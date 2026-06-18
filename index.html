@@ -538,32 +538,7 @@ Rules:
 // ─── SMALL COMPONENTS ────────────────────────────────────────────────────────
 function Badge({children,color=C.accent}){return <span style={{fontSize:10,fontWeight:700,padding:"2px 9px",borderRadius:20,background:color+"22",color,letterSpacing:"0.08em",textTransform:"uppercase"}}>{children}</span>;}
 function Skeleton({width="100%",height=14,radius=6,style={}}){return <div style={{width,height,borderRadius:radius,background:`linear-gradient(90deg,${C.border} 25%,${C.dim} 50%,${C.border} 75%)`,backgroundSize:"200% 100%",animation:"shimmer 1.4s infinite",...style}}/>;}
-function StatCard({label,value,color,sub,onClick}){return <div onClick={onClick} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"13px 14px",cursor:onClick?"pointer":"default"}}><div style={{fontSize:20,fontWeight:800,color:color||C.accentLight,lineHeight:1}}>{value}</div>{sub&&<div style={{fontSize:10,color:color||C.accentLight,opacity:0.75,marginTop:2}}>{sub}</div>}<div style={{fontSize:11,color:C.muted,marginTop:4}}>{label}</div></div>;}
-function TrendArrow({trend,delta}){
-  if(!trend)return null;
-  const col=trend==="up"?C.easy:trend==="down"?C.hard:C.muted;
-  const arrow=trend==="up"?"↑":trend==="down"?"↓":"→";
-  return <span style={{fontSize:12,color:col,fontWeight:700}}>{arrow}{delta!==null&&delta!==undefined?` ${Math.abs(delta)}%`:""}</span>;
-}
-function ScoreRing({pct,size=96}){
-  const r=(size-12)/2,circ=2*Math.PI*r,offset=circ-(pct/100)*circ,col=pct>=70?C.easy:pct>=50?C.medium:C.hard;
-  return <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}><circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.border} strokeWidth={7}/><circle cx={size/2} cy={size/2} r={r} fill="none" stroke={col} strokeWidth={7} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" style={{transition:"stroke-dashoffset 0.7s ease"}}/><text x={size/2} y={size/2} textAnchor="middle" dominantBaseline="middle" style={{fill:col,fontSize:size>80?16:12,fontWeight:800,transform:`rotate(90deg)`,transformOrigin:`${size/2}px ${size/2}px`}}>{pct}%</text></svg>;
-}
-function QualityBar({quality,label,color}){
-  return(
-    <div style={{marginBottom:8}}>
-      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-        <span style={{fontSize:11,color:C.muted}}>{label}</span>
-        <span style={{fontSize:11,fontWeight:700,color}}>{quality}%</span>
-      </div>
-      <div style={{height:4,background:C.border,borderRadius:2}}><div style={{height:"100%",width:`${quality}%`,background:color,borderRadius:2,transition:"width 0.5s"}}/></div>
-    </div>
-  );
-}
-function LOSHeatmapCell({tested,pct}){
-  const bg=!tested?C.border:pct>=80?"#16a34a":pct>=60?C.medium:C.hard;
-  return <div style={{width:12,height:12,borderRadius:2,background:bg,flexShrink:0}} title={tested?`${pct}% accuracy`:"Not yet tested"}/>;
-}
+
 const EXAM_DATE    = new Date("2026-08-19");
 const DIFFICULTIES = ["Easy","Medium","Hard"];
 const Q_COUNTS     = [5,10,15,20];
