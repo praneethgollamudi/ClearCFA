@@ -4548,6 +4548,249 @@ Reply with just "saved" when done.`
     }
   }, "Cancel"))));
 
+  // ══ AI COACH ════════════════════════════════════════════════════════════════
+  if (aiCoachScreen) return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontSize: 20,
+      fontWeight: 800,
+      color: "#22d3ee"
+    }
+  }, "🤖 AI Study Coach"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 2
+    }
+  }, "Powered by Claude · Knows your performance data")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAiCoachScreen(false),
+    style: {
+      background: "none",
+      border: "none",
+      color: C.muted,
+      cursor: "pointer",
+      fontSize: 13
+    }
+  }, "← Home")), (() => {
+    const topWeak = moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
+    const untouched = moduleReadiness.filter(m => m.sessions === 0).length;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#080818",
+        border: `1px solid #22d3ee22`,
+        borderRadius: 11,
+        padding: "12px 14px",
+        marginBottom: 14,
+        fontSize: 11,
+        color: C.muted
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#22d3ee",
+        fontWeight: 700
+      }
+    }, "Context loaded: "), history.length, " sessions · ", daysLeft, " days to exam ·", topWeak.length > 0 ? ` Weakest: ${topWeak[0].topic.split(" ")[0]} (${topWeak[0].accuracy}%) ·` : "", untouched > 0 ? ` ${untouched} untouched modules` : "", "· Pass prob: ", passProbability ? `${passProbability.probability}%` : "N/A");
+  })(), aiCoachMessages.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: C.muted,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 4
+    }
+  }, "Quick questions"), ["What should I study today?", "Where am I most likely to lose marks?", "How do I fix my weakest topic fast?", "Am I on track to pass? Be honest.", "What's my biggest risk with 62 days left?"].map(prompt => /*#__PURE__*/React.createElement("button", {
+    key: prompt,
+    onClick: async () => {
+      if (!apiKey) {
+        setAiCoachMessages(m => [...m, {
+          role: "user",
+          text: prompt
+        }, {
+          role: "assistant",
+          text: "Add an API key first (🔑 on home screen) to use AI Coach."
+        }]);
+        return;
+      }
+      const userMsg = {
+        role: "user",
+        text: prompt
+      };
+      setAiCoachMessages(m => [...m, userMsg]);
+      setAiCoachLoading(true);
+      try {
+        const topWeak = moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3).map(m => `${m.topic}: ${m.accuracy}%`).join(", ");
+        const untouched = moduleReadiness.filter(m => m.sessions === 0).map(m => m.topic.split(" ")[0]).join(", ");
+        const context = `Student data: ${history.length} sessions, overall ${overallPct || "N/A"}%, pass probability ${passProbability?.probability || "N/A"}%, days to exam ${daysLeft}, weakest modules: ${topWeak || "none yet"}, untouched: ${untouched || "none"}, SR due: ${dueCards.length}, leeches: ${leeches.length}.`;
+        const sysPrompt = `You are a direct, honest CFA Level 1 study coach. ${context} Give specific, actionable advice in 2-4 sentences. No generic motivational fluff.`;
+        const result = await callClaude(`${sysPrompt}\n\nStudent: ${prompt}`, 300, {
+          model: "claude-haiku-4-5-20251001",
+          retries: 1,
+          retryDelay: 2000
+        });
+        const text = result?.content?.[0]?.text || result || "No response";
+        setAiCoachMessages(m => [...m, {
+          role: "assistant",
+          text
+        }]);
+      } catch (e) {
+        setAiCoachMessages(m => [...m, {
+          role: "assistant",
+          text: "Error: " + e.message
+        }]);
+      }
+      setAiCoachLoading(false);
+    },
+    style: {
+      textAlign: "left",
+      padding: "10px 14px",
+      borderRadius: 9,
+      fontSize: 12,
+      background: C.surface,
+      border: `1px solid #22d3ee22`,
+      color: C.textMid,
+      cursor: "pointer"
+    }
+  }, prompt))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
+      marginBottom: 16
+    }
+  }, aiCoachMessages.map((msg, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: "flex",
+      justifyContent: msg.role === "user" ? "flex-end" : "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: "85%",
+      padding: "10px 14px",
+      borderRadius: 11,
+      fontSize: 12,
+      lineHeight: 1.7,
+      background: msg.role === "user" ? `linear-gradient(135deg,${C.accent},${C.accentLight})` : C.surface,
+      color: msg.role === "user" ? "#fff" : "#a0d8e8",
+      border: msg.role === "user" ? "none" : `1px solid #22d3ee22`
+    }
+  }, msg.text))), aiCoachLoading && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "10px 14px",
+      borderRadius: 11,
+      background: C.surface,
+      border: `1px solid #22d3ee22`
+    }
+  }, /*#__PURE__*/React.createElement(Skeleton, {
+    width: 120,
+    height: 12,
+    radius: 6
+  })))), aiCoachMessages.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: aiCoachInput,
+    onChange: e => setAiCoachInput(e.target.value),
+    onKeyDown: async e => {
+      if (e.key === "Enter" && aiCoachInput.trim() && !aiCoachLoading) {
+        const q = aiCoachInput.trim();
+        setAiCoachInput("");
+        if (!apiKey) {
+          setAiCoachMessages(m => [...m, {
+            role: "user",
+            text: q
+          }, {
+            role: "assistant",
+            text: "Add an API key first."
+          }]);
+          return;
+        }
+        setAiCoachMessages(m => [...m, {
+          role: "user",
+          text: q
+        }]);
+        setAiCoachLoading(true);
+        try {
+          const topWeak = moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3).map(m => `${m.topic}: ${m.accuracy}%`).join(", ");
+          const context = `Student data: ${history.length} sessions, overall ${overallPct || "N/A"}%, pass prob ${passProbability?.probability || "N/A"}%, days to exam ${daysLeft}, weakest: ${topWeak || "none"}.`;
+          const result = await callClaude(`You are a direct CFA L1 coach. ${context}\n\nStudent: ${q}`, 300, {
+            model: "claude-haiku-4-5-20251001",
+            retries: 1,
+            retryDelay: 2000
+          });
+          setAiCoachMessages(m => [...m, {
+            role: "assistant",
+            text: result?.content?.[0]?.text || result || "No response"
+          }]);
+        } catch (e) {
+          setAiCoachMessages(m => [...m, {
+            role: "assistant",
+            text: "Error: " + e.message
+          }]);
+        }
+        setAiCoachLoading(false);
+      }
+    },
+    placeholder: "Ask anything about your study plan...",
+    style: {
+      flex: 1,
+      padding: "11px 14px",
+      borderRadius: 10,
+      fontSize: 12,
+      background: C.surface,
+      border: `1px solid #22d3ee44`,
+      color: C.text,
+      outline: "none"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {},
+    style: {
+      padding: "11px 14px",
+      borderRadius: 10,
+      fontSize: 13,
+      background: "#22d3ee22",
+      border: `1px solid #22d3ee44`,
+      color: "#22d3ee",
+      cursor: "pointer",
+      fontWeight: 700
+    }
+  }, "↑")), aiCoachMessages.length > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAiCoachMessages([]),
+    style: {
+      marginTop: 10,
+      width: "100%",
+      padding: "8px",
+      borderRadius: 8,
+      fontSize: 11,
+      background: "none",
+      border: `1px solid ${C.border}`,
+      color: C.muted,
+      cursor: "pointer"
+    }
+  }, "Clear chat")));
+
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if (screen === "home") return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9426,249 +9669,6 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     initialTopic: revisionTopic,
     initialTab: revisionTab
   });
-
-  // ══ AI COACH ══════════════════════════════════════════════════════════════
-  if (aiCoachScreen) return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-    style: {
-      margin: 0,
-      fontSize: 20,
-      fontWeight: 800,
-      color: "#22d3ee"
-    }
-  }, "🤖 AI Study Coach"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.muted,
-      marginTop: 2
-    }
-  }, "Powered by Claude · Knows your performance data")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setAiCoachScreen(false),
-    style: {
-      background: "none",
-      border: "none",
-      color: C.muted,
-      cursor: "pointer",
-      fontSize: 13
-    }
-  }, "← Home")), (() => {
-    const topWeak = moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
-    const untouched = moduleReadiness.filter(m => m.sessions === 0).length;
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: "#080818",
-        border: `1px solid #22d3ee22`,
-        borderRadius: 11,
-        padding: "12px 14px",
-        marginBottom: 14,
-        fontSize: 11,
-        color: C.muted
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: "#22d3ee",
-        fontWeight: 700
-      }
-    }, "Context loaded: "), history.length, " sessions · ", daysLeft, " days to exam ·", topWeak.length > 0 ? ` Weakest: ${topWeak[0].topic.split(" ")[0]} (${topWeak[0].accuracy}%) ·` : "", untouched > 0 ? ` ${untouched} untouched modules` : "", "· Pass prob: ", passProbability ? `${passProbability.probability}%` : "N/A");
-  })(), aiCoachMessages.length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 8,
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: C.muted,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      marginBottom: 4
-    }
-  }, "Quick questions"), ["What should I study today?", "Where am I most likely to lose marks?", "How do I fix my weakest topic fast?", "Am I on track to pass? Be honest.", "What's my biggest risk with 62 days left?"].map(prompt => /*#__PURE__*/React.createElement("button", {
-    key: prompt,
-    onClick: async () => {
-      if (!apiKey) {
-        setAiCoachMessages(m => [...m, {
-          role: "user",
-          text: prompt
-        }, {
-          role: "assistant",
-          text: "Add an API key first (🔑 on home screen) to use AI Coach."
-        }]);
-        return;
-      }
-      const userMsg = {
-        role: "user",
-        text: prompt
-      };
-      setAiCoachMessages(m => [...m, userMsg]);
-      setAiCoachLoading(true);
-      try {
-        const topWeak = moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3).map(m => `${m.topic}: ${m.accuracy}%`).join(", ");
-        const untouched = moduleReadiness.filter(m => m.sessions === 0).map(m => m.topic.split(" ")[0]).join(", ");
-        const context = `Student data: ${history.length} sessions, overall ${overallPct || "N/A"}%, pass probability ${passProbability?.probability || "N/A"}%, days to exam ${daysLeft}, weakest modules: ${topWeak || "none yet"}, untouched: ${untouched || "none"}, SR due: ${dueCards.length}, leeches: ${leeches.length}.`;
-        const sysPrompt = `You are a direct, honest CFA Level 1 study coach. ${context} Give specific, actionable advice in 2-4 sentences. No generic motivational fluff.`;
-        const result = await callClaude(`${sysPrompt}\n\nStudent: ${prompt}`, 300, {
-          model: "claude-haiku-4-5-20251001",
-          retries: 1,
-          retryDelay: 2000
-        });
-        const text = result?.content?.[0]?.text || result || "No response";
-        setAiCoachMessages(m => [...m, {
-          role: "assistant",
-          text
-        }]);
-      } catch (e) {
-        setAiCoachMessages(m => [...m, {
-          role: "assistant",
-          text: "Error: " + e.message
-        }]);
-      }
-      setAiCoachLoading(false);
-    },
-    style: {
-      textAlign: "left",
-      padding: "10px 14px",
-      borderRadius: 9,
-      fontSize: 12,
-      background: C.surface,
-      border: `1px solid #22d3ee22`,
-      color: C.textMid,
-      cursor: "pointer"
-    }
-  }, prompt))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 10,
-      marginBottom: 16
-    }
-  }, aiCoachMessages.map((msg, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      display: "flex",
-      justifyContent: msg.role === "user" ? "flex-end" : "flex-start"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      maxWidth: "85%",
-      padding: "10px 14px",
-      borderRadius: 11,
-      fontSize: 12,
-      lineHeight: 1.7,
-      background: msg.role === "user" ? `linear-gradient(135deg,${C.accent},${C.accentLight})` : C.surface,
-      color: msg.role === "user" ? "#fff" : "#a0d8e8",
-      border: msg.role === "user" ? "none" : `1px solid #22d3ee22`
-    }
-  }, msg.text))), aiCoachLoading && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "flex-start"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: "10px 14px",
-      borderRadius: 11,
-      background: C.surface,
-      border: `1px solid #22d3ee22`
-    }
-  }, /*#__PURE__*/React.createElement(Skeleton, {
-    width: 120,
-    height: 12,
-    radius: 6
-  })))), aiCoachMessages.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    value: aiCoachInput,
-    onChange: e => setAiCoachInput(e.target.value),
-    onKeyDown: async e => {
-      if (e.key === "Enter" && aiCoachInput.trim() && !aiCoachLoading) {
-        const q = aiCoachInput.trim();
-        setAiCoachInput("");
-        if (!apiKey) {
-          setAiCoachMessages(m => [...m, {
-            role: "user",
-            text: q
-          }, {
-            role: "assistant",
-            text: "Add an API key first."
-          }]);
-          return;
-        }
-        setAiCoachMessages(m => [...m, {
-          role: "user",
-          text: q
-        }]);
-        setAiCoachLoading(true);
-        try {
-          const topWeak = moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3).map(m => `${m.topic}: ${m.accuracy}%`).join(", ");
-          const context = `Student data: ${history.length} sessions, overall ${overallPct || "N/A"}%, pass prob ${passProbability?.probability || "N/A"}%, days to exam ${daysLeft}, weakest: ${topWeak || "none"}.`;
-          const result = await callClaude(`You are a direct CFA L1 coach. ${context}\n\nStudent: ${q}`, 300, {
-            model: "claude-haiku-4-5-20251001",
-            retries: 1,
-            retryDelay: 2000
-          });
-          setAiCoachMessages(m => [...m, {
-            role: "assistant",
-            text: result?.content?.[0]?.text || result || "No response"
-          }]);
-        } catch (e) {
-          setAiCoachMessages(m => [...m, {
-            role: "assistant",
-            text: "Error: " + e.message
-          }]);
-        }
-        setAiCoachLoading(false);
-      }
-    },
-    placeholder: "Ask anything about your study plan...",
-    style: {
-      flex: 1,
-      padding: "11px 14px",
-      borderRadius: 10,
-      fontSize: 12,
-      background: C.surface,
-      border: `1px solid #22d3ee44`,
-      color: C.text,
-      outline: "none"
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {},
-    style: {
-      padding: "11px 14px",
-      borderRadius: 10,
-      fontSize: 13,
-      background: "#22d3ee22",
-      border: `1px solid #22d3ee44`,
-      color: "#22d3ee",
-      cursor: "pointer",
-      fontWeight: 700
-    }
-  }, "↑")), aiCoachMessages.length > 0 && /*#__PURE__*/React.createElement("button", {
-    onClick: () => setAiCoachMessages([]),
-    style: {
-      marginTop: 10,
-      width: "100%",
-      padding: "8px",
-      borderRadius: 8,
-      fontSize: 11,
-      background: "none",
-      border: `1px solid ${C.border}`,
-      color: C.muted,
-      cursor: "pointer"
-    }
-  }, "Clear chat")));
   return null;
 }
 const root = ReactDOM.createRoot(document.getElementById('root'));
