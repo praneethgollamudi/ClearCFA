@@ -363,6 +363,62 @@ Rules: 3 options only (A,B,C). Each wrong option exploits a misconception. Sprea
 }
 
 // Expand compact JSON keys returned by optimised prompt
+function buildVignettePrompt(topic, module, difficulty, vigCount) {
+  const los = (LOS[topic]?.modules[module] || []).slice(0, 4).map((l, i) => `${i + 1}. ${l}`).join("\n");
+  return `You are a CFA Level 1 exam writer. Generate ${vigCount} item set(s) for ${topic} — ${module} at ${difficulty} difficulty.
+
+Each item set = one scenario (100-150 words) + exactly 3 multiple-choice questions testing that scenario.
+
+Official LOS to anchor to:
+${los}
+
+Output a JSON array of item sets:
+[{
+  "scenario": "100-150 word business/investment scenario with a named person, firm, and specific situation",
+  "questions": [
+    {
+      "q": "Question text referencing the scenario",
+      "o": {"A":"option","B":"option","C":"option"},
+      "a": "A|B|C",
+      "e": "Explanation referencing scenario details",
+      "c": "Concept name",
+      "l": "LOS statement tested",
+      "m": "Misconception targeted"
+    }
+  ]
+}]
+
+Rules:
+- Each question must REQUIRE reading the scenario (no standalone questions)
+- Distractors must be plausible and target common misconceptions
+- Difficulty ${difficulty}: ${difficulty === "Easy" ? "recall/identify" : difficulty === "Medium" ? "apply/calculate" : "evaluate/synthesize across multiple LOS"}
+- Output ONLY valid JSON, no markdown`;
+}
+function flattenVignettes(rawVignettes, topic, module) {
+  const arr = Array.isArray(rawVignettes) ? rawVignettes : rawVignettes?.vignettes || [];
+  const qs = [];
+  arr.forEach((v, vi) => {
+    const scenario = v.scenario || v.vignette || "";
+    (v.questions || []).forEach((q, qi) => {
+      qs.push({
+        id: `vig_${vi}_${qi}_${Date.now()}`,
+        question: scenario ? `SCENARIO:\n${scenario}\n\nQUESTION: ${q.q || q.question || ""}` : q.q || q.question || "",
+        options: q.o || q.options || {},
+        answer: q.a || q.answer || "A",
+        explanation: q.e || q.explanation || "",
+        concept: q.c || q.concept || "",
+        los_tested: q.l || q.los_tested || "",
+        misconception_targeted: q.m || q.misconception_targeted || "",
+        _topic: topic,
+        _subtopic: module,
+        _isVignette: true,
+        _vignetteIdx: vi,
+        _qIdx: qi
+      });
+    });
+  });
+  return qs;
+}
 function expandQuestionKeys(qs) {
   return qs.map(q => ({
     id: q.id,
@@ -1594,8 +1650,18 @@ function RevisionScreen({
   const [selTopic, setSelTopic] = useState(initialTopic || Object.keys(POWER_NOTES)[0]);
   const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
   const [expandedModule, setExpandedModule] = useState(null);
+  const [drillMode, setDrillMode] = useState(false);
+  const [drillIdx, setDrillIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [drillResult, setDrillResult] = useState({}); // {idx: "got it"|"again"}
+  const [drillDone, setDrillDone] = useState(false);
   const topicData = POWER_NOTES[selTopic];
   const formulaData = FORMULAS[selTopic] || [];
+  const allFormulas = Object.values(FORMULAS).flat();
+  const drillData = formulaData.length > 0 ? formulaData : allFormulas;
+  const drillTotal = drillData.length;
+  const drillCard = drillData[drillIdx] || null;
+  const drillProgress = Object.keys(drillResult).length;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "system-ui,sans-serif",
@@ -1841,7 +1907,38 @@ function RevisionScreen({
         fontStyle: "italic"
       }
     }, mod.mnemonic))));
-  })), tab === "formulas" && /*#__PURE__*/React.createElement("div", null, formulaData.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  })), tab === "formulas" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 0,
+      marginBottom: 14,
+      background: C.surface,
+      borderRadius: 10,
+      padding: 3,
+      border: `1px solid ${C.border}`
+    }
+  }, [["ref", "📋 Reference"], ["drill", "🃏 Drill Mode"]].map(([m, label]) => /*#__PURE__*/React.createElement("button", {
+    key: m,
+    onClick: () => {
+      setDrillMode(m === "drill");
+      setDrillIdx(0);
+      setFlipped(false);
+      setDrillResult({});
+      setDrillDone(false);
+    },
+    style: {
+      flex: 1,
+      padding: "7px",
+      borderRadius: 8,
+      fontSize: 12,
+      fontWeight: 700,
+      border: "none",
+      cursor: "pointer",
+      background: drillMode && m === "drill" || !drillMode && m === "ref" ? `linear-gradient(135deg,${C.reward},${C.rewardLight})` : C.surface,
+      color: drillMode && m === "drill" || !drillMode && m === "ref" ? "#000" : C.muted,
+      transition: "all 0.15s"
+    }
+  }, label))), !drillMode && /*#__PURE__*/React.createElement(React.Fragment, null, formulaData.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "40px 0",
@@ -1888,7 +1985,220 @@ function RevisionScreen({
       color: C.muted,
       textAlign: "center"
     }
-  }, formulaData.length, " formulas · All topics in topic picker above")));
+  }, formulaData.length, " formulas · switch topic above")), drillMode && !drillDone && drillCard && /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: "fadeIn 0.2s ease"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted
+    }
+  }, drillIdx + 1, " / ", drillTotal), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 4,
+      flex: 1,
+      background: C.border,
+      borderRadius: 2,
+      margin: "0 12px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: `${drillProgress / drillTotal * 100}%`,
+      background: `linear-gradient(90deg,${C.reward},${C.rewardLight})`,
+      borderRadius: 2,
+      transition: "width 0.3s"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.rewardLight,
+      fontWeight: 700
+    }
+  }, drillProgress, "/", drillTotal)), /*#__PURE__*/React.createElement("div", {
+    onClick: () => setFlipped(f => !f),
+    style: {
+      cursor: "pointer",
+      minHeight: 180,
+      background: flipped ? C.surfaceHigh : C.surface,
+      border: `2px solid ${flipped ? C.reward + "88" : C.border}`,
+      borderRadius: 16,
+      padding: "28px 24px",
+      textAlign: "center",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      transition: "all 0.2s",
+      userSelect: "none"
+    }
+  }, !flipped ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.muted,
+      letterSpacing: "0.1em",
+      textTransform: "uppercase",
+      marginBottom: 12
+    }
+  }, "Formula name"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 17,
+      fontWeight: 800,
+      color: C.text,
+      lineHeight: 1.4
+    }
+  }, drillCard.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 16
+    }
+  }, "Tap to reveal →")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.rewardLight,
+      letterSpacing: "0.1em",
+      textTransform: "uppercase",
+      marginBottom: 12
+    }
+  }, drillCard.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 19,
+      fontWeight: 800,
+      color: C.rewardLight,
+      fontFamily: "monospace",
+      lineHeight: 1.5,
+      letterSpacing: "0.02em"
+    }
+  }, drillCard.f))), flipped && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      marginTop: 14,
+      animation: "fadeIn 0.15s ease"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setDrillResult(r => ({
+        ...r,
+        [drillIdx]: "again"
+      }));
+      const next = drillIdx + 1;
+      if (next >= drillTotal) {
+        setDrillDone(true);
+      } else {
+        setDrillIdx(next);
+        setFlipped(false);
+      }
+    },
+    style: {
+      flex: 1,
+      padding: "13px",
+      borderRadius: 11,
+      fontSize: 14,
+      fontWeight: 700,
+      background: C.hard + "28",
+      border: `1px solid ${C.hard}55`,
+      color: C.hard,
+      cursor: "pointer"
+    }
+  }, "🔁 Again"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setDrillResult(r => ({
+        ...r,
+        [drillIdx]: "got it"
+      }));
+      const next = drillIdx + 1;
+      if (next >= drillTotal) {
+        setDrillDone(true);
+      } else {
+        setDrillIdx(next);
+        setFlipped(false);
+      }
+    },
+    style: {
+      flex: 1,
+      padding: "13px",
+      borderRadius: 11,
+      fontSize: 14,
+      fontWeight: 700,
+      background: C.easy + "28",
+      border: `1px solid ${C.easy}55`,
+      color: C.easy,
+      cursor: "pointer"
+    }
+  }, "✓ Got it"))), drillMode && drillDone && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "32px 0",
+      animation: "fadeIn 0.3s ease"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 36,
+      marginBottom: 16
+    }
+  }, "🎉"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: C.text,
+      marginBottom: 8
+    }
+  }, "Round complete!"), (() => {
+    const gotIt = Object.values(drillResult).filter(v => v === "got it").length;
+    const again = drillTotal - gotIt;
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.muted,
+        marginBottom: 4
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.easy,
+        fontWeight: 700
+      }
+    }, gotIt), " got it · ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.hard,
+        fontWeight: 700
+      }
+    }, again), " need review"), again > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginBottom: 20
+      }
+    }, "Review the ones you missed before the next round"));
+  })(), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setDrillIdx(0);
+      setFlipped(false);
+      setDrillResult({});
+      setDrillDone(false);
+    },
+    style: {
+      padding: "12px 28px",
+      borderRadius: 11,
+      fontSize: 14,
+      fontWeight: 700,
+      background: `linear-gradient(135deg,${C.reward},${C.rewardLight})`,
+      color: "#000",
+      border: "none",
+      cursor: "pointer"
+    }
+  }, "Drill again →"))));
 }
 
 // ─── LOCAL QUESTION GENERATOR ────────────────────────────────────────────────
@@ -2809,6 +3119,105 @@ const Q_TEMPLATES = {
     };
   }],
   "Economics": [
+  // Business cycles
+  () => {
+    const phase = pick(["expansion", "peak", "contraction", "trough"]);
+    const indicators = {
+      "expansion": "rising GDP, falling unemployment, increasing consumer spending, rising inflation",
+      "peak": "GDP at maximum, unemployment at minimum, inflation high, leading indicators turning down",
+      "contraction": "falling GDP, rising unemployment, declining consumer confidence, falling inflation",
+      "trough": "GDP at minimum, unemployment at maximum, leading indicators turning up, accommodative monetary policy"
+    };
+    const next = {
+      "expansion": "peak",
+      "peak": "contraction",
+      "contraction": "trough",
+      "trough": "expansion"
+    };
+    const wrong1 = pick(Object.keys(indicators).filter(p => p !== phase));
+    const wrong2 = pick(Object.keys(indicators).filter(p => p !== phase && p !== wrong1));
+    return {
+      question: `An economy shows: ${indicators[phase]}. Which phase of the business cycle is this MOST consistent with?`,
+      options: {
+        A: phase.charAt(0).toUpperCase() + phase.slice(1),
+        B: wrong1.charAt(0).toUpperCase() + wrong1.slice(1),
+        C: wrong2.charAt(0).toUpperCase() + wrong2.slice(1)
+      },
+      answer: "A",
+      explanation: `These characteristics describe the ${phase} phase. The next phase is typically ${next[phase]}. During ${phase}: ${indicators[phase]}.`,
+      concept: "Business Cycles",
+      los_tested: "describe the business cycle and its phases",
+      misconception_targeted: "confusing adjacent business cycle phases"
+    };
+  },
+  // Monetary policy
+  () => {
+    const action = pick(["raise", "lower"]);
+    const rationale = action === "raise" ? "combat inflation (economy overheating)" : "stimulate growth (economy slowing)";
+    const effect1 = action === "raise" ? "borrowing costs rise, investment falls, aggregate demand decreases" : "borrowing costs fall, investment rises, aggregate demand increases";
+    const effect2 = action === "raise" ? "currency typically appreciates (higher yields attract foreign capital)" : "currency typically depreciates (lower yields reduce foreign capital inflows)";
+    const wrong1 = action === "raise" ? "Stimulate borrowing and increase aggregate demand" : "Reduce borrowing costs and slow the economy";
+    const wrong2 = action === "raise" ? "Depreciate the currency to boost exports" : "Appreciate the currency to increase inflation";
+    return {
+      question: `A central bank decides to ${action} its policy interest rate. The MOST likely primary objective is to ${rationale}. Which effect on the economy is MOST expected?`,
+      options: {
+        A: effect1,
+        B: wrong1,
+        C: wrong2
+      },
+      answer: "A",
+      explanation: `When a central bank ${action}s rates: ${effect1}. Additionally, ${effect2}. Central banks use interest rates as the primary tool for managing the money supply and economic activity.`,
+      concept: "Monetary Policy",
+      los_tested: "describe how monetary policy affects the economy",
+      misconception_targeted: "reversing the direction of monetary policy effects"
+    };
+  },
+  // Fiscal policy
+  () => {
+    const policy = pick(["expansionary", "contractionary"]);
+    const tools = policy === "expansionary" ? "increasing government spending or cutting taxes" : "decreasing government spending or raising taxes";
+    const effect = policy === "expansionary" ? "increases aggregate demand, stimulates GDP growth, may raise inflation" : "reduces aggregate demand, slows GDP growth, may lower inflation";
+    const crowd = policy === "expansionary" ? "Crowding out: higher government borrowing may raise interest rates, reducing private investment" : "Fiscal drag: reduced spending and higher taxes reduce private sector activity";
+    const wrong = policy === "expansionary" ? "reduces aggregate demand and slows growth" : "stimulates aggregate demand and increases growth";
+    return {
+      question: `A government pursues ${policy} fiscal policy through ${tools}. Which outcome is MOST likely?`,
+      options: {
+        A: effect,
+        B: wrong,
+        C: "Has no effect on aggregate demand or inflation"
+      },
+      answer: "A",
+      explanation: `${policy.charAt(0).toUpperCase() + policy.slice(1)} fiscal policy ${effect}. Key side effect: ${crowd}. Fiscal multiplier: the ultimate GDP impact exceeds the initial spending change.`,
+      concept: "Fiscal Policy",
+      los_tested: "describe how fiscal policy affects the economy",
+      misconception_targeted: "confusing expansionary and contractionary fiscal effects"
+    };
+  },
+  // GDP components
+  () => {
+    const component = pick(["consumption (C)", "investment (I)", "government spending (G)", "net exports (X-M)"]);
+    const desc = {
+      "consumption (C)": "largest component of GDP (~70% in most economies); household spending on goods and services",
+      "investment (I)": "business spending on capital goods, inventory changes, and residential construction",
+      "government spending (G)": "federal, state, and local purchases of goods and services (excludes transfer payments)",
+      "net exports (X-M)": "exports minus imports; negative when imports exceed exports (trade deficit)"
+    };
+    const wrong1 = pick(Object.keys(desc).filter(c => c !== component));
+    const wrong2 = pick(Object.keys(desc).filter(c => c !== component && c !== wrong1));
+    return {
+      question: `In the expenditure approach to GDP, which component is described as: "${desc[component]}"?`,
+      options: {
+        A: component,
+        B: wrong1,
+        C: wrong2
+      },
+      answer: "A",
+      explanation: `GDP = C + I + G + (X-M). ${component}: ${desc[component]}. Note: transfer payments (welfare, pensions) are NOT included in G because no good/service is produced.`,
+      concept: "GDP Components",
+      los_tested: "calculate and describe GDP using the expenditure approach",
+      misconception_targeted: "including transfer payments in government spending component"
+    };
+  },
   // Market structures
   () => {
     const structure = pick(["perfect competition", "monopolistic competition", "oligopoly", "monopoly"]);
@@ -2839,6 +3248,108 @@ const Q_TEMPLATES = {
     };
   }],
   "Alternatives": [
+  // Hedge fund strategies
+  () => {
+    const strategy = pick(["long/short equity", "global macro", "event-driven", "relative value"]);
+    const desc = {
+      "long/short equity": "takes long positions in undervalued stocks and short positions in overvalued stocks; net market exposure varies",
+      "global macro": "takes positions across asset classes (equities, FX, rates, commodities) based on macroeconomic views",
+      "event-driven": "exploits pricing inefficiencies around corporate events such as mergers, spin-offs, and restructurings",
+      "relative value": "exploits pricing discrepancies between related instruments (e.g., convertible bond arbitrage, fixed income arbitrage)"
+    };
+    const wrong1 = pick(Object.keys(desc).filter(s => s !== strategy));
+    const wrong2 = pick(Object.keys(desc).filter(s => s !== strategy && s !== wrong1));
+    return {
+      question: `A hedge fund "${desc[strategy]}." This fund is BEST classified as which strategy?`,
+      options: {
+        A: strategy,
+        B: wrong1,
+        C: wrong2
+      },
+      answer: "A",
+      explanation: `${strategy.charAt(0).toUpperCase() + strategy.slice(1)}: ${desc[strategy]}. Key distinction: long/short equity has equity market beta exposure; global macro takes directional macro bets; event-driven requires catalyst; relative value is market-neutral with spread risk.`,
+      concept: "Hedge Fund Strategies",
+      los_tested: "describe hedge funds types characteristics and strategies",
+      misconception_targeted: "confusing event-driven with global macro strategies"
+    };
+  },
+  // Private equity stages
+  () => {
+    const stage = pick(["seed", "venture capital", "growth equity", "leveraged buyout"]);
+    const desc = {
+      "seed": "provides capital to develop a business concept; highest risk, pre-revenue",
+      "venture capital": "funds early-stage companies with proven concept but limited revenue; equity financing",
+      "growth equity": "invests in established companies seeking expansion capital without changing control",
+      "leveraged buyout": "acquires a mature company using significant debt; aims to improve operations and exit via sale or IPO"
+    };
+    const wrong1 = pick(Object.keys(desc).filter(s => s !== stage));
+    const wrong2 = pick(Object.keys(desc).filter(s => s !== stage && s !== wrong1));
+    return {
+      question: `A PE investor "${desc[stage]}." This investment is BEST described as:`,
+      options: {
+        A: stage,
+        B: wrong1,
+        C: wrong2
+      },
+      answer: "A",
+      explanation: `${stage.charAt(0).toUpperCase() + stage.slice(1)}: ${desc[stage]}. LBO uses highest leverage (50-70% debt). Venture has highest equity return potential but highest failure rate. Growth equity is minority stake with no control change.`,
+      concept: "Private Equity Stages",
+      los_tested: "describe private equity strategies including venture capital growth equity and LBOs",
+      misconception_targeted: "confusing growth equity with LBO (control vs minority)"
+    };
+  },
+  // Real estate
+  () => {
+    const capRate = parseFloat((rnd(4, 8) + Math.random()).toFixed(1));
+    const noi = rnd(800, 2000) * 1000;
+    const value = Math.round(noi / capRate * 100);
+    const wrongLow = Math.round(noi / (capRate + 2) * 100);
+    const wrongHigh = Math.round(noi / (capRate - 1.5) * 100);
+    return {
+      question: `A commercial property generates NOI of $${(noi / 1000).toFixed(0)}K per year. Market cap rates for comparable properties are ${capRate}%. What is the estimated property value?`,
+      options: {
+        A: `$${(value / 1000).toFixed(0)}K`,
+        B: `$${(wrongLow / 1000).toFixed(0)}K`,
+        C: `$${(wrongHigh / 1000).toFixed(0)}K`
+      },
+      answer: "A",
+      explanation: `Property Value = NOI ÷ Cap Rate = $${(noi / 1000).toFixed(0)}K ÷ ${capRate}% = $${(value / 1000).toFixed(0)}K. The cap rate is the NOI yield — a higher cap rate means lower value (more risk). Common error: dividing by the wrong cap rate or inverting the formula.`,
+      concept: "Real Estate Valuation",
+      los_tested: "calculate and interpret the value of real estate using the income approach",
+      misconception_targeted: "inverting NOI/cap rate or using wrong cap rate"
+    };
+  },
+  // Commodity characteristics
+  () => {
+    const commodity = pick(["gold", "oil", "agricultural commodities", "infrastructure"]);
+    const char = {
+      "gold": "store of value, inflation hedge, low correlation with equities, no income stream",
+      "oil": "economically sensitive, geopolitical risk, contango/backwardation roll yield, income via futures",
+      "agricultural commodities": "seasonal price patterns, weather-dependent supply, perishable (storage costs), speculative demand",
+      "infrastructure": "long-duration cash flows, regulated monopoly characteristics, inflation-linked revenues, illiquid"
+    };
+    const hedge = {
+      "gold": "inflation and currency debasement",
+      "oil": "energy cost inflation and geopolitical disruption",
+      "agricultural commodities": "food price inflation",
+      "infrastructure": "inflation via regulated price escalators"
+    };
+    const wrong1 = pick(Object.keys(char).filter(c => c !== commodity));
+    const wrong2 = pick(Object.keys(char).filter(c => c !== commodity && c !== wrong1));
+    return {
+      question: `An investor wants exposure to an asset with these characteristics: "${char[commodity]}." Which alternative investment is the BEST match?`,
+      options: {
+        A: commodity,
+        B: wrong1,
+        C: wrong2
+      },
+      answer: "A",
+      explanation: `${commodity.charAt(0).toUpperCase() + commodity.slice(1)}: ${char[commodity]}. Primary hedge use: ${hedge[commodity]}. Key consideration for portfolio allocation: real assets typically have low correlation with financial assets, providing diversification benefits.`,
+      concept: "Commodity Characteristics",
+      los_tested: "describe investment characteristics of alternative investments",
+      misconception_targeted: "confusing commodity inflation-hedging properties across asset types"
+    };
+  },
   // 2-and-20 fee structure
   () => {
     const committed = rnd(50, 200);
@@ -2918,6 +3429,7 @@ function CFAMock() {
   const [mode, setMode] = useState("guided");
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
+  const [flaggedQ, setFlaggedQ] = useState({}); // confidence flags: {qId: true}
   const [currentQ, setCurrentQ] = useState(0);
   const [showExp, setShowExp] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -2926,6 +3438,19 @@ function CFAMock() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [timeTaken, setTimeTaken] = useState(0);
   const [fullExamMode, setFullExamMode] = useState(false);
+  const [examSession, setExamSession] = useState(1); // 1=AM, 2=PM for split exam
+  const [examBreak, setExamBreak] = useState(false); // showing break screen between sessions
+  const [vignetteMode, setVignetteMode] = useState(false);
+  const [aiDebrief, setAiDebrief] = useState(null);
+  const [aiDebriefLoading, setAiDebriefLoading] = useState(false);
+  const [aiCoachScreen, setAiCoachScreen] = useState(false);
+  const [aiCoachMessages, setAiCoachMessages] = useState([]);
+  const [aiCoachInput, setAiCoachInput] = useState("");
+  const [aiCoachLoading, setAiCoachLoading] = useState(false);
+  const [formulaDrillMode, setFormulaDrillMode] = useState(false);
+  const [formulaDrillIdx, setFormulaDrillIdx] = useState(0);
+  const [formulaFlipped, setFormulaFlipped] = useState(false);
+  const [formulaDrillTopic, setFormulaDrillTopic] = useState("Quantitative Methods");
   const timerRef = useRef(null);
   const startRef = useRef(null);
   const [history, setHistory] = useState([]);
@@ -3175,6 +3700,7 @@ function CFAMock() {
   // Uses refs so it always reads current values, not stale closure
   const questionsRef = useRef([]);
   const answersRef = useRef({});
+  const flaggedQRef = useRef({});
   const topicRef = useRef("");
   const subtopicRef = useRef("");
   const difficultyRef = useRef("Medium");
@@ -3185,6 +3711,9 @@ function CFAMock() {
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
+  useEffect(() => {
+    flaggedQRef.current = flaggedQ;
+  }, [flaggedQ]);
   useEffect(() => {
     topicRef.current = topic;
   }, [topic]);
@@ -3220,6 +3749,7 @@ function CFAMock() {
   useEffect(() => {
     if (screen !== "results") {
       sessionCommittedRef.current = false;
+      setAiDebrief(null);
       return;
     }
     if (sessionCommittedRef.current) return; // already committed for this session
@@ -3238,9 +3768,15 @@ function CFAMock() {
     const score = qs.filter(q => ans[q.id] === q.answer).length;
     const pct = Math.round(score / qs.length * 100);
 
-    // Update SR deck
+    // Read flagged state from ref
+    const flagged = flaggedQRef.current || {};
+
+    // Update SR deck — also add flagged-correct answers with shortened interval
     qs.forEach(q => {
       const correct = ans[q.id] === q.answer;
+      const isFlagged = !!flagged[q.id];
+      // Skip correct+unflagged — no SR needed
+      if (correct && !isFlagged) return;
       const key = `${t}|||${st}|||${q.id}`;
       setSrDeck(prev => {
         const existing = prev[key] || {
@@ -3256,6 +3792,13 @@ function CFAMock() {
         };
         const updated = sm2Update(existing, correct);
         if (!correct) updated.wrongCount = (existing.wrongCount || 0) + 1;
+        if (isFlagged && correct) {
+          // Flagged correct: treat as shaky — short interval, don't increase EF
+          updated.interval = 1;
+          updated.repetitions = 0;
+          updated.ef = Math.max(1.3, existing.ef - 0.1);
+          updated.nextReview = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+        }
         return {
           ...prev,
           [key]: updated
@@ -3625,7 +4168,7 @@ Reply with just "saved" when done.`
     }
     setWeeklyPlanLoading(false);
   };
-  const generateQuestions = async (t, st, diff, cnt, m = "guided") => {
+  const generateQuestions = async (t, st, diff, cnt, m = "guided", isVignette = false) => {
     if (generatingRef.current) {
       return;
     }
@@ -3636,49 +4179,52 @@ Reply with just "saved" when done.`
     setLoadingETA(null);
     loadingStartRef.current = Date.now();
 
-    // ── Try local generation first (instant, no API needed) ──
-    // Generate more than needed, then deduplicate by question text similarity
-    const localRaw = generateLocalQuestions(t, st, diff, cnt * 3);
-    const seen = new Set();
-    const localQs = localRaw.filter(q => {
-      // Dedup by first 60 chars of question (catches same template, different numbers somewhat)
-      const key = (q.question || "").slice(0, 60).toLowerCase().replace(/\d+/g, "#");
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).slice(0, cnt);
-    if (localQs.length >= Math.min(cnt, 3)) {
-      setLoadingProgress(100);
-      setLoadingMsg(`${localQs.length} questions ready!`);
-      await new Promise(r => setTimeout(r, 300));
-      setTopic(t);
-      setSubtopic(st);
-      setDifficulty(diff);
-      setCount(cnt);
-      setMode(m);
-      setQuestions(localQs);
-      setAnswers({});
-      setCurrentQ(0);
-      setShowExp(false);
-      setLastSession(null);
-      setFullExamMode(false);
-      setScreen("quiz");
-      setLoading(false);
-      setLoadingProgress(0);
-      generatingRef.current = false;
-      return;
+    // Vignette mode always requires API — skip local generation
+    if (!isVignette) {
+      // ── Try local generation first (instant, no API needed) ──
+      const localRaw = generateLocalQuestions(t, st, diff, cnt * 3);
+      const seen = new Set();
+      const localQs = localRaw.filter(q => {
+        const key = (q.question || "").slice(0, 60).toLowerCase().replace(/\d+/g, "#");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, cnt);
+      if (localQs.length >= Math.min(cnt, 3)) {
+        setLoadingProgress(100);
+        setLoadingMsg(`${localQs.length} questions ready!`);
+        await new Promise(r => setTimeout(r, 300));
+        setTopic(t);
+        setSubtopic(st);
+        setDifficulty(diff);
+        setCount(cnt);
+        setMode(m);
+        setVignetteMode(false);
+        setQuestions(localQs);
+        setAnswers({});
+        setFlaggedQ({});
+        setCurrentQ(0);
+        setShowExp(false);
+        setLastSession(null);
+        setFullExamMode(false);
+        setScreen("quiz");
+        setLoading(false);
+        setLoadingProgress(0);
+        generatingRef.current = false;
+        return;
+      }
     }
 
-    // ── Fallback to API (only if local templates don't cover this topic) ──
+    // ── Fallback to API ──
     if (!apiKey) {
-      setError("No local questions available for this topic yet, and no API key is set. Add your API key via the 🔑 button.");
+      setError(isVignette ? "Vignette mode requires an API key. Add yours via the 🔑 button." : "No local questions available for this topic yet, and no API key is set. Add your API key via the 🔑 button.");
       setLoading(false);
       setLoadingProgress(0);
       generatingRef.current = false;
       return;
     }
     const estimatedMs = Math.max(5000, cnt * 900);
-    const msgs = ["Reading LOS statements...", "Anchoring to 2026 curriculum...", "Engineering distractors...", "Checking for duplicates...", "Almost ready..."];
+    const msgs = isVignette ? ["Writing scenario...", "Building item set...", "Engineering distractors...", "Almost ready..."] : ["Reading LOS statements...", "Anchoring to 2026 curriculum...", "Engineering distractors...", "Checking for duplicates...", "Almost ready..."];
     setLoadingMsg(msgs[0]);
     const progressInterval = setInterval(() => {
       const elapsed = Date.now() - loadingStartRef.current;
@@ -3690,33 +4236,48 @@ Reply with just "saved" when done.`
       setLoadingMsg(msgs[mi]);
     }, 200);
     try {
-      const tightMax = {
-        5: 700,
-        10: 1400,
-        15: 2000,
-        20: 2600
-      }[cnt] || 1400;
       const useModel = diff === "Easy" ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6";
-      let parsed = await callClaude(buildQuestionPrompt(t, st, diff, cnt), tightMax, {
-        retries: 3,
-        retryDelay: 8000,
-        model: useModel
-      });
-      // Expand short keys to full names
-      if (Array.isArray(parsed)) parsed = expandQuestionKeys(parsed);
+      let parsed;
+      if (isVignette) {
+        const vignetteCount = Math.max(1, Math.ceil(cnt / 3));
+        const vigPrompt = buildVignettePrompt(t, st, diff, vignetteCount);
+        const rawVig = await callClaude(vigPrompt, 3000, {
+          retries: 3,
+          retryDelay: 8000,
+          model: useModel
+        });
+        // Flatten vignettes into questions with shared context prepended
+        parsed = flattenVignettes(rawVig, t, st);
+      } else {
+        const tightMax = {
+          5: 700,
+          10: 1400,
+          15: 2000,
+          20: 2600
+        }[cnt] || 1400;
+        let raw = await callClaude(buildQuestionPrompt(t, st, diff, cnt), tightMax, {
+          retries: 3,
+          retryDelay: 8000,
+          model: useModel
+        });
+        if (Array.isArray(raw)) raw = expandQuestionKeys(raw);
+        parsed = raw;
+      }
       if (!Array.isArray(parsed) || !parsed.length) throw new Error("Empty");
       const fresh = filterNewQuestions(parsed, qdb);
       const finalQs = fresh.length >= Math.ceil(cnt * 0.7) ? fresh : parsed;
       setLoadingProgress(100);
-      setLoadingMsg("Questions ready!");
+      setLoadingMsg(isVignette ? "Vignettes ready!" : "Questions ready!");
       await new Promise(r => setTimeout(r, 350));
       setTopic(t);
       setSubtopic(st);
       setDifficulty(diff);
       setCount(cnt);
       setMode(m);
+      setVignetteMode(isVignette);
       setQuestions(finalQs);
       setAnswers({});
+      setFlaggedQ({});
       setCurrentQ(0);
       setShowExp(false);
       setLastSession(null);
@@ -3732,7 +4293,7 @@ Reply with just "saved" when done.`
     setLoadingETA(null);
     generatingRef.current = false;
   };
-  const startFullExam = async () => {
+  const startFullExam = async (sessionNum = 1) => {
     setLoading(true);
     setError("");
     try {
@@ -3741,6 +4302,7 @@ Reply with just "saved" when done.`
         weight
       }]) => s + weight, 0);
       let allQs = [];
+      // Generate proportionally from local templates first, API fallback per topic
       for (let i = 0; i < allTopics.length; i++) {
         const [t, {
           weight,
@@ -3748,31 +4310,51 @@ Reply with just "saved" when done.`
         }] = allTopics[i];
         const topicCount = Math.max(2, Math.round(weight / totalW * 180));
         const moduleNames = Object.keys(modules);
-        // Distribute across ALL modules for this topic proportionally
         const perModule = Math.max(1, Math.floor(topicCount / moduleNames.length));
         for (const mod of moduleNames.slice(0, Math.ceil(topicCount / perModule))) {
           setLoadingMsg(`${t} › ${mod} (${i + 1}/${allTopics.length})…`);
-          try {
-            const qs = await callClaude(buildQuestionPrompt(t, mod, "Medium", perModule));
-            allQs = [...allQs, ...qs.map((q, j) => ({
+          const localQs = generateLocalQuestions(t, mod, "Medium", perModule);
+          if (localQs.length >= perModule) {
+            allQs = [...allQs, ...localQs.map(q => ({
               ...q,
-              id: `${i}_${j}_${mod.slice(0, 5)}`,
               _topic: t,
               _subtopic: mod
             }))];
-          } catch {}
+          } else if (apiKey) {
+            try {
+              const qs = await callClaude(buildQuestionPrompt(t, mod, "Medium", perModule), 600, {
+                retries: 1,
+                retryDelay: 4000,
+                model: "claude-haiku-4-5-20251001"
+              });
+              allQs = [...allQs, ...(Array.isArray(qs) ? expandQuestionKeys(qs) : []).map((q, j) => ({
+                ...q,
+                id: `${i}_${j}_${mod.slice(0, 5)}`,
+                _topic: t,
+                _subtopic: mod
+              }))];
+            } catch {}
+          }
         }
       }
-      if (allQs.length < 30) throw new Error("Too few questions generated");
+      if (allQs.length < 30) throw new Error("Too few questions generated. Add an API key for full exam support.");
       const shuffled = allQs.sort(() => Math.random() - 0.5);
+      // Split into AM (session 1) and PM (session 2) of 90 questions each
+      const amQs = shuffled.slice(0, Math.min(90, shuffled.length));
+      const pmQs = shuffled.slice(90, Math.min(180, shuffled.length));
+      // Store PM questions for after break
+      window._cfaExamPMQs = pmQs;
+      const sessionQs = sessionNum === 1 ? amQs : pmQs;
+      setExamSession(sessionNum);
       setTopic("Full Exam");
-      setSubtopic("All Modules");
+      setSubtopic(sessionNum === 1 ? "AM Session" : "PM Session");
       setDifficulty("Medium");
-      setCount(Math.min(90, shuffled.length));
+      setCount(sessionQs.length);
       setMode("exam");
       setFullExamMode(true);
-      setQuestions(shuffled.slice(0, Math.min(90, shuffled.length)));
+      setQuestions(sessionQs);
       setAnswers({});
+      setFlaggedQ({});
       setCurrentQ(0);
       setShowExp(false);
       setLastSession(null);
@@ -4620,7 +5202,72 @@ Reply with just "saved" when done.`
       cursor: "pointer",
       flexShrink: 0
     }
-  }, "Start →")), /*#__PURE__*/React.createElement("div", {
+  }, "Start →")), daysLeft > 14 && daysLeft <= 90 && (() => {
+    const highWeight = [{
+      t: "Ethics",
+      w: 15,
+      m: "Code of Ethics & Standards"
+    }, {
+      t: "Financial Statement Analysis",
+      w: 13,
+      m: "Financial Ratios"
+    }, {
+      t: "Equity",
+      w: 11,
+      m: "Equity Valuation – DDM & Multiples"
+    }, {
+      t: "Fixed Income",
+      w: 11,
+      m: "Yield Measures & Duration"
+    }];
+    const weakHighWeight = highWeight.filter(({
+      t
+    }) => {
+      const mr = moduleReadiness.find(m => m.topic === t);
+      return !mr || mr.accuracy === null || mr.accuracy < 70;
+    });
+    if (!weakHighWeight.length) return null;
+    const urgency = daysLeft <= 30 ? "#ff6b35" : daysLeft <= 60 ? "#f59e0b" : "#6366f1";
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: `linear-gradient(135deg,${urgency}15,${urgency}06)`,
+        border: `1px solid ${urgency}44`,
+        borderRadius: 12,
+        padding: "12px 14px",
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 800,
+        color: urgency,
+        marginBottom: 6
+      }
+    }, daysLeft <= 30 ? "🔥 30-day crunch — prioritise now" : daysLeft <= 60 ? "⚡ 60-day push — build your foundation" : "📅 Study plan — high-weight topics first"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        flexWrap: "wrap"
+      }
+    }, weakHighWeight.map(({
+      t,
+      w,
+      m
+    }) => /*#__PURE__*/React.createElement("button", {
+      key: t,
+      onClick: () => generateQuestions(t, m, daysLeft <= 30 ? "Hard" : "Medium", 10, "guided"),
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: "5px 10px",
+        borderRadius: 7,
+        background: urgency + "22",
+        border: `1px solid ${urgency}44`,
+        color: urgency,
+        cursor: "pointer"
+      }
+    }, t.split(" ")[0], " ", w, "% →"))));
+  })(), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 9,
@@ -4643,13 +5290,43 @@ Reply with just "saved" when done.`
     }
   }, "Custom Mock →"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
+      // Fix My Weakest Spot: find lowest readiness high-weight topic
+      const byReadiness = moduleReadiness.filter(m => m.weight >= 8).sort((a, b) => {
+        if (a.accuracy === null && b.accuracy === null) return b.weight - a.weight;
+        if (a.accuracy === null) return -1;
+        if (b.accuracy === null) return 1;
+        return a.accuracy - b.accuracy;
+      });
+      const target = byReadiness[0] || moduleReadiness[0];
+      const mod = target.untouchedModules?.[0] || target.modules?.[0];
+      if (target && mod) generateQuestions(target.topic, mod, "Medium", 10, "guided");
+    },
+    style: {
+      flex: 1,
+      padding: "14px",
+      borderRadius: 12,
+      fontSize: 12,
+      fontWeight: 700,
+      background: `linear-gradient(135deg,${C.hard}33,${C.hard}18)`,
+      border: `1px solid ${C.hard}44`,
+      color: C.hard,
+      cursor: "pointer"
+    }
+  }, "🎯 Fix Weakest")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 9,
+      marginBottom: 9
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
       const weakModules = moduleReadiness.filter(m => m.sessions > 0).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
       const target = weakModules[0] || moduleReadiness.find(m => m.sessions === 0) || moduleReadiness[0];
       if (target) generateQuestions(target.topic, target.modulesCovered[0] || target.modules[0], "Medium", 10, "guided");
     },
     style: {
       flex: 1,
-      padding: "14px",
+      padding: "12px",
       borderRadius: 12,
       fontSize: 13,
       fontWeight: 700,
@@ -4658,7 +5335,23 @@ Reply with just "saved" when done.`
       color: C.medium,
       cursor: "pointer"
     }
-  }, "🎲 Mix")), /*#__PURE__*/React.createElement("div", {
+  }, "🎲 Mix"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setVignetteMode(true);
+      setScreen("setup");
+    },
+    style: {
+      flex: 1,
+      padding: "12px",
+      borderRadius: 12,
+      fontSize: 12,
+      fontWeight: 700,
+      background: C.surfaceHigh,
+      border: `1px solid ${C.accentLight}33`,
+      color: C.accentLight,
+      cursor: "pointer"
+    }
+  }, "📖 Vignette")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr 1fr",
@@ -4731,6 +5424,25 @@ Reply with just "saved" when done.`
     }
   }, "📚 Revise"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
+      setFormulaDrillMode(true);
+      setFormulaDrillIdx(0);
+      setFormulaFlipped(false);
+      setRevisionTopic(null);
+      setRevisionTab("formulas");
+      setScreen("revision");
+    },
+    style: {
+      padding: "11px 8px",
+      borderRadius: 12,
+      fontSize: 12,
+      fontWeight: 700,
+      background: C.reward + "15",
+      border: `1px solid ${C.reward}44`,
+      color: C.rewardLight,
+      cursor: "pointer"
+    }
+  }, "🔢 Formulas"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
       const cases = getEthicsCases("all", 10);
       if (cases.length) {
         setTopic("Ethics");
@@ -4744,6 +5456,7 @@ Reply with just "saved" when done.`
         setShowExp(false);
         setLastSession(null);
         setFullExamMode(false);
+        setVignetteMode(false);
         setScreen("quiz");
       }
     },
@@ -4757,7 +5470,7 @@ Reply with just "saved" when done.`
       color: C.hard,
       cursor: "pointer"
     }
-  }, "⚖️ Ethics Cases"), /*#__PURE__*/React.createElement("button", {
+  }, "⚖️ Ethics"), /*#__PURE__*/React.createElement("button", {
     onClick: startFullExam,
     disabled: loading,
     style: {
@@ -4770,7 +5483,19 @@ Reply with just "saved" when done.`
       color: C.accentLight,
       cursor: loading ? "not-allowed" : "pointer"
     }
-  }, "🎓 Full Exam")), /*#__PURE__*/React.createElement("div", {
+  }, "🎓 Full Exam"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAiCoachScreen(true),
+    style: {
+      padding: "11px 8px",
+      borderRadius: 12,
+      fontSize: 12,
+      fontWeight: 700,
+      background: "#0a1a20",
+      border: `1px solid #22d3ee44`,
+      color: "#22d3ee",
+      cursor: "pointer"
+    }
+  }, "🤖 AI Coach")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 9,
@@ -6174,7 +6899,10 @@ Reply with just "saved" when done.`
     }, step));
   })))));
   if (screen === "setup") return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setScreen("home"),
+    onClick: () => {
+      setScreen("home");
+      setVignetteMode(false);
+    },
     style: {
       background: "none",
       border: "none",
@@ -6184,7 +6912,35 @@ Reply with just "saved" when done.`
       marginBottom: 18,
       padding: 0
     }
-  }, "← Back"), /*#__PURE__*/React.createElement("h2", {
+  }, "← Back"), vignetteMode ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      fontSize: 22,
+      fontWeight: 800,
+      marginBottom: 4,
+      marginTop: 0
+    }
+  }, "📖 Vignette Mode"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: `linear-gradient(135deg,${C.accentLight}15,${C.accentLight}06)`,
+      border: `1px solid ${C.accentLight}33`,
+      borderRadius: 10,
+      padding: "10px 14px",
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.accentLight,
+      fontWeight: 700,
+      marginBottom: 3
+    }
+  }, "Item-Set Format"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      lineHeight: 1.6
+    }
+  }, "AI generates a 100–150 word scenario (person, firm, situation) followed by 3 linked questions from the same module — matching the real CFA exam item-set format."))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("h2", {
     style: {
       fontSize: 22,
       fontWeight: 800,
@@ -6197,7 +6953,7 @@ Reply with just "saved" when done.`
       color: C.muted,
       marginBottom: 18
     }
-  }, "Questions anchored to official 2026 CFA LOS · Misconception-engineered distractors · ClearCFA"), /*#__PURE__*/React.createElement("div", {
+  }, "Questions anchored to official 2026 CFA LOS · Misconception-engineered distractors · ClearCFA")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 18
     }
@@ -6470,7 +7226,7 @@ Reply with just "saved" when done.`
       marginBottom: 14
     }
   }, error), /*#__PURE__*/React.createElement("button", {
-    onClick: () => generateQuestions(topic, subtopic, difficulty, count, mode),
+    onClick: () => generateQuestions(topic, subtopic, difficulty, count, mode, vignetteMode),
     disabled: !topic || !subtopic || loading,
     style: {
       width: "100%",
@@ -6484,7 +7240,7 @@ Reply with just "saved" when done.`
       cursor: topic && subtopic && !loading ? "pointer" : "not-allowed",
       boxShadow: topic && subtopic && !loading ? `0 4px 20px ${C.accent}44` : "none"
     }
-  }, loading ? loadingMsg : `Generate ${count} LOS-Anchored Questions →`), loading && /*#__PURE__*/React.createElement("div", {
+  }, loading ? loadingMsg : vignetteMode ? `Generate ${Math.ceil(count / 3)} Vignettes (${count} questions) →` : `Generate ${count} LOS-Anchored Questions →`), loading && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 20,
       display: "flex",
@@ -6807,10 +7563,17 @@ Reply with just "saved" when done.`
         padding: "8px",
         animation: "pulse 2s infinite"
       }
-    }, "Select an answer to continue"), answered && /*#__PURE__*/React.createElement("button", {
+    }, "Select an answer to continue"), answered && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        marginBottom: 8,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: nextQ,
       style: {
-        width: "100%",
+        flex: 1,
         padding: "13px",
         borderRadius: 10,
         fontSize: 14,
@@ -6820,7 +7583,24 @@ Reply with just "saved" when done.`
         border: "none",
         cursor: "pointer"
       }
-    }, isLast ? "See Results →" : "Next →"), currentQ > 2 && mode !== "exam" && /*#__PURE__*/React.createElement("button", {
+    }, isLast ? "See Results →" : "Next →"), answers[q.id] === q.answer && /*#__PURE__*/React.createElement("button", {
+      onClick: () => setFlaggedQ(f => ({
+        ...f,
+        [q.id]: !f[q.id]
+      })),
+      title: "Flag for SR even though correct",
+      style: {
+        padding: "13px 14px",
+        borderRadius: 10,
+        fontSize: 13,
+        fontWeight: 700,
+        background: flaggedQ[q.id] ? C.medium + "33" : C.surface,
+        border: `1.5px solid ${flaggedQ[q.id] ? C.medium : C.border}`,
+        color: flaggedQ[q.id] ? C.medium : C.muted,
+        cursor: "pointer",
+        flexShrink: 0
+      }
+    }, flaggedQ[q.id] ? "⚑ Flagged" : "⚐ Not sure")), currentQ > 2 && mode !== "exam" && /*#__PURE__*/React.createElement("button", {
       onClick: endQuiz,
       style: {
         marginTop: 9,
@@ -6955,7 +7735,69 @@ Reply with just "saved" when done.`
         fontSize: 12,
         color: C.muted
       }
-    }, "📋 ", wrongs.length, " wrong answer", wrongs.length !== 1 ? "s" : "", " added to SR deck with LOS tags + misconception flags."), wrongs.length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, "📋 ", wrongs.length, " wrong answer", wrongs.length !== 1 ? "s" : "", " added to SR deck with LOS tags + misconception flags."), apiKey && wrongs.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#080818",
+        border: `1px solid #22d3ee33`,
+        borderRadius: 12,
+        padding: "14px 16px",
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: "#22d3ee"
+      }
+    }, "🤖 AI Debrief"), !aiDebrief && /*#__PURE__*/React.createElement("button", {
+      onClick: async () => {
+        setAiDebriefLoading(true);
+        try {
+          const wrongSummary = wrongs.slice(0, 5).map(q => `- "${q.concept || q.los_tested}": got ${answers[q.id]}, correct ${q.answer}`).join("\n");
+          const prompt = `You are a CFA Level 1 tutor. A student just scored ${sessionPct}% on a ${difficulty} ${subtopic} mock (${wrongs.length}/${questions.length} wrong).
+
+Wrong answers:
+${wrongSummary}
+
+Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to do next, (3) one honest motivational sentence. Be direct and specific, not generic. No markdown.`;
+          const result = await callClaude(prompt, 200, {
+            model: "claude-haiku-4-5-20251001",
+            retries: 1,
+            retryDelay: 2000
+          });
+          setAiDebrief(result?.content?.[0]?.text || result);
+        } catch (e) {
+          setAiDebrief("Could not load debrief — check API key.");
+        }
+        setAiDebriefLoading(false);
+      },
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: "5px 12px",
+        borderRadius: 7,
+        background: "#22d3ee22",
+        border: "1px solid #22d3ee44",
+        color: "#22d3ee",
+        cursor: "pointer"
+      }
+    }, "Get debrief")), aiDebriefLoading && /*#__PURE__*/React.createElement(Skeleton, {
+      height: 48,
+      radius: 6
+    }), aiDebrief && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#a0d8e8",
+        lineHeight: 1.7
+      }
+    }, aiDebrief)), wrongs.length > 0 && /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 16
       }
@@ -7031,7 +7873,66 @@ Reply with just "saved" when done.`
       style: {
         fontWeight: 700
       }
-    }, "Error pattern: "), q.misconception_targeted))))), /*#__PURE__*/React.createElement("div", {
+    }, "Error pattern: "), q.misconception_targeted), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setRevisionTopic(q._topic || topic);
+        setRevisionTab("notes");
+        setScreen("revision");
+      },
+      style: {
+        marginTop: 10,
+        fontSize: 11,
+        fontWeight: 700,
+        padding: "5px 12px",
+        borderRadius: 7,
+        background: C.accent + "18",
+        border: `1px solid ${C.accent}44`,
+        color: C.accentLight,
+        cursor: "pointer"
+      }
+    }, "📚 Review in Power Notes →"))))), fullExamMode && examSession === 1 && window._cfaExamPMQs?.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: `linear-gradient(135deg,${C.easy}12,${C.easy}06)`,
+        border: `1px solid ${C.easy}44`,
+        borderRadius: 14,
+        padding: "18px 20px",
+        marginBottom: 14,
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 16,
+        fontWeight: 800,
+        color: C.easy,
+        marginBottom: 6
+      }
+    }, "AM Session Complete ✓"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.muted,
+        marginBottom: 4
+      }
+    }, "Score: ", sessionPct, "% · ", sessionScore, "/", questions.length, " correct"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
+        marginBottom: 16,
+        lineHeight: 1.6
+      }
+    }, "Take a 30-minute break before PM session. Stand up, eat, rest your eyes. CFA examiners build this in — use it."), /*#__PURE__*/React.createElement("button", {
+      onClick: () => startFullExam(2),
+      style: {
+        width: "100%",
+        padding: "13px",
+        borderRadius: 11,
+        fontSize: 14,
+        fontWeight: 700,
+        background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
+        color: "#fff",
+        border: "none",
+        cursor: "pointer"
+      }
+    }, "Start PM Session (", window._cfaExamPMQs.length, " questions) →")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 9,
@@ -8525,6 +9426,249 @@ Reply with just "saved" when done.`
     initialTopic: revisionTopic,
     initialTab: revisionTab
   });
+
+  // ══ AI COACH ══════════════════════════════════════════════════════════════
+  if (aiCoachScreen) return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontSize: 20,
+      fontWeight: 800,
+      color: "#22d3ee"
+    }
+  }, "🤖 AI Study Coach"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 2
+    }
+  }, "Powered by Claude · Knows your performance data")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAiCoachScreen(false),
+    style: {
+      background: "none",
+      border: "none",
+      color: C.muted,
+      cursor: "pointer",
+      fontSize: 13
+    }
+  }, "← Home")), (() => {
+    const topWeak = moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
+    const untouched = moduleReadiness.filter(m => m.sessions === 0).length;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#080818",
+        border: `1px solid #22d3ee22`,
+        borderRadius: 11,
+        padding: "12px 14px",
+        marginBottom: 14,
+        fontSize: 11,
+        color: C.muted
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#22d3ee",
+        fontWeight: 700
+      }
+    }, "Context loaded: "), history.length, " sessions · ", daysLeft, " days to exam ·", topWeak.length > 0 ? ` Weakest: ${topWeak[0].topic.split(" ")[0]} (${topWeak[0].accuracy}%) ·` : "", untouched > 0 ? ` ${untouched} untouched modules` : "", "· Pass prob: ", passProbability ? `${passProbability.probability}%` : "N/A");
+  })(), aiCoachMessages.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: C.muted,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 4
+    }
+  }, "Quick questions"), ["What should I study today?", "Where am I most likely to lose marks?", "How do I fix my weakest topic fast?", "Am I on track to pass? Be honest.", "What's my biggest risk with 62 days left?"].map(prompt => /*#__PURE__*/React.createElement("button", {
+    key: prompt,
+    onClick: async () => {
+      if (!apiKey) {
+        setAiCoachMessages(m => [...m, {
+          role: "user",
+          text: prompt
+        }, {
+          role: "assistant",
+          text: "Add an API key first (🔑 on home screen) to use AI Coach."
+        }]);
+        return;
+      }
+      const userMsg = {
+        role: "user",
+        text: prompt
+      };
+      setAiCoachMessages(m => [...m, userMsg]);
+      setAiCoachLoading(true);
+      try {
+        const topWeak = moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3).map(m => `${m.topic}: ${m.accuracy}%`).join(", ");
+        const untouched = moduleReadiness.filter(m => m.sessions === 0).map(m => m.topic.split(" ")[0]).join(", ");
+        const context = `Student data: ${history.length} sessions, overall ${overallPct || "N/A"}%, pass probability ${passProbability?.probability || "N/A"}%, days to exam ${daysLeft}, weakest modules: ${topWeak || "none yet"}, untouched: ${untouched || "none"}, SR due: ${dueCards.length}, leeches: ${leeches.length}.`;
+        const sysPrompt = `You are a direct, honest CFA Level 1 study coach. ${context} Give specific, actionable advice in 2-4 sentences. No generic motivational fluff.`;
+        const result = await callClaude(`${sysPrompt}\n\nStudent: ${prompt}`, 300, {
+          model: "claude-haiku-4-5-20251001",
+          retries: 1,
+          retryDelay: 2000
+        });
+        const text = result?.content?.[0]?.text || result || "No response";
+        setAiCoachMessages(m => [...m, {
+          role: "assistant",
+          text
+        }]);
+      } catch (e) {
+        setAiCoachMessages(m => [...m, {
+          role: "assistant",
+          text: "Error: " + e.message
+        }]);
+      }
+      setAiCoachLoading(false);
+    },
+    style: {
+      textAlign: "left",
+      padding: "10px 14px",
+      borderRadius: 9,
+      fontSize: 12,
+      background: C.surface,
+      border: `1px solid #22d3ee22`,
+      color: C.textMid,
+      cursor: "pointer"
+    }
+  }, prompt))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
+      marginBottom: 16
+    }
+  }, aiCoachMessages.map((msg, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: "flex",
+      justifyContent: msg.role === "user" ? "flex-end" : "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: "85%",
+      padding: "10px 14px",
+      borderRadius: 11,
+      fontSize: 12,
+      lineHeight: 1.7,
+      background: msg.role === "user" ? `linear-gradient(135deg,${C.accent},${C.accentLight})` : C.surface,
+      color: msg.role === "user" ? "#fff" : "#a0d8e8",
+      border: msg.role === "user" ? "none" : `1px solid #22d3ee22`
+    }
+  }, msg.text))), aiCoachLoading && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "10px 14px",
+      borderRadius: 11,
+      background: C.surface,
+      border: `1px solid #22d3ee22`
+    }
+  }, /*#__PURE__*/React.createElement(Skeleton, {
+    width: 120,
+    height: 12,
+    radius: 6
+  })))), aiCoachMessages.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: aiCoachInput,
+    onChange: e => setAiCoachInput(e.target.value),
+    onKeyDown: async e => {
+      if (e.key === "Enter" && aiCoachInput.trim() && !aiCoachLoading) {
+        const q = aiCoachInput.trim();
+        setAiCoachInput("");
+        if (!apiKey) {
+          setAiCoachMessages(m => [...m, {
+            role: "user",
+            text: q
+          }, {
+            role: "assistant",
+            text: "Add an API key first."
+          }]);
+          return;
+        }
+        setAiCoachMessages(m => [...m, {
+          role: "user",
+          text: q
+        }]);
+        setAiCoachLoading(true);
+        try {
+          const topWeak = moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3).map(m => `${m.topic}: ${m.accuracy}%`).join(", ");
+          const context = `Student data: ${history.length} sessions, overall ${overallPct || "N/A"}%, pass prob ${passProbability?.probability || "N/A"}%, days to exam ${daysLeft}, weakest: ${topWeak || "none"}.`;
+          const result = await callClaude(`You are a direct CFA L1 coach. ${context}\n\nStudent: ${q}`, 300, {
+            model: "claude-haiku-4-5-20251001",
+            retries: 1,
+            retryDelay: 2000
+          });
+          setAiCoachMessages(m => [...m, {
+            role: "assistant",
+            text: result?.content?.[0]?.text || result || "No response"
+          }]);
+        } catch (e) {
+          setAiCoachMessages(m => [...m, {
+            role: "assistant",
+            text: "Error: " + e.message
+          }]);
+        }
+        setAiCoachLoading(false);
+      }
+    },
+    placeholder: "Ask anything about your study plan...",
+    style: {
+      flex: 1,
+      padding: "11px 14px",
+      borderRadius: 10,
+      fontSize: 12,
+      background: C.surface,
+      border: `1px solid #22d3ee44`,
+      color: C.text,
+      outline: "none"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {},
+    style: {
+      padding: "11px 14px",
+      borderRadius: 10,
+      fontSize: 13,
+      background: "#22d3ee22",
+      border: `1px solid #22d3ee44`,
+      color: "#22d3ee",
+      cursor: "pointer",
+      fontWeight: 700
+    }
+  }, "↑")), aiCoachMessages.length > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAiCoachMessages([]),
+    style: {
+      marginTop: 10,
+      width: "100%",
+      padding: "8px",
+      borderRadius: 8,
+      fontSize: 11,
+      background: "none",
+      border: `1px solid ${C.border}`,
+      color: C.muted,
+      cursor: "pointer"
+    }
+  }, "Clear chat")));
   return null;
 }
 const root = ReactDOM.createRoot(document.getElementById('root'));
