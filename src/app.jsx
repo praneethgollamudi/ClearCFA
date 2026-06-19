@@ -2240,6 +2240,8 @@ function CFAMock(){
   const [sessionSaved,setSessionSaved]=useState(false); // confirm session was saved
   const generatingRef=useRef(false); // debounce double-tap
   const [weeklyPlanScreen,setWeeklyPlanScreen]=useState(false);
+  const [settingsOpen,setSettingsOpen]=useState(false);
+  const [showMoreActions,setShowMoreActions]=useState(false);
   const [weeklyPlan,setWeeklyPlan]=useState(null);
   const [weeklyPlanLoading,setWeeklyPlanLoading]=useState(false);
   const [weeklyPlanError,setWeeklyPlanError]=useState("");
@@ -2993,6 +2995,59 @@ Reply with just "saved" when done.`}]
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
+    {/* Settings drawer overlay */}
+    {settingsOpen&&(
+      <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
+        <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:"18px 18px 0 0",padding:"20px 16px 32px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
+          <div style={{width:36,height:4,borderRadius:2,background:C.border,margin:"0 auto 18px"}}/>
+          <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:16}}>Settings</div>
+          {/* API Key */}
+          <button onClick={()=>{setSettingsOpen(false);setScreen("apiKey");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:apiKey?C.easy+"15":C.surface,border:`1px solid ${apiKey?C.easy+"44":C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+            <span style={{fontSize:18}}>🔑</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700}}>API Key</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>{apiKey?"Claude AI connected":"Not configured — questions use templates"}</div>
+            </div>
+            {apiKey&&<span style={{fontSize:11,color:C.easy,fontWeight:700}}>✓</span>}
+          </button>
+          {/* Supabase */}
+          <button onClick={async()=>{
+            if(!supabaseCfg)return;
+            setSupabaseSyncing(true);
+            setDriveStatus("syncing");
+            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current);
+            setDriveStatus(ok?"synced":"error");
+            setTimeout(()=>setDriveStatus(null),4000);
+            setSupabaseSyncing(false);
+          }} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:supabaseCfg?"#080f18":C.surface,border:`1px solid ${supabaseCfg?"#22d3ee33":C.border}`,color:C.text,cursor:supabaseCfg?"pointer":"default",marginBottom:9,textAlign:"left"}}>
+            <span style={{fontSize:18}}>☁</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700}}>Supabase Cloud Sync</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>
+                {supabaseCfg
+                  ? (supabaseSyncing?"Syncing…":`${history.length} sessions · ${Object.keys(srDeckRef.current).length} SR cards${driveStatus==="synced"?" · synced ✓":driveStatus==="error"?" · sync failed ✗":" · tap to sync"}`)
+                  : "Configure in quiz setup screen"}
+              </div>
+            </div>
+            {supabaseCfg&&<span style={{fontSize:11,color:driveStatus==="synced"?C.easy:driveStatus==="error"?C.hard:"#22d3ee",fontWeight:700}}>{driveStatus==="synced"?"✓":driveStatus==="error"?"✗":"↑"}</span>}
+          </button>
+          {/* Backup */}
+          <button onClick={()=>{setSettingsOpen(false);setScreen("backup");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+            <span style={{fontSize:18}}>💾</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700}}>Backup & Restore</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>Export JSON · import on another device</div>
+            </div>
+          </button>
+          {/* Data status */}
+          <div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:6}}>
+            {history.length} sessions saved locally
+            {sessionSaved===false&&<span style={{color:C.hard}}> · ⚠ last save failed</span>}
+          </div>
+        </div>
+      </div>
+    )}
+
     {/* Header */}
     <div style={{marginBottom:16}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
@@ -3005,14 +3060,17 @@ Reply with just "saved" when done.`}]
             </div>
           </div>
         </div>
-        <div style={{textAlign:"right"}}>
-          <div style={{fontSize:28,fontWeight:800,color:daysLeft<30?C.hard:daysLeft<60?C.medium:C.accentLight,lineHeight:1}}>{daysLeft}</div>
-          <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>days to exam</div>
+        <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:28,fontWeight:800,color:daysLeft<30?C.hard:daysLeft<60?C.medium:C.accentLight,lineHeight:1}}>{daysLeft}</div>
+            <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>days to exam</div>
+          </div>
+          <button onClick={()=>setSettingsOpen(true)} style={{marginTop:4,width:32,height:32,borderRadius:9,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>⚙</button>
         </div>
       </div>
       {studyPace?.burnoutRisk ? (
         <div style={{fontSize:11,color:C.easy,textAlign:"center",padding:"5px 0",fontStyle:"italic",opacity:0.9}}>
-          Welcome back. Every session counts — even 5 minutes. You've done this before. 💪
+          Welcome back. Every session counts — even 5 minutes. 💪
         </div>
       ) : (
         <MotivationalBanner daysLeft={daysLeft}/>
@@ -3100,13 +3158,13 @@ Reply with just "saved" when done.`}]
       </div>
     )}
 
-    {/* Auto-escalation */}
+    {/* Auto-escalation — subtle inline nudge, not a full card */}
     {autoEscalation&&(
-      <div style={{background:`linear-gradient(135deg,${C.easy}12,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div><div style={{fontSize:13,fontWeight:700,color:C.easyLight}}>↑ Ready to level up</div><div style={{fontSize:11,color:C.muted,marginTop:2}}>{autoEscalation.subtopic} → try {autoEscalation.to}</div></div>
-        <div style={{display:"flex",gap:7}}>
-          <button onClick={()=>{generateQuestions(autoEscalation.topic,autoEscalation.subtopic,autoEscalation.to,10);setAutoEscalation(null);}} style={{fontSize:12,fontWeight:700,padding:"6px 12px",borderRadius:8,background:C.easy+"25",border:`1px solid ${C.easy}44`,color:C.easyLight,cursor:"pointer"}}>Start {autoEscalation.to}</button>
-          <button onClick={()=>setAutoEscalation(null)} style={{fontSize:12,padding:"5px 8px",borderRadius:8,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>✕</button>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.easy+"0d",border:`1px solid ${C.easy}33`,borderRadius:10,padding:"9px 13px",marginBottom:10}}>
+        <span style={{fontSize:12,color:C.easyLight}}>↑ Ready to level up · {autoEscalation.subtopic} → {autoEscalation.to}</span>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>{generateQuestions(autoEscalation.topic,autoEscalation.subtopic,autoEscalation.to,10);setAutoEscalation(null);}} style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:7,background:C.easy+"25",border:`1px solid ${C.easy}44`,color:C.easyLight,cursor:"pointer"}}>Start</button>
+          <button onClick={()=>setAutoEscalation(null)} style={{fontSize:11,padding:"4px 7px",borderRadius:7,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>✕</button>
         </div>
       </div>
     )}
@@ -3160,164 +3218,72 @@ Reply with just "saved" when done.`}]
       )}
     </div>
 
-    {/* Activity heatmap */}
-    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 16px",marginBottom:12}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>30-Day Activity</div>
-        <div style={{fontSize:10,color:C.muted}}>{Object.values(activity).filter(v=>v>0).length}/30 active days</div>
+    {/* Primary CTA — smart start */}
+    <div style={{display:"flex",gap:9,marginBottom:12}}>
+      <button onClick={()=>{
+        // SR due takes highest priority, else pick weakest high-weight topic
+        if(dueCards.length>0){setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");return;}
+        const weak=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
+          ||moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
+          ||moduleReadiness[0];
+        generateQuestions(weak.topic,weak.untouchedModules?.[0]||weak.modules[0],"Medium",10,"guided");
+      }} style={{flex:1,padding:"15px",borderRadius:13,fontSize:15,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 6px 20px ${C.accent}55`,letterSpacing:"-0.2px"}}>
+        {dueCards.length>0?`📋 Review ${dueCards.length} Due Cards →`:"▶ Start Practice →"}
+      </button>
+      <button onClick={()=>setScreen("setup")} style={{padding:"15px 14px",borderRadius:13,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",flexShrink:0}}>
+        Custom
+      </button>
+    </div>
+
+    {/* Activity heatmap — compact */}
+    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"11px 14px",marginBottom:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <span style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>30-Day Activity</span>
+        <span style={{fontSize:10,color:C.muted}}>{totalQsAttempted} Qs · {Object.keys(qdb).length} unique{totalWrongs>0?` · `+totalWrongs+` wrong`:""}</span>
       </div>
       <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
         {Object.entries(activity).reverse().map(([date,cnt])=>{
           const bg=cnt===0?C.border:cnt===1?"#2d1f6e":cnt===2?"#4a35b0":C.accent;
-          return <div key={date} title={`${date}: ${cnt} session${cnt!==1?"s":""}`} style={{width:16,height:16,borderRadius:3,background:bg,transition:"background 0.2s"}}/>;
+          return <div key={date} title={`${date}: ${cnt} session${cnt!==1?"s":""}`} style={{width:14,height:14,borderRadius:3,background:bg,transition:"background 0.2s"}}/>;
         })}
       </div>
-      <div style={{display:"flex",gap:12,marginTop:8}}>
-        <span style={{fontSize:10,color:C.muted}}>{totalQsAttempted} Qs attempted</span>
-        <span style={{fontSize:10,color:C.muted}}>{Object.keys(qdb).length} unique seen</span>
-        {totalWrongs>0&&<span style={{fontSize:10,color:C.hard}}>{totalWrongs} wrong answers logged</span>}
-      </div>
     </div>
 
-    {/* Primary actions */}
-    {/* Office mode quick-start */}
-    <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-      <div>
-        <div style={{fontSize:12,fontWeight:700,color:C.accentLight}}>⚡ Office Mode — 5 questions, ~7 min</div>
-        <div style={{fontSize:11,color:C.muted,marginTop:2}}>For lunch breaks or commutes. AI picks the highest-priority topic.</div>
+    {/* More actions — collapsed by default */}
+    <button onClick={()=>setShowMoreActions(v=>!v)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:11,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",marginBottom:showMoreActions?8:0,fontSize:12,fontWeight:600}}>
+      <span>More</span>
+      <span style={{fontSize:10,transition:"transform 0.2s",display:"inline-block",transform:showMoreActions?"rotate(180deg)":"none"}}>▾</span>
+    </button>
+    {showMoreActions&&(
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:9}}>
+        <button onClick={()=>{
+          const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
+          const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];
+          if(target) generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");
+        }} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.medium}44`,color:C.medium,cursor:"pointer"}}>🎲 Mix</button>
+        <button onClick={()=>{setVignetteMode(true);setScreen("setup");}} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight,cursor:"pointer"}}>📖 Vignette</button>
+        <button onClick={startFullExam} disabled={loading} style={{padding:"11px 8px",borderRadius:11,fontSize:11,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight,cursor:loading?"not-allowed":"pointer"}}>🎓 Full Exam</button>
+        <button onClick={()=>{
+          const cases=getEthicsCases("all",10);
+          if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}
+        }} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:700,background:"#0a0820",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>⚖️ Ethics</button>
+        <button onClick={()=>{
+          const all=history.flatMap(h=>Array.isArray(h.wrongs)?h.wrongs:[]).filter(w=>w&&w.question).slice(0,50);
+          if(all.length){setReviewList(all);setReviewIdx(0);setScreen("review");}
+          else{setError("No wrong answers yet.");setTimeout(()=>setError(""),3000);}
+        }} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${totalWrongs>0?C.hard+"44":C.border}`,color:totalWrongs>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
+          🔁 Wrongs{totalWrongs>0&&<span style={{position:"absolute",top:-4,right:-4,width:15,height:15,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:8,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(totalWrongs,99)}</span>}
+        </button>
+        <button onClick={()=>setAiCoachScreen(true)} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:700,background:"#0a1a20",border:`1px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer"}}>🤖 Coach</button>
+        <button onClick={()=>setScreen("readiness")} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>📊 Readiness</button>
+        <button onClick={()=>setScreen("dashboard")} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>📈 Dashboard</button>
+        <button onClick={()=>setScreen("passProbability")} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:700,background:passProbability?`${passProbability.color}18`:C.surface,border:`1px solid ${passProbability?passProbability.color+"44":C.border}`,color:passProbability?passProbability.color:C.muted,cursor:"pointer"}}>
+          {passProbability?`${passProbability.probability}% Pass`:"Pass %"}
+        </button>
+        <button onClick={()=>{setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise</button>
+        <button onClick={()=>{setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:700,background:C.reward+"15",border:`1px solid ${C.reward}44`,color:C.rewardLight,cursor:"pointer"}}>🔢 Formulas</button>
+        <button onClick={()=>setWeeklyPlanScreen(true)} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>🗓 Week Plan</button>
       </div>
-      <button onClick={()=>{
-        // Pick highest-priority topic automatically
-        const weak = moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
-          || moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
-          || moduleReadiness[0];
-        generateQuestions(weak.topic, weak.untouchedModules[0]||weak.modules[0], "Medium", 5, "guided");
-      }} style={{fontSize:12,fontWeight:700,padding:"8px 14px",borderRadius:9,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0}}>
-        Start →
-      </button>
-    </div>
-
-    {/* Crunch mode banner: 15-90 days */}
-    {daysLeft>14&&daysLeft<=90&&(()=>{
-      const highWeight=[{t:"Ethics",w:15,m:"Code of Ethics & Standards"},{t:"Financial Statement Analysis",w:13,m:"Financial Ratios"},{t:"Equity",w:11,m:"Equity Valuation – DDM & Multiples"},{t:"Fixed Income",w:11,m:"Yield Measures & Duration"}];
-      const weakHighWeight=highWeight.filter(({t})=>{const mr=moduleReadiness.find(m=>m.topic===t);return !mr||mr.accuracy===null||mr.accuracy<70;});
-      if(!weakHighWeight.length)return null;
-      const urgency=daysLeft<=30?"#ff6b35":daysLeft<=60?"#f59e0b":"#6366f1";
-      return(
-        <div style={{background:`linear-gradient(135deg,${urgency}15,${urgency}06)`,border:`1px solid ${urgency}44`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
-          <div style={{fontSize:12,fontWeight:800,color:urgency,marginBottom:6}}>
-            {daysLeft<=30?"🔥 30-day crunch — prioritise now":daysLeft<=60?"⚡ 60-day push — build your foundation":"📅 Study plan — high-weight topics first"}
-          </div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {weakHighWeight.map(({t,w,m})=>(
-              <button key={t} onClick={()=>generateQuestions(t,m,daysLeft<=30?"Hard":"Medium",10,"guided")}
-                style={{fontSize:11,fontWeight:700,padding:"5px 10px",borderRadius:7,background:urgency+"22",border:`1px solid ${urgency}44`,color:urgency,cursor:"pointer"}}>
-                {t.split(" ")[0]} {w}% →
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    })()}
-
-    {/* Row 1: Primary actions */}
-    <div style={{display:"flex",gap:9,marginBottom:9}}>
-      <button onClick={()=>setScreen("setup")} style={{flex:2,padding:"14px",borderRadius:12,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 6px 20px ${C.accent}55`,letterSpacing:"-0.2px"}}>
-        Custom Mock →
-      </button>
-      <button onClick={()=>{
-        // Fix My Weakest Spot: find lowest readiness high-weight topic
-        const byReadiness=moduleReadiness.filter(m=>m.weight>=8).sort((a,b)=>{
-          if(a.accuracy===null&&b.accuracy===null)return b.weight-a.weight;
-          if(a.accuracy===null)return -1;
-          if(b.accuracy===null)return 1;
-          return a.accuracy-b.accuracy;
-        });
-        const target=byReadiness[0]||moduleReadiness[0];
-        const mod=target.untouchedModules?.[0]||target.modules?.[0];
-        if(target&&mod) generateQuestions(target.topic,mod,"Medium",10,"guided");
-      }} style={{flex:1,padding:"14px",borderRadius:12,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.hard}33,${C.hard}18)`,border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
-        🎯 Fix Weakest
-      </button>
-    </div>
-    <div style={{display:"flex",gap:9,marginBottom:9}}>
-      <button onClick={()=>{
-        const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
-        const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];
-        if(target) generateQuestions(target.topic,target.modulesCovered[0]||target.modules[0],"Medium",10,"guided");
-      }} style={{flex:1,padding:"12px",borderRadius:12,fontSize:13,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.medium}44`,color:C.medium,cursor:"pointer"}}>
-        🎲 Mix
-      </button>
-      <button onClick={()=>{setVignetteMode(true);setScreen("setup");}} style={{flex:1,padding:"12px",borderRadius:12,fontSize:12,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight,cursor:"pointer"}}>
-        📖 Vignette
-      </button>
-    </div>
-    {/* Row 2: 3-column grid */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:9,marginBottom:9}}>
-      <button onClick={()=>setScreen("readiness")} style={{padding:"11px 8px",borderRadius:12,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>📊 Readiness</button>
-      <button onClick={()=>setScreen("passProbability")} style={{padding:"11px 8px",borderRadius:12,fontSize:12,fontWeight:700,background:passProbability?`${passProbability.color}18`:C.surface,border:`1px solid ${passProbability?passProbability.color+"44":C.border}`,color:passProbability?passProbability.color:C.muted,cursor:"pointer"}}>
-        {passProbability?`${passProbability.probability}% Pass`:"Pass %"}
-      </button>
-      <button onClick={()=>setWeeklyPlanScreen(true)} style={{padding:"11px 8px",borderRadius:12,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>🗓 Week Plan</button>
-      <button onClick={()=>setScreen("dashboard")} style={{padding:"11px 8px",borderRadius:12,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>📈 Dashboard</button>
-      <button onClick={()=>{setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}} style={{padding:"11px 8px",borderRadius:12,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise</button>
-      <button onClick={()=>{setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}} style={{padding:"11px 8px",borderRadius:12,fontSize:12,fontWeight:700,background:C.reward+"15",border:`1px solid ${C.reward}44`,color:C.rewardLight,cursor:"pointer"}}>🔢 Formulas</button>
-      <button onClick={()=>{
-        const cases=getEthicsCases("all",10);
-        if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}
-      }} style={{padding:"11px 8px",borderRadius:12,fontSize:12,fontWeight:700,background:"#0a0820",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>⚖️ Ethics</button>
-      <button onClick={startFullExam} disabled={loading} style={{padding:"11px 8px",borderRadius:12,fontSize:11,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight,cursor:loading?"not-allowed":"pointer"}}>🎓 Full Exam</button>
-      <button onClick={()=>setAiCoachScreen(true)} style={{padding:"11px 8px",borderRadius:12,fontSize:12,fontWeight:700,background:"#0a1a20",border:`1px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer"}}>🤖 AI Coach</button>
-    </div>
-    {/* Row 3: Utility */}
-    <div style={{display:"flex",gap:9,marginBottom:9}}>
-      <button onClick={()=>{
-        const all=history.flatMap(h=>Array.isArray(h.wrongs)?h.wrongs:[]).filter(w=>w&&w.question).slice(0,50);
-        if(all.length){setReviewList(all);setReviewIdx(0);setScreen("review");}
-        else{setError("No wrong answers yet — complete a session first.");setTimeout(()=>setError(""),3000);}
-      }} style={{flex:1,padding:"10px",borderRadius:12,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:totalWrongs>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
-        🔁 Wrongs{totalWrongs>0&&<span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(totalWrongs,99)}</span>}
-      </button>
-      <button onClick={()=>setScreen("apiKey")} style={{flex:1,padding:"10px",borderRadius:12,fontSize:12,fontWeight:600,background:apiKey?C.easy+"15":C.surface,border:`1px solid ${apiKey?C.easy+"44":C.border}`,color:apiKey?C.easy:C.muted,cursor:"pointer"}}>
-        🔑 {apiKey?"API ✓":"API Key"}
-      </button>
-      <button onClick={()=>setScreen("backup")} style={{flex:1,padding:"10px",borderRadius:12,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
-        💾 Backup
-      </button>
-    </div>
-    {/* Data status bar — always visible so user can see session count */}
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${sessionSaved===false?C.hard+"55":C.border}`,borderRadius:10,padding:"9px 14px",marginBottom:supabaseCfg?6:error?9:0}}>
-      <div style={{fontSize:11,color:C.muted}}>
-        <span style={{color:C.textMid,fontWeight:700}}>{history.length}</span> sessions
-        {history.length>0&&<span> · <span style={{color:C.textMid}}>{history[0]?.date}</span> {history[0]?.topic?.split(" ")[0]} {history[0]?.pct}%</span>}
-      </div>
-      <div style={{fontSize:10,display:"flex",gap:6,alignItems:"center"}}>
-        {driveStatus==="syncing"&&<span style={{color:C.medium}}>☁ syncing…</span>}
-        {driveStatus==="synced"&&<span style={{color:C.easy}}>☁ synced ✓</span>}
-        {driveStatus==="error"&&<span style={{color:C.hard}}>☁ sync failed ✗</span>}
-        <span style={{color:sessionSaved===false?C.hard:sessionSaved===true?C.easy:C.muted}}>
-          {sessionSaved===false?"⚠ local save failed":sessionSaved===true?"✓ saved":""}
-        </span>
-      </div>
-    </div>
-    {/* Supabase sync strip — only shown when connected */}
-    {supabaseCfg&&(
-      <button onClick={async()=>{
-        if(supabaseSyncing)return;
-        setSupabaseSyncing(true);
-        setDriveStatus("syncing");
-        const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current);
-        setDriveStatus(ok?"synced":"error");
-        setTimeout(()=>setDriveStatus(null),4000);
-        setSupabaseSyncing(false);
-      }} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 14px",borderRadius:9,background:"#080f18",border:`1px solid #22d3ee22`,marginBottom:error?9:0,cursor:"pointer",textAlign:"left"}}>
-        <span style={{fontSize:10,color:"#22d3ee",fontWeight:700}}>
-          {supabaseSyncing?"☁ Syncing to Supabase…":"☁ Supabase"}
-        </span>
-        <span style={{fontSize:10,color:C.muted}}>
-          {history.length} sessions · {Object.keys(srDeckRef.current).length} SR cards · tap to sync
-        </span>
-      </button>
     )}
     {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease"}}>{error}</div>}
 
