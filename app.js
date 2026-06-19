@@ -913,6 +913,9 @@ const SR_KEY = "cfa_sr_v7";
 const QDB_KEY = "cfa_qdb_v7";
 const USAGE_KEY = "cfa_usage_v1";
 const BESTS_KEY = "cfa_bests_v1";
+const QCACHE_KEY = "cfa_qcache_v1";
+const QCACHE_SLOTS = 2; // sets per topic+module+difficulty combo
+const QCACHE_MAX = 25; // max distinct combos to keep
 const SM2_INTERVALS = [1, 3, 7, 16, 35, 70];
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -1053,6 +1056,61 @@ function fireConfetti(duration = 2400) {
     if (Date.now() < end) requestAnimationFrame(draw);else canvas.remove();
   }
   draw();
+}
+
+// ─── QUESTION CACHE HELPERS ───────────────────────────────────────────────────
+function qcKey(t, st, diff) {
+  return `${t}|||${st}|||${diff}`;
+}
+function qcGet(cache, t, st, diff, cnt) {
+  const today = new Date().toISOString().slice(0, 10);
+  const slots = cache[qcKey(t, st, diff)] || [];
+  const avail = slots.filter(s => s.qs && s.qs.length >= Math.min(cnt, 5) && s.usedOn !== today);
+  if (!avail.length) return null;
+  avail.sort((a, b) => (a.usedOn || "") < (b.usedOn || "") ? -1 : 1);
+  return avail[0];
+}
+function qcMarkUsed(cache, t, st, diff, ts) {
+  const k = qcKey(t, st, diff);
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    ...cache,
+    [k]: (cache[k] || []).map(s => s.ts === ts ? {
+      ...s,
+      usedOn: today
+    } : s)
+  };
+}
+function qcAdd(cache, t, st, diff, questions) {
+  const k = qcKey(t, st, diff);
+  const slots = [...(cache[k] || [])];
+  const slot = {
+    qs: questions.slice(0, 15),
+    usedOn: null,
+    ts: Date.now()
+  };
+  if (slots.length < QCACHE_SLOTS) {
+    slots.push(slot);
+  } else {
+    const oldest = slots.reduce((mi, s, i) => s.ts < slots[mi].ts ? i : mi, 0);
+    slots[oldest] = slot;
+  }
+  const updated = {
+    ...cache,
+    [k]: slots
+  };
+  // Prune to QCACHE_MAX keys by removing least-recently-used entries
+  const keys = Object.keys(updated);
+  if (keys.length > QCACHE_MAX) {
+    const sorted = keys.map(ky => ({
+      ky,
+      latest: Math.max(...(updated[ky] || []).map(s => s.ts || 0))
+    })).sort((a, b) => a.latest - b.latest);
+    sorted.slice(0, keys.length - QCACHE_MAX).forEach(({
+      ky
+    }) => delete updated[ky]);
+  }
+  return updated;
 }
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
@@ -4244,6 +4302,7 @@ function CFAMock() {
   const [crossVignetteTopic, setCrossVignetteTopic] = useState("Financial Statement Analysis");
   const [crossVignetteModule1, setCrossVignetteModule1] = useState("");
   const [crossVignetteModule2, setCrossVignetteModule2] = useState("");
+  const qCacheRef = React.useRef({});
   const [luckyDipSpinning, setLuckyDipSpinning] = useState(false);
   const [luckyDipLabel, setLuckyDipLabel] = useState("");
   const [personalBests, setPersonalBests] = useState(() => {
@@ -4413,6 +4472,10 @@ function CFAMock() {
           setExamDate(new Date(d));
           setExamDateInput(d);
         }
+      } catch {}
+      try {
+        const qc = await storageGet(QCACHE_KEY);
+        if (qc && typeof qc === "object") qCacheRef.current = qc;
       } catch {}
       setQdbLoaded(true);
 
@@ -5026,7 +5089,8 @@ Reply with just "saved" when done.`
       const prompt = WEEKLY_PLAN_PROMPT.split("{days}").join(String(daysLeft)).split("{hours}").join(String(hoursThisWeek)).split("{prob}").join(String(prob)).split("{accuracy}").join(accuracyStr || "No data yet").split("{untested}").join(untestedStr).split("{srDue}").join(String(dueCards.length)).split("{daysSince}").join(String(daysSince));
       const plan = await callClaude(prompt, 2000, {
         retries: 3,
-        retryDelay: 6000
+        retryDelay: 6000,
+        model: "claude-haiku-4-5-20251001"
       });
       if (!plan || !plan.days) throw new Error("Plan missing 'days' field — got: " + JSON.stringify(plan).slice(0, 100));
       setWeeklyPlan(plan);
@@ -5159,8 +5223,46 @@ Reply with just "saved" when done.`
       const mi = Math.floor(elapsed / 1800) % msgs.length;
       setLoadingMsg(msgs[mi]);
     }, 200);
+    // ── Question cache check (skip for vignettes) ─────────────────────────────
+    if (!isVignette) {
+      const hit = qcGet(qCacheRef.current, t, st, diff, cnt);
+      if (hit) {
+        const cachedQs = hit.qs.slice(0, cnt);
+        const fresh = filterNewQuestions(cachedQs, qdb);
+        const finalQs = fresh.length >= Math.ceil(cnt * 0.7) ? fresh : cachedQs;
+        if (finalQs.length >= Math.ceil(cnt * 0.7)) {
+          qCacheRef.current = qcMarkUsed(qCacheRef.current, t, st, diff, hit.ts);
+          storageSet(QCACHE_KEY, qCacheRef.current);
+          setLoadingProgress(100);
+          setLoadingMsg("Questions ready!");
+          await new Promise(r => setTimeout(r, 250));
+          setTopic(t);
+          setSubtopic(st);
+          setDifficulty(diff);
+          setCount(cnt);
+          setMode(m);
+          setVignetteMode(false);
+          setQuestions(finalQs);
+          setAnswers({});
+          setFlaggedQ({});
+          setCurrentQ(0);
+          setShowExp(false);
+          setLastSession(null);
+          setFullExamMode(false);
+          setScreen("quiz");
+          clearInterval(progressInterval);
+          setLoading(false);
+          setLoadingProgress(0);
+          setLoadingETA(null);
+          generatingRef.current = false;
+          return;
+        }
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────────
     try {
-      const useModel = diff === "Easy" ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6";
+      // Haiku for Easy+Medium (structured MCQ output); Sonnet only for Hard (nuanced judgment)
+      const useModel = diff === "Hard" ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
       let parsed;
       if (isVignette) {
         const vignetteCount = Math.max(1, Math.ceil(cnt / 3));
@@ -5174,12 +5276,12 @@ Reply with just "saved" when done.`
         parsed = flattenVignettes(rawVig, t, st);
       } else {
         const tightMax = {
-          3: 2000,
-          5: 3500,
-          10: 6000,
-          15: 8000,
-          20: 8000
-        }[cnt] || cnt * 700;
+          3: 1600,
+          5: 2500,
+          10: 4500,
+          15: 6000,
+          20: 7000
+        }[cnt] || cnt * 500;
         let raw = await callClaude(buildQuestionPrompt(t, st, diff, cnt), tightMax, {
           retries: 3,
           retryDelay: 8000,
@@ -5191,6 +5293,11 @@ Reply with just "saved" when done.`
       if (!Array.isArray(parsed) || !parsed.length) throw new Error("Empty");
       const fresh = filterNewQuestions(parsed, qdb);
       const finalQs = fresh.length >= Math.ceil(cnt * 0.7) ? fresh : parsed;
+      // Cache successful non-vignette sets for reuse
+      if (!isVignette && parsed.length >= 5) {
+        qCacheRef.current = qcAdd(qCacheRef.current, t, st, diff, parsed);
+        storageSet(QCACHE_KEY, qCacheRef.current);
+      }
       setLoadingProgress(100);
       setLoadingMsg(isVignette ? "Vignettes ready!" : "Questions ready!");
       await new Promise(r => setTimeout(r, 350));
