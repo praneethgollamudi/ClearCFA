@@ -6307,7 +6307,7 @@ Reply with just "saved" when done.`
       border: `1px solid ${sessionSaved === false ? C.hard + "55" : C.border}`,
       borderRadius: 10,
       padding: "9px 14px",
-      marginBottom: error ? 9 : 0
+      marginBottom: supabaseCfg ? 6 : error ? 9 : 0
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6338,15 +6338,49 @@ Reply with just "saved" when done.`
     style: {
       color: C.easy
     }
-  }, "☁ Drive ✓"), driveStatus === "error" && /*#__PURE__*/React.createElement("span", {
+  }, "☁ synced ✓"), driveStatus === "error" && /*#__PURE__*/React.createElement("span", {
     style: {
       color: C.hard
     }
-  }, "☁ Drive ✗"), /*#__PURE__*/React.createElement("span", {
+  }, "☁ sync failed ✗"), /*#__PURE__*/React.createElement("span", {
     style: {
       color: sessionSaved === false ? C.hard : sessionSaved === true ? C.easy : C.muted
     }
-  }, sessionSaved === false ? "⚠ local save failed" : sessionSaved === true ? "✓ saved" : ""))), error && /*#__PURE__*/React.createElement("div", {
+  }, sessionSaved === false ? "⚠ local save failed" : sessionSaved === true ? "✓ saved" : ""))), supabaseCfg && /*#__PURE__*/React.createElement("button", {
+    onClick: async () => {
+      if (supabaseSyncing) return;
+      setSupabaseSyncing(true);
+      setDriveStatus("syncing");
+      const ok = await supabaseSync(supabaseCfg, history, srDeckRef.current);
+      setDriveStatus(ok ? "synced" : "error");
+      setTimeout(() => setDriveStatus(null), 4000);
+      setSupabaseSyncing(false);
+    },
+    style: {
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "7px 14px",
+      borderRadius: 9,
+      background: "#080f18",
+      border: `1px solid #22d3ee22`,
+      marginBottom: error ? 9 : 0,
+      cursor: "pointer",
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: "#22d3ee",
+      fontWeight: 700
+    }
+  }, supabaseSyncing ? "☁ Syncing to Supabase…" : "☁ Supabase"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: C.muted
+    }
+  }, history.length, " sessions · ", Object.keys(srDeckRef.current).length, " SR cards · tap to sync")), error && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.errorBg,
       border: `1px solid ${C.hard}44`,

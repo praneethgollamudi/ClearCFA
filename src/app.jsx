@@ -3286,20 +3286,39 @@ Reply with just "saved" when done.`}]
       </button>
     </div>
     {/* Data status bar — always visible so user can see session count */}
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${sessionSaved===false?C.hard+"55":C.border}`,borderRadius:10,padding:"9px 14px",marginBottom:error?9:0}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${sessionSaved===false?C.hard+"55":C.border}`,borderRadius:10,padding:"9px 14px",marginBottom:supabaseCfg?6:error?9:0}}>
       <div style={{fontSize:11,color:C.muted}}>
         <span style={{color:C.textMid,fontWeight:700}}>{history.length}</span> sessions
         {history.length>0&&<span> · <span style={{color:C.textMid}}>{history[0]?.date}</span> {history[0]?.topic?.split(" ")[0]} {history[0]?.pct}%</span>}
       </div>
       <div style={{fontSize:10,display:"flex",gap:6,alignItems:"center"}}>
         {driveStatus==="syncing"&&<span style={{color:C.medium}}>☁ syncing…</span>}
-        {driveStatus==="synced"&&<span style={{color:C.easy}}>☁ Drive ✓</span>}
-        {driveStatus==="error"&&<span style={{color:C.hard}}>☁ Drive ✗</span>}
+        {driveStatus==="synced"&&<span style={{color:C.easy}}>☁ synced ✓</span>}
+        {driveStatus==="error"&&<span style={{color:C.hard}}>☁ sync failed ✗</span>}
         <span style={{color:sessionSaved===false?C.hard:sessionSaved===true?C.easy:C.muted}}>
           {sessionSaved===false?"⚠ local save failed":sessionSaved===true?"✓ saved":""}
         </span>
       </div>
     </div>
+    {/* Supabase sync strip — only shown when connected */}
+    {supabaseCfg&&(
+      <button onClick={async()=>{
+        if(supabaseSyncing)return;
+        setSupabaseSyncing(true);
+        setDriveStatus("syncing");
+        const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current);
+        setDriveStatus(ok?"synced":"error");
+        setTimeout(()=>setDriveStatus(null),4000);
+        setSupabaseSyncing(false);
+      }} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 14px",borderRadius:9,background:"#080f18",border:`1px solid #22d3ee22`,marginBottom:error?9:0,cursor:"pointer",textAlign:"left"}}>
+        <span style={{fontSize:10,color:"#22d3ee",fontWeight:700}}>
+          {supabaseSyncing?"☁ Syncing to Supabase…":"☁ Supabase"}
+        </span>
+        <span style={{fontSize:10,color:C.muted}}>
+          {history.length} sessions · {Object.keys(srDeckRef.current).length} SR cards · tap to sync
+        </span>
+      </button>
+    )}
     {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease"}}>{error}</div>}
 
     {/* Storage diagnostic — shown when history is empty */}
