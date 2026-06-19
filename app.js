@@ -4127,6 +4127,7 @@ function CFAMock() {
   const [focusLoading, setFocusLoading] = useState(false);
   const [focusError, setFocusError] = useState("");
   const [selectedFocus, setSelectedFocus] = useState(null);
+  const [focusCount, setFocusCount] = useState(10);
   const [focusLastGenerated, setFocusLastGenerated] = useState(null); // timestamp of last generation
   const [lastSession, setLastSession] = useState(null);
   const [srQueue, setSrQueue] = useState([]);
@@ -4523,11 +4524,11 @@ function CFAMock() {
         concept: (q.concept || st).slice(0, 60),
         topic: t,
         subtopic: st,
-        question: (q.question || "").slice(0, 180),
+        question: (q.question || "").slice(0, 600),
         options: q.options,
         answer: q.answer,
-        explanation: (q.explanation || "").slice(0, 300),
-        los_tested: (q.los_tested || "").slice(0, 100),
+        explanation: (q.explanation || "").slice(0, 500),
+        los_tested: (q.los_tested || "").slice(0, 120),
         wrongCount: 0
       };
       const card = sm2Update(existing, correct);
@@ -5229,6 +5230,7 @@ Reply with just "saved" when done.`
   const totalXP = useMemo(() => getTotalXP(history), [history]);
   const levelInfo = useMemo(() => getLevel(totalXP), [totalXP]);
   const totalWrongs = useMemo(() => history.flatMap(h => Array.isArray(h.wrongs) ? h.wrongs : []).filter(w => w && w.question).length, [history]);
+  const srWrongCount = useMemo(() => Object.values(srDeck).filter(c => (c.wrongCount || 0) > 0).length, [srDeck]);
 
   // Adaptive difficulty for Office Mode — derived from last 5 OM sessions
   const adaptiveOmDifficulty = useMemo(() => {
@@ -6360,10 +6362,36 @@ Reply with just "saved" when done.`
       lineHeight: 1.55,
       marginBottom: selectedFocus === i ? 12 : 0
     }
-  }, s.reason), selectedFocus === i && /*#__PURE__*/React.createElement("button", {
+  }, s.reason), selectedFocus === i && /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginBottom: 8
+    }
+  }, [5, 10, 15].map(n => /*#__PURE__*/React.createElement("button", {
+    key: n,
     onClick: e => {
       e.stopPropagation();
-      generateQuestions(s.topic, s.module, s.difficulty, s.count || 10, s.mode || "guided");
+      setFocusCount(n);
+    },
+    style: {
+      flex: 1,
+      padding: "6px 0",
+      borderRadius: 8,
+      fontSize: 12,
+      fontWeight: 700,
+      cursor: "pointer",
+      border: focusCount === n ? `1.5px solid ${C.accent}` : `1.5px solid ${C.border}`,
+      background: focusCount === n ? C.accent + "22" : C.surface,
+      color: focusCount === n ? C.accentLight : C.muted,
+      transition: "all 0.15s"
+    }
+  }, n, " Qs"))), /*#__PURE__*/React.createElement("button", {
+    onClick: e => {
+      e.stopPropagation();
+      generateQuestions(s.topic, s.module, s.difficulty, focusCount, s.mode || "guided");
     },
     style: {
       width: "100%",
@@ -6377,7 +6405,7 @@ Reply with just "saved" when done.`
       cursor: "pointer",
       boxShadow: `0 4px 12px ${C.accent}44`
     }
-  }, "Start ", s.count || 10, " Questions →"))))), (() => {
+  }, "Start ", focusCount, " Questions →")))))), (() => {
     const omSessions = history.filter(h => h.isOfficeMode);
     const omStreak = (() => {
       let s = 0,
@@ -6544,13 +6572,14 @@ Reply with just "saved" when done.`
   }, "🎯 Fix Weakest"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       trackUsage("wrongs_review");
-      const all = history.flatMap(h => Array.isArray(h.wrongs) ? h.wrongs : []).filter(w => w && w.question).slice(0, 50);
-      if (all.length) {
-        setReviewList(all);
-        setReviewIdx(0);
-        setScreen("review");
+      const wrongCards = Object.values(srDeck).filter(c => (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 30);
+      if (wrongCards.length) {
+        setSrQueue(wrongCards);
+        setSrIdx(0);
+        setSrAnswer(null);
+        setScreen("srReview");
       } else {
-        setError("No wrong answers yet.");
+        setError("No wrong answers in SR deck yet — complete a session first.");
         setTimeout(() => setError(""), 3000);
       }
     },
@@ -6561,12 +6590,12 @@ Reply with just "saved" when done.`
       fontSize: 12,
       fontWeight: 600,
       background: C.surface,
-      border: `1px solid ${totalWrongs > 0 ? C.hard + "44" : C.border}`,
-      color: totalWrongs > 0 ? C.hard : C.muted,
+      border: `1px solid ${srWrongCount > 0 ? C.hard + "44" : C.border}`,
+      color: srWrongCount > 0 ? C.hard : C.muted,
       cursor: "pointer",
       position: "relative"
     }
-  }, "🔁 Wrongs", totalWrongs > 0 && /*#__PURE__*/React.createElement("span", {
+  }, "🔁 Wrongs", srWrongCount > 0 && /*#__PURE__*/React.createElement("span", {
     style: {
       position: "absolute",
       top: -5,
@@ -6582,7 +6611,7 @@ Reply with just "saved" when done.`
       alignItems: "center",
       justifyContent: "center"
     }
-  }, Math.min(totalWrongs, 99)))), /*#__PURE__*/React.createElement("div", {
+  }, Math.min(srWrongCount, 99)))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.surface,
       border: `1px solid ${C.border}`,

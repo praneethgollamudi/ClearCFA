@@ -2334,7 +2334,7 @@ function CFAMock(){
   const [qdb,setQdb]=useState({});const [qdbLoaded,setQdbLoaded]=useState(false); // question dedup db
   const [reviewList,setReviewList]=useState([]);const [reviewIdx,setReviewIdx]=useState(0);
   const [confirmClear,setConfirmClear]=useState(false);
-  const [focusSuggestions,setFocusSuggestions]=useState(null);const [focusLoading,setFocusLoading]=useState(false);const [focusError,setFocusError]=useState("");const [selectedFocus,setSelectedFocus]=useState(null);
+  const [focusSuggestions,setFocusSuggestions]=useState(null);const [focusLoading,setFocusLoading]=useState(false);const [focusError,setFocusError]=useState("");const [selectedFocus,setSelectedFocus]=useState(null);const [focusCount,setFocusCount]=useState(10);
   const [focusLastGenerated,setFocusLastGenerated]=useState(null); // timestamp of last generation
   const [lastSession,setLastSession]=useState(null);
   const [srQueue,setSrQueue]=useState([]);const [srIdx,setSrIdx]=useState(0);const [srAnswer,setSrAnswer]=useState(null);
@@ -2630,7 +2630,7 @@ function CFAMock(){
       const isFlagged=!!flagged[q.id];
       if(correct&&!isFlagged) return; // skip correct+unflagged
       const key=`${t}|||${st}|||${q.id}`;
-      const existing=updatedSrDeck[key]||{concept:(q.concept||st).slice(0,60),topic:t,subtopic:st,question:(q.question||"").slice(0,180),options:q.options,answer:q.answer,explanation:(q.explanation||"").slice(0,300),los_tested:(q.los_tested||"").slice(0,100),wrongCount:0};
+      const existing=updatedSrDeck[key]||{concept:(q.concept||st).slice(0,60),topic:t,subtopic:st,question:(q.question||"").slice(0,600),options:q.options,answer:q.answer,explanation:(q.explanation||"").slice(0,500),los_tested:(q.los_tested||"").slice(0,120),wrongCount:0};
       const card=sm2Update(existing,correct);
       if(!correct) card.wrongCount=(existing.wrongCount||0)+1;
       if(isFlagged&&correct){
@@ -3058,6 +3058,7 @@ Reply with just "saved" when done.`}]
   const totalXP=useMemo(()=>getTotalXP(history),[history]);
   const levelInfo=useMemo(()=>getLevel(totalXP),[totalXP]);
   const totalWrongs=useMemo(()=>history.flatMap(h=>Array.isArray(h.wrongs)?h.wrongs:[]).filter(w=>w&&w.question).length,[history]);
+  const srWrongCount=useMemo(()=>Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).length,[srDeck]);
 
   // Adaptive difficulty for Office Mode — derived from last 5 OM sessions
   const adaptiveOmDifficulty=useMemo(()=>{
@@ -3421,10 +3422,20 @@ Reply with just "saved" when done.`}]
               </div>
               <div style={{fontSize:12,color:C.textMid,lineHeight:1.55,marginBottom:selectedFocus===i?12:0}}>{s.reason}</div>
               {selectedFocus===i&&(
-                <button onClick={e=>{e.stopPropagation();generateQuestions(s.topic,s.module,s.difficulty,s.count||10,s.mode||"guided");}}
-                  style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`}}>
-                  Start {s.count||10} Questions →
-                </button>
+                <div onClick={e=>e.stopPropagation()}>
+                  <div style={{display:"flex",gap:6,marginBottom:8}}>
+                    {[5,10,15].map(n=>(
+                      <button key={n} onClick={e=>{e.stopPropagation();setFocusCount(n);}}
+                        style={{flex:1,padding:"6px 0",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",border:focusCount===n?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:focusCount===n?C.accent+"22":C.surface,color:focusCount===n?C.accentLight:C.muted,transition:"all 0.15s"}}>
+                        {n} Qs
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={e=>{e.stopPropagation();generateQuestions(s.topic,s.module,s.difficulty,focusCount,s.mode||"guided");}}
+                    style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`}}>
+                    Start {focusCount} Questions →
+                  </button>
+                </div>
               )}
             </div>
           ))}
@@ -3479,11 +3490,11 @@ Reply with just "saved" when done.`}]
       <button onClick={()=>{trackUsage("fix_weakest");const byReadiness=moduleReadiness.filter(m=>m.weight>=8).sort((a,b)=>{if(a.accuracy===null&&b.accuracy===null)return b.weight-a.weight;if(a.accuracy===null)return -1;if(b.accuracy===null)return 1;return a.accuracy-b.accuracy;});const target=byReadiness[0]||moduleReadiness[0];const mod=target.untouchedModules?.[0]||target.modules?.[0];if(target&&mod)generateQuestions(target.topic,mod,"Medium",10,"guided");}} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:700,background:C.hard+"18",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>🎯 Fix Weakest</button>
       <button onClick={()=>{
         trackUsage("wrongs_review");
-        const all=history.flatMap(h=>Array.isArray(h.wrongs)?h.wrongs:[]).filter(w=>w&&w.question).slice(0,50);
-        if(all.length){setReviewList(all);setReviewIdx(0);setScreen("review");}
-        else{setError("No wrong answers yet.");setTimeout(()=>setError(""),3000);}
-      }} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${totalWrongs>0?C.hard+"44":C.border}`,color:totalWrongs>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
-        🔁 Wrongs{totalWrongs>0&&<span style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(totalWrongs,99)}</span>}
+        const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
+        if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
+        else{setError("No wrong answers in SR deck yet — complete a session first.");setTimeout(()=>setError(""),3000);}
+      }} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${srWrongCount>0?C.hard+"44":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
+        🔁 Wrongs{srWrongCount>0&&<span style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
       </button>
     </div>
 
