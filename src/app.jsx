@@ -251,7 +251,78 @@ Rules: 3 options only (A,B,C). Each wrong option exploits a misconception. Sprea
 }
 
 // Expand compact JSON keys returned by optimised prompt
-function buildVignettePrompt(topic,module,difficulty,vigCount){
+function buildFSAStatementPrompt(subtopic, difficulty){
+  return `You are a CFA Level 1 exam writer. Create an FSA financial statement analysis problem.
+
+Generate a JSON object with this exact structure:
+{
+  "company": "fictional company name",
+  "year": 2024,
+  "scenario": "2-3 sentence business context",
+  "statements": {
+    "income_statement": { "Revenue": 0, "COGS": 0, "Gross_Profit": 0, "Operating_Expenses": 0, "EBIT": 0, "Interest_Expense": 0, "EBT": 0, "Tax_Expense": 0, "Net_Income": 0 },
+    "balance_sheet": { "Cash": 0, "Accounts_Receivable": 0, "Inventory": 0, "Total_Current_Assets": 0, "PPE_Net": 0, "Total_Assets": 0, "Accounts_Payable": 0, "Short_Term_Debt": 0, "Total_Current_Liabilities": 0, "Long_Term_Debt": 0, "Total_Equity": 0 },
+    "supplemental": { "Shares_Outstanding": 0, "Dividends_Per_Share": 0, "Depreciation": 0, "CapEx": 0 }
+  },
+  "questions": [
+    { "id": 1, "question": "specific ratio/analysis question based on the statement", "options": {"A": "option", "B": "option", "C": "option"}, "answer": "A", "explanation": "step-by-step calculation showing the work", "concept": "ratio name", "los_tested": "relevant LOS" },
+    { "id": 2, "question": "IFRS/GAAP or accounting treatment question", "options": {"A": "option", "B": "option", "C": "option"}, "answer": "B", "explanation": "explanation", "concept": "concept", "los_tested": "LOS" },
+    { "id": 3, "question": "analysis/interpretation question", "options": {"A": "option", "B": "option", "C": "option"}, "answer": "C", "explanation": "explanation", "concept": "concept", "los_tested": "LOS" }
+  ]
+}
+
+Topic focus: ${subtopic}. Difficulty: ${difficulty}.
+Make the numbers realistic for a mid-size company. All numbers internally consistent. Output ONLY valid JSON.`;
+}
+
+function formatStatements(raw){
+  const is=raw.statements?.income_statement||{};
+  const bs=raw.statements?.balance_sheet||{};
+  const sup=raw.statements?.supplemental||{};
+  const fmt=(n)=>n!=null?`$${Number(n).toLocaleString()}M`:"—";
+  return `INCOME STATEMENT: Revenue ${fmt(is.Revenue)} | COGS ${fmt(is.COGS)} | Gross Profit ${fmt(is.Gross_Profit)} | OpEx ${fmt(is.Operating_Expenses)} | EBIT ${fmt(is.EBIT)} | Interest ${fmt(is.Interest_Expense)} | Net Income ${fmt(is.Net_Income)}\nBALANCE SHEET: Cash ${fmt(bs.Cash)} | AR ${fmt(bs.Accounts_Receivable)} | Inventory ${fmt(bs.Inventory)} | Current Assets ${fmt(bs.Total_Current_Assets)} | Total Assets ${fmt(bs.Total_Assets)} | AP ${fmt(bs.Accounts_Payable)} | Curr Liab ${fmt(bs.Total_Current_Liabilities)} | LT Debt ${fmt(bs.Long_Term_Debt)} | Total Equity ${fmt(bs.Total_Equity)}\nSUPP: Shares ${fmt(sup.Shares_Outstanding)} | DPS $${sup.Dividends_Per_Share||0} | D&A ${fmt(sup.Depreciation)} | CapEx ${fmt(sup.CapEx)}`;
+}
+
+const RELATED_MODULES={
+  "Financial Statement Analysis":[["Income Statement Analysis","Financial Ratios"],["Cash Flow Statement","Financial Ratios"],["Inventories & Long-Lived Assets","Income Taxes & Long-Term Liabilities"]],
+  "Fixed Income":[["Bond Features & Pricing","Yield Measures & Duration"],["Yield Measures & Duration","Credit Analysis"]],
+  "Equity":[["Equity Valuation – DDM & Multiples","Industry & Company Analysis"],["Market Efficiency","Equity Valuation – DDM & Multiples"]],
+  "Derivatives":[["Forwards & Futures","Options – Payoffs & Strategies"],["Options – Payoffs & Strategies","Swaps"]],
+  "Corporate Issuers":[["Capital Structure & Leverage","Capital Investments & Allocation"],["Working Capital Management","Capital Structure & Leverage"]],
+  "Portfolio Management":[["Portfolio Risk & Return","CAPM & Factor Models"],["CAPM & Factor Models","Portfolio Planning & Construction"]],
+};
+function getRelatedModules(topic){return RELATED_MODULES[topic]||[];}
+
+function generateStudyPlan(history, srDeck, examDate, daysLeft){
+  const topics=Object.entries(LOS).map(([name,{weight,modules}])=>{
+    const topicSessions=history.filter(h=>h.topic===name);
+    const accuracy=topicSessions.length?topicSessions.reduce((s,h)=>s+(h.pct||0),0)/topicSessions.length:0;
+    const adjustedWeight=weight*(topicSessions.length===0?1.5:accuracy<60?1.3:accuracy>80?0.8:1.0);
+    return{name,weight,adjustedWeight,modules:Object.keys(modules),accuracy,totalModules:Object.keys(modules).length};
+  });
+  const studyDays=Math.min(daysLeft-3,55);
+  const plan=[];
+  const totalWeight=topics.reduce((s,t)=>s+t.adjustedWeight,0);
+  let dayIdx=0;
+  for(const t of topics.sort((a,b)=>b.adjustedWeight-a.adjustedWeight)){
+    const daysForTopic=Math.max(1,Math.round((t.adjustedWeight/totalWeight)*studyDays*0.7));
+    for(let d=0;d<daysForTopic&&dayIdx<studyDays;d++,dayIdx++){
+      const mod=t.modules[d%t.modules.length];
+      plan.push({dayNum:dayIdx+1,date:new Date(Date.now()+dayIdx*86400000),topic:t.name,module:mod,count:10,difficulty:t.accuracy<60?"Easy":"Medium",type:"learn"});
+    }
+  }
+  while(dayIdx<studyDays){
+    const weakTopic=topics.sort((a,b)=>a.accuracy-b.accuracy)[0];
+    plan.push({dayNum:dayIdx+1,date:new Date(Date.now()+dayIdx*86400000),topic:weakTopic.name,module:weakTopic.modules[0],count:10,difficulty:"Hard",type:"review"});
+    dayIdx++;
+  }
+  for(let i=0;i<3&&dayIdx<daysLeft;i++,dayIdx++){
+    plan.push({dayNum:dayIdx+1,date:new Date(Date.now()+dayIdx*86400000),topic:"Ethics",module:"Code of Ethics & Standards",count:10,difficulty:"Hard",type:"ethics"});
+  }
+  return plan;
+}
+
+function buildVignettePrompt(topic,module,difficulty,vigCount,subtopic2=null){
   const los=(LOS[topic]?.modules[module]||[]).slice(0,4).map((l,i)=>`${i+1}. ${l}`).join("\n");
   return `You are a CFA Level 1 exam writer. Generate ${vigCount} item set(s) for ${topic} — ${module} at ${difficulty} difficulty.
 
@@ -280,7 +351,7 @@ Rules:
 - Each question must REQUIRE reading the scenario (no standalone questions)
 - Distractors must be plausible and target common misconceptions
 - Difficulty ${difficulty}: ${difficulty==="Easy"?"recall/identify":difficulty==="Medium"?"apply/calculate":"evaluate/synthesize across multiple LOS"}
-- Output ONLY valid JSON, no markdown`;
+- Output ONLY valid JSON, no markdown${subtopic2?`\n- The vignette MUST require analysis of BOTH ${module} AND ${subtopic2} — integrate them naturally into a single realistic scenario`:""}`;
 }
 
 function flattenVignettes(rawVignettes,topic,module){
@@ -1229,8 +1300,22 @@ const POWER_NOTES = {
 };
 
 
+async function askClaudeText(apiKey, prompt, maxTokens=400){
+  if(!apiKey) return null;
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"content-type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true","x-api-key":apiKey},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+    });
+    if(!res.ok) return null;
+    const data=await res.json();
+    return data.content?.map(i=>i.text||"").join("").trim()||null;
+  }catch{return null;}
+}
+
 // ─── REVISION SCREEN COMPONENTS ──────────────────────────────────────────────
-function RevisionScreen({onBack, initialTopic=null, initialTab="notes"}){
+function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey=""}){
   const [selTopic, setSelTopic] = useState(initialTopic || Object.keys(POWER_NOTES)[0]);
   const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
   const [expandedModule, setExpandedModule] = useState(null);
@@ -1239,6 +1324,9 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes"}){
   const [flipped, setFlipped] = useState(false);
   const [drillResult, setDrillResult] = useState({}); // {idx: "got it"|"again"}
   const [drillDone, setDrillDone] = useState(false);
+  const [explainCache, setExplainCache] = useState({});
+  const [explainLoading, setExplainLoading] = useState(null);
+  const [explainOpen, setExplainOpen] = useState(null);
 
   const topicData = POWER_NOTES[selTopic];
   const formulaData = FORMULAS[selTopic] || [];
@@ -1314,9 +1402,30 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes"}){
                       <div style={{fontSize:10,fontWeight:800,color:C.easy,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>✅ Key Rules</div>
                       <div style={{display:"flex",flexDirection:"column",gap:6}}>
                         {mod.rules.map((r,i)=>(
-                          <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:C.textMid,lineHeight:1.6}}>
-                            <span style={{color:C.easy,flexShrink:0,fontWeight:700,marginTop:1}}>·</span>
-                            <span>{r}</span>
+                          <div key={i} style={{marginBottom:2}}>
+                            <div onClick={async()=>{
+                              if(explainOpen===r){setExplainOpen(null);return;}
+                              setExplainOpen(r);
+                              if(!explainCache[r]&&!explainLoading){
+                                setExplainLoading(r);
+                                const result=await askClaudeText(apiKey,`CFA Level 1 exam prep. Explain this rule in 3-4 sentences for a student, include one concrete worked example (with numbers if relevant), and name one common exam trap:\n\n"${r}"\n\nBe direct and specific. No fluff.`,400);
+                                setExplainCache(c=>({...c,[r]:result||"Could not load explanation."}));
+                                setExplainLoading(null);
+                              }
+                            }} style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:C.textMid,lineHeight:1.6,cursor:"pointer",padding:"3px 0",borderRadius:6,transition:"background 0.1s"}}>
+                              <span style={{color:C.easy,flexShrink:0,fontWeight:700,marginTop:1}}>·</span>
+                              <span style={{flex:1}}>{r}</span>
+                              <span style={{fontSize:10,color:C.accent,flexShrink:0,marginTop:2}}>{explainOpen===r?"▲":"💡"}</span>
+                            </div>
+                            {explainOpen===r&&(
+                              <div style={{background:"#0a1020",border:`1px solid ${C.accent}33`,borderRadius:8,padding:"10px 12px",marginTop:4,marginLeft:16,animation:"fadeIn 0.15s ease"}}>
+                                {explainLoading===r?(
+                                  <div style={{fontSize:11,color:C.muted,animation:"pulse 1.5s infinite"}}>Loading explanation…</div>
+                                ):(
+                                  <div style={{fontSize:12,color:"#c0c8e8",lineHeight:1.7}}>{explainCache[r]}</div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -2266,6 +2375,27 @@ function CFAMock(){
   const [examDateInput,setExamDateInput]=useState("2026-08-19");
   const [revisionTopic,setRevisionTopic]=useState(null);
   const [revisionTab,setRevisionTab]=useState("notes");
+  const [walkthroughTopic, setWalkthroughTopic] = useState(Object.keys(LOS)[0]);
+  const [walkthroughModule, setWalkthroughModule] = useState("");
+  const [walkthroughText, setWalkthroughText] = useState(null);
+  const [walkthroughLoading, setWalkthroughLoading] = useState(false);
+  const [walkthroughError, setWalkthroughError] = useState("");
+  const [fsaVignetteOpen, setFsaVignetteOpen] = useState(false);
+  const [fsaSubtopic, setFsaSubtopic] = useState("Financial Ratios");
+  const [fsaDifficulty, setFsaDifficulty] = useState("Medium");
+  const [calcTopic, setCalcTopic] = useState("Fixed Income");
+  const [calcDifficulty, setCalcDifficulty] = useState("Medium");
+  const [calcProblem, setCalcProblem] = useState(null);
+  const [calcSteps, setCalcSteps] = useState([]);
+  const [calcInputs, setCalcInputs] = useState({});
+  const [calcChecked, setCalcChecked] = useState({});
+  const [calcLoading, setCalcLoading] = useState(false);
+  const [calcError, setCalcError] = useState("");
+  const [studyPlanData, setStudyPlanData] = useState(null);
+  const [crossVignetteOpen, setCrossVignetteOpen] = useState(false);
+  const [crossVignetteTopic, setCrossVignetteTopic] = useState("Financial Statement Analysis");
+  const [crossVignetteModule1, setCrossVignetteModule1] = useState("");
+  const [crossVignetteModule2, setCrossVignetteModule2] = useState("");
 
   // Auto-trigger focus refresh when flagged
   useEffect(()=>{
@@ -2752,7 +2882,37 @@ Reply with just "saved" when done.`}]
     setWeeklyPlanLoading(false);
   };
 
-  const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false)=>{
+  const generateFSAVignette=async(subtopic,difficulty)=>{
+    if(generatingRef.current)return; generatingRef.current=true;
+    setLoading(true);setError("");setLoadingProgress(0);
+    setLoadingMsg("Building financial statements...");
+    const progressInterval=setInterval(()=>{setLoadingProgress(p=>Math.min(85,p+3));},300);
+    try{
+      if(!apiKey){setError("FSA Statement Vignette requires an API key.");setLoading(false);clearInterval(progressInterval);generatingRef.current=false;return;}
+      const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),2500,{retries:2,retryDelay:6000,model:"claude-sonnet-4-6"});
+      clearInterval(progressInterval);
+      if(!raw||!raw.questions)throw new Error("Invalid FSA vignette format");
+      const stmtText=formatStatements(raw);
+      const qs=raw.questions.map(q=>({
+        ...q,
+        id:`fsa_${Date.now()}_${q.id}`,
+        question:`**${raw.company} (${raw.year}) — ${raw.scenario}**\n\n${stmtText}\n\n${q.question}`,
+        _isFSAVignette:true,
+      }));
+      setLoadingProgress(100);
+      await new Promise(r=>setTimeout(r,200));
+      setTopic("Financial Statement Analysis");setSubtopic(subtopic);setDifficulty(difficulty);
+      setMode("fsa_vignette");setVignetteMode(true);
+      setQuestions(qs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);
+      setScreen("quiz");
+    }catch(e){
+      clearInterval(progressInterval);
+      setError("FSA Vignette failed: "+e.message);
+    }
+    setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+  };
+
+  const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
     setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
     loadingStartRef.current=Date.now();
@@ -2808,7 +2968,7 @@ Reply with just "saved" when done.`}]
       let parsed;
       if(isVignette){
         const vignetteCount=Math.max(1,Math.ceil(cnt/3));
-        const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount);
+        const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null);
         const rawVig=await callClaude(vigPrompt,3000,{retries:3,retryDelay:8000,model:useModel});
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
@@ -3356,6 +3516,11 @@ Reply with just "saved" when done.`}]
         {key:"formulas",label:"🔢 Formulas",style:{background:C.reward+"15",border:`1px solid ${C.reward}44`,color:C.rewardLight},action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
         {key:"week_plan",label:"🗓 Week Plan",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}},
         {key:"sr_review",label:`📋 SR${dueCards.length>0?" ("+dueCards.length+")":""}`,style:{background:dueCards.length>0?C.accent+"15":C.surface,border:`1px solid ${dueCards.length>0?C.accent+"44":C.border}`,color:dueCards.length>0?C.accentLight:C.muted},action:()=>{trackUsage("sr_review");if(dueCards.length>0){setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}}},
+        {key:"learn",label:"📖 Learn",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("learn");setWalkthroughTopic(Object.keys(LOS)[0]);setWalkthroughModule(Object.keys(LOS[Object.keys(LOS)[0]].modules||{})[0]||"");setWalkthroughText(null);setWalkthroughError("");setScreen("walkthrough");}},
+        {key:"fsa_vignette",label:"📊 FSA Statement",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("fsa_vignette");setFsaVignetteOpen(true);}},
+        {key:"calc_trainer",label:"🔢 Calc Trainer",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
+        {key:"study_plan",label:"📅 2-Month Plan",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("study_plan");const plan=generateStudyPlan(history,srDeck,examDate,daysLeft);setStudyPlanData(plan);setScreen("studyPlan");}},
+        {key:"cross_vignette",label:"🔀 Cross Vignette",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("cross_vignette");const pairs=getRelatedModules("Financial Statement Analysis");setCrossVignetteTopic("Financial Statement Analysis");setCrossVignetteModule1(pairs[0]?.[0]||"");setCrossVignetteModule2(pairs[0]?.[1]||"");setCrossVignetteOpen(true);}},
       ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
       return(<>
         <button onClick={()=>{trackUsage("more_toggle");setShowMoreActions(v=>!v);}} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:11,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",marginBottom:showMoreActions?8:0,fontSize:12,fontWeight:600}}>
@@ -3413,8 +3578,64 @@ Reply with just "saved" when done.`}]
         )}
       </div>
     )}
+
+    {fsaVignetteOpen&&(
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"flex-end"}} onClick={()=>setFsaVignetteOpen(false)}>
+        <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,margin:"0 auto",background:C.surface,borderRadius:"16px 16px 0 0",padding:"24px 20px 40px",border:`1px solid ${C.border}`}}>
+          <div style={{width:40,height:4,background:C.border,borderRadius:2,margin:"0 auto 20px"}}/>
+          <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:4}}>📊 FSA Statement Vignette</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:16}}>Generate a real financial statement with 3 analysis questions</div>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:"0.05em",textTransform:"uppercase"}}>FSA Subtopic</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+            {Object.keys(LOS["Financial Statement Analysis"]?.modules||{}).map(m=>(
+              <button key={m} onClick={()=>setFsaSubtopic(m)} style={{padding:"5px 10px",borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",border:fsaSubtopic===m?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:fsaSubtopic===m?C.accent+"22":C.dim,color:fsaSubtopic===m?C.accentLight:C.muted}}>{m}</button>
+            ))}
+          </div>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:"0.05em",textTransform:"uppercase"}}>Difficulty</div>
+          <div style={{display:"flex",gap:8,marginBottom:20}}>
+            {["Easy","Medium","Hard"].map(d=>(
+              <button key={d} onClick={()=>setFsaDifficulty(d)} style={{flex:1,padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",border:fsaDifficulty===d?`1.5px solid ${diffC[d]}`:`1.5px solid ${C.border}`,background:fsaDifficulty===d?diffC[d]+"22":C.dim,color:fsaDifficulty===d?diffC[d]:C.muted}}>{d}</button>
+            ))}
+          </div>
+          <button onClick={()=>{setFsaVignetteOpen(false);generateFSAVignette(fsaSubtopic,fsaDifficulty);}} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}44`}}>
+            Generate FSA Vignette →
+          </button>
+        </div>
+      </div>
+    )}
+
+    {crossVignetteOpen&&(
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"flex-end"}} onClick={()=>setCrossVignetteOpen(false)}>
+        <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,margin:"0 auto",background:C.surface,borderRadius:"16px 16px 0 0",padding:"24px 20px 40px",border:`1px solid ${C.border}`}}>
+          <div style={{width:40,height:4,background:C.border,borderRadius:2,margin:"0 auto 20px"}}/>
+          <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:4}}>🔀 Cross-Topic Vignette</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:16}}>Two related subtopics in one scenario — exam style</div>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>Topic</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+            {Object.keys(RELATED_MODULES).map(t=>(
+              <button key={t} onClick={()=>{setCrossVignetteTopic(t);const pairs=getRelatedModules(t);setCrossVignetteModule1(pairs[0]?.[0]||"");setCrossVignetteModule2(pairs[0]?.[1]||"");}} style={{padding:"5px 10px",borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",border:crossVignetteTopic===t?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:crossVignetteTopic===t?C.accent+"22":C.dim,color:crossVignetteTopic===t?C.accentLight:C.muted}}>{t.split(" ")[0]}</button>
+            ))}
+          </div>
+          {getRelatedModules(crossVignetteTopic).length>0&&(
+            <>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>Module Pair</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+                {getRelatedModules(crossVignetteTopic).map((pair,i)=>(
+                  <button key={i} onClick={()=>{setCrossVignetteModule1(pair[0]);setCrossVignetteModule2(pair[1]);}} style={{padding:"8px 12px",borderRadius:9,fontSize:11,fontWeight:600,cursor:"pointer",textAlign:"left",border:crossVignetteModule1===pair[0]&&crossVignetteModule2===pair[1]?`1.5px solid ${C.accentLight}`:`1.5px solid ${C.border}`,background:crossVignetteModule1===pair[0]&&crossVignetteModule2===pair[1]?C.accentLight+"18":C.dim,color:crossVignetteModule1===pair[0]&&crossVignetteModule2===pair[1]?C.accentLight:C.muted}}>
+                    {pair[0]} + {pair[1]}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          <button onClick={()=>{setCrossVignetteOpen(false);generateQuestions(crossVignetteTopic,crossVignetteModule1,"Medium",6,"guided",true,crossVignetteModule2);}} disabled={!crossVignetteModule1||!crossVignetteModule2} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:crossVignetteModule1&&crossVignetteModule2?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.dim,color:crossVignetteModule1&&crossVignetteModule2?"#fff":C.muted,border:"none",cursor:crossVignetteModule1&&crossVignetteModule2?"pointer":"not-allowed"}}>
+            Generate Cross Vignette →
+          </button>
+        </div>
+      </div>
+    )}
   </>);
-  
+
   // ══ BACKUP / RESTORE SCREEN ════════════════════════════════════════════════
   if(screen==="backup") return wrap(<>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
@@ -4417,8 +4638,198 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     </div>
   </>);
 
+  // ══ STUDY PLAN SCREEN ════════════════════════════════════════════════════════
+  if(screen==="studyPlan") return wrap((()=>{
+    const plan=studyPlanData||[];
+    const today=plan[0];
+    const typeColor={learn:C.accent,review:C.medium,ethics:C.easy};
+    return(<>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div><h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📅 2-Month Study Plan</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>Personalised to your weak topics · {daysLeft} days to exam</div></div>
+        <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
+      </div>
+      {today&&(
+        <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"16px",marginBottom:16}}>
+          <div style={{fontSize:10,fontWeight:800,color:C.accentLight,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>Today's Session</div>
+          <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:2}}>{today.topic}</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:12}}>{today.module} · {today.count} questions · {today.difficulty}</div>
+          <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(today.topic,today.module,today.difficulty,today.count,"guided"),100);}} style={{width:"100%",padding:"12px",borderRadius:10,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
+            Start Today's Session →
+          </button>
+        </div>
+      )}
+      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:10}}>Upcoming Schedule</div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {plan.slice(0,30).map((day,i)=>(
+          <div key={i} style={{background:C.surface,border:`1px solid ${i===0?C.accent+"55":C.border}`,borderRadius:11,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{flex:1}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                <span style={{fontSize:10,fontWeight:800,color:C.muted}}>Day {day.dayNum}</span>
+                <span style={{fontSize:9,padding:"2px 7px",borderRadius:10,background:(typeColor[day.type]||C.accent)+"22",color:typeColor[day.type]||C.accent,fontWeight:700,textTransform:"uppercase"}}>{day.type}</span>
+              </div>
+              <div style={{fontSize:12,fontWeight:700,color:C.text}}>{day.topic.split(" ").slice(0,3).join(" ")}</div>
+              <div style={{fontSize:11,color:C.muted}}>{day.module.slice(0,40)}{day.module.length>40?"…":""} · {day.count}Q</div>
+            </div>
+            {i>0&&<button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(day.topic,day.module,day.difficulty,day.count,"guided"),100);}} style={{fontSize:10,fontWeight:700,padding:"6px 10px",borderRadius:8,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0,marginLeft:10}}>Start</button>}
+          </div>
+        ))}
+        {plan.length>30&&<div style={{textAlign:"center",fontSize:11,color:C.muted,padding:"8px"}}>+{plan.length-30} more days planned</div>}
+      </div>
+    </>);
+  })());
+
+  // ══ CALC TRAINER SCREEN ══════════════════════════════════════════════════════
+  if(screen==="calcTrainer") return wrap((()=>{
+    const calcTopics=["Quantitative Methods","Fixed Income","Derivatives","Portfolio Management","Equity","Corporate Issuers"];
+    const generateCalcProblem=async()=>{
+      if(!apiKey){setCalcError("API key required for Calc Trainer.");return;}
+      setCalcLoading(true);setCalcError("");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});
+      try{
+        const result=await callClaude(`Generate a CFA Level 1 multi-step calculation problem for: ${calcTopic} (${calcDifficulty}).\n\nReturn JSON:\n{\n  "problem": "Full problem statement with all given data",\n  "steps": [\n    {"step_num": 1, "instruction": "Calculate X first", "answer": "exact numerical answer", "formula": "formula used", "explanation": "why this step"},\n    {"step_num": 2, "instruction": "...", "answer": "...", "formula": "...", "explanation": "..."}\n  ],\n  "final_answer": "final answer with units",\n  "concept": "what is being tested",\n  "los_tested": "relevant CFA LOS"\n}\n\nMake it 3-5 steps. Use realistic CFA exam numbers. Output ONLY valid JSON.`,1200,{retries:2,retryDelay:5000,model:"claude-haiku-4-5-20251001"});
+        if(result&&result.steps){setCalcProblem(result);setCalcSteps(result.steps||[]);}
+        else throw new Error("Invalid response format");
+      }catch(e){setCalcError("Failed to generate problem: "+e.message);}
+      setCalcLoading(false);
+    };
+    const checkStep=(stepIdx,answer,userInput)=>{
+      const clean=s=>s.replace(/[$%,\s]/g,"");
+      const user=parseFloat(clean(userInput));
+      const correct=parseFloat(clean(String(answer)));
+      const ok=!isNaN(user)&&!isNaN(correct)&&Math.abs((user-correct)/(correct||1))<=0.001;
+      setCalcChecked(c=>({...c,[stepIdx]:ok?"correct":"wrong"}));
+    };
+    return(<>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div><h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>🔢 Calc Trainer</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>Step-by-step calculation practice</div></div>
+        <button onClick={()=>{setScreen("home");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
+      </div>
+      {!calcProblem&&(
+        <>
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>Topic</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {calcTopics.map(t=>(
+                <button key={t} onClick={()=>setCalcTopic(t)} style={{padding:"6px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",border:calcTopic===t?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:calcTopic===t?C.accent+"22":C.surface,color:calcTopic===t?C.accentLight:C.muted}}>{t.split(" ")[0]}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>Difficulty</div>
+            <div style={{display:"flex",gap:8}}>
+              {["Easy","Medium","Hard"].map(d=>(
+                <button key={d} onClick={()=>setCalcDifficulty(d)} style={{flex:1,padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",border:calcDifficulty===d?`1.5px solid ${diffC[d]}`:`1.5px solid ${C.border}`,background:calcDifficulty===d?diffC[d]+"22":C.surface,color:calcDifficulty===d?diffC[d]:C.muted}}>{d}</button>
+              ))}
+            </div>
+          </div>
+          {calcError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:12}}>{calcError}</div>}
+          <button onClick={generateCalcProblem} disabled={calcLoading} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:calcLoading?C.dim:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:calcLoading?C.muted:"#fff",border:"none",cursor:calcLoading?"not-allowed":"pointer"}}>
+            {calcLoading?"Generating problem…":"Generate Problem →"}
+          </button>
+        </>
+      )}
+      {calcProblem&&(
+        <div style={{animation:"fadeIn 0.2s ease"}}>
+          <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:13,padding:"16px",marginBottom:16}}>
+            <div style={{fontSize:10,fontWeight:800,color:C.accentLight,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>Problem — {calcProblem.concept}</div>
+            <div style={{fontSize:13,color:C.text,lineHeight:1.7}}>{calcProblem.problem}</div>
+            {calcProblem.los_tested&&<div style={{fontSize:10,color:C.muted,marginTop:8}}>LOS: {calcProblem.los_tested}</div>}
+          </div>
+          {calcSteps.map((step,idx)=>(
+            <div key={idx} style={{background:C.surface,border:`1px solid ${calcChecked[idx]==="correct"?C.easy+"55":calcChecked[idx]==="wrong"?C.hard+"55":C.border}`,borderRadius:12,padding:"14px",marginBottom:10,transition:"border-color 0.2s"}}>
+              <div style={{fontSize:11,fontWeight:800,color:C.accentLight,marginBottom:6}}>Step {step.step_num}: {step.instruction}</div>
+              {step.formula&&<div style={{fontSize:11,color:C.muted,fontFamily:"monospace",marginBottom:8,background:C.dim,padding:"5px 9px",borderRadius:6}}>Formula: {step.formula}</div>}
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <input
+                  type="text"
+                  placeholder="Your answer…"
+                  value={calcInputs[idx]||""}
+                  onChange={e=>setCalcInputs(c=>({...c,[idx]:e.target.value}))}
+                  disabled={!!calcChecked[idx]}
+                  style={{flex:1,padding:"9px 12px",borderRadius:8,fontSize:13,background:C.dim,border:`1px solid ${C.border}`,color:C.text,outline:"none"}}
+                />
+                {!calcChecked[idx]?(
+                  <button onClick={()=>checkStep(idx,step.answer,calcInputs[idx]||"")} style={{padding:"9px 14px",borderRadius:8,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>Check</button>
+                ):(
+                  <span style={{fontSize:18,flexShrink:0}}>{calcChecked[idx]==="correct"?"✅":"❌"}</span>
+                )}
+              </div>
+              {calcChecked[idx]&&(
+                <div style={{marginTop:8,padding:"8px 10px",borderRadius:8,background:calcChecked[idx]==="correct"?C.successBg:C.errorBg,fontSize:12,color:calcChecked[idx]==="correct"?C.easy:"#fca5a5",lineHeight:1.5}}>
+                  {calcChecked[idx]==="correct"?"✓ Correct! ":"✗ Answer: "+step.answer+" | "}{step.explanation}
+                </div>
+              )}
+            </div>
+          ))}
+          {Object.keys(calcChecked).length===calcSteps.length&&calcSteps.length>0&&(
+            <div style={{background:C.surface,border:`1px solid ${C.easy}44`,borderRadius:12,padding:"14px",marginBottom:10,textAlign:"center"}}>
+              <div style={{fontSize:14,fontWeight:800,color:C.easy,marginBottom:4}}>Final Answer: {calcProblem.final_answer}</div>
+              <div style={{fontSize:12,color:C.muted}}>{Object.values(calcChecked).filter(v=>v==="correct").length}/{calcSteps.length} steps correct</div>
+            </div>
+          )}
+          <button onClick={()=>{setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");}} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+            ↺ New Problem
+          </button>
+        </div>
+      )}
+    </>);
+  })());
+
+  // ══ WALKTHROUGH SCREEN ═══════════════════════════════════════════════════════
+  if(screen==="walkthrough") return wrap((()=>{
+    const wtMods=Object.keys(LOS[walkthroughTopic]?.modules||{});
+    const activeWtMod=walkthroughModule||wtMods[0]||"";
+    return(<>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div><h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📖 Concept Walkthrough</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>AI mini-lesson before you drill</div></div>
+        <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
+      </div>
+      <div style={{marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:"0.05em",textTransform:"uppercase"}}>Topic</div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {Object.keys(LOS).map(t=>(
+            <button key={t} onClick={()=>{setWalkthroughTopic(t);setWalkthroughModule(Object.keys(LOS[t].modules||{})[0]||"");setWalkthroughText(null);}} style={{padding:"5px 11px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",border:walkthroughTopic===t?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:walkthroughTopic===t?C.accent+"22":C.surface,color:walkthroughTopic===t?C.accentLight:C.muted}}>{t.split(" ")[0]}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8,letterSpacing:"0.05em",textTransform:"uppercase"}}>Module</div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {wtMods.map(m=>(
+            <button key={m} onClick={()=>{setWalkthroughModule(m);setWalkthroughText(null);}} style={{padding:"5px 11px",borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",border:activeWtMod===m?`1.5px solid ${C.accentLight}`:`1.5px solid ${C.border}`,background:activeWtMod===m?C.accentLight+"18":C.surface,color:activeWtMod===m?C.accentLight:C.muted}}>{m}</button>
+          ))}
+        </div>
+      </div>
+      {walkthroughError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:12}}>{walkthroughError}</div>}
+      {!walkthroughText&&!walkthroughLoading&&(
+        <button onClick={async()=>{
+          if(!apiKey){setWalkthroughError("API key required for Concept Walkthrough.");return;}
+          setWalkthroughLoading(true);setWalkthroughError("");setWalkthroughText(null);
+          try{
+            const result=await callClaude(`You are a CFA Level 1 tutor. Create a concise concept walkthrough for: ${walkthroughTopic} → ${activeWtMod}\n\nStructure your response as:\n**Core Concept** (2 sentences explaining the big idea)\n**Key Rules** (3-4 bullet points of what you MUST know for the exam)\n**Worked Example** (one numerical or scenario-based example with the solution)\n**Exam Traps** (2 bullet points of common mistakes)\n\nBe specific to CFA L1 2026 curriculum. No padding.`,800,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001"});
+            setWalkthroughText(typeof result==="string"?result:JSON.stringify(result));
+          }catch(e){setWalkthroughError("Walkthrough failed: "+e.message);}
+          setWalkthroughLoading(false);
+        }} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}44`}}>
+          Generate Walkthrough →
+        </button>
+      )}
+      {walkthroughLoading&&<div style={{textAlign:"center",padding:"30px",color:C.muted,animation:"pulse 1.5s infinite"}}>Generating walkthrough…</div>}
+      {walkthroughText&&(
+        <div style={{animation:"fadeIn 0.2s ease"}}>
+          <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:13,padding:"16px",marginBottom:14,whiteSpace:"pre-wrap",fontSize:13,color:C.textMid,lineHeight:1.8}}>{walkthroughText}</div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>{setWalkthroughText(null);}} style={{flex:1,padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>↺ Regenerate</button>
+            <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(walkthroughTopic,activeWtMod,"Medium",5,"guided"),100);}} style={{flex:2,padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
+              Start Drilling →
+            </button>
+          </div>
+        </div>
+      )}
+    </>);
+  })());
+
   // ══ REVISION SCREEN ══════════════════════════════════════════════════════════
-  if(screen==="revision") return <RevisionScreen onBack={()=>setScreen("home")} initialTopic={revisionTopic} initialTab={revisionTab}/>;
+  if(screen==="revision") return <RevisionScreen onBack={()=>setScreen("home")} initialTopic={revisionTopic} initialTab={revisionTab} apiKey={apiKey}/>;
 
   return null;
 }
