@@ -201,7 +201,7 @@ async function storageHealth() {
 }
 
 // Supabase sync — saves entire data blob as one row
-async function supabaseSync(cfg, history, srDeck) {
+async function supabaseSync(cfg, history, srDeck, usageStats = {}) {
   if (!cfg || !cfg.url || !cfg.key) return false;
   try {
     const payload = {
@@ -210,6 +210,7 @@ async function supabaseSync(cfg, history, srDeck) {
         version: 3,
         history,
         srDeck,
+        usageStats,
         savedAt: new Date().toISOString()
       }),
       updated_at: new Date().toISOString()
@@ -3955,6 +3956,15 @@ function CFAMock() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [usageStats, setUsageStats] = useState({});
+  const usageStatsRef = useRef({});
+  const [omMode, setOmMode] = useState(false); // true when current session was started via Office Mode
+  const [omQCount, setOmQCount] = useState(() => {
+    try {
+      return parseInt(localStorage.getItem("cfa_om_count") || "5");
+    } catch {
+      return 5;
+    }
+  });
   const [weeklyPlan, setWeeklyPlan] = useState(null);
   const [weeklyPlanLoading, setWeeklyPlanLoading] = useState(false);
   const [weeklyPlanError, setWeeklyPlanError] = useState("");
@@ -4099,10 +4109,27 @@ function CFAMock() {
               srDeckRef.current = sbData.srDeck;
             }
           } else if (bestHistory.length > sbCount) {
-            // Local is ahead — push to Supabase in background so progress is safe
-            supabaseSync(sbCfg, bestHistory, bestSR || {}).catch(() => {});
+            // Local is ahead — push to Supabase in background
+            supabaseSync(sbCfg, bestHistory, bestSR || {}, usageStatsRef.current).catch(() => {});
           }
-          // Equal counts: no action needed (last session already synced)
+          // Merge usageStats from Supabase (take max count per key — union of all sessions)
+          if (sbData?.usageStats && typeof sbData.usageStats === "object") {
+            const local = usageStatsRef.current;
+            const merged = {};
+            const allKeys = new Set([...Object.keys(local), ...Object.keys(sbData.usageStats)]);
+            for (const k of allKeys) {
+              const lc = local[k]?.count || 0;
+              const sc = sbData.usageStats[k]?.count || 0;
+              merged[k] = {
+                count: Math.max(lc, sc),
+                lastUsed: lc >= sc ? local[k]?.lastUsed || "" : sbData.usageStats[k]?.lastUsed || "",
+                firstUsed: (local[k]?.firstUsed || "9") < (sbData.usageStats[k]?.firstUsed || "9") ? local[k]?.firstUsed : sbData.usageStats[k]?.firstUsed
+              };
+            }
+            setUsageStats(merged);
+            usageStatsRef.current = merged;
+            storageSet(USAGE_KEY, merged);
+          }
         } catch {}
       }
 
@@ -4210,6 +4237,9 @@ function CFAMock() {
   useEffect(() => {
     srDeckRef.current = srDeck;
   }, [srDeck]);
+  useEffect(() => {
+    usageStatsRef.current = usageStats;
+  }, [usageStats]);
   useEffect(() => {
     topicRef.current = topic;
   }, [topic]);
@@ -4327,7 +4357,10 @@ function CFAMock() {
       }),
       dateKey: new Date().toISOString().slice(0, 10),
       wrongCount: qs.filter(q => ans[q.id] !== q.answer).length,
-      wrongs: []
+      wrongs: [],
+      ...(omMode && {
+        isOfficeMode: true
+      })
     };
     setLastSession(session);
 
@@ -4352,7 +4385,7 @@ function CFAMock() {
       if (ok && apiKey) syncToDrive(newHistory.slice(0, 100));
       const sbCfg = getSupabaseConfig();
       if (sbCfg) {
-        const synced = await supabaseSync(sbCfg, newHistory.slice(0, 300), updatedSrDeck);
+        const synced = await supabaseSync(sbCfg, newHistory.slice(0, 300), updatedSrDeck, usageStatsRef.current);
         if (synced) setDriveStatus("synced");else setDriveStatus("error");
         setTimeout(() => setDriveStatus(null), 4000);
       }
@@ -4446,6 +4479,7 @@ function CFAMock() {
         }
       };
       storageSet(USAGE_KEY, updated);
+      usageStatsRef.current = updated;
       return updated;
     });
   };
@@ -4912,6 +4946,14 @@ Reply with just "saved" when done.`
   const totalXP = useMemo(() => getTotalXP(history), [history]);
   const levelInfo = useMemo(() => getLevel(totalXP), [totalXP]);
   const totalWrongs = useMemo(() => history.flatMap(h => Array.isArray(h.wrongs) ? h.wrongs : []).filter(w => w && w.question).length, [history]);
+
+  // Adaptive difficulty for Office Mode — derived from last 5 OM sessions
+  const adaptiveOmDifficulty = useMemo(() => {
+    const omSessions = history.filter(h => h.isOfficeMode).slice(0, 5);
+    if (!omSessions.length) return "Medium";
+    const avg = omSessions.reduce((s, h) => s + (h.pct || 0), 0) / omSessions.length;
+    return avg >= 80 ? "Hard" : avg >= 60 ? "Medium" : "Easy";
+  }, [history]);
   const wrap = (children, maxW = 580) => /*#__PURE__*/React.createElement("div", {
     style: {
       minHeight: "100vh",
@@ -5390,7 +5432,7 @@ Reply with just "saved" when done.`
       if (!supabaseCfg) return;
       setSupabaseSyncing(true);
       setDriveStatus("syncing");
-      const ok = await supabaseSync(supabaseCfg, history, srDeckRef.current);
+      const ok = await supabaseSync(supabaseCfg, history, srDeckRef.current, usageStatsRef.current);
       setDriveStatus(ok ? "synced" : "error");
       setTimeout(() => setDriveStatus(null), 4000);
       setSupabaseSyncing(false);
@@ -5428,7 +5470,7 @@ Reply with just "saved" when done.`
       color: C.muted,
       marginTop: 1
     }
-  }, supabaseCfg ? supabaseSyncing ? "Syncing…" : `${history.length} sessions · ${Object.keys(srDeckRef.current).length} SR cards${driveStatus === "synced" ? " · synced ✓" : driveStatus === "error" ? " · sync failed ✗" : " · tap to sync"}` : "Configure in quiz setup screen")), supabaseCfg && /*#__PURE__*/React.createElement("span", {
+  }, supabaseCfg ? supabaseSyncing ? "Syncing…" : `${history.length} sessions · ${Object.keys(srDeckRef.current).length} SR cards · ${Object.keys(usageStatsRef.current).length} usage events${driveStatus === "synced" ? " · synced ✓" : driveStatus === "error" ? " · sync failed ✗" : " · tap to sync"}` : "Configure in quiz setup screen")), supabaseCfg && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: driveStatus === "synced" ? C.easy : driveStatus === "error" ? C.hard : "#22d3ee",
@@ -6052,51 +6094,125 @@ Reply with just "saved" when done.`
       cursor: "pointer",
       boxShadow: `0 4px 12px ${C.accent}44`
     }
-  }, "Start ", s.count || 10, " Questions →"))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: `linear-gradient(135deg,${C.accent}18,${C.accent}08)`,
-      border: `1px solid ${C.accent}44`,
-      borderRadius: 14,
-      padding: "14px 16px",
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 800,
-      color: C.accentLight
-    }
-  }, "⚡ Office Mode"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.muted,
-      marginTop: 2
-    }
-  }, "5 questions · ~7 min · AI picks your weakest topic")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      trackUsage("office_mode");
-      const weak = moduleReadiness.filter(m => m.sessions === 0 && m.weight >= 9)[0] || moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy)[0] || moduleReadiness[0];
-      generateQuestions(weak.topic, weak.untouchedModules?.[0] || weak.modules[0], "Medium", 5, "guided");
-    },
-    style: {
-      fontSize: 14,
-      fontWeight: 800,
-      padding: "10px 20px",
-      borderRadius: 10,
-      background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
-      color: "#fff",
-      border: "none",
-      cursor: "pointer",
-      boxShadow: `0 4px 16px ${C.accent}55`,
-      flexShrink: 0
-    }
-  }, "Start →"))), /*#__PURE__*/React.createElement("div", {
+  }, "Start ", s.count || 10, " Questions →"))))), (() => {
+    const omSessions = history.filter(h => h.isOfficeMode);
+    const omStreak = (() => {
+      let s = 0,
+        d = new Date();
+      for (let i = 0; i < 30; i++) {
+        const k = new Date(d - i * 86400000).toISOString().slice(0, 10);
+        if (omSessions.some(h => h.dateKey === k)) s++;else if (i > 0) break;
+      }
+      return s;
+    })();
+    const diffColor = adaptiveOmDifficulty === "Hard" ? C.hard : adaptiveOmDifficulty === "Easy" ? C.easy : C.medium;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: `linear-gradient(135deg,${C.accent}18,${C.accent}08)`,
+        border: `1px solid ${C.accent}44`,
+        borderRadius: 14,
+        padding: "14px 16px",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 13,
+        fontWeight: 800,
+        color: C.accentLight
+      }
+    }, "⚡ Office Mode"), omStreak > 1 && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        background: C.reward + "22",
+        color: C.rewardLight,
+        padding: "2px 7px",
+        borderRadius: 5,
+        fontWeight: 700
+      }
+    }, "🔥 ", omStreak, "d streak")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginTop: 3
+      }
+    }, "AI picks your weakest topic · ", omQCount, " Qs · ~", omQCount * 1.5 | 0, " min", omSessions.length > 0 && /*#__PURE__*/React.createElement("span", {
+      style: {
+        marginLeft: 6,
+        color: diffColor,
+        fontWeight: 600
+      }
+    }, "· ", adaptiveOmDifficulty, " (your form)"))), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        trackUsage("office_mode");
+        setOmMode(true);
+        const weak = moduleReadiness.filter(m => m.sessions === 0 && m.weight >= 9)[0] || moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy)[0] || moduleReadiness[0];
+        generateQuestions(weak.topic, weak.untouchedModules?.[0] || weak.modules[0], adaptiveOmDifficulty, omQCount, "guided");
+      },
+      style: {
+        fontSize: 14,
+        fontWeight: 800,
+        padding: "10px 20px",
+        borderRadius: 10,
+        background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
+        color: "#fff",
+        border: "none",
+        cursor: "pointer",
+        boxShadow: `0 4px 16px ${C.accent}55`,
+        flexShrink: 0,
+        marginLeft: 10
+      }
+    }, "Start →")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6
+      }
+    }, [{
+      n: 3,
+      label: "3 Qs · ~5 min"
+    }, {
+      n: 5,
+      label: "5 Qs · ~8 min"
+    }, {
+      n: 10,
+      label: "10 Qs · ~15 min"
+    }].map(({
+      n,
+      label
+    }) => /*#__PURE__*/React.createElement("button", {
+      key: n,
+      onClick: () => {
+        setOmQCount(n);
+        try {
+          localStorage.setItem("cfa_om_count", String(n));
+        } catch {}
+      },
+      style: {
+        flex: 1,
+        padding: "6px 4px",
+        borderRadius: 8,
+        fontSize: 11,
+        fontWeight: 700,
+        background: omQCount === n ? C.accent + "33" : "transparent",
+        border: `1px solid ${omQCount === n ? C.accent + "88" : C.border}`,
+        color: omQCount === n ? C.accentLight : C.muted,
+        cursor: "pointer",
+        transition: "all 0.15s"
+      }
+    }, label))));
+  })(), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -8776,7 +8892,49 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         border: "none",
         cursor: "pointer"
       }
-    }, "Start PM Session (", window._cfaExamPMQs.length, " questions) →")), /*#__PURE__*/React.createElement("div", {
+    }, "Start PM Session (", window._cfaExamPMQs.length, " questions) →")), omMode && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: `linear-gradient(135deg,${C.accent}15,${C.accent}08)`,
+        border: `1px solid ${C.accent}44`,
+        borderRadius: 12,
+        padding: "13px 16px",
+        marginBottom: 10,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: C.accentLight
+      }
+    }, "⚡ Keep going?"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginTop: 2
+      }
+    }, omQCount, " more questions · next weakest topic")), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        trackUsage("office_mode");
+        const weak = moduleReadiness.filter(m => m.sessions === 0 && m.weight >= 9)[0] || moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy)[0] || moduleReadiness[0];
+        setOmMode(true);
+        generateQuestions(weak.topic, weak.untouchedModules?.[0] || weak.modules[0], adaptiveOmDifficulty, omQCount, "guided");
+      },
+      style: {
+        fontSize: 13,
+        fontWeight: 800,
+        padding: "9px 18px",
+        borderRadius: 9,
+        background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
+        color: "#fff",
+        border: "none",
+        cursor: "pointer",
+        boxShadow: `0 4px 12px ${C.accent}44`,
+        flexShrink: 0
+      }
+    }, omQCount, " More →")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 9,
@@ -8784,6 +8942,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       }
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => {
+        setOmMode(false);
         setAnswers({});
         setCurrentQ(0);
         setShowExp(false);
@@ -8802,7 +8961,10 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         cursor: "pointer"
       }
     }, "Retry"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setScreen("setup"),
+      onClick: () => {
+        setOmMode(false);
+        setScreen("setup");
+      },
       style: {
         flex: 2,
         padding: "12px",
@@ -10157,7 +10319,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         url: supabaseUrl.replace(/\/$/, ""),
         key: supabaseKey
       };
-      const ok = await supabaseSync(cfg, history, srDeckRef.current);
+      const ok = await supabaseSync(cfg, history, srDeckRef.current, usageStatsRef.current);
       if (ok) {
         localStorage.setItem("cfa_supabase_config", JSON.stringify(cfg));
         setSupabaseCfg(cfg);
@@ -10212,7 +10374,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     onClick: async () => {
       if (!supabaseCfg) return;
       setSupabaseSyncing(true);
-      const ok = await supabaseSync(supabaseCfg, history, srDeckRef.current);
+      const ok = await supabaseSync(supabaseCfg, history, srDeckRef.current, usageStatsRef.current);
       setDriveStatus(ok ? "synced" : "error");
       setTimeout(() => setDriveStatus(null), 4000);
       setSupabaseSyncing(false);

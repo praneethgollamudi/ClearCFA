@@ -140,12 +140,12 @@ async function storageHealth(){
 }
 
 // Supabase sync — saves entire data blob as one row
-async function supabaseSync(cfg, history, srDeck){
+async function supabaseSync(cfg, history, srDeck, usageStats={}){
   if(!cfg||!cfg.url||!cfg.key) return false;
   try{
     const payload={
       user_id:"default",
-      data:JSON.stringify({version:3,history,srDeck,savedAt:new Date().toISOString()}),
+      data:JSON.stringify({version:3,history,srDeck,usageStats,savedAt:new Date().toISOString()}),
       updated_at:new Date().toISOString()
     };
     // Upsert in one request — avoids GET+PATCH race and silent PATCH failures
@@ -2244,6 +2244,9 @@ function CFAMock(){
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [showMoreActions,setShowMoreActions]=useState(false);
   const [usageStats,setUsageStats]=useState({});
+  const usageStatsRef=useRef({});
+  const [omMode,setOmMode]=useState(false); // true when current session was started via Office Mode
+  const [omQCount,setOmQCount]=useState(()=>{try{return parseInt(localStorage.getItem("cfa_om_count")||"5");}catch{return 5;}});
   const [weeklyPlan,setWeeklyPlan]=useState(null);
   const [weeklyPlanLoading,setWeeklyPlanLoading]=useState(false);
   const [weeklyPlanError,setWeeklyPlanError]=useState("");
@@ -2352,10 +2355,27 @@ function CFAMock(){
             storageSet(STORAGE_KEY,bestHistory);
             if(sbData.srDeck){setSrDeck(sbData.srDeck);srDeckRef.current=sbData.srDeck;}
           } else if(bestHistory.length>sbCount){
-            // Local is ahead — push to Supabase in background so progress is safe
-            supabaseSync(sbCfg,bestHistory,bestSR||{}).catch(()=>{});
+            // Local is ahead — push to Supabase in background
+            supabaseSync(sbCfg,bestHistory,bestSR||{},usageStatsRef.current).catch(()=>{});
           }
-          // Equal counts: no action needed (last session already synced)
+          // Merge usageStats from Supabase (take max count per key — union of all sessions)
+          if(sbData?.usageStats&&typeof sbData.usageStats==="object"){
+            const local=usageStatsRef.current;
+            const merged={};
+            const allKeys=new Set([...Object.keys(local),...Object.keys(sbData.usageStats)]);
+            for(const k of allKeys){
+              const lc=local[k]?.count||0;
+              const sc=sbData.usageStats[k]?.count||0;
+              merged[k]={
+                count:Math.max(lc,sc),
+                lastUsed:lc>=sc?(local[k]?.lastUsed||""):(sbData.usageStats[k]?.lastUsed||""),
+                firstUsed:(local[k]?.firstUsed||"9")<(sbData.usageStats[k]?.firstUsed||"9")?local[k]?.firstUsed:sbData.usageStats[k]?.firstUsed
+              };
+            }
+            setUsageStats(merged);
+            usageStatsRef.current=merged;
+            storageSet(USAGE_KEY,merged);
+          }
         }catch{}
       }
 
@@ -2430,6 +2450,7 @@ function CFAMock(){
   useEffect(()=>{answersRef.current=answers;},[answers]);
   useEffect(()=>{flaggedQRef.current=flaggedQ;},[flaggedQ]);
   useEffect(()=>{srDeckRef.current=srDeck;},[srDeck]);
+  useEffect(()=>{usageStatsRef.current=usageStats;},[usageStats]);
   useEffect(()=>{topicRef.current=topic;},[topic]);
   useEffect(()=>{subtopicRef.current=subtopic;},[subtopic]);
   useEffect(()=>{difficultyRef.current=difficulty;},[difficulty]);
@@ -2502,6 +2523,7 @@ function CFAMock(){
       dateKey:new Date().toISOString().slice(0,10),
       wrongCount:qs.filter(q=>ans[q.id]!==q.answer).length,
       wrongs:[],
+      ...(omMode&&{isOfficeMode:true}),
     };
 
     setLastSession(session);
@@ -2522,7 +2544,7 @@ function CFAMock(){
       if(ok&&apiKey) syncToDrive(newHistory.slice(0,100));
       const sbCfg=getSupabaseConfig();
       if(sbCfg){
-        const synced=await supabaseSync(sbCfg,newHistory.slice(0,300),updatedSrDeck);
+        const synced=await supabaseSync(sbCfg,newHistory.slice(0,300),updatedSrDeck,usageStatsRef.current);
         if(synced) setDriveStatus("synced");
         else setDriveStatus("error");
         setTimeout(()=>setDriveStatus(null),4000);
@@ -2585,6 +2607,7 @@ function CFAMock(){
       const now=new Date().toISOString();
       const updated={...prev,[feature]:{count:(prev[feature]?.count||0)+1,lastUsed:now,firstUsed:prev[feature]?.firstUsed||now}};
       storageSet(USAGE_KEY,updated);
+      usageStatsRef.current=updated;
       return updated;
     });
   };
@@ -2870,6 +2893,14 @@ Reply with just "saved" when done.`}]
   const levelInfo=useMemo(()=>getLevel(totalXP),[totalXP]);
   const totalWrongs=useMemo(()=>history.flatMap(h=>Array.isArray(h.wrongs)?h.wrongs:[]).filter(w=>w&&w.question).length,[history]);
 
+  // Adaptive difficulty for Office Mode — derived from last 5 OM sessions
+  const adaptiveOmDifficulty=useMemo(()=>{
+    const omSessions=history.filter(h=>h.isOfficeMode).slice(0,5);
+    if(!omSessions.length) return "Medium";
+    const avg=omSessions.reduce((s,h)=>s+(h.pct||0),0)/omSessions.length;
+    return avg>=80?"Hard":avg>=60?"Medium":"Easy";
+  },[history]);
+
   const wrap=(children,maxW=580)=>(
     <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
       <div style={{maxWidth:maxW,width:"100%",animation:"fadeIn 0.2s ease"}}>{children}</div>
@@ -3032,7 +3063,7 @@ Reply with just "saved" when done.`}]
             if(!supabaseCfg)return;
             setSupabaseSyncing(true);
             setDriveStatus("syncing");
-            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current);
+            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current,usageStatsRef.current);
             setDriveStatus(ok?"synced":"error");
             setTimeout(()=>setDriveStatus(null),4000);
             setSupabaseSyncing(false);
@@ -3042,7 +3073,7 @@ Reply with just "saved" when done.`}]
               <div style={{fontSize:13,fontWeight:700}}>Supabase Cloud Sync</div>
               <div style={{fontSize:11,color:C.muted,marginTop:1}}>
                 {supabaseCfg
-                  ? (supabaseSyncing?"Syncing…":`${history.length} sessions · ${Object.keys(srDeckRef.current).length} SR cards${driveStatus==="synced"?" · synced ✓":driveStatus==="error"?" · sync failed ✗":" · tap to sync"}`)
+                  ? (supabaseSyncing?"Syncing…":`${history.length} sessions · ${Object.keys(srDeckRef.current).length} SR cards · ${Object.keys(usageStatsRef.current).length} usage events${driveStatus==="synced"?" · synced ✓":driveStatus==="error"?" · sync failed ✗":" · tap to sync"}`)
                   : "Configure in quiz setup screen"}
               </div>
             </div>
@@ -3235,24 +3266,46 @@ Reply with just "saved" when done.`}]
       )}
     </div>
 
-    {/* Office Mode — primary CTA, restored as most-used feature */}
-    <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div>
-          <div style={{fontSize:13,fontWeight:800,color:C.accentLight}}>⚡ Office Mode</div>
-          <div style={{fontSize:11,color:C.muted,marginTop:2}}>5 questions · ~7 min · AI picks your weakest topic</div>
+    {/* Office Mode — primary CTA */}
+    {(()=>{
+      const omSessions=history.filter(h=>h.isOfficeMode);
+      const omStreak=(()=>{let s=0,d=new Date();for(let i=0;i<30;i++){const k=new Date(d-i*86400000).toISOString().slice(0,10);if(omSessions.some(h=>h.dateKey===k))s++;else if(i>0)break;}return s;})();
+      const diffColor=adaptiveOmDifficulty==="Hard"?C.hard:adaptiveOmDifficulty==="Easy"?C.easy:C.medium;
+      return(
+        <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+            <div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:13,fontWeight:800,color:C.accentLight}}>⚡ Office Mode</span>
+                {omStreak>1&&<span style={{fontSize:10,background:C.reward+"22",color:C.rewardLight,padding:"2px 7px",borderRadius:5,fontWeight:700}}>🔥 {omStreak}d streak</span>}
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginTop:3}}>
+                AI picks your weakest topic · {omQCount} Qs · ~{omQCount*1.5|0} min
+                {omSessions.length>0&&<span style={{marginLeft:6,color:diffColor,fontWeight:600}}>· {adaptiveOmDifficulty} (your form)</span>}
+              </div>
+            </div>
+            <button onClick={()=>{
+              trackUsage("office_mode");
+              setOmMode(true);
+              const weak=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
+                ||moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
+                ||moduleReadiness[0];
+              generateQuestions(weak.topic,weak.untouchedModules?.[0]||weak.modules[0],adaptiveOmDifficulty,omQCount,"guided");
+            }} style={{fontSize:14,fontWeight:800,padding:"10px 20px",borderRadius:10,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}55`,flexShrink:0,marginLeft:10}}>
+              Start →
+            </button>
+          </div>
+          {/* Time selector */}
+          <div style={{display:"flex",gap:6}}>
+            {[{n:3,label:"3 Qs · ~5 min"},{n:5,label:"5 Qs · ~8 min"},{n:10,label:"10 Qs · ~15 min"}].map(({n,label})=>(
+              <button key={n} onClick={()=>{setOmQCount(n);try{localStorage.setItem("cfa_om_count",String(n));}catch{}}} style={{flex:1,padding:"6px 4px",borderRadius:8,fontSize:11,fontWeight:700,background:omQCount===n?C.accent+"33":"transparent",border:`1px solid ${omQCount===n?C.accent+"88":C.border}`,color:omQCount===n?C.accentLight:C.muted,cursor:"pointer",transition:"all 0.15s"}}>
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-        <button onClick={()=>{
-          trackUsage("office_mode");
-          const weak=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
-            ||moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
-            ||moduleReadiness[0];
-          generateQuestions(weak.topic,weak.untouchedModules?.[0]||weak.modules[0],"Medium",5,"guided");
-        }} style={{fontSize:14,fontWeight:800,padding:"10px 20px",borderRadius:10,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}55`,flexShrink:0}}>
-          Start →
-        </button>
-      </div>
-    </div>
+      );
+    })()}
 
     {/* Secondary actions row */}
     <div style={{display:"flex",gap:8,marginBottom:12}}>
@@ -3948,9 +4001,28 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         </div>
       )}
 
+      {/* Office Mode — Keep going prompt */}
+      {omMode&&(
+        <div style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"13px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>⚡ Keep going?</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{omQCount} more questions · next weakest topic</div>
+          </div>
+          <button onClick={()=>{
+            trackUsage("office_mode");
+            const weak=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
+              ||moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
+              ||moduleReadiness[0];
+            setOmMode(true);
+            generateQuestions(weak.topic,weak.untouchedModules?.[0]||weak.modules[0],adaptiveOmDifficulty,omQCount,"guided");
+          }} style={{fontSize:13,fontWeight:800,padding:"9px 18px",borderRadius:9,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`,flexShrink:0}}>
+            {omQCount} More →
+          </button>
+        </div>
+      )}
       <div style={{display:"flex",gap:9,marginBottom:9}}>
-        <button onClick={()=>{setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setScreen("quiz");}} style={{flex:1,padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Retry</button>
-        <button onClick={()=>setScreen("setup")} style={{flex:2,padding:"12px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>New Mock →</button>
+        <button onClick={()=>{setOmMode(false);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setScreen("quiz");}} style={{flex:1,padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Retry</button>
+        <button onClick={()=>{setOmMode(false);setScreen("setup");}} style={{flex:2,padding:"12px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>New Mock →</button>
       </div>
       {wrongs.length>0&&(
         <button onClick={()=>{
@@ -4280,7 +4352,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           if(!supabaseUrl||!supabaseKey){return;}
           setSupabaseSyncing(true);
           const cfg={url:supabaseUrl.replace(/\/$/,""),key:supabaseKey};
-          const ok=await supabaseSync(cfg,history,srDeckRef.current);
+          const ok=await supabaseSync(cfg,history,srDeckRef.current,usageStatsRef.current);
           if(ok){
             localStorage.setItem("cfa_supabase_config",JSON.stringify(cfg));
             setSupabaseCfg(cfg);
@@ -4306,7 +4378,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           <button onClick={async()=>{
             if(!supabaseCfg)return;
             setSupabaseSyncing(true);
-            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current);
+            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current,usageStatsRef.current);
             setDriveStatus(ok?"synced":"error");
             setTimeout(()=>setDriveStatus(null),4000);
             setSupabaseSyncing(false);
