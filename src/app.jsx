@@ -2595,7 +2595,8 @@ function CFAMock(){
         // Regex-extract the outermost JSON array or object (handles extra text before/after)
         const arrM=raw.match(/\[[\s\S]*\]/); if(arrM){try{return JSON.parse(arrM[0]);}catch{}}
         const objM=raw.match(/\{[\s\S]*\}/); if(objM){try{return JSON.parse(objM[0]);}catch{}}
-        throw new Error(`JSON parse failed. Raw: ${raw.slice(0,500)}`);
+        // Not JSON — return raw string (plain text responses: debrief, AI coach, etc.)
+        return raw;
       }catch(e){
         clearTimeout(timeout);
         if(e.name==="AbortError"){lastError=new Error("Timed out — API is slow, try again.");continue;}
@@ -2996,7 +2997,7 @@ Reply with just "saved" when done.`}]
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass probability ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest modules: ${topWeak||"none yet"}, untouched: ${untouched||"none"}, SR due: ${dueCards.length}, leeches: ${leeches.length}.`;
               const sysPrompt=`You are a direct, honest CFA Level 1 study coach. ${context} Give specific, actionable advice in 2-4 sentences. No generic motivational fluff.`;
               const result=await callClaude(`${sysPrompt}\n\nStudent: ${prompt}`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000});
-              const text=result?.content?.[0]?.text||result||"No response";
+              const text=(typeof result==="string"?result:"")||"No response";
               setAiCoachMessages(m=>[...m,{role:"assistant",text}]);
             }catch(e){setAiCoachMessages(m=>[...m,{role:"assistant",text:"Error: "+e.message}]);}
             setAiCoachLoading(false);
@@ -3034,7 +3035,7 @@ Reply with just "saved" when done.`}]
               const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3).map(m=>`${m.topic}: ${m.accuracy}%`).join(", ");
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass prob ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest: ${topWeak||"none"}.`;
               const result=await callClaude(`You are a direct CFA L1 coach. ${context}\n\nStudent: ${q}`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000});
-              setAiCoachMessages(m=>[...m,{role:"assistant",text:result?.content?.[0]?.text||result||"No response"}]);
+              setAiCoachMessages(m=>[...m,{role:"assistant",text:(typeof result==="string"?result:"")||"No response"}]);
             }catch(e){setAiCoachMessages(m=>[...m,{role:"assistant",text:"Error: "+e.message}]);}
             setAiCoachLoading(false);
           }}}
@@ -3961,8 +3962,8 @@ Wrong answers:
 ${wrongSummary}
 
 Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to do next, (3) one honest motivational sentence. Be direct and specific, not generic. No markdown.`;
-                const result=await callClaude(prompt,200,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000});
-                setAiDebrief(result?.content?.[0]?.text||result);
+                const result=await callClaude(prompt,400,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000});
+                setAiDebrief(typeof result==="string"?result:JSON.stringify(result));
               }catch(e){setAiDebrief("Could not load debrief — check API key.");}
               setAiDebriefLoading(false);
             }} style={{fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:7,background:"#22d3ee22",border:"1px solid #22d3ee44",color:"#22d3ee",cursor:"pointer"}}>

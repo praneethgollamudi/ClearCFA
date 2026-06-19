@@ -4467,7 +4467,8 @@ function CFAMock() {
             return JSON.parse(objM[0]);
           } catch {}
         }
-        throw new Error(`JSON parse failed. Raw: ${raw.slice(0, 500)}`);
+        // Not JSON — return raw string (plain text responses: debrief, AI coach, etc.)
+        return raw;
       } catch (e) {
         clearTimeout(timeout);
         if (e.name === "AbortError") {
@@ -5212,7 +5213,7 @@ Reply with just "saved" when done.`
           retries: 1,
           retryDelay: 2000
         });
-        const text = result?.content?.[0]?.text || result || "No response";
+        const text = (typeof result === "string" ? result : "") || "No response";
         setAiCoachMessages(m => [...m, {
           role: "assistant",
           text
@@ -5312,7 +5313,7 @@ Reply with just "saved" when done.`
           });
           setAiCoachMessages(m => [...m, {
             role: "assistant",
-            text: result?.content?.[0]?.text || result || "No response"
+            text: (typeof result === "string" ? result : "") || "No response"
           }]);
         } catch (e) {
           setAiCoachMessages(m => [...m, {
@@ -8742,12 +8743,12 @@ Wrong answers:
 ${wrongSummary}
 
 Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to do next, (3) one honest motivational sentence. Be direct and specific, not generic. No markdown.`;
-          const result = await callClaude(prompt, 200, {
+          const result = await callClaude(prompt, 400, {
             model: "claude-haiku-4-5-20251001",
             retries: 1,
             retryDelay: 2000
           });
-          setAiDebrief(result?.content?.[0]?.text || result);
+          setAiDebrief(typeof result === "string" ? result : JSON.stringify(result));
         } catch (e) {
           setAiDebrief("Could not load debrief — check API key.");
         }
