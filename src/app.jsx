@@ -2979,6 +2979,7 @@ Reply with just "saved" when done.`}]
     setLoading(false);setLoadingProgress(0);generatingRef.current=false;
   };
 
+  const generateQuestionsRef=React.useRef(null);
   const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
     setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
@@ -3062,6 +3063,7 @@ Reply with just "saved" when done.`}]
     }
     clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
   };
+  generateQuestionsRef.current=generateQuestions;
 
   const startFullExam=async(sessionNum=1)=>{
     setLoading(true);setError("");
@@ -3580,8 +3582,8 @@ Reply with just "saved" when done.`}]
           setTimeout(()=>{
             setLuckyDipSpinning(false);
             const mods=Object.keys(LOS[t].modules||{});
-            const m=mods[Math.floor(Math.random()*mods.length)];
-            generateQuestions(t,m,"Medium",10,"guided");
+            const m=mods[Math.floor(Math.random()*mods.length)]||Object.keys(LOS[t].modules||{})[0];
+            if(generateQuestionsRef.current) generateQuestionsRef.current(t,m,"Medium",10,"guided");
           },600);
         }
       };
