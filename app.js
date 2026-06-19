@@ -2572,37 +2572,45 @@ const Q_TEMPLATES = {
   () => {
     const name = pname();
     const gift = rnd(150, 500);
-    const threshold = 100;
     return {
-      question: `${name}, CFA, is offered a gift worth $${gift} from a client whose portfolio she manages, as a thank-you for strong performance. She has NOT yet notified her employer. What should she do?`,
+      question: `${name}, CFA, is offered a gift worth $${gift} from a client whose portfolio she manages, as a thank-you for strong performance. She has NOT yet obtained written permission from her employer. What is the MOST appropriate action?`,
       options: {
-        A: `Accept the gift since it is a gesture of appreciation, not a bribe`,
-        B: `Decline the gift as it exceeds the $${threshold} threshold and she has not obtained employer permission`,
-        C: `Accept the gift but disclose it to her employer within 30 days`
+        A: `Accept the gift — it is a gesture of appreciation and does not impair independence`,
+        B: `Disclose the gift to her employer after accepting, since the intent was not improper`,
+        C: `Decline the gift until she has disclosed it and received written permission from her employer`
       },
-      answer: "B",
-      explanation: `Standard I-B requires written permission from employer before accepting gifts above $${threshold} from clients. Accepting first and disclosing later is not compliant. She must disclose and get approval BEFORE accepting.`,
+      answer: "C",
+      explanation: `Standard I-B (Independence and Objectivity) requires members to obtain written permission from their employer BEFORE accepting gifts from clients or other parties that could reasonably be expected to create a conflict of interest. The CFA Standards set no specific dollar threshold — any gift that could impair independence requires pre-approval. Accepting first and disclosing later is not compliant.`,
       concept: "Standard I-B",
       los_tested: "demonstrate application of Standard I-B: Independence and Objectivity",
-      misconception_targeted: "thinking disclosure after the fact is sufficient"
+      misconception_targeted: "thinking post-facto disclosure is sufficient, or that small gifts require no approval"
     };
   },
   // Standard II-A Material Nonpublic
   () => {
     const name = pname();
-    const info = pick(["overheard a conversation between two executives about an unannounced merger", "read an analyst report based on publicly available data", "received a tip from a friend who works at the company"]);
+    const scenario = pick([{
+      info: "overheard two executives at a restaurant discussing an unannounced acquisition at a premium",
+      action: "purchases shares of the target company for client accounts before any announcement"
+    }, {
+      info: "received a call from a company's investor relations officer hinting that next week's earnings will significantly exceed analyst estimates",
+      action: "adds to client positions in the company the same afternoon"
+    }, {
+      info: "works in a company's legal department and knows about a pending government contract that has not been disclosed",
+      action: "tips off a friend who then buys shares"
+    }]);
     return {
-      question: `${name}, CFA, ${info} suggesting the company's stock will rise significantly. She buys shares for client accounts before the information becomes public. Which Standard is MOST likely violated?`,
+      question: `${name}, CFA, ${scenario.info}. She then ${scenario.action}. Which Standard is MOST likely violated?`,
       options: {
-        A: `Standard I-C: Misrepresentation`,
-        B: `Standard II-A: Material Nonpublic Information`,
-        C: `Standard III-A: Loyalty, Prudence and Care`
+        A: `Standard I-C: Misrepresentation — the information was obtained deceptively`,
+        B: `Standard II-A: Material Nonpublic Information — trading on or tipping non-public, price-sensitive information`,
+        C: `Standard III-B: Fair Dealing — she did not offer the opportunity to all clients equally`
       },
       answer: "B",
-      explanation: `Standard II-A prohibits trading on material nonpublic information. Information is material if it would affect a reasonable investor's decision. Acting on this before public release violates this Standard.`,
+      explanation: `Standard II-A prohibits members from acting or causing others to act on material nonpublic information. Information is material if a reasonable investor would consider it important in making an investment decision. It is nonpublic until it has been disseminated broadly to the marketplace. Both trading on and tipping such information are violations.`,
       concept: "Standard II-A",
       los_tested: "demonstrate application of Standard II-A: Material Nonpublic Information",
-      misconception_targeted: "confusing duties to clients with market integrity standards"
+      misconception_targeted: "confusing market integrity standards with duties to clients"
     };
   },
   // Standard III-C Suitability
@@ -2641,13 +2649,49 @@ const Q_TEMPLATES = {
       misconception_targeted: "thinking simultaneous execution satisfies priority requirements"
     };
   },
-  // ── Real CFA Institute case studies (via getEthicsCases) ──
+  // Standard V-A Diligence and Reasonable Basis
   () => {
-    const cases = getEthicsCases("all", 1);
-    return cases.length ? cases[0] : null;
-  }, () => {
-    const cases = getEthicsCases("all", 1);
-    return cases.length ? cases[0] : null;
+    const name = pname();
+    const scenario = pick([{
+      act: "relies solely on a single sell-side analyst's report without conducting any independent analysis",
+      issue: "relying on a single third-party source without verifying the underlying reasoning"
+    }, {
+      act: "issues a 'Buy' recommendation based on a quantitative screen without reviewing the company's financial statements or business model",
+      issue: "using a mechanical screen as a substitute for diligence"
+    }, {
+      act: "recommends a complex structured product to clients after attending only a 30-minute sales presentation by the issuer",
+      issue: "insufficient understanding of a complex product before recommending it"
+    }]);
+    return {
+      question: `${name}, CFA, ${scenario.act}. Which Standard is MOST likely violated?`,
+      options: {
+        A: `Standard V-A: Diligence and Reasonable Basis — she did not have an adequate basis for the recommendation`,
+        B: `Standard III-C: Suitability — the investment may not suit all clients`,
+        C: `Standard VI-A: Disclosure of Conflicts — she should have disclosed her reliance on third parties`
+      },
+      answer: "A",
+      explanation: `Standard V-A requires members to have a reasonable and adequate basis for all investment recommendations, supported by appropriate diligence. The violation here is ${scenario.issue}. Members may rely on third-party research but must assess whether that research has a sound basis. Failing to do so before making a recommendation violates V-A.`,
+      concept: "Standard V-A",
+      los_tested: "demonstrate application of Standard V-A: Diligence and Reasonable Basis",
+      misconception_targeted: "assuming reliance on external research automatically satisfies diligence requirements"
+    };
+  },
+  // GIPS Standards
+  () => {
+    const name = pname();
+    return {
+      question: `A firm claims GIPS compliance in its marketing materials. According to the Global Investment Performance Standards, which of the following is REQUIRED?`,
+      options: {
+        A: `All portfolios managed by the firm must be included in at least one composite`,
+        B: `The firm must obtain third-party verification to claim compliance`,
+        C: `Performance must be calculated using a time-weighted return for all periods`
+      },
+      answer: "A",
+      explanation: `GIPS requires that all actual, fee-paying, discretionary portfolios must be included in at least one composite — firms cannot cherry-pick their best portfolios. Verification is recommended but not required to claim compliance. GIPS requires time-weighted returns for composites but the specific calculation method may vary. The key anti-cherry-picking rule (all discretionary portfolios in a composite) is a cornerstone of GIPS.`,
+      concept: "GIPS",
+      los_tested: "explain the purpose of the GIPS standards and how they are implemented",
+      misconception_targeted: "believing GIPS verification is mandatory, or that firms can select which portfolios to include"
+    };
   },
   // Standard VII-B CFA Designation
   () => {
@@ -2668,6 +2712,30 @@ const Q_TEMPLATES = {
     };
   }],
   "Quantitative Methods": [
+  // Confidence interval
+  () => {
+    const mu = rnd(8, 15);
+    const se = parseFloat(rnd(10, 30) / 10).toFixed(1);
+    const z = pick([1.645, 1.96, 2.576]);
+    const conf = z === 1.645 ? "90%" : z === 1.96 ? "95%" : "99%";
+    const lo = parseFloat(mu - z * parseFloat(se)).toFixed(2);
+    const hi = parseFloat(mu + z * parseFloat(se)).toFixed(2);
+    const wrongLo = parseFloat(mu - parseFloat(se)).toFixed(2);
+    const wrongHi = parseFloat(mu + parseFloat(se)).toFixed(2);
+    return {
+      question: `A sample of equity returns has a mean of ${mu}% and a standard error of ${se}%. What is the ${conf} confidence interval for the population mean?`,
+      options: {
+        A: `[${lo}%, ${hi}%]`,
+        B: `[${wrongLo}%, ${wrongHi}%] (uses ±1 SE, not the correct z-score)`,
+        C: `[${parseFloat(mu - 2 * parseFloat(se)).toFixed(2)}%, ${parseFloat(mu + 2 * parseFloat(se)).toFixed(2)}%] (uses z=2 regardless of confidence level)`
+      },
+      answer: "A",
+      explanation: `${conf} CI = x̄ ± z × SE = ${mu}% ± ${z} × ${se}% = [${lo}%, ${hi}%]. Critical z-values: 90% → 1.645, 95% → 1.96, 99% → 2.576. The CI means: if we repeated this sampling process many times, ${conf} of the resulting intervals would contain the true population mean.`,
+      concept: "Confidence Intervals",
+      los_tested: "explain the construction and interpretation of confidence intervals",
+      misconception_targeted: "using the wrong z-score for a given confidence level"
+    };
+  },
   // EAR calculation
   () => {
     const r = rnd(4, 12);
@@ -2983,23 +3051,23 @@ const Q_TEMPLATES = {
   // Duration price sensitivity
   () => {
     const md = parseFloat(rnd(40, 90) / 10).toFixed(1);
-    const dy = parseFloat(rnd(20, 80) / 100).toFixed(2);
+    const dy = parseFloat(rnd(25, 75) / 100).toFixed(2);
     const price = rnd(95, 105);
-    const dp = parseFloat(-parseFloat(md) * parseFloat(dy) / 100 * price).toFixed(3);
-    const wrong1 = parseFloat(parseFloat(md) * parseFloat(dy) / 100 * price).toFixed(3);
-    const wrong2 = parseFloat(-parseFloat(md) * parseFloat(dy) * price).toFixed(3);
+    const dp = parseFloat(-parseFloat(md) * parseFloat(dy) / 100 * price).toFixed(2);
+    const wrong1 = parseFloat(parseFloat(md) * parseFloat(dy) / 100 * price).toFixed(2);
+    const wrong2 = parseFloat(-parseFloat(md) * parseFloat(dy) * price / 10).toFixed(2);
     return {
-      question: `A bond has a modified duration of ${md} and is priced at $${price}. If yields rise by ${dy}%, what is the approximate price change?`,
+      question: `A bond has a modified duration of ${md} and a full price of $${price}. If the yield-to-maturity rises by ${dy}%, what is the approximate change in full price?`,
       options: {
         A: `$${dp}`,
-        B: `$${wrong1} (positive — price rises with yields)`,
-        C: `$${wrong2} (incorrect scaling)`
+        B: `+$${wrong1} (price rises when yields rise)`,
+        C: `$${wrong2} (yield change not converted to decimal)`
       },
       answer: "A",
-      explanation: `ΔP ≈ −ModDuration × Δy × Price = −${md} × ${parseFloat(dy) / 100} × $${price} = $${dp}. The negative sign reflects the inverse price-yield relationship. A ${dy}% yield rise causes approximately a $${Math.abs(parseFloat(dp))} price decline.`,
-      concept: "Modified Duration",
+      explanation: `ΔPrice ≈ −ModDuration × Δy × Price = −${md} × ${(parseFloat(dy) / 100).toFixed(4)} × $${price} ≈ $${dp}. The negative sign captures the inverse price-yield relationship. This approximation improves with convexity adjustment for large yield moves.`,
+      concept: "Modified Duration Price Change",
       los_tested: "define calculate and interpret modified duration money duration and the price value of a basis point",
-      misconception_targeted: "forgetting the negative sign in the duration price change formula"
+      misconception_targeted: "forgetting the negative sign or not converting yield change to decimal"
     };
   },
   // Macaulay vs Modified Duration
@@ -3014,14 +3082,14 @@ const Q_TEMPLATES = {
       question: `A bond has a Macaulay duration of ${mac} years and a yield-to-maturity of ${y}% compounded ${m === 1 ? "annually" : "semi-annually"}. What is its modified duration?`,
       options: {
         A: `${mod} years`,
-        B: `${wrong1} years (same as Macaulay)`,
-        C: `${wrong2} years`
+        B: `${wrong1} years (same as Macaulay — no adjustment needed)`,
+        C: `${wrong2} years (multiplied instead of divided)`
       },
       answer: "A",
-      explanation: `Modified Duration = Macaulay Duration / (1 + y/m) = ${mac} / (1 + ${y}%/${m}) = ${mod}. Modified duration always < Macaulay duration. It directly measures the % price change for a 1% change in yield.`,
-      concept: "Modified Duration",
-      los_tested: "define calculate and interpret Macaulay duration",
-      misconception_targeted: "confusing Macaulay and modified duration or treating them as equal"
+      explanation: `Modified Duration = Macaulay Duration / (1 + y/m) = ${mac} / (1 + ${y}%/${m}) = ${mod} years. Modified duration is always slightly less than Macaulay duration. It directly estimates the percentage price change for a 1% change in yield: %ΔP ≈ −ModDur × Δy.`,
+      concept: "Macaulay vs Modified Duration",
+      los_tested: "define calculate and interpret Macaulay duration and modified duration",
+      misconception_targeted: "treating Macaulay and modified duration as equal"
     };
   },
   // Coupon and duration relationship
@@ -3030,17 +3098,101 @@ const Q_TEMPLATES = {
       c2 = rnd(8, 12);
     const mat = rnd(5, 15);
     return {
-      question: `Two bonds have identical maturities of ${mat} years and the same yield-to-maturity. Bond A has a coupon of ${c1}% and Bond B has a coupon of ${c2}%. Which bond has higher interest rate risk?`,
+      question: `Two bonds have identical maturities of ${mat} years and the same yield-to-maturity. Bond A has a coupon of ${c1}% and Bond B has a coupon of ${c2}%. Which bond has higher interest rate risk, and why?`,
       options: {
-        A: `Bond A (${c1}% coupon) — lower coupon means higher duration`,
-        B: `Bond B (${c2}% coupon) — higher coupon means more cash flows to be discounted`,
-        C: `Both bonds have identical interest rate risk since maturity and yield are the same`
+        A: `Bond A — lower coupon means a higher proportion of value comes from the par payment at maturity, so duration and price sensitivity are higher`,
+        B: `Bond B — higher coupon rate means higher cash flows, so more to lose if yields rise`,
+        C: `Both bonds have identical interest rate risk because they have the same maturity and YTM`
       },
       answer: "A",
-      explanation: `Lower coupon → higher duration → higher price sensitivity to yield changes. Bond A (${c1}% coupon) returns less cash earlier, so the weighted average time to receive cash flows (duration) is longer. Bond B's higher coupons reduce its duration despite identical maturity.`,
-      concept: "Coupon and Duration",
+      explanation: `Lower coupon → less cash returned early → longer weighted average time to cash flows → higher Macaulay and modified duration → greater price sensitivity to yield changes. Bond A (${c1}% coupon) has a longer duration than Bond B (${c2}% coupon) despite identical maturity. In the extreme, a zero-coupon bond has the highest duration equal to its maturity.`,
+      concept: "Coupon Rate and Duration",
       los_tested: "explain how a bond's maturity coupon and yield level affect its interest rate risk",
-      misconception_targeted: "ignoring coupon rate's effect on duration when maturity is equal"
+      misconception_targeted: "assuming equal maturity means equal interest rate risk"
+    };
+  },
+  // YTM vs coupon rate and price
+  () => {
+    const par = 1000;
+    const coup = rnd(4, 8);
+    const ytm = rnd(3, 10);
+    const relation = ytm < coup ? "above par (premium bond)" : ytm > coup ? "below par (discount bond)" : "at par";
+    const logic = ytm < coup ? `YTM (${ytm}%) < coupon rate (${coup}%) — investors accept a lower yield, so they bid the price above par` : ytm > coup ? `YTM (${ytm}%) > coupon rate (${coup}%) — investors require a higher yield, so they pay less than par` : `YTM equals coupon rate — the bond is priced exactly at par`;
+    const wrong1 = ytm < coup ? "below par (discount bond)" : "above par (premium bond)";
+    const wrong2 = "at par regardless of coupon and yield";
+    return {
+      question: `A bond has a ${coup}% annual coupon rate and a yield-to-maturity of ${ytm}%. Assuming annual coupon payments, the bond is priced:`,
+      options: {
+        A: relation,
+        B: wrong1,
+        C: wrong2
+      },
+      answer: "A",
+      explanation: `${logic}. Key rule: If YTM > coupon rate → discount bond (price < par). If YTM < coupon rate → premium bond (price > par). If YTM = coupon rate → par bond (price = par). This relationship holds for all conventional bonds.`,
+      concept: "Bond Price YTM Coupon Relationship",
+      los_tested: "describe relationships among a bond's price coupon rate maturity and yield-to-maturity",
+      misconception_targeted: "inverting the direction of the price-yield relationship relative to coupon rate"
+    };
+  },
+  // Credit spreads
+  () => {
+    const govt = parseFloat(rnd(20, 50) / 10).toFixed(1);
+    const corp = parseFloat(parseFloat(rnd(20, 50) / 10) + rnd(10, 40) / 10).toFixed(1);
+    const spread = parseFloat(parseFloat(corp) - parseFloat(govt)).toFixed(1);
+    const spreadBps = Math.round(parseFloat(spread) * 100);
+    return {
+      question: `A government bond yields ${govt}% and a comparable-maturity corporate bond yields ${corp}%. The credit spread (G-spread) is ${spreadBps} bps. If the credit spread widens by 50 bps and the corporate bond has a modified duration of 5 years, what is the approximate price impact?`,
+      options: {
+        A: `−${(5 * 0.50).toFixed(2)}% (price falls as spreads widen)`,
+        B: `+${(5 * 0.50).toFixed(2)}% (price rises as spreads widen)`,
+        C: `No change — credit spread changes affect yield but not price`
+      },
+      answer: "A",
+      explanation: `Credit spread widening raises the bond's YTM. Using duration: %ΔP ≈ −ModDur × ΔSpread = −5 × 0.50% = −${(5 * 0.50).toFixed(2)}%. Wider spreads = higher required yield = lower price. Credit spread = compensation for credit risk, liquidity risk, and taxation. G-spread = corporate YTM − government YTM for the same maturity.`,
+      concept: "Credit Spreads",
+      los_tested: "define spread measures and explain how they are used to value a bond",
+      misconception_targeted: "not applying duration to spread changes, or reversing the price direction"
+    };
+  },
+  // Callable vs straight bond
+  () => {
+    const y = rnd(5, 9);
+    const coup = rnd(6, 10);
+    return {
+      question: `A callable bond and an otherwise identical straight (non-callable) bond both have a ${coup}% coupon. As interest rates fall significantly below the coupon rate, how does the price of the callable bond compare to the straight bond?`,
+      options: {
+        A: `The callable bond's price rises less than the straight bond's price — price compression occurs as the call option becomes more valuable to the issuer`,
+        B: `The callable bond's price rises more than the straight bond's price — investors demand higher yields on the callable bond`,
+        C: `Both bonds rise identically in price since they have the same coupon and maturity`
+      },
+      answer: "A",
+      explanation: `Callable bond price = Straight bond price − Value of call option. As rates fall, the call option becomes more valuable to the issuer (likely to be exercised), capping the callable bond's price appreciation. This is called negative convexity or price compression. The callable bond will lag the straight bond in price appreciation when rates fall significantly below the coupon rate.`,
+      concept: "Callable Bond Negative Convexity",
+      los_tested: "describe how the presence of embedded options changes the features of fixed-income securities",
+      misconception_targeted: "assuming callable and straight bonds behave identically when rates fall below coupon"
+    };
+  },
+  // Accrued interest / full vs flat price
+  () => {
+    const coup = rnd(4, 8);
+    const par = 1000;
+    const days = rnd(30, 150);
+    const period = 180;
+    const accrued = parseFloat(coup / 100 * par / 2 * days / period).toFixed(2);
+    const flat = parseFloat(rnd(950, 1050) + Math.random() * 10).toFixed(2);
+    const full = parseFloat(parseFloat(flat) + parseFloat(accrued)).toFixed(2);
+    return {
+      question: `A bond with a ${coup}% semi-annual coupon (par $${par}) has a flat (clean) price of $${flat}. The bond is ${days} days into a ${period}-day coupon period. What is the full (dirty) price?`,
+      options: {
+        A: `$${full}`,
+        B: `$${flat} — flat price is the actual settlement price`,
+        C: `$${parseFloat(parseFloat(flat) - parseFloat(accrued)).toFixed(2)} — subtract accrued interest`
+      },
+      answer: "A",
+      explanation: `Full (dirty) price = Flat (clean) price + Accrued Interest. Accrued interest = (Coupon / 2) × (Days since last coupon / Days in period) = ($${coup / 100 * par / 2}) × (${days}/${period}) = $${accrued}. Full price = $${flat} + $${accrued} = $${full}. Bond quotes use the flat price, but settlement occurs at the full price. The buyer compensates the seller for accrued interest.`,
+      concept: "Full Price vs Flat Price",
+      los_tested: "calculate and interpret the full price of a bond given the flat price",
+      misconception_targeted: "using the flat price as the settlement price or subtracting accrued interest"
     };
   }],
   "Equity": [
@@ -3054,69 +3206,167 @@ const Q_TEMPLATES = {
     const wrong1 = parseFloat(parseFloat(d0) / (r / 100 - g / 100)).toFixed(2);
     const wrong2 = parseFloat(parseFloat(d1) / (r / 100 + g / 100)).toFixed(2);
     return {
-      question: `A stock just paid a dividend of $${d0} per share. The dividend is expected to grow at ${g}% per year indefinitely. The required return is ${r}%. What is the intrinsic value per share?`,
+      question: `A stock just paid a dividend of $${d0} per share (D₀). Dividends are expected to grow at ${g}% per year indefinitely. The required return is ${r}%. What is the intrinsic value per share?`,
       options: {
         A: `$${v}`,
         B: `$${wrong1} (uses D₀ instead of D₁)`,
-        C: `$${wrong2} (adds g instead of subtracting)`
+        C: `$${wrong2} (adds g to required return instead of subtracting)`
       },
       answer: "A",
-      explanation: `Gordon Growth Model: V = D₁/(r−g). D₁ = D₀×(1+g) = $${d0}×(1+${g}%) = $${d1}. V = $${d1}/(${r}%−${g}%) = $${v}. Always use next period's dividend (D₁), not the just-paid dividend (D₀).`,
+      explanation: `Gordon Growth Model (GGM): V₀ = D₁/(r−g). D₁ = D₀×(1+g) = $${d0}×${1 + g / 100} = $${d1}. V₀ = $${d1}/(${r}%−${g}%) = $${v}. Always use next period's dividend D₁. Using D₀ ($${wrong1}) understates value by a factor of (1+g).`,
       concept: "Gordon Growth Model",
       los_tested: "calculate and interpret the intrinsic value of an equity security based on the Gordon growth dividend discount model",
       misconception_targeted: "using D₀ instead of D₁ in the Gordon Growth Model"
     };
   },
-  // P/E and growth
+  // Justified trailing P/E
   () => {
     const pout = rnd(30, 60);
     const r = rnd(9, 13);
     const g = rnd(3, 6);
-    const pe = parseFloat(pout / 100 / (r / 100 - g / 100)).toFixed(1);
+    const leadPE = parseFloat(pout / 100 / (r / 100 - g / 100)).toFixed(1);
+    const trailPE = parseFloat(pout / 100 * (1 + g / 100) / (r / 100 - g / 100)).toFixed(1);
     const wrong1 = parseFloat(1 / (r / 100 - g / 100)).toFixed(1);
     const wrong2 = parseFloat((1 - pout / 100) / (r / 100 - g / 100)).toFixed(1);
     return {
-      question: `A company has a dividend payout ratio of ${pout}%, required return of ${r}%, and sustainable growth rate of ${g}%. What is the justified leading P/E?`,
+      question: `A company has a dividend payout ratio of ${pout}%, required return of ${r}%, and sustainable growth rate of ${g}%. What is the justified LEADING P/E ratio?`,
       options: {
-        A: `${pe}×`,
-        B: `${wrong1}× (ignores payout ratio)`,
-        C: `${wrong2}× (uses retention ratio instead of payout)`
+        A: `${leadPE}×`,
+        B: `${trailPE}× (trailing P/E, not leading)`,
+        C: `${wrong2}× (uses retention ratio in place of payout ratio)`
       },
       answer: "A",
-      explanation: `Justified leading P/E = Payout ratio / (r − g) = ${pout}% / (${r}% − ${g}%) = ${pe}×. The payout ratio reflects what fraction of earnings is distributed. Higher payout or lower (r−g) spread = higher justified P/E.`,
-      concept: "P/E Valuation",
-      los_tested: "explain the rationale for using price multiples to value equity and how the price to earnings multiple relates to fundamentals",
-      misconception_targeted: "using retention ratio instead of payout ratio in the P/E formula"
+      explanation: `Justified leading P/E = Payout ratio / (r − g) = ${pout}% / (${r}% − ${g}%) = ${leadPE}×. The trailing P/E = leading P/E × (1+g) = ${leadPE}× × ${1 + g / 100} = ${trailPE}×. Leading P/E uses next year's expected earnings; trailing P/E uses last year's actual earnings. Higher payout ratio or lower (r−g) spread → higher justified P/E.`,
+      concept: "Justified P/E",
+      los_tested: "calculate and interpret the justified trailing and leading P/E ratios for a stock",
+      misconception_targeted: "using retention ratio in the P/E formula or confusing leading with trailing P/E"
     };
   },
   // Market Efficiency
   () => {
     const form = pick(["weak", "semi-strong", "strong"]);
     const implication = {
-      "weak": "Technical analysis cannot generate consistent excess returns, but fundamental analysis may.",
-      "semi-strong": "Neither technical nor fundamental analysis can generate consistent excess returns. Only inside information could.",
-      "strong": "No analysis — including insider information — can generate consistent excess returns. Markets fully reflect all information."
+      "weak": "Technical analysis cannot generate consistent excess returns, but fundamental analysis may still work.",
+      "semi-strong": "Neither technical analysis nor fundamental analysis based on public information can generate consistent excess returns. Only inside information could provide an edge.",
+      "strong": "No analysis — including the use of insider information — can generate consistent excess returns. All information is fully reflected in prices."
     }[form];
     const wrongA = {
-      "weak": "Both technical and fundamental analysis are useless",
-      "semi-strong": "Technical analysis still works since only public info is priced in",
-      "strong": "Fundamental analysis can still earn excess returns"
+      "weak": "Neither technical nor fundamental analysis can earn excess returns — all information is priced in",
+      "semi-strong": "Technical analysis is ineffective but fundamental analysis still works because only historical prices are priced in",
+      "strong": "Fundamental analysis can still earn excess returns by identifying mispriced stocks"
     }[form];
     return {
-      question: `If markets are ${form}-form efficient, which statement BEST describes the implication for investment analysis?`,
+      question: `If markets are ${form}-form efficient, which statement BEST describes the implication?`,
       options: {
         A: wrongA,
         B: implication,
-        C: "Passive management always outperforms active management regardless of efficiency form"
+        C: "Passive index funds always underperform active managers in the long run"
       },
       answer: "B",
-      explanation: `${form.charAt(0).toUpperCase() + form.slice(1)}-form efficiency: ${implication} Each level of efficiency subsumes the previous — semi-strong includes weak-form, strong includes both.`,
-      concept: "Market Efficiency",
+      explanation: `${form.charAt(0).toUpperCase() + form.slice(1)}-form EMH: ${implication} The three forms are cumulative: semi-strong subsumes weak-form; strong subsumes both. Anomalies (e.g., momentum, value premium) are debated evidence against semi-strong efficiency.`,
+      concept: "Market Efficiency EMH",
       los_tested: "contrast weak-form semi-strong-form and strong-form market efficiency",
-      misconception_targeted: "confusing which forms of analysis are rendered ineffective by each EMH form"
+      misconception_targeted: "confusing which forms of analysis are ineffective under each EMH form"
+    };
+  },
+  // Price-to-Book ratio
+  () => {
+    const roe = rnd(12, 20);
+    const r = rnd(8, 12);
+    const g = rnd(3, 6);
+    const pb = parseFloat((roe / 100 - g / 100) / (r / 100 - g / 100)).toFixed(2);
+    const wrong1 = parseFloat(roe / r).toFixed(2);
+    const wrong2 = parseFloat((r / 100 - g / 100) / (roe / 100 - g / 100)).toFixed(2);
+    return {
+      question: `A firm has ROE = ${roe}%, required return = ${r}%, and sustainable growth rate = ${g}%. What is the justified Price-to-Book (P/B) ratio?`,
+      options: {
+        A: `${pb}×`,
+        B: `${wrong1}× (ROE / required return — missing growth)`,
+        C: `${wrong2}× (ratio inverted)`
+      },
+      answer: "A",
+      explanation: `Justified P/B = (ROE − g) / (r − g) = (${roe}% − ${g}%) / (${r}% − ${g}%) = ${pb}×. When ROE > required return, P/B > 1 (firm earns above its cost of equity). When ROE = r, P/B = 1. When ROE < r, P/B < 1. This links directly to the GGM: P/B = ROE × payout / (r − g) per share.`,
+      concept: "Justified P/B Ratio",
+      los_tested: "calculate and interpret the justified P/B ratio for a stock",
+      misconception_targeted: "using ROE/r without accounting for the growth differential"
+    };
+  },
+  // EV/EBITDA
+  () => {
+    const ev = rnd(500, 2000);
+    const ebitda = rnd(50, 200);
+    const mult = parseFloat(ev / ebitda).toFixed(1);
+    const debt = rnd(100, 400);
+    const cash = rnd(20, 100);
+    const shares = rnd(50, 200);
+    const sp = Math.round((ev - debt + cash) / shares);
+    return {
+      question: `A company has enterprise value of $${ev}M and EBITDA of $${ebitda}M (EV/EBITDA = ${mult}×). A comparable company trades at 8.5× EV/EBITDA with EBITDA of $${ebitda}M. EV/EBITDA is preferred over P/E for which of the following reasons?`,
+      options: {
+        A: `EV/EBITDA is unaffected by differences in capital structure, depreciation policies, and tax rates, making cross-company comparison more reliable`,
+        B: `EV/EBITDA always gives a lower valuation than P/E, making acquisitions appear cheaper`,
+        C: `P/E cannot be calculated for companies with positive earnings, so EV/EBITDA must be used`
+      },
+      answer: "A",
+      explanation: `EV/EBITDA is useful for comparing companies because: (1) EV includes debt, making it capital-structure-neutral; (2) EBITDA adds back D&A, removing distortions from different depreciation policies; (3) It's pre-tax, avoiding tax rate differences. EV = Market cap + Debt − Cash. Particularly useful for capital-intensive, levered, or cross-border comparisons where tax and depreciation differ.`,
+      concept: "EV EBITDA Multiple",
+      los_tested: "calculate and interpret EV multiples and evaluate the usefulness of EV/EBITDA",
+      misconception_targeted: "not understanding why EV/EBITDA is preferred over P/E for leveraged or capital-intensive comparisons"
     };
   }],
   "Derivatives": [
+  // Forward price
+  () => {
+    const s = rnd(40, 100);
+    const r = rnd(2, 6);
+    const t = pick([0.25, 0.5, 1]);
+    const tname = {
+      0.25: "3 months",
+      0.5: "6 months",
+      1: "1 year"
+    }[t];
+    const div = parseFloat(rnd(0, 30) / 10).toFixed(1);
+    const fp = parseFloat((s - parseFloat(div)) * (1 + r / 100) ** t).toFixed(2);
+    const wrong1 = parseFloat(s * (1 + r / 100) ** t).toFixed(2);
+    const wrong2 = parseFloat(s * (1 + r / 100) * t).toFixed(2);
+    return {
+      question: `A stock trades at $${s} and is expected to pay a dividend of $${div} in ${tname}. The risk-free rate is ${r}% per year. What is the no-arbitrage forward price for a ${tname} forward contract?`,
+      options: {
+        A: `$${fp}`,
+        B: `$${wrong1} (ignores the dividend payment)`,
+        C: `$${wrong2} (uses simple interest and ignores dividend)`
+      },
+      answer: "A",
+      explanation: `Forward price = (S₀ − PV(dividends)) × (1+r)^T. PV(div) ≈ $${div} (paid close to delivery, so discounting is minor). F = ($${s} − $${div}) × (1+${r}%)^${t} = $${fp}. Dividends reduce the cost-of-carry because the dividend is received by the holder of the spot (not the forward). Ignoring dividends overstates the forward price to $${wrong1}.`,
+      concept: "Forward Price No-Arbitrage",
+      los_tested: "describe and calculate the no-arbitrage forward price for equity forward contracts",
+      misconception_targeted: "ignoring dividend payments in the forward price formula"
+    };
+  },
+  // Options — intrinsic vs time value
+  () => {
+    const s = rnd(50, 80);
+    const x = rnd(55, 75);
+    const premium = parseFloat(rnd(300, 900) / 100).toFixed(2);
+    const isCall = Math.random() > 0.5;
+    const intrinsic = isCall ? Math.max(s - x, 0) : Math.max(x - s, 0);
+    const tv = parseFloat(parseFloat(premium) - intrinsic).toFixed(2);
+    const inMoney = intrinsic > 0;
+    const moneyness = isCall ? s > x ? "in-the-money" : s < x ? "out-of-the-money" : "at-the-money" : x > s ? "in-the-money" : x < s ? "out-of-the-money" : "at-the-money";
+    return {
+      question: `A European ${isCall ? "call" : "put"} option with strike $${x} is priced at $${premium}. The underlying stock is at $${s}. What is the option's time value?`,
+      options: {
+        A: `$${tv} (premium minus intrinsic value of $${intrinsic})`,
+        B: `$${premium} (the full premium is time value)`,
+        C: `$${intrinsic} (the intrinsic value is the time value)`
+      },
+      answer: "A",
+      explanation: `Option premium = Intrinsic value + Time value. Intrinsic value = max(${isCall ? `S−X = $${s}−$${x}` : `X−S = $${x}−$${s}`}, 0) = $${intrinsic}. Time value = $${premium} − $${intrinsic} = $${tv}. This option is ${moneyness}. Time value reflects the probability that the option moves further in-the-money before expiration; it decays to zero at expiration (theta decay).`,
+      concept: "Option Intrinsic vs Time Value",
+      los_tested: "identify the moneyness of an option explain time value and explain the value of an option at expiration",
+      misconception_targeted: "confusing total premium with time value, or intrinsic value with time value"
+    };
+  },
   // Put-call parity
   () => {
     const s = rnd(45, 65);
@@ -3179,45 +3429,112 @@ const Q_TEMPLATES = {
     const wrong1 = parseFloat((wd / 100 * rd / 100 + we / 100 * re / 100) * 100).toFixed(2);
     const wrong2 = parseFloat((rd + re) / 2).toFixed(2);
     return {
-      question: `A firm has ${wd}% debt (cost ${rd}%) and ${we}% equity (cost ${re}%), with a tax rate of ${t}%. What is the WACC?`,
+      question: `A firm's capital structure is ${wd}% debt (pre-tax cost ${rd}%) and ${we}% equity (cost ${re}%), with a marginal tax rate of ${t}%. What is the WACC?`,
       options: {
         A: `${wacc}%`,
-        B: `${wrong1}% (no tax shield on debt)`,
-        C: `${wrong2}% (simple average)`
+        B: `${wrong1}% (pre-tax cost of debt used — no tax shield applied)`,
+        C: `${wrong2}% (simple average of debt and equity costs)`
       },
       answer: "A",
-      explanation: `WACC = w_d×r_d×(1−t) + w_e×r_e = ${wd}%×${rd}%×(1−${t}%) + ${we}%×${re}% = ${wacc}%. The after-tax cost of debt reflects the interest tax shield. Use market value weights, not book value.`,
+      explanation: `WACC = w_d × r_d × (1−t) + w_e × r_e = ${wd}% × ${rd}% × (1−${t}%) + ${we}% × ${re}% = ${wacc}%. The after-tax cost of debt accounts for the tax deductibility of interest (the interest tax shield). Always use marginal tax rate and market-value weights, not book-value weights.`,
       concept: "WACC",
       los_tested: "calculate and interpret the weighted-average cost of capital for a company",
-      misconception_targeted: "ignoring the tax shield on debt when calculating WACC"
+      misconception_targeted: "using pre-tax cost of debt or simple average instead of WACC formula"
+    };
+  },
+  // Modigliani-Miller
+  () => {
+    const scenario = pick([{
+      tax: "no taxes",
+      "MM": "firm value is unaffected by capital structure — the total value of the firm depends only on its operating cash flows, not how they are divided between debt and equity holders",
+      wrong1: "increasing debt always increases firm value via the interest tax shield",
+      wrong2: "firms should use maximum equity to minimise financial distress risk"
+    }, {
+      tax: "corporate taxes (no financial distress costs)",
+      "MM": "firm value increases with leverage because interest payments are tax-deductible, creating an interest tax shield",
+      wrong1: "firm value is unaffected by capital structure — the tax shield has no value",
+      wrong2: "firm value decreases with leverage because more debt increases required equity returns"
+    }]);
+    return {
+      question: `Under the Modigliani-Miller framework with ${scenario.tax}, which proposition is correct regarding capital structure?`,
+      options: {
+        A: scenario["MM"],
+        B: scenario.wrong1,
+        C: scenario.wrong2
+      },
+      answer: "A",
+      explanation: `MM with ${scenario.tax}: ${scenario["MM"]}. The MM irrelevance theorem (no taxes) established that in a perfect market, the value of a levered firm equals the value of an unlevered firm. Adding corporate taxes introduces the interest tax shield (PV of tax shield = T×D), making debt financing beneficial up to the point where financial distress costs offset the shield.`,
+      concept: "Modigliani-Miller Capital Structure",
+      los_tested: "explain the Modigliani-Miller propositions regarding capital structure",
+      misconception_targeted: "reversing the MM conclusions about the role of taxes in capital structure"
+    };
+  },
+  // Dividend policy irrelevance
+  () => {
+    return {
+      question: `Under Miller and Modigliani's dividend irrelevance proposition (perfect markets), which statement is CORRECT?`,
+      options: {
+        A: `A firm's dividend policy has no effect on shareholder wealth — investors can create homemade dividends by selling shares`,
+        B: `Higher dividends always increase stock price because they signal management confidence`,
+        C: `Firms should retain all earnings since dividends are taxed at a higher rate than capital gains`
+      },
+      answer: "A",
+      explanation: `Under MM (perfect markets, no taxes, no transaction costs): dividend policy is irrelevant. Shareholders can create 'homemade dividends' by selling shares if they want cash, or reinvest dividends if they prefer capital gains. Real-world factors that matter: taxes (preferring capital gains), signalling (dividends signal confidence), clientele effect (different investors prefer different payout policies), and agency costs.`,
+      concept: "Dividend Policy Irrelevance",
+      los_tested: "describe MM propositions regarding dividend policy",
+      misconception_targeted: "assuming dividends always increase value or that retained earnings are always preferable"
     };
   },
   // NPV vs IRR conflict
   () => {
-    const npvA = rnd(50, 200);
-    const npvB = rnd(30, 160);
-    const irrA = rnd(15, 22);
-    const irrB = rnd(18, 28);
-    const winner = npvA > npvB ? "A" : "B";
-    const irrwinner = irrA > irrB ? "A" : "B";
-    if (irrwinner === winner) {
-      irrA += 5;
-    } // ensure conflict
+    // Generate guaranteed NPV-IRR conflict: NPV winner ≠ IRR winner
+    let npvA = rnd(80, 200);
+    let npvB = rnd(30, 100); // A wins on NPV
+    let irrA = rnd(15, 20);
+    let irrB = rnd(22, 32); // B wins on IRR
+    // Randomly swap so the "correct" answer isn't always A
+    if (Math.random() > 0.5) {
+      const t1 = npvA;
+      npvA = npvB;
+      npvB = t1;
+      const t2 = irrA;
+      irrA = irrB;
+      irrB = t2;
+    }
+    const npvWinner = npvA > npvB ? "A" : "B";
+    const irrWinner = irrA > irrB ? "A" : "B";
+    const loser = npvWinner === "A" ? "B" : "A";
     return {
-      question: `Project A has NPV = $${npvA}K and IRR = ${irrA}%. Project B has NPV = $${npvB}K and IRR = ${irrB}%. The projects are mutually exclusive. Which should be selected?`,
+      question: `Two mutually exclusive projects: Project A has NPV = $${npvA}K and IRR = ${irrA}%. Project B has NPV = $${npvB}K and IRR = ${irrB}%. Which project should be selected, and why?`,
       options: {
-        A: `Project ${winner} — NPV is the correct decision criterion for mutually exclusive projects`,
-        B: `Project ${irrA > irrB ? "A" : "B"} — always choose the higher IRR`,
-        C: `Cannot determine without knowing the cost of capital`
+        A: `Project ${npvWinner} — when NPV and IRR conflict, NPV is the correct criterion for mutually exclusive projects`,
+        B: `Project ${irrWinner} — always select the project with the higher IRR`,
+        C: `Project ${loser} — it has the better risk-adjusted return`
       },
       answer: "A",
-      explanation: `When NPV and IRR conflict for mutually exclusive projects, use NPV. NPV measures absolute value creation, which is the firm's goal. IRR assumes reinvestment at the IRR rate — often unrealistic. Project ${winner} (NPV = $${Math.max(npvA, npvB)}K) creates more value.`,
+      explanation: `When NPV and IRR conflict for mutually exclusive projects, NPV is the theoretically correct decision rule. NPV measures the absolute dollar value added to shareholder wealth. IRR can be misleading because it implicitly assumes cash flows are reinvested at the IRR rate (often unrealistic) and ignores project scale. Project ${npvWinner} (NPV = $${Math.max(npvA, npvB)}K) creates more value for shareholders despite having the lower IRR of ${Math.min(irrA, irrB)}%.`,
       concept: "NPV vs IRR",
       los_tested: "describe the capital allocation process calculate NPV IRR and ROIC and contrast their use in capital allocation",
-      misconception_targeted: "using IRR over NPV when they conflict for mutually exclusive projects"
+      misconception_targeted: "choosing the higher IRR over the higher NPV for mutually exclusive projects"
     };
   }],
   "Portfolio Management": [
+  // CML vs SML
+  () => {
+    return {
+      question: `An analyst plots two lines on a risk-return graph: the Capital Market Line (CML) and the Security Market Line (SML). Which statement BEST distinguishes them?`,
+      options: {
+        A: `The CML uses total risk (standard deviation) on the x-axis and applies only to efficient portfolios; the SML uses systematic risk (beta) and applies to all assets and portfolios`,
+        B: `The CML uses beta on the x-axis and applies to all assets; the SML uses standard deviation and applies only to efficient portfolios`,
+        C: `The CML and SML are the same line — both plot expected return against market risk`
+      },
+      answer: "A",
+      explanation: `CML: x-axis = portfolio standard deviation (total risk); valid only for efficient portfolios on the efficient frontier. SML: x-axis = beta (systematic risk); valid for all individual assets and portfolios, efficient or not. An underpriced asset plots above the SML (positive alpha); an overpriced asset plots below it. Both lines share the risk-free rate as the y-intercept.`,
+      concept: "CML vs SML",
+      los_tested: "explain the capital market line CML and the security market line SML",
+      misconception_targeted: "confusing which risk measure and which investment universe applies to CML vs SML"
+    };
+  },
   // CAPM expected return
   () => {
     const rf = rnd(2, 4);
@@ -4333,13 +4650,12 @@ Reply with just "saved" when done.`
     setLoadingETA(null);
     loadingStartRef.current = Date.now();
 
-    // Vignette mode always requires API — skip local generation
-    if (!isVignette) {
-      // ── Try local generation first (instant, no API needed) ──
+    // ── No API key: use local templates as fallback ──
+    // When an API key IS set, always use the API for exam-quality questions.
+    if (!isVignette && !apiKey) {
       const localRaw = generateLocalQuestions(t, st, diff, cnt * 3);
       const seen = new Set();
       const localQs = localRaw.filter(q => {
-        // Deduplicate by concept first, then by normalized question text
         const key = q.concept ? q.concept.toLowerCase() : (q.question || "").toLowerCase().replace(/\d+\.?\d*/g, "#").replace(/\s+/g, " ").slice(0, 80);
         if (seen.has(key)) return false;
         seen.add(key);
@@ -4347,7 +4663,7 @@ Reply with just "saved" when done.`
       }).slice(0, cnt);
       if (localQs.length >= Math.min(cnt, 3)) {
         setLoadingProgress(100);
-        setLoadingMsg(`${localQs.length} questions ready!`);
+        setLoadingMsg(`${localQs.length} questions ready (offline mode)`);
         await new Promise(r => setTimeout(r, 300));
         setTopic(t);
         setSubtopic(st);
@@ -4370,9 +4686,9 @@ Reply with just "saved" when done.`
       }
     }
 
-    // ── Fallback to API ──
+    // ── API path (always used when key is set; fallback error when not) ──
     if (!apiKey) {
-      setError(isVignette ? "Vignette mode requires an API key. Add yours via the 🔑 button." : "No local questions available for this topic yet, and no API key is set. Add your API key via the 🔑 button.");
+      setError(isVignette ? "Vignette mode requires an API key. Add yours via the 🔑 button." : "Add your Anthropic API key (🔑 on the home screen) to generate exam-quality questions.");
       setLoading(false);
       setLoadingProgress(0);
       generatingRef.current = false;
