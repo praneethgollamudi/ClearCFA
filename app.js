@@ -807,6 +807,7 @@ const TIME_PER_Q = 90;
 const STORAGE_KEY = "cfa_mock_v7";
 const SR_KEY = "cfa_sr_v7";
 const QDB_KEY = "cfa_qdb_v7";
+const USAGE_KEY = "cfa_usage_v1";
 const SM2_INTERVALS = [1, 3, 7, 16, 35, 70];
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -3953,6 +3954,7 @@ function CFAMock() {
   const [weeklyPlanScreen, setWeeklyPlanScreen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [usageStats, setUsageStats] = useState({});
   const [weeklyPlan, setWeeklyPlan] = useState(null);
   const [weeklyPlanLoading, setWeeklyPlanLoading] = useState(false);
   const [weeklyPlanError, setWeeklyPlanError] = useState("");
@@ -4069,6 +4071,12 @@ function CFAMock() {
         srDeckRef.current = bestSR;
       }
       setSrLoaded(true);
+
+      // Load usage analytics
+      try {
+        const usage = await storageGet(USAGE_KEY);
+        if (usage && typeof usage === "object" && !Array.isArray(usage)) setUsageStats(usage);
+      } catch {}
 
       // STEP 2c: Bidirectional Supabase merge
       // Pull if Supabase is ahead; push if local is ahead (ensures progress is never lost)
@@ -4425,6 +4433,21 @@ function CFAMock() {
       }
     }
     throw lastError || new Error("All retries failed — please wait a minute and try again.");
+  };
+  const trackUsage = feature => {
+    setUsageStats(prev => {
+      const now = new Date().toISOString();
+      const updated = {
+        ...prev,
+        [feature]: {
+          count: (prev[feature]?.count || 0) + 1,
+          lastUsed: now,
+          firstUsed: prev[feature]?.firstUsed || now
+        }
+      };
+      storageSet(USAGE_KEY, updated);
+      return updated;
+    });
   };
   const generateFocus = () => {
     setFocusLoading(true);
@@ -5529,7 +5552,10 @@ Reply with just "saved" when done.`
       marginTop: 2
     }
   }, "days to exam")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setSettingsOpen(true),
+    onClick: () => {
+      trackUsage("settings");
+      setSettingsOpen(true);
+    },
     style: {
       marginTop: 4,
       width: 32,
@@ -5765,6 +5791,7 @@ Reply with just "saved" when done.`
     }
   }, "Missed 4+ times — your real blind spots")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
+      trackUsage("leech_review");
       setSrQueue([...leeches].sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 20));
       setSrIdx(0);
       setSrAnswer(null);
@@ -5783,6 +5810,7 @@ Reply with just "saved" when done.`
     }
   }, "Review Now")), dueCards.length > 0 && /*#__PURE__*/React.createElement("div", {
     onClick: () => {
+      trackUsage("sr_review");
       setSrQueue([...dueCards].sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 20));
       setSrIdx(0);
       setSrAnswer(null);
@@ -5893,7 +5921,10 @@ Reply with just "saved" when done.`
       marginTop: 2
     }
   }, "AI-powered · LOS gaps · SR · leeches")), !focusLoading && /*#__PURE__*/React.createElement("button", {
-    onClick: generateFocus,
+    onClick: () => {
+      trackUsage("daily_focus");
+      generateFocus();
+    },
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -6023,50 +6054,136 @@ Reply with just "saved" when done.`
     }
   }, "Start ", s.count || 10, " Questions →"))))), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      gap: 9,
-      marginBottom: 12
+      background: `linear-gradient(135deg,${C.accent}18,${C.accent}08)`,
+      border: `1px solid ${C.accent}44`,
+      borderRadius: 14,
+      padding: "14px 16px",
+      marginBottom: 10
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 800,
+      color: C.accentLight
+    }
+  }, "⚡ Office Mode"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 2
+    }
+  }, "5 questions · ~7 min · AI picks your weakest topic")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      // SR due takes highest priority, else pick weakest high-weight topic
-      if (dueCards.length > 0) {
-        setSrQueue([...dueCards].sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 20));
-        setSrIdx(0);
-        setSrAnswer(null);
-        setScreen("srReview");
-        return;
-      }
+      trackUsage("office_mode");
       const weak = moduleReadiness.filter(m => m.sessions === 0 && m.weight >= 9)[0] || moduleReadiness.filter(m => m.accuracy !== null).sort((a, b) => a.accuracy - b.accuracy)[0] || moduleReadiness[0];
-      generateQuestions(weak.topic, weak.untouchedModules?.[0] || weak.modules[0], "Medium", 10, "guided");
+      generateQuestions(weak.topic, weak.untouchedModules?.[0] || weak.modules[0], "Medium", 5, "guided");
     },
     style: {
-      flex: 1,
-      padding: "15px",
-      borderRadius: 13,
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: 800,
+      padding: "10px 20px",
+      borderRadius: 10,
       background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
       color: "#fff",
       border: "none",
       cursor: "pointer",
-      boxShadow: `0 6px 20px ${C.accent}55`,
-      letterSpacing: "-0.2px"
+      boxShadow: `0 4px 16px ${C.accent}55`,
+      flexShrink: 0
     }
-  }, dueCards.length > 0 ? `📋 Review ${dueCards.length} Due Cards →` : "▶ Start Practice →"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setScreen("setup"),
+  }, "Start →"))), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: "15px 14px",
-      borderRadius: 13,
-      fontSize: 13,
+      display: "flex",
+      gap: 8,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      trackUsage("custom_mock");
+      setScreen("setup");
+    },
+    style: {
+      flex: 1,
+      padding: "11px",
+      borderRadius: 11,
+      fontSize: 12,
       fontWeight: 700,
       background: C.surface,
       border: `1px solid ${C.border}`,
       color: C.textMid,
-      cursor: "pointer",
-      flexShrink: 0
+      cursor: "pointer"
     }
-  }, "Custom")), /*#__PURE__*/React.createElement("div", {
+  }, "Custom Mock"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      trackUsage("fix_weakest");
+      const byReadiness = moduleReadiness.filter(m => m.weight >= 8).sort((a, b) => {
+        if (a.accuracy === null && b.accuracy === null) return b.weight - a.weight;
+        if (a.accuracy === null) return -1;
+        if (b.accuracy === null) return 1;
+        return a.accuracy - b.accuracy;
+      });
+      const target = byReadiness[0] || moduleReadiness[0];
+      const mod = target.untouchedModules?.[0] || target.modules?.[0];
+      if (target && mod) generateQuestions(target.topic, mod, "Medium", 10, "guided");
+    },
+    style: {
+      flex: 1,
+      padding: "11px",
+      borderRadius: 11,
+      fontSize: 12,
+      fontWeight: 700,
+      background: C.hard + "18",
+      border: `1px solid ${C.hard}44`,
+      color: C.hard,
+      cursor: "pointer"
+    }
+  }, "🎯 Fix Weakest"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      trackUsage("wrongs_review");
+      const all = history.flatMap(h => Array.isArray(h.wrongs) ? h.wrongs : []).filter(w => w && w.question).slice(0, 50);
+      if (all.length) {
+        setReviewList(all);
+        setReviewIdx(0);
+        setScreen("review");
+      } else {
+        setError("No wrong answers yet.");
+        setTimeout(() => setError(""), 3000);
+      }
+    },
+    style: {
+      flex: 1,
+      padding: "11px",
+      borderRadius: 11,
+      fontSize: 12,
+      fontWeight: 600,
+      background: C.surface,
+      border: `1px solid ${totalWrongs > 0 ? C.hard + "44" : C.border}`,
+      color: totalWrongs > 0 ? C.hard : C.muted,
+      cursor: "pointer",
+      position: "relative"
+    }
+  }, "🔁 Wrongs", totalWrongs > 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      top: -5,
+      right: -5,
+      width: 16,
+      height: 16,
+      borderRadius: "50%",
+      background: C.hard,
+      color: "#fff",
+      fontSize: 9,
+      fontWeight: 800,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, Math.min(totalWrongs, 99)))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.surface,
       border: `1px solid ${C.border}`,
@@ -6113,245 +6230,236 @@ Reply with just "saved" when done.`
         transition: "background 0.2s"
       }
     });
-  }))), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setShowMoreActions(v => !v),
-    style: {
-      width: "100%",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      padding: "10px 14px",
-      borderRadius: 11,
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      color: C.muted,
-      cursor: "pointer",
-      marginBottom: showMoreActions ? 8 : 0,
-      fontSize: 12,
-      fontWeight: 600
-    }
-  }, /*#__PURE__*/React.createElement("span", null, "More"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      transition: "transform 0.2s",
-      display: "inline-block",
-      transform: showMoreActions ? "rotate(180deg)" : "none"
-    }
-  }, "▾")), showMoreActions && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr 1fr",
-      gap: 8,
-      marginBottom: 9
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      const weakModules = moduleReadiness.filter(m => m.sessions > 0).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
-      const target = weakModules[0] || moduleReadiness.find(m => m.sessions === 0) || moduleReadiness[0];
-      if (target) generateQuestions(target.topic, target.modulesCovered?.[0] || target.modules[0], "Medium", 10, "guided");
-    },
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 700,
-      background: C.surfaceHigh,
-      border: `1px solid ${C.medium}44`,
-      color: C.medium,
-      cursor: "pointer"
-    }
-  }, "🎲 Mix"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setVignetteMode(true);
-      setScreen("setup");
-    },
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 700,
-      background: C.surfaceHigh,
-      border: `1px solid ${C.accentLight}33`,
-      color: C.accentLight,
-      cursor: "pointer"
-    }
-  }, "📖 Vignette"), /*#__PURE__*/React.createElement("button", {
-    onClick: startFullExam,
-    disabled: loading,
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 11,
-      fontWeight: 700,
-      background: C.surfaceHigh,
-      border: `1px solid ${C.accentLight}33`,
-      color: C.accentLight,
-      cursor: loading ? "not-allowed" : "pointer"
-    }
-  }, "🎓 Full Exam"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      const cases = getEthicsCases("all", 10);
-      if (cases.length) {
-        setTopic("Ethics");
-        setSubtopic("Ethics Case Studies");
-        setDifficulty("Medium");
-        setCount(cases.length);
-        setMode("guided");
-        setQuestions(cases);
-        setAnswers({});
-        setCurrentQ(0);
-        setShowExp(false);
-        setLastSession(null);
-        setFullExamMode(false);
-        setVignetteMode(false);
-        setScreen("quiz");
+  }))), (() => {
+    const moreItems = [{
+      key: "mix",
+      label: "🎲 Mix",
+      style: {
+        background: C.surfaceHigh,
+        border: `1px solid ${C.medium}44`,
+        color: C.medium
+      },
+      action: () => {
+        trackUsage("mix");
+        const weakModules = moduleReadiness.filter(m => m.sessions > 0).sort((a, b) => a.accuracy - b.accuracy).slice(0, 3);
+        const target = weakModules[0] || moduleReadiness.find(m => m.sessions === 0) || moduleReadiness[0];
+        if (target) generateQuestions(target.topic, target.modulesCovered?.[0] || target.modules[0], "Medium", 10, "guided");
       }
-    },
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 700,
-      background: "#0a0820",
-      border: `1px solid ${C.hard}44`,
-      color: C.hard,
-      cursor: "pointer"
-    }
-  }, "⚖️ Ethics"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      const all = history.flatMap(h => Array.isArray(h.wrongs) ? h.wrongs : []).filter(w => w && w.question).slice(0, 50);
-      if (all.length) {
-        setReviewList(all);
-        setReviewIdx(0);
-        setScreen("review");
-      } else {
-        setError("No wrong answers yet.");
-        setTimeout(() => setError(""), 3000);
+    }, {
+      key: "vignette",
+      label: "📖 Vignette",
+      style: {
+        background: C.surfaceHigh,
+        border: `1px solid ${C.accentLight}33`,
+        color: C.accentLight
+      },
+      action: () => {
+        trackUsage("vignette");
+        setVignetteMode(true);
+        setScreen("setup");
       }
-    },
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 600,
-      background: C.surface,
-      border: `1px solid ${totalWrongs > 0 ? C.hard + "44" : C.border}`,
-      color: totalWrongs > 0 ? C.hard : C.muted,
-      cursor: "pointer",
-      position: "relative"
-    }
-  }, "🔁 Wrongs", totalWrongs > 0 && /*#__PURE__*/React.createElement("span", {
-    style: {
-      position: "absolute",
-      top: -4,
-      right: -4,
-      width: 15,
-      height: 15,
-      borderRadius: "50%",
-      background: C.hard,
-      color: "#fff",
-      fontSize: 8,
-      fontWeight: 800,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }
-  }, Math.min(totalWrongs, 99))), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setAiCoachScreen(true),
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 700,
-      background: "#0a1a20",
-      border: `1px solid #22d3ee44`,
-      color: "#22d3ee",
-      cursor: "pointer"
-    }
-  }, "🤖 Coach"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setScreen("readiness"),
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 600,
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      color: C.textMid,
-      cursor: "pointer"
-    }
-  }, "📊 Readiness"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setScreen("dashboard"),
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 600,
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      color: C.textMid,
-      cursor: "pointer"
-    }
-  }, "📈 Dashboard"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setScreen("passProbability"),
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 700,
-      background: passProbability ? `${passProbability.color}18` : C.surface,
-      border: `1px solid ${passProbability ? passProbability.color + "44" : C.border}`,
-      color: passProbability ? passProbability.color : C.muted,
-      cursor: "pointer"
-    }
-  }, passProbability ? `${passProbability.probability}% Pass` : "Pass %"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setRevisionTopic(null);
-      setRevisionTab("notes");
-      setScreen("revision");
-    },
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 700,
-      background: C.accent + "18",
-      border: `1px solid ${C.accent}44`,
-      color: C.accentLight,
-      cursor: "pointer"
-    }
-  }, "📚 Revise"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setFormulaDrillMode(true);
-      setFormulaDrillIdx(0);
-      setFormulaFlipped(false);
-      setRevisionTopic(null);
-      setRevisionTab("formulas");
-      setScreen("revision");
-    },
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 700,
-      background: C.reward + "15",
-      border: `1px solid ${C.reward}44`,
-      color: C.rewardLight,
-      cursor: "pointer"
-    }
-  }, "🔢 Formulas"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setWeeklyPlanScreen(true),
-    style: {
-      padding: "11px 8px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 600,
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      color: C.textMid,
-      cursor: "pointer"
-    }
-  }, "🗓 Week Plan")), error && /*#__PURE__*/React.createElement("div", {
+    }, {
+      key: "full_exam",
+      label: "🎓 Full Exam",
+      style: {
+        background: C.surfaceHigh,
+        border: `1px solid ${C.accentLight}33`,
+        color: C.accentLight
+      },
+      action: () => {
+        trackUsage("full_exam");
+        startFullExam();
+      }
+    }, {
+      key: "ethics",
+      label: "⚖️ Ethics",
+      style: {
+        background: "#0a0820",
+        border: `1px solid ${C.hard}44`,
+        color: C.hard
+      },
+      action: () => {
+        trackUsage("ethics");
+        const cases = getEthicsCases("all", 10);
+        if (cases.length) {
+          setTopic("Ethics");
+          setSubtopic("Ethics Case Studies");
+          setDifficulty("Medium");
+          setCount(cases.length);
+          setMode("guided");
+          setQuestions(cases);
+          setAnswers({});
+          setCurrentQ(0);
+          setShowExp(false);
+          setLastSession(null);
+          setFullExamMode(false);
+          setVignetteMode(false);
+          setScreen("quiz");
+        }
+      }
+    }, {
+      key: "ai_coach",
+      label: "🤖 Coach",
+      style: {
+        background: "#0a1a20",
+        border: `1px solid #22d3ee44`,
+        color: "#22d3ee"
+      },
+      action: () => {
+        trackUsage("ai_coach");
+        setAiCoachScreen(true);
+      }
+    }, {
+      key: "readiness",
+      label: "📊 Readiness",
+      style: {
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        color: C.textMid
+      },
+      action: () => {
+        trackUsage("readiness");
+        setScreen("readiness");
+      }
+    }, {
+      key: "dashboard",
+      label: "📈 Dashboard",
+      style: {
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        color: C.textMid
+      },
+      action: () => {
+        trackUsage("dashboard");
+        setScreen("dashboard");
+      }
+    }, {
+      key: "pass_pct",
+      label: passProbability ? `${passProbability.probability}% Pass` : "Pass %",
+      style: {
+        background: passProbability ? `${passProbability.color}18` : C.surface,
+        border: `1px solid ${passProbability ? passProbability.color + "44" : C.border}`,
+        color: passProbability ? passProbability.color : C.muted
+      },
+      action: () => {
+        trackUsage("pass_pct");
+        setScreen("passProbability");
+      }
+    }, {
+      key: "revise",
+      label: "📚 Revise",
+      style: {
+        background: C.accent + "18",
+        border: `1px solid ${C.accent}44`,
+        color: C.accentLight
+      },
+      action: () => {
+        trackUsage("revise");
+        setRevisionTopic(null);
+        setRevisionTab("notes");
+        setScreen("revision");
+      }
+    }, {
+      key: "formulas",
+      label: "🔢 Formulas",
+      style: {
+        background: C.reward + "15",
+        border: `1px solid ${C.reward}44`,
+        color: C.rewardLight
+      },
+      action: () => {
+        trackUsage("formulas");
+        setFormulaDrillMode(true);
+        setFormulaDrillIdx(0);
+        setFormulaFlipped(false);
+        setRevisionTopic(null);
+        setRevisionTab("formulas");
+        setScreen("revision");
+      }
+    }, {
+      key: "week_plan",
+      label: "🗓 Week Plan",
+      style: {
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        color: C.textMid
+      },
+      action: () => {
+        trackUsage("week_plan");
+        setWeeklyPlanScreen(true);
+      }
+    }, {
+      key: "sr_review",
+      label: `📋 SR${dueCards.length > 0 ? " (" + dueCards.length + ")" : ""}`,
+      style: {
+        background: dueCards.length > 0 ? C.accent + "15" : C.surface,
+        border: `1px solid ${dueCards.length > 0 ? C.accent + "44" : C.border}`,
+        color: dueCards.length > 0 ? C.accentLight : C.muted
+      },
+      action: () => {
+        trackUsage("sr_review");
+        if (dueCards.length > 0) {
+          setSrQueue([...dueCards].sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 20));
+          setSrIdx(0);
+          setSrAnswer(null);
+          setScreen("srReview");
+        }
+      }
+    }].sort((a, b) => (usageStats[b.key]?.count || 0) - (usageStats[a.key]?.count || 0));
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        trackUsage("more_toggle");
+        setShowMoreActions(v => !v);
+      },
+      style: {
+        width: "100%",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "10px 14px",
+        borderRadius: 11,
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        color: C.muted,
+        cursor: "pointer",
+        marginBottom: showMoreActions ? 8 : 0,
+        fontSize: 12,
+        fontWeight: 600
+      }
+    }, /*#__PURE__*/React.createElement("span", null, "More", !showMoreActions && usageStats && Object.keys(usageStats).length > 0 ? /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: C.muted,
+        marginLeft: 6,
+        fontWeight: 400
+      }
+    }, "· sorted by your usage") : ""), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        transition: "transform 0.2s",
+        display: "inline-block",
+        transform: showMoreActions ? "rotate(180deg)" : "none"
+      }
+    }, "▾")), showMoreActions && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr 1fr",
+        gap: 8,
+        marginBottom: 9
+      }
+    }, moreItems.map(item => /*#__PURE__*/React.createElement("button", {
+      key: item.key,
+      onClick: item.action,
+      style: {
+        padding: "11px 8px",
+        borderRadius: 11,
+        fontSize: 12,
+        fontWeight: item.key === "pass_pct" ? 700 : 600,
+        ...item.style,
+        cursor: "pointer"
+      }
+    }, item.label))));
+  })(), error && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.errorBg,
       border: `1px solid ${C.hard}44`,
