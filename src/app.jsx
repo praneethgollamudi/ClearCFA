@@ -3434,7 +3434,7 @@ Reply with just "saved" when done.`}]
         <StatCard label="Sessions" value={history.length||"–"} icon="📚"/>
         <StatCard label="Avg Score" value={overallPct?`${overallPct}%`:"–"} color={overallPct?(overallPct>=70?C.easy:C.hard):C.muted} icon="🎯"/>
         <StatCard label="Predicted" value={predicted?`${predicted.low}–${predicted.high}%`:"–"} color={predicted?(predicted.score>=70?C.easy:C.hard):C.muted} sub={predicted?`${predicted.confidence}% conf`:null} onClick={()=>setScreen("readiness")} icon="📈"/>
-        <StatCard label="XP" value={totalXP>0?totalXP.toLocaleString():"–"} color={C.reward} sub={levelInfo.label} icon="⭐"/>
+        <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"✓"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":"all caught up"} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
 

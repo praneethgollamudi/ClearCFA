@@ -6157,11 +6157,18 @@ Reply with just "saved" when done.`
     onClick: () => setScreen("readiness"),
     icon: "📈"
   }), /*#__PURE__*/React.createElement(StatCard, {
-    label: "XP",
-    value: totalXP > 0 ? totalXP.toLocaleString() : "–",
-    color: C.reward,
-    sub: levelInfo.label,
-    icon: "⭐"
+    label: "SR Due",
+    value: dueCards.length > 0 ? dueCards.length : "✓",
+    color: dueCards.length > 0 ? C.accent : C.easy,
+    sub: dueCards.length > 0 ? "review today" : "all caught up",
+    icon: "📋",
+    onClick: dueCards.length > 0 ? () => {
+      trackUsage("sr_review");
+      setSrQueue([...dueCards].sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 20));
+      setSrIdx(0);
+      setSrAnswer(null);
+      setScreen("srReview");
+    } : undefined
   })), studyPace?.burnoutRisk && /*#__PURE__*/React.createElement("div", {
     style: {
       background: `linear-gradient(135deg,${C.easy}12,${C.easy}06)`,
