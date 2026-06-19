@@ -664,6 +664,8 @@ const BESTS_KEY    = "cfa_bests_v1";
 const QCACHE_KEY   = "cfa_qcache_v1";
 const QCACHE_SLOTS = 2;   // sets per topic+module+difficulty combo
 const QCACHE_MAX   = 25;  // max distinct combos to keep
+const API_LOG_KEY  = "cfa_api_log_v1";
+const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -2419,6 +2421,7 @@ function CFAMock(){
   const [showMoreActions,setShowMoreActions]=useState(false);
   const [usageStats,setUsageStats]=useState({});
   const usageStatsRef=useRef({});
+  const apiLogRef=useRef([]);
   const [omMode,setOmMode]=useState(false); // true when current session was started via Office Mode
   const [omQCount,setOmQCount]=useState(()=>{try{return parseInt(localStorage.getItem("cfa_om_count")||"5");}catch{return 5;}});
   const [weeklyPlan,setWeeklyPlan]=useState(null);
@@ -2538,6 +2541,7 @@ function CFAMock(){
         const usage=await storageGet(USAGE_KEY);
         if(usage&&typeof usage==="object"&&!Array.isArray(usage)) setUsageStats(usage);
       }catch{}
+      try{const al=await storageGet(API_LOG_KEY);if(Array.isArray(al))apiLogRef.current=al;}catch{}
 
       // STEP 2c: Bidirectional Supabase merge
       // Pull if Supabase is ahead; push if local is ahead (ensures progress is never lost)
@@ -2785,7 +2789,7 @@ function CFAMock(){
     })();
   },[screen]);
 
-  const callClaude=async(prompt,maxTokens=8000,{retries=3,retryDelay=8000,model="claude-sonnet-4-6"}={})=>{
+  const callClaude=async(prompt,maxTokens=8000,{retries=3,retryDelay=8000,model="claude-sonnet-4-6",feature=""}={})=>{
     if(!navigator.onLine) throw new Error("No internet — check your connection and retry.");
     let lastError;
     for(let attempt=0;attempt<retries;attempt++){
@@ -2823,6 +2827,15 @@ function CFAMock(){
         const raw=data.content.map(i=>i.text||"").join("").replace(/```json\n?|```/g,"").trim();
         if(!raw) throw new Error("No text content in response");
         if(data.stop_reason==="max_tokens") throw new Error("Response too long — tap retry (using more budget next time).");
+        if(data.usage){
+          const inTok=data.usage.input_tokens||0,outTok=data.usage.output_tokens||0;
+          const pr=MODEL_PRICING[modelName]||{in:3.00,out:15.00};
+          const cost=(inTok*pr.in+outTok*pr.out)/1000000;
+          const entry={ts:Date.now(),f:feature||"unknown",m:modelName.includes("haiku")?"haiku":"sonnet",in:inTok,out:outTok,$:Math.round(cost*1000000)/1000000};
+          const newLog=[entry,...apiLogRef.current].slice(0,300);
+          apiLogRef.current=newLog;
+          storageSet(API_LOG_KEY,newLog);
+        }
         // Try direct parse
         try{ return JSON.parse(raw); }catch{}
         // Regex-extract the outermost JSON array or object (handles extra text before/after)
@@ -2973,7 +2986,7 @@ Reply with just "saved" when done.`}]
         .split("{srDue}").join(String(dueCards.length))
         .split("{daysSince}").join(String(daysSince));
 
-      const plan=await callClaude(prompt,2000,{retries:3,retryDelay:6000,model:"claude-haiku-4-5-20251001"});
+      const plan=await callClaude(prompt,2000,{retries:3,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"week_plan"});
       if(!plan||!plan.days) throw new Error("Plan missing 'days' field — got: "+JSON.stringify(plan).slice(0,100));
       setWeeklyPlan(plan);
     }catch(e){
@@ -2992,7 +3005,7 @@ Reply with just "saved" when done.`}]
     const progressInterval=setInterval(()=>{setLoadingProgress(p=>Math.min(85,p+3));},300);
     try{
       if(!apiKey){setError("FSA Statement Vignette requires an API key.");setLoading(false);clearInterval(progressInterval);generatingRef.current=false;return;}
-      const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),2500,{retries:2,retryDelay:6000,model:"claude-sonnet-4-6"});
+      const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),2500,{retries:2,retryDelay:6000,model:"claude-sonnet-4-6",feature:"fsa_vignette"});
       clearInterval(progressInterval);
       if(!raw||!raw.questions)throw new Error("Invalid FSA vignette format");
       const stmtText=formatStatements(raw);
@@ -3096,12 +3109,12 @@ Reply with just "saved" when done.`}]
       if(isVignette){
         const vignetteCount=Math.max(1,Math.ceil(cnt/3));
         const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null);
-        const rawVig=await callClaude(vigPrompt,3000,{retries:3,retryDelay:8000,model:useModel});
+        const rawVig=await callClaude(vigPrompt,3000,{retries:3,retryDelay:8000,model:useModel,feature:`vignette:${diff}`});
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
         const tightMax={3:1600,5:2500,10:4500,15:6000,20:7000}[cnt]||(cnt*500);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt),tightMax,{retries:3,retryDelay:8000,model:useModel});
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt),tightMax,{retries:3,retryDelay:8000,model:useModel,feature:`questions:${diff}`});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
@@ -3147,7 +3160,7 @@ Reply with just "saved" when done.`}]
             allQs=[...allQs,...localQs.map(q=>({...q,_topic:t,_subtopic:mod}))];
           } else if(apiKey){
             try{
-              const qs=await callClaude(buildQuestionPrompt(t,mod,"Medium",perModule),perModule*500,{retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001"});
+              const qs=await callClaude(buildQuestionPrompt(t,mod,"Medium",perModule),perModule*500,{retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001",feature:"full_exam"});
               allQs=[...allQs,...(Array.isArray(qs)?expandQuestionKeys(qs):[]).map((q,j)=>({...q,id:`${i}_${j}_${mod.slice(0,5)}`,_topic:t,_subtopic:mod}))];
             }catch{}
           }
@@ -3290,7 +3303,7 @@ Reply with just "saved" when done.`}]
               const untouched=moduleReadiness.filter(m=>m.sessions===0).map(m=>m.topic.split(" ")[0]).join(", ");
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass probability ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest modules: ${topWeak||"none yet"}, untouched: ${untouched||"none"}, SR due: ${dueCards.length}, leeches: ${leeches.length}.`;
               const sysPrompt=`You are a direct, honest CFA Level 1 study coach. ${context} Give specific, actionable advice in 2-4 sentences. No generic motivational fluff.`;
-              const result=await callClaude(`${sysPrompt}\n\nStudent: ${prompt}`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000});
+              const result=await callClaude(`${sysPrompt}\n\nStudent: ${prompt}`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_coach"});
               const text=(typeof result==="string"?result:"")||"No response";
               setAiCoachMessages(m=>[...m,{role:"assistant",text}]);
             }catch(e){setAiCoachMessages(m=>[...m,{role:"assistant",text:"Error: "+e.message}]);}
@@ -3328,7 +3341,7 @@ Reply with just "saved" when done.`}]
             try{
               const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3).map(m=>`${m.topic}: ${m.accuracy}%`).join(", ");
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass prob ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest: ${topWeak||"none"}.`;
-              const result=await callClaude(`You are a direct CFA L1 coach. ${context}\n\nStudent: ${q}`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000});
+              const result=await callClaude(`You are a direct CFA L1 coach. ${context}\n\nStudent: ${q}`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_coach"});
               setAiCoachMessages(m=>[...m,{role:"assistant",text:(typeof result==="string"?result:"")||"No response"}]);
             }catch(e){setAiCoachMessages(m=>[...m,{role:"assistant",text:"Error: "+e.message}]);}
             setAiCoachLoading(false);
@@ -4356,7 +4369,7 @@ Wrong answers:
 ${wrongSummary}
 
 Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to do next, (3) one honest motivational sentence. Be direct and specific, not generic. No markdown.`;
-                const result=await callClaude(prompt,400,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000});
+                const result=await callClaude(prompt,400,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_debrief"});
                 setAiDebrief(typeof result==="string"?result:JSON.stringify(result));
               }catch(e){setAiDebrief("Could not load debrief — check API key.");}
               setAiDebriefLoading(false);
@@ -4562,7 +4575,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
 
       {/* Tab nav */}
       <div style={{display:"flex",gap:6,marginBottom:16}}>
-        {[["sessions","Sessions"],["patterns","Error Patterns"],["quality","Quality"]].map(([tab,label])=>(
+        {[["sessions","Sessions"],["patterns","Errors"],["quality","Quality"],["api","API Cost"]].map(([tab,label])=>(
           <button key={tab} onClick={()=>setDashTab(tab)} style={{flex:1,padding:"8px",borderRadius:8,fontSize:12,fontWeight:600,border:dashTab===tab?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:dashTab===tab?C.accent+"18":C.surface,color:dashTab===tab?C.accentLight:C.muted,cursor:"pointer"}}>{label}</button>
         ))}
       </div>
@@ -4623,9 +4636,99 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         </div>
       </>}
 
-      {!confirmClear?<button onClick={()=>setConfirmClear(true)} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:"none",border:`1px solid #2a1018`,color:"#5a2a3a",cursor:"pointer"}}>Clear All History & SR Deck</button>:(
+      {dashTab==="api"&&(()=>{
+        const log=apiLogRef.current;
+        const today=new Date().toISOString().slice(0,10);
+        const weekAgo=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+        const todayLog=log.filter(e=>new Date(e.ts).toISOString().slice(0,10)===today);
+        const weekLog=log.filter(e=>new Date(e.ts).toISOString().slice(0,10)>=weekAgo);
+        const todayCost=todayLog.reduce((s,e)=>s+(e.$||0),0);
+        const weekCost=weekLog.reduce((s,e)=>s+(e.$||0),0);
+        const totalCost=log.reduce((s,e)=>s+(e.$||0),0);
+        const byFeature={};
+        log.forEach(e=>{const f=e.f||"unknown";if(!byFeature[f])byFeature[f]={cost:0,calls:0};byFeature[f].cost+=(e.$||0);byFeature[f].calls+=1;});
+        const featureList=Object.entries(byFeature).sort((a,b)=>b[1].cost-a[1].cost);
+        const maxFeatureCost=featureList[0]?.[1]?.cost||1;
+        const haikuCost=log.filter(e=>e.m==="haiku").reduce((s,e)=>s+(e.$||0),0);
+        const sonnetCost=log.filter(e=>e.m==="sonnet").reduce((s,e)=>s+(e.$||0),0);
+        const haikuCalls=log.filter(e=>e.m==="haiku").length;
+        const sonnetCalls=log.filter(e=>e.m==="sonnet").length;
+        const fmtC=(n)=>n<0.0001?"<$0.0001":n<1?`$${n.toFixed(4)}`:`$${n.toFixed(2)}`;
+        const featureEmoji={"questions:Easy":"🟢","questions:Medium":"🟡","questions:Hard":"🔴","vignette:Easy":"📗","vignette:Medium":"📙","vignette:Hard":"📕","fsa_vignette":"📊","full_exam":"🎓","week_plan":"🗓","ai_coach":"🤖","ai_debrief":"🔍","office_mode":"💼","calc_trainer":"🔢","walkthrough":"📖","unknown":"❓"};
+        return(<>
+          {log.length===0?(
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"28px 20px",textAlign:"center",color:C.muted,fontSize:13,marginBottom:16}}>
+              No API calls logged yet.<br/><span style={{fontSize:11,marginTop:4,display:"block"}}>Data is captured from your next question generation.</span>
+            </div>
+          ):(<>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+              {[["Today",todayCost,todayLog.length],["This Week",weekCost,weekLog.length],["All Time",totalCost,log.length]].map(([label,cost,calls])=>(
+                <div key={label} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"10px 8px",textAlign:"center"}}>
+                  <div style={{fontSize:15,fontWeight:800,color:cost>0.10?C.hard:cost>0.03?C.medium:C.easy}}>{fmtC(cost)}</div>
+                  <div style={{fontSize:10,color:C.muted,marginTop:2}}>{label}</div>
+                  <div style={{fontSize:10,color:C.muted}}>{calls} calls</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>Model Split</div>
+              {[["Haiku",haikuCost,haikuCalls,C.easy],["Sonnet",sonnetCost,sonnetCalls,C.hard]].map(([name,cost,calls,col])=>(
+                <div key={name} style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
+                  <div style={{fontSize:11,color:C.muted,width:48}}>{name}</div>
+                  <div style={{flex:1,height:8,background:C.border,borderRadius:4}}>
+                    <div style={{height:"100%",width:`${totalCost>0?(cost/totalCost*100):0}%`,background:col,borderRadius:4,transition:"width 0.3s"}}/>
+                  </div>
+                  <div style={{fontSize:11,color:C.muted,width:28,textAlign:"right"}}>{calls}×</div>
+                  <div style={{fontSize:11,fontWeight:700,color:col,width:60,textAlign:"right"}}>{fmtC(cost)}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:10}}>Cost by Feature</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {featureList.map(([feat,stats])=>(
+                  <div key={feat}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                      <div style={{fontSize:12,color:C.textMid}}>{featureEmoji[feat]||"•"} {feat}</div>
+                      <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                        <div style={{fontSize:10,color:C.muted}}>{stats.calls}×</div>
+                        <div style={{fontSize:12,fontWeight:700,color:stats.cost>0.05?C.hard:stats.cost>0.01?C.medium:C.easy,minWidth:56,textAlign:"right"}}>{fmtC(stats.cost)}</div>
+                      </div>
+                    </div>
+                    <div style={{height:5,background:C.border,borderRadius:3}}>
+                      <div style={{height:"100%",width:`${(stats.cost/maxFeatureCost)*100}%`,background:stats.cost>0.05?C.hard:stats.cost>0.01?C.medium:C.easy,borderRadius:3,transition:"width 0.3s"}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>Recent Calls</div>
+              {log.slice(0,25).map((entry,i)=>{
+                const ago=Math.round((Date.now()-entry.ts)/60000);
+                const agoStr=ago<60?`${ago}m ago`:ago<1440?`${Math.round(ago/60)}h ago`:`${Math.round(ago/1440)}d ago`;
+                return(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:i<Math.min(24,log.length-1)?`1px solid ${C.border}`:"none"}}>
+                    <div>
+                      <div style={{fontSize:12,color:C.textMid}}>{featureEmoji[entry.f]||"•"} {entry.f}</div>
+                      <div style={{fontSize:10,color:C.muted}}>{entry.m} · {(entry.in||0).toLocaleString()}+{(entry.out||0).toLocaleString()} tok · {agoStr}</div>
+                    </div>
+                    <div style={{fontSize:12,fontWeight:700,color:(entry.$||0)>0.05?C.hard:(entry.$||0)>0.01?C.medium:C.easy}}>{fmtC(entry.$||0)}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={()=>{apiLogRef.current=[];storageSet(API_LOG_KEY,[]);}} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:11,fontWeight:600,background:"none",border:`1px solid #2a1018`,color:"#5a2a3a",cursor:"pointer",marginBottom:12}}>Clear API Log</button>
+          </>)}
+        </>);
+      })()}
+
+      {dashTab!=="api"&&(!confirmClear?<button onClick={()=>setConfirmClear(true)} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:"none",border:`1px solid #2a1018`,color:"#5a2a3a",cursor:"pointer"}}>Clear All History & SR Deck</button>:(
         <div style={{display:"flex",gap:9}}><button onClick={()=>setConfirmClear(false)} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Cancel</button><button onClick={()=>{setHistory([]);setSrDeck({});setQdb({});setConfirmClear(false);setScreen("home");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:"#400010",border:`1px solid ${C.hard}`,color:C.hard,cursor:"pointer"}}>Clear All</button></div>
-      )}
+      ))}
     </>);
   }
 
@@ -4858,7 +4961,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       if(!apiKey){setCalcError("API key required for Calc Trainer.");return;}
       setCalcLoading(true);setCalcError("");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});
       try{
-        const result=await callClaude(`Generate a CFA Level 1 multi-step calculation problem for: ${calcTopic} (${calcDifficulty}).\n\nReturn JSON:\n{\n  "problem": "Full problem statement with all given data",\n  "steps": [\n    {"step_num": 1, "instruction": "Calculate X first", "answer": "exact numerical answer", "formula": "formula used", "explanation": "why this step"},\n    {"step_num": 2, "instruction": "...", "answer": "...", "formula": "...", "explanation": "..."}\n  ],\n  "final_answer": "final answer with units",\n  "concept": "what is being tested",\n  "los_tested": "relevant CFA LOS"\n}\n\nMake it 3-5 steps. Use realistic CFA exam numbers. Output ONLY valid JSON.`,1200,{retries:2,retryDelay:5000,model:"claude-haiku-4-5-20251001"});
+        const result=await callClaude(`Generate a CFA Level 1 multi-step calculation problem for: ${calcTopic} (${calcDifficulty}).\n\nReturn JSON:\n{\n  "problem": "Full problem statement with all given data",\n  "steps": [\n    {"step_num": 1, "instruction": "Calculate X first", "answer": "exact numerical answer", "formula": "formula used", "explanation": "why this step"},\n    {"step_num": 2, "instruction": "...", "answer": "...", "formula": "...", "explanation": "..."}\n  ],\n  "final_answer": "final answer with units",\n  "concept": "what is being tested",\n  "los_tested": "relevant CFA LOS"\n}\n\nMake it 3-5 steps. Use realistic CFA exam numbers. Output ONLY valid JSON.`,1200,{retries:2,retryDelay:5000,model:"claude-haiku-4-5-20251001",feature:"calc_trainer"});
         if(result&&result.steps){setCalcProblem(result);setCalcSteps(result.steps||[]);}
         else throw new Error("Invalid response format");
       }catch(e){setCalcError("Failed to generate problem: "+e.message);}
@@ -4978,7 +5081,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           if(!apiKey){setWalkthroughError("API key required for Concept Walkthrough.");return;}
           setWalkthroughLoading(true);setWalkthroughError("");setWalkthroughText(null);
           try{
-            const result=await callClaude(`You are a CFA Level 1 tutor. Create a concise concept walkthrough for: ${walkthroughTopic} → ${activeWtMod}\n\nStructure your response as:\n**Core Concept** (2 sentences explaining the big idea)\n**Key Rules** (3-4 bullet points of what you MUST know for the exam)\n**Worked Example** (one numerical or scenario-based example with the solution)\n**Exam Traps** (2 bullet points of common mistakes)\n\nBe specific to CFA L1 2026 curriculum. No padding.`,800,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001"});
+            const result=await callClaude(`You are a CFA Level 1 tutor. Create a concise concept walkthrough for: ${walkthroughTopic} → ${activeWtMod}\n\nStructure your response as:\n**Core Concept** (2 sentences explaining the big idea)\n**Key Rules** (3-4 bullet points of what you MUST know for the exam)\n**Worked Example** (one numerical or scenario-based example with the solution)\n**Exam Traps** (2 bullet points of common mistakes)\n\nBe specific to CFA L1 2026 curriculum. No padding.`,800,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"walkthrough"});
             setWalkthroughText(typeof result==="string"?result:JSON.stringify(result));
           }catch(e){setWalkthroughError("Walkthrough failed: "+e.message);}
           setWalkthroughLoading(false);
