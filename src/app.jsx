@@ -2587,10 +2587,15 @@ function CFAMock(){
         const data=await res.json();
         if(data.error) throw new Error(`Claude error: ${data.error.message||JSON.stringify(data.error)}`);
         if(!data.content||!data.content.length) throw new Error("Empty response from API");
-        const raw=data.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
+        const raw=data.content.map(i=>i.text||"").join("").replace(/```json\n?|```/g,"").trim();
         if(!raw) throw new Error("No text content in response");
-        try{ return JSON.parse(raw); }
-        catch(e){ throw new Error(`JSON parse failed. Raw: ${raw.slice(0,200)}`); }
+        if(data.stop_reason==="max_tokens") throw new Error("Response too long — tap retry (using more budget next time).");
+        // Try direct parse
+        try{ return JSON.parse(raw); }catch{}
+        // Regex-extract the outermost JSON array or object (handles extra text before/after)
+        const arrM=raw.match(/\[[\s\S]*\]/); if(arrM){try{return JSON.parse(arrM[0]);}catch{}}
+        const objM=raw.match(/\{[\s\S]*\}/); if(objM){try{return JSON.parse(objM[0]);}catch{}}
+        throw new Error(`JSON parse failed. Raw: ${raw.slice(0,500)}`);
       }catch(e){
         clearTimeout(timeout);
         if(e.name==="AbortError"){lastError=new Error("Timed out — API is slow, try again.");continue;}
@@ -2807,7 +2812,7 @@ Reply with just "saved" when done.`}]
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
-        const tightMax={3:1500,5:2500,10:4500,15:6000,20:7500}[cnt]||(cnt*500);
+        const tightMax={3:2000,5:3500,10:6000,15:8000,20:8000}[cnt]||(cnt*700);
         let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt),tightMax,{retries:3,retryDelay:8000,model:useModel});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
