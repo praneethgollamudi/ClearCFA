@@ -6898,7 +6898,23 @@ Reply with just "saved" when done.`
       alignItems: "center",
       justifyContent: "center"
     }
-  }, Math.min(srWrongCount, 99)))), /*#__PURE__*/React.createElement("button", {
+  }, Math.min(srWrongCount, 99))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      trackUsage("ai_coach");
+      setAiCoachScreen(true);
+    },
+    style: {
+      flex: 1,
+      padding: "11px",
+      borderRadius: 11,
+      fontSize: 12,
+      fontWeight: 600,
+      background: "#0a1a20",
+      border: `1px solid #22d3ee44`,
+      color: "#22d3ee",
+      cursor: "pointer"
+    }
+  }, "🤖 Coach")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       if (luckyDipSpinning) return;
       trackUsage("lucky_dip");
@@ -7007,30 +7023,6 @@ Reply with just "saved" when done.`
         }
       }
     }, {
-      key: "ai_coach",
-      label: "🤖 Coach",
-      style: {
-        background: "#0a1a20",
-        border: `1px solid #22d3ee44`,
-        color: "#22d3ee"
-      },
-      action: () => {
-        trackUsage("ai_coach");
-        setAiCoachScreen(true);
-      }
-    }, {
-      key: "readiness",
-      label: "📊 Readiness",
-      style: {
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        color: C.textMid
-      },
-      action: () => {
-        trackUsage("readiness");
-        setScreen("readiness");
-      }
-    }, {
       key: "dashboard",
       label: "📈 Dashboard",
       style: {
@@ -7115,34 +7107,6 @@ Reply with just "saved" when done.`
         }
       }
     }, {
-      key: "learn",
-      label: "📖 Learn",
-      style: {
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        color: C.textMid
-      },
-      action: () => {
-        trackUsage("learn");
-        setWalkthroughTopic(Object.keys(LOS)[0]);
-        setWalkthroughModule(Object.keys(LOS[Object.keys(LOS)[0]].modules || {})[0] || "");
-        setWalkthroughText(null);
-        setWalkthroughError("");
-        setScreen("walkthrough");
-      }
-    }, {
-      key: "fsa_vignette",
-      label: "📊 FSA Statement",
-      style: {
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        color: C.textMid
-      },
-      action: () => {
-        trackUsage("fsa_vignette");
-        setFsaVignetteOpen(true);
-      }
-    }, {
       key: "calc_trainer",
       label: "🔢 Calc Trainer",
       style: {
@@ -7158,36 +7122,6 @@ Reply with just "saved" when done.`
         setCalcChecked({});
         setCalcError("");
         setScreen("calcTrainer");
-      }
-    }, {
-      key: "study_plan",
-      label: "📅 2-Month Plan",
-      style: {
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        color: C.textMid
-      },
-      action: () => {
-        trackUsage("study_plan");
-        const plan = generateStudyPlan(history, srDeck, examDate, daysLeft);
-        setStudyPlanData(plan);
-        setScreen("studyPlan");
-      }
-    }, {
-      key: "cross_vignette",
-      label: "🔀 Cross Vignette",
-      style: {
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        color: C.textMid
-      },
-      action: () => {
-        trackUsage("cross_vignette");
-        const pairs = getRelatedModules("Financial Statement Analysis");
-        setCrossVignetteTopic("Financial Statement Analysis");
-        setCrossVignetteModule1(pairs[0]?.[0] || "");
-        setCrossVignetteModule2(pairs[0]?.[1] || "");
-        setCrossVignetteOpen(true);
       }
     }, {
       key: "los_coverage",
