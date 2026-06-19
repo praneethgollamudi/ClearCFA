@@ -4797,11 +4797,12 @@ Reply with just "saved" when done.`
         parsed = flattenVignettes(rawVig, t, st);
       } else {
         const tightMax = {
-          5: 700,
-          10: 1400,
-          15: 2000,
-          20: 2600
-        }[cnt] || 1400;
+          3: 1500,
+          5: 2500,
+          10: 4500,
+          15: 6000,
+          20: 7500
+        }[cnt] || cnt * 500;
         let raw = await callClaude(buildQuestionPrompt(t, st, diff, cnt), tightMax, {
           retries: 3,
           retryDelay: 8000,
@@ -4869,7 +4870,7 @@ Reply with just "saved" when done.`
             }))];
           } else if (apiKey) {
             try {
-              const qs = await callClaude(buildQuestionPrompt(t, mod, "Medium", perModule), 600, {
+              const qs = await callClaude(buildQuestionPrompt(t, mod, "Medium", perModule), perModule * 500, {
                 retries: 1,
                 retryDelay: 4000,
                 model: "claude-haiku-4-5-20251001"

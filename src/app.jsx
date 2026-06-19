@@ -2807,7 +2807,7 @@ Reply with just "saved" when done.`}]
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
-        const tightMax={5:700,10:1400,15:2000,20:2600}[cnt]||1400;
+        const tightMax={3:1500,5:2500,10:4500,15:6000,20:7500}[cnt]||(cnt*500);
         let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt),tightMax,{retries:3,retryDelay:8000,model:useModel});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
@@ -2848,7 +2848,7 @@ Reply with just "saved" when done.`}]
             allQs=[...allQs,...localQs.map(q=>({...q,_topic:t,_subtopic:mod}))];
           } else if(apiKey){
             try{
-              const qs=await callClaude(buildQuestionPrompt(t,mod,"Medium",perModule),600,{retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001"});
+              const qs=await callClaude(buildQuestionPrompt(t,mod,"Medium",perModule),perModule*500,{retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001"});
               allQs=[...allQs,...(Array.isArray(qs)?expandQuestionKeys(qs):[]).map((q,j)=>({...q,id:`${i}_${j}_${mod.slice(0,5)}`,_topic:t,_subtopic:mod}))];
             }catch{}
           }
