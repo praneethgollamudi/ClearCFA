@@ -860,7 +860,7 @@ const POWER_NOTES = {
         rules: [
           "Code has 6 components; Standards has 7 (I–VII). Know both by number.",
           "Standard I-A: Follow the STRICTER of local law vs CFA Standards — whichever is more restrictive.",
-          "Standard I-B: Independence — gifts >US$100 from clients need employer written permission.",
+          "Standard I-B: Independence — any gift/benefit that could compromise objectivity must be disclosed to employer; decline or obtain written pre-approval before accepting. No dollar threshold in CFA Standards.",
           "Standard I-C: Misrepresentation includes plagiarism and guaranteeing investment returns.",
           "Standard II-A: Material = would affect price or reasonable investor's decision. Nonpublic = not yet released. BOTH required.",
           "Standard III-A: Loyalty, Prudence, Care — duty to clients first, then employer, then self.",
