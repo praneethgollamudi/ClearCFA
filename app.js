@@ -2793,14 +2793,14 @@ const Q_TEMPLATES = {
     const wrong1 = dso + dio + dpo;
     const wrong2 = dso + dio;
     return {
-      question: `A company has Days Sales Outstanding of ${dso} days, Days Inventory Outstanding of ${dso} days (DIO = ${dio}), and Days Payable Outstanding of ${dpo} days. What is the Cash Conversion Cycle?`,
+      question: `A company has Days Sales Outstanding of ${dso} days, Days Inventory Outstanding (DIO) of ${dio} days, and Days Payable Outstanding of ${dpo} days. What is the Cash Conversion Cycle?`,
       options: {
         A: `${ccc} days`,
         B: `${wrong1} days`,
         C: `${wrong2} days`
       },
       answer: "A",
-      explanation: `CCC = DSO + DIO − DPO = ${dso} + ${dio} − ${dpo} = ${ccc} days. DPO is SUBTRACTED because paying suppliers later extends the time before cash is needed. A shorter CCC = more efficient working capital management.`,
+      explanation: `CCC = DSO + DIO − DPO = ${dso} + ${dio} − ${dpo} = ${ccc} days. DPO is SUBTRACTED because paying suppliers later reduces the cash conversion period. A shorter CCC = more efficient working capital management.`,
       concept: "Cash Conversion Cycle",
       los_tested: "calculate and interpret activity liquidity solvency and profitability ratios",
       misconception_targeted: "adding DPO instead of subtracting it in the CCC formula"
@@ -2808,9 +2808,8 @@ const Q_TEMPLATES = {
   },
   // LIFO vs FIFO in inflation
   () => {
-    const inflation = pick(["rising", "increasing"]);
     return {
-      question: `During a period of ${inflation} inventory costs, compared to FIFO, a company using LIFO will report:`,
+      question: `During a period of rising inventory costs, compared to FIFO, a company using LIFO will report:`,
       options: {
         A: `Higher net income and higher inventory on the balance sheet`,
         B: `Lower net income and lower inventory on the balance sheet`,
@@ -2821,6 +2820,163 @@ const Q_TEMPLATES = {
       concept: "LIFO vs FIFO",
       los_tested: "calculate and explain how inflation and deflation of inventory costs affect financial statements and ratios",
       misconception_targeted: "mixing LIFO effects on income statement vs balance sheet"
+    };
+  },
+  // Current ratio & quick ratio
+  () => {
+    const ca = rnd(200, 500);
+    const cl = rnd(100, 250);
+    const inv = rnd(50, 150);
+    const prep = rnd(10, 40);
+    const cr = parseFloat(ca / cl).toFixed(2);
+    const qr = parseFloat((ca - inv - prep) / cl).toFixed(2);
+    const wrong1 = parseFloat((ca - inv) / cl).toFixed(2);
+    return {
+      question: `A firm has current assets of $${ca}M, current liabilities of $${cl}M, inventory of $${inv}M, and prepaid expenses of $${prep}M. What is the quick ratio?`,
+      options: {
+        A: `${qr}×`,
+        B: `${cr}× (current ratio, not quick ratio)`,
+        C: `${wrong1}× (excluding only inventory)`
+      },
+      answer: "A",
+      explanation: `Quick ratio = (Current Assets − Inventory − Prepaid Expenses) / Current Liabilities = ($${ca} − $${inv} − $${prep}) / $${cl} = ${qr}×. Prepaid expenses are excluded because they cannot be quickly converted to cash. The current ratio (${cr}×) includes all current assets.`,
+      concept: "Quick Ratio",
+      los_tested: "calculate and interpret activity liquidity solvency and profitability ratios",
+      misconception_targeted: "forgetting to exclude prepaid expenses from the quick ratio"
+    };
+  },
+  // Revenue recognition (percentage of completion)
+  () => {
+    const total = rnd(50, 200);
+    const pct = rnd(30, 70);
+    const cost = Math.round(total * rnd(60, 80) / 100);
+    const rev = Math.round(total * pct / 100);
+    const costRec = Math.round(cost * pct / 100);
+    const gp = rev - costRec;
+    return {
+      question: `Under the percentage-of-completion method, a $${total}M contract is ${pct}% complete. Total estimated costs are $${cost}M. How much gross profit is recognised in the current period?`,
+      options: {
+        A: `$${gp}M`,
+        B: `$0 — profit recognised only on completion`,
+        C: `$${total - cost}M — total contract profit recognised immediately`
+      },
+      answer: "A",
+      explanation: `Revenue recognised = ${pct}% × $${total}M = $${rev}M. Costs recognised = ${pct}% × $${cost}M = $${costRec}M. Gross profit = $${rev}M − $${costRec}M = $${gp}M. Under percentage-of-completion (IFRS15 / ASC 606), revenue is recognised proportionally as work progresses.`,
+      concept: "Revenue Recognition Percentage of Completion",
+      los_tested: "describe the general principles of revenue recognition",
+      misconception_targeted: "deferring all profit until contract completion"
+    };
+  },
+  // Deferred tax
+  () => {
+    const pretax = rnd(100, 300);
+    const rate = pick([20, 25, 30]);
+    const bookDep = rnd(20, 60);
+    const diff = rnd(10, 30);
+    const taxDep = bookDep + diff;
+    const dtl = Math.round(diff * rate / 100);
+    const taxExp = Math.round(pretax * rate / 100);
+    const wrongVal = Math.round(pretax * rate / 100 - dtl);
+    return {
+      question: `A company has pre-tax income of $${pretax}M and a tax rate of ${rate}%. Book depreciation is $${bookDep}M while tax depreciation is $${taxDep}M (accelerated). What is the deferred tax liability created this period?`,
+      options: {
+        A: `$${dtl}M`,
+        B: `$${taxExp}M (total income tax expense, not the deferred portion)`,
+        C: `$${wrongVal}M (taxes currently payable)`
+      },
+      answer: "A",
+      explanation: `Temporary difference = tax depreciation − book depreciation = $${taxDep}M − $${bookDep}M = $${diff}M. DTL = $${diff}M × ${rate}% = $${dtl}M. Accelerated tax depreciation reduces taxes payable now but creates a deferred liability that reverses in later periods when tax depreciation falls below book depreciation.`,
+      concept: "Deferred Tax Liability",
+      los_tested: "explain how deferred tax liabilities and assets are created and the factors that determine how a company's deferred tax liabilities and assets should be treated for purposes of financial analysis",
+      misconception_targeted: "confusing total income tax expense with the deferred tax component"
+    };
+  },
+  // Operating vs investing cash flows
+  () => {
+    const ni = rnd(50, 150);
+    const dep = rnd(10, 40);
+    const wc = rnd(5, 30);
+    const capex = rnd(30, 100);
+    const cfo = ni + dep - wc;
+    const cfi = -capex;
+    return {
+      question: `A company reports net income of $${ni}M, depreciation of $${dep}M, an increase in working capital of $${wc}M, and capital expenditures of $${capex}M. What is cash flow from operations (CFO) under the indirect method?`,
+      options: {
+        A: `$${cfo}M`,
+        B: `$${ni + dep}M (ignoring working capital change)`,
+        C: `$${cfo + cfi}M (including capex)`
+      },
+      answer: "A",
+      explanation: `CFO (indirect) = Net Income + Depreciation − Increase in Working Capital = $${ni} + $${dep} − $${wc} = $${cfo}M. Depreciation is added back (non-cash charge). Working capital increases use cash, so they are subtracted. Capital expenditures ($${capex}M) belong in CFI, not CFO.`,
+      concept: "Cash Flow from Operations Indirect Method",
+      los_tested: "describe how the cash flow statement is linked to the income statement and balance sheet",
+      misconception_targeted: "including capex in CFO or mishandling working capital direction"
+    };
+  },
+  // EPS diluted vs basic
+  () => {
+    const ni = rnd(50, 200);
+    const shares = rnd(50, 150);
+    const opts = rnd(5, 20);
+    const price = rnd(20, 50);
+    const strike = Math.round(price * rnd(50, 80) / 100);
+    const basic = parseFloat(ni / shares).toFixed(2);
+    const treasury = Math.round(opts * (price - strike) / price);
+    const dilutedShares = shares + opts - treasury;
+    const diluted = parseFloat(ni / dilutedShares).toFixed(2);
+    return {
+      question: `A company earns $${ni}M net income with ${shares}M basic shares. It has ${opts}M dilutive options (strike $${strike}, market $${price}). Using the treasury stock method, what is diluted EPS?`,
+      options: {
+        A: `$${diluted}`,
+        B: `$${basic} (basic EPS, options ignored)`,
+        C: `$${parseFloat(ni / (shares + opts)).toFixed(2)} (ignoring treasury stock buyback)`
+      },
+      answer: "A",
+      explanation: `Treasury stock method: Options exercised = ${opts}M. Proceeds = ${opts}M × $${strike} = $${opts * strike}M. Shares bought back at market price = $${opts * strike}M / $${price} = ${treasury}M shares. Net dilution = ${opts}M − ${treasury}M = ${opts - treasury}M shares. Diluted shares = ${shares}M + ${opts - treasury}M = ${dilutedShares}M. Diluted EPS = $${ni}M / ${dilutedShares}M = $${diluted}.`,
+      concept: "Diluted EPS Treasury Stock Method",
+      los_tested: "calculate and interpret basic and diluted EPS",
+      misconception_targeted: "adding all option shares without applying treasury stock method"
+    };
+  },
+  // Inventory write-down LCNRV
+  () => {
+    const cost = rnd(100, 300);
+    const nrv = Math.round(cost * rnd(70, 95) / 100);
+    const writedown = cost - nrv;
+    return {
+      question: `A company's inventory has a historical cost of $${cost}M. The estimated net realisable value (NRV) is $${nrv}M. Under IFRS, what is the required accounting treatment?`,
+      options: {
+        A: `Write down inventory to $${nrv}M, recognising a $${writedown}M loss on the income statement`,
+        B: `No adjustment required; IFRS requires inventory at historical cost`,
+        C: `Write down only under US GAAP; IFRS allows the higher of cost or NRV`
+      },
+      answer: "A",
+      explanation: `Under IFRS (IAS 2), inventory is carried at the lower of cost or NRV. Since NRV ($${nrv}M) < cost ($${cost}M), inventory is written down to $${nrv}M, recording a $${writedown}M loss. Under US GAAP the rule is lower of cost or market (LCM), but the principle is similar. Write-downs cannot be reversed under US GAAP; IFRS allows reversal if NRV recovers.`,
+      concept: "Inventory Lower of Cost or NRV",
+      los_tested: "calculate and explain how inventories are reported in the financial statements",
+      misconception_targeted: "believing IFRS uses historical cost without NRV test"
+    };
+  },
+  // Debt-to-equity vs debt-to-assets
+  () => {
+    const debt = rnd(100, 400);
+    const equity = rnd(100, 300);
+    const assets = debt + equity;
+    const dte = parseFloat(debt / equity).toFixed(2);
+    const dta = parseFloat(debt / assets).toFixed(2);
+    const wrong = parseFloat(equity / assets).toFixed(2);
+    return {
+      question: `A firm has total debt of $${debt}M and total equity of $${equity}M (total assets = $${assets}M). What is the debt-to-equity ratio?`,
+      options: {
+        A: `${dte}×`,
+        B: `${dta}× (debt-to-assets, not D/E)`,
+        C: `${wrong}× (equity-to-assets)`
+      },
+      answer: "A",
+      explanation: `Debt-to-Equity = Total Debt / Total Equity = $${debt}M / $${equity}M = ${dte}×. Debt-to-Assets = $${debt}M / $${assets}M = ${dta}×. These ratios measure leverage differently; D/E shows how many dollars of debt per dollar of equity, while D/A shows the proportion of assets financed by debt.`,
+      concept: "Solvency Ratios Debt-to-Equity",
+      los_tested: "calculate and interpret activity liquidity solvency and profitability ratios",
+      misconception_targeted: "confusing debt-to-equity with debt-to-assets"
     };
   }],
   "Fixed Income": [
@@ -3382,13 +3538,11 @@ function generateLocalQuestions(topic, module, difficulty, count) {
   const templates = Q_TEMPLATES[topic] || [];
   if (!templates.length) return [];
   const questions = [];
-  const usedTemplates = new Set();
 
-  // Shuffle template order to avoid always using same templates first
+  // Shuffle template order; each template used at most once per call to prevent same-concept repeats
   const shuffledIdxs = [...Array(templates.length).keys()].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < count * 4 && questions.length < count; i++) {
-    // Rotate through all templates before repeating
-    const tIdx = shuffledIdxs[i % shuffledIdxs.length];
+  for (let i = 0; i < shuffledIdxs.length && questions.length < count; i++) {
+    const tIdx = shuffledIdxs[i];
     try {
       const q = templates[tIdx]();
       if (!q || !q.question || !q.options || !q.answer) continue;
@@ -4185,7 +4339,8 @@ Reply with just "saved" when done.`
       const localRaw = generateLocalQuestions(t, st, diff, cnt * 3);
       const seen = new Set();
       const localQs = localRaw.filter(q => {
-        const key = (q.question || "").slice(0, 60).toLowerCase().replace(/\d+/g, "#");
+        // Deduplicate by concept first, then by normalized question text
+        const key = q.concept ? q.concept.toLowerCase() : (q.question || "").toLowerCase().replace(/\d+\.?\d*/g, "#").replace(/\s+/g, " ").slice(0, 80);
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
