@@ -2316,20 +2316,7 @@ function CFAMock(){
       }
       setHistoryLoaded(true);
 
-      // STEP 2b: If Supabase configured, try to load from there (more sessions may exist)
-      const sbCfg=getSupabaseConfig();
-      if(sbCfg){
-        const sbData=await supabaseLoad(sbCfg);
-        if(sbData&&Array.isArray(sbData.history)&&sbData.history.length>bestHistory.length){
-          bestHistory=sbData.history.map(s=>({...s,wrongs:[]}));
-          setHistory(bestHistory);
-          historyRef.current=bestHistory;
-          storageSet(STORAGE_KEY,bestHistory);// cache locally
-          if(sbData.srDeck) setSrDeck(sbData.srDeck);
-        }
-      }
-
-      // STEP 3: Load SR deck (stripped down)
+      // STEP 2b: Load SR deck before Supabase merge so we can push it up if needed
       let bestSR=null;
       try{
         const val=await storageGet(SR_KEY);
@@ -2337,8 +2324,30 @@ function CFAMock(){
           bestSR=val;
         }
       }catch{}
-      if(bestSR)setSrDeck(bestSR);
+      if(bestSR){setSrDeck(bestSR);srDeckRef.current=bestSR;}
       setSrLoaded(true);
+
+      // STEP 2c: Bidirectional Supabase merge
+      // Pull if Supabase is ahead; push if local is ahead (ensures progress is never lost)
+      const sbCfg=getSupabaseConfig();
+      if(sbCfg){
+        try{
+          const sbData=await supabaseLoad(sbCfg);
+          const sbCount=sbData&&Array.isArray(sbData.history)?sbData.history.length:0;
+          if(sbData&&sbCount>bestHistory.length){
+            // Supabase has more sessions — pull and cache locally
+            bestHistory=sbData.history.map(s=>({...s,wrongs:[]}));
+            setHistory(bestHistory);
+            historyRef.current=bestHistory;
+            storageSet(STORAGE_KEY,bestHistory);
+            if(sbData.srDeck){setSrDeck(sbData.srDeck);srDeckRef.current=sbData.srDeck;}
+          } else if(bestHistory.length>sbCount){
+            // Local is ahead — push to Supabase in background so progress is safe
+            supabaseSync(sbCfg,bestHistory,bestSR||{}).catch(()=>{});
+          }
+          // Equal counts: no action needed (last session already synced)
+        }catch{}
+      }
 
       // STEP 4: Load settings
       try{const k=await storageGet("cfa_api_key");if(k&&typeof k==="string"&&k.startsWith("sk-")){setApiKey(k);setApiKeyInput(k);}}catch{}
@@ -4252,12 +4261,12 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         <input value={supabaseKey} onChange={e=>setSupabaseKey(e.target.value)} placeholder="eyJhbGci..."
           style={{width:"100%",padding:"10px 12px",borderRadius:9,fontSize:12,background:C.surface,border:`1.5px solid ${supabaseKey?"#44aa8844":C.border}`,color:C.text,outline:"none",boxSizing:"border-box"}}/>
       </div>
-      <div style={{display:"flex",gap:9,marginBottom:16}}>
+      <div style={{display:"flex",gap:9,marginBottom:12}}>
         <button onClick={async()=>{
           if(!supabaseUrl||!supabaseKey){return;}
           setSupabaseSyncing(true);
           const cfg={url:supabaseUrl.replace(/\/$/,""),key:supabaseKey};
-          const ok=await supabaseSync(cfg,history,srDeck);
+          const ok=await supabaseSync(cfg,history,srDeckRef.current);
           if(ok){
             localStorage.setItem("cfa_supabase_config",JSON.stringify(cfg));
             setSupabaseCfg(cfg);
@@ -4275,7 +4284,24 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           Disconnect
         </button>}
       </div>
-      {supabaseCfg&&<div style={{fontSize:11,color:"#22c55e",background:"#0a1f0a",borderRadius:8,padding:"8px 12px",marginBottom:12}}>✅ Supabase connected — sessions auto-sync after every quiz</div>}
+      {supabaseCfg&&(
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:11,color:"#22c55e",background:"#0a1f0a",borderRadius:8,padding:"8px 12px",marginBottom:8}}>
+            ✅ Supabase connected · {history.length} session{history.length!==1?"s":""} · {Object.keys(srDeckRef.current).length} SR cards
+          </div>
+          <button onClick={async()=>{
+            if(!supabaseCfg)return;
+            setSupabaseSyncing(true);
+            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current);
+            setDriveStatus(ok?"synced":"error");
+            setTimeout(()=>setDriveStatus(null),4000);
+            setSupabaseSyncing(false);
+          }} style={{width:"100%",padding:"10px",borderRadius:9,fontSize:12,fontWeight:700,
+            background:"#0a1f2a",border:`1.5px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer"}}>
+            {supabaseSyncing?"Syncing…":"⬆ Sync All Data to Supabase Now"}
+          </button>
+        </div>
+      )}
     </div>
 
     <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
