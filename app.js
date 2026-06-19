@@ -912,6 +912,7 @@ const STORAGE_KEY = "cfa_mock_v7";
 const SR_KEY = "cfa_sr_v7";
 const QDB_KEY = "cfa_qdb_v7";
 const USAGE_KEY = "cfa_usage_v1";
+const BESTS_KEY = "cfa_bests_v1";
 const SM2_INTERVALS = [1, 3, 7, 16, 35, 70];
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
@@ -1009,6 +1010,49 @@ function getLevel(xp) {
     nextXP: nextThreshold,
     progress: Math.min(99, progress)
   };
+}
+function fireConfetti(duration = 2400) {
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;";
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  const colors = ["#f59e0b", "#6366f1", "#10b981", "#ef4444", "#a78bfa", "#fcd34d", "#34d399", "#f472b6"];
+  const particles = Array.from({
+    length: 90
+  }, (_, i) => ({
+    x: Math.random() * canvas.width,
+    y: -10 - Math.random() * 60,
+    vx: (Math.random() - 0.5) * 5,
+    vy: Math.random() * 4 + 1.5,
+    color: colors[i % colors.length],
+    size: Math.random() * 7 + 3,
+    angle: Math.random() * 360,
+    spin: (Math.random() - 0.5) * 0.25,
+    opacity: 1
+  }));
+  const end = Date.now() + duration;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const remaining = end - Date.now();
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.06;
+      p.angle += p.spin;
+      if (remaining < 600) p.opacity = Math.max(0, remaining / 600);
+      ctx.save();
+      ctx.globalAlpha = p.opacity;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    });
+    if (Date.now() < end) requestAnimationFrame(draw);else canvas.remove();
+  }
+  draw();
 }
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
@@ -4200,6 +4244,15 @@ function CFAMock() {
   const [crossVignetteTopic, setCrossVignetteTopic] = useState("Financial Statement Analysis");
   const [crossVignetteModule1, setCrossVignetteModule1] = useState("");
   const [crossVignetteModule2, setCrossVignetteModule2] = useState("");
+  const [luckyDipSpinning, setLuckyDipSpinning] = useState(false);
+  const [luckyDipLabel, setLuckyDipLabel] = useState("");
+  const [personalBests, setPersonalBests] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(BESTS_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  });
 
   // Auto-trigger focus refresh when flagged
   useEffect(() => {
@@ -4215,7 +4268,7 @@ function CFAMock() {
   }, [history]);
   useEffect(() => {
     const s = document.createElement("style");
-    s.textContent = `@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeInScale{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}@keyframes glow{0%,100%{box-shadow:0 0 8px #6366f144}50%{box-shadow:0 0 18px #6366f188}}@keyframes correctFlash{0%{background:#022c22}50%{background:#064e3b}100%{background:#022c22}}*{box-sizing:border-box}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2a2848;border-radius:2px}button:focus-visible{outline:2px solid #6366f1;outline-offset:2px}`;
+    s.textContent = `@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeInScale{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}@keyframes glow{0%,100%{box-shadow:0 0 8px #6366f144}50%{box-shadow:0 0 18px #6366f188}}@keyframes correctFlash{0%{background:#022c22}50%{background:#064e3b}100%{background:#022c22}}@keyframes toastIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(-10px)}}*{box-sizing:border-box}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2a2848;border-radius:2px}button:focus-visible{outline:2px solid #6366f1;outline-offset:2px}`;
     document.head.appendChild(s);
     return () => document.head.removeChild(s);
   }, []);
@@ -4417,6 +4470,9 @@ function CFAMock() {
     storageHealth().then(ok => setStorageOk(ok));
   }, []);
   const pendingSessionRef = useRef(null);
+  const showToast = React.useCallback((emoji, title, desc, celebrate = false) => {
+    if (typeof window.__cfaShowToast === "function") window.__cfaShowToast(emoji, title, desc, celebrate);
+  }, []);
   const endQuiz = useCallback(() => {
     clearInterval(timerRef.current);
     const elapsed = Math.floor((Date.now() - startRef.current) / 1000);
@@ -4581,6 +4637,43 @@ function CFAMock() {
     const newHistory = [session, ...historyRef.current];
     setHistory(newHistory);
     historyRef.current = newHistory;
+
+    // ── Milestone checks ──────────────────────────────────────────────────
+    const oldXP = getTotalXP(newHistory.slice(1));
+    const newXP = getTotalXP(newHistory);
+    const oldLevel = getLevel(oldXP).level;
+    const newLevel = getLevel(newXP).level;
+    if (newLevel > oldLevel) {
+      showToast("⭐", `Level Up! You're now ${getLevel(newXP).label}`, "Keep the momentum going!", true);
+    } else if (pct === 100) {
+      showToast("🎯", "Perfect Session!", `100% on ${t} — flawless.`, true);
+    } else if (newHistory.length === 1) {
+      showToast("🚀", "First Session Done!", "Your CFA journey starts now.", false);
+    }
+    // Personal best check
+    const bestKey = `${t}|||${st}`;
+    setPersonalBests(prev => {
+      const stored = prev[bestKey];
+      if (!stored || pct > stored.pct) {
+        const updated = {
+          ...prev,
+          [bestKey]: {
+            pct,
+            date: session.dateKey,
+            difficulty: diff
+          }
+        };
+        try {
+          localStorage.setItem(BESTS_KEY, JSON.stringify(updated));
+        } catch {}
+        if (stored && pct > stored.pct) {
+          showToast("🏆", "New Personal Best!", `${pct}% in ${st} (was ${stored.pct}%)`, pct === 100 ? false : true);
+        }
+        return updated;
+      }
+      return prev;
+    });
+    // ─────────────────────────────────────────────────────────────────────
 
     // Auto-escalation
     const topicHistory = historyRef.current.filter(h => h.topic === t && h.subtopic === st && h.difficulty === diff);
@@ -6527,7 +6620,7 @@ Reply with just "saved" when done.`
     style: {
       display: "flex",
       gap: 8,
-      marginBottom: 12
+      marginBottom: 8
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -6611,7 +6704,48 @@ Reply with just "saved" when done.`
       alignItems: "center",
       justifyContent: "center"
     }
-  }, Math.min(srWrongCount, 99)))), /*#__PURE__*/React.createElement("div", {
+  }, Math.min(srWrongCount, 99)))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (luckyDipSpinning) return;
+      trackUsage("lucky_dip");
+      setLuckyDipSpinning(true);
+      const allTopics = Object.keys(LOS);
+      let count = 0;
+      const spin = () => {
+        const t = allTopics[Math.floor(Math.random() * allTopics.length)];
+        setLuckyDipLabel(t);
+        count++;
+        if (count < 9) {
+          setTimeout(spin, 80 + count * 55);
+        } else {
+          setTimeout(() => {
+            setLuckyDipSpinning(false);
+            const mods = Object.keys(LOS[t].modules || {});
+            const m = mods[Math.floor(Math.random() * mods.length)];
+            generateQuestions(t, m, "Medium", 10, "guided");
+          }, 600);
+        }
+      };
+      spin();
+    },
+    style: {
+      width: "100%",
+      marginBottom: 12,
+      padding: "12px",
+      borderRadius: 11,
+      fontSize: 13,
+      fontWeight: 700,
+      background: luckyDipSpinning ? "#1a1a2e" : `linear-gradient(135deg,#7c3aed22,#6366f118)`,
+      border: `1px solid ${luckyDipSpinning ? "#7c3aed88" : "#6366f144"}`,
+      color: luckyDipSpinning ? "#a78bfa" : C.textMid,
+      cursor: luckyDipSpinning ? "default" : "pointer",
+      transition: "all 0.15s",
+      letterSpacing: luckyDipSpinning ? 0.3 : 0,
+      overflow: "hidden",
+      whiteSpace: "nowrap",
+      textOverflow: "ellipsis"
+    }
+  }, luckyDipSpinning ? `🎲 ${luckyDipLabel}` : "🎲 Lucky Dip — Surprise me!"), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.surface,
       border: `1px solid ${C.border}`,
@@ -11787,5 +11921,69 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
   });
   return null;
 }
+
+// ─── Toast manager (separate React root so it renders across all screens) ─────
+function ToastManager() {
+  const [toasts, setToasts] = React.useState([]);
+  React.useEffect(() => {
+    window.__cfaShowToast = (emoji, title, desc, celebrate) => {
+      const id = Date.now() + Math.random();
+      setToasts(t => [...t, {
+        id,
+        emoji,
+        title,
+        desc
+      }]);
+      if (celebrate) fireConfetti();
+      setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 4200);
+    };
+    return () => {
+      window.__cfaShowToast = null;
+    };
+  }, []);
+  if (!toasts.length) return null;
+  return React.createElement(React.Fragment, null, ...toasts.map((t, i) => React.createElement("div", {
+    key: t.id,
+    style: {
+      position: "fixed",
+      top: 16 + i * 80,
+      right: 16,
+      zIndex: 10000,
+      background: "linear-gradient(135deg,#12122a,#1a1a38)",
+      border: "1px solid #6366f166",
+      borderRadius: 16,
+      padding: "13px 16px",
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      boxShadow: "0 8px 32px #00000099",
+      animation: "toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+      maxWidth: 300,
+      minWidth: 220
+    }
+  }, React.createElement("span", {
+    style: {
+      fontSize: 26,
+      lineHeight: 1,
+      flexShrink: 0
+    }
+  }, t.emoji), React.createElement("div", null, React.createElement("div", {
+    style: {
+      fontWeight: 800,
+      fontSize: 13,
+      color: "#e8e6ff",
+      lineHeight: 1.3
+    }
+  }, t.title), t.desc && React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#7c7a9e",
+      marginTop: 3,
+      lineHeight: 1.4
+    }
+  }, t.desc)))));
+}
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CFAMock));
+const toastRoot = ReactDOM.createRoot(document.getElementById('toast-root'));
+toastRoot.render(React.createElement(ToastManager));
