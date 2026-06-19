@@ -214,29 +214,25 @@ async function supabaseSync(cfg, history, srDeck) {
       }),
       updated_at: new Date().toISOString()
     };
-    const res = await fetch(`${cfg.url}/rest/v1/sessions?user_id=eq.default`, {
-      method: "GET",
-      headers: {
-        "apikey": cfg.key,
-        "Authorization": `Bearer ${cfg.key}`,
-        "Content-Type": "application/json"
-      }
-    });
-    const existing = await res.json();
-    const method = existing && existing.length > 0 ? "PATCH" : "POST";
-    const url = method === "PATCH" ? `${cfg.url}/rest/v1/sessions?user_id=eq.default` : `${cfg.url}/rest/v1/sessions`;
-    await fetch(url, {
-      method,
+    // Upsert in one request — avoids GET+PATCH race and silent PATCH failures
+    const res = await fetch(`${cfg.url}/rest/v1/sessions`, {
+      method: "POST",
       headers: {
         "apikey": cfg.key,
         "Authorization": `Bearer ${cfg.key}`,
         "Content-Type": "application/json",
-        "Prefer": "return=minimal"
+        "Prefer": "resolution=merge-duplicates,return=minimal"
       },
       body: JSON.stringify(payload)
     });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      console.error("Supabase sync failed:", res.status, errText);
+      return false;
+    }
     return true;
-  } catch {
+  } catch (e) {
+    console.error("Supabase sync error:", e);
     return false;
   }
 }
@@ -4172,6 +4168,7 @@ function CFAMock() {
   const questionsRef = useRef([]);
   const answersRef = useRef({});
   const flaggedQRef = useRef({});
+  const srDeckRef = useRef({});
   const topicRef = useRef("");
   const subtopicRef = useRef("");
   const difficultyRef = useRef("Medium");
@@ -4185,6 +4182,9 @@ function CFAMock() {
   useEffect(() => {
     flaggedQRef.current = flaggedQ;
   }, [flaggedQ]);
+  useEffect(() => {
+    srDeckRef.current = srDeck;
+  }, [srDeck]);
   useEffect(() => {
     topicRef.current = topic;
   }, [topic]);
@@ -4242,40 +4242,41 @@ function CFAMock() {
     // Read flagged state from ref
     const flagged = flaggedQRef.current || {};
 
-    // Update SR deck — also add flagged-correct answers with shortened interval
+    // Build updated SR deck synchronously from the ref (guaranteed current value)
+    // so both state and the Supabase payload use the same post-session data
+    let updatedSrDeck = {
+      ...srDeckRef.current
+    };
     qs.forEach(q => {
       const correct = ans[q.id] === q.answer;
       const isFlagged = !!flagged[q.id];
-      // Skip correct+unflagged — no SR needed
-      if (correct && !isFlagged) return;
+      if (correct && !isFlagged) return; // skip correct+unflagged
       const key = `${t}|||${st}|||${q.id}`;
-      setSrDeck(prev => {
-        const existing = prev[key] || {
-          concept: (q.concept || st).slice(0, 60),
-          topic: t,
-          subtopic: st,
-          question: (q.question || "").slice(0, 180),
-          options: q.options,
-          answer: q.answer,
-          explanation: (q.explanation || "").slice(0, 300),
-          los_tested: (q.los_tested || "").slice(0, 100),
-          wrongCount: 0
-        };
-        const updated = sm2Update(existing, correct);
-        if (!correct) updated.wrongCount = (existing.wrongCount || 0) + 1;
-        if (isFlagged && correct) {
-          // Flagged correct: treat as shaky — short interval, don't increase EF
-          updated.interval = 1;
-          updated.repetitions = 0;
-          updated.ef = Math.max(1.3, existing.ef - 0.1);
-          updated.nextReview = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-        }
-        return {
-          ...prev,
-          [key]: updated
-        };
-      });
+      const existing = updatedSrDeck[key] || {
+        concept: (q.concept || st).slice(0, 60),
+        topic: t,
+        subtopic: st,
+        question: (q.question || "").slice(0, 180),
+        options: q.options,
+        answer: q.answer,
+        explanation: (q.explanation || "").slice(0, 300),
+        los_tested: (q.los_tested || "").slice(0, 100),
+        wrongCount: 0
+      };
+      const card = sm2Update(existing, correct);
+      if (!correct) card.wrongCount = (existing.wrongCount || 0) + 1;
+      if (isFlagged && correct) {
+        card.interval = 1;
+        card.repetitions = 0;
+        card.ef = Math.max(1.3, existing.ef - 0.1);
+        card.nextReview = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+      }
+      updatedSrDeck = {
+        ...updatedSrDeck,
+        [key]: card
+      };
     });
+    setSrDeck(updatedSrDeck); // single state update with fully computed deck
 
     // QDB
     setQdb(prev => addToQDB(qs.map(q => ({
@@ -4285,7 +4286,6 @@ function CFAMock() {
     })), prev));
 
     // Build session object
-    // History stores ONLY stats — no wrongs (they live in SR deck, keeps storage <100KB)
     const session = {
       id: Date.now(),
       topic: t,
@@ -4308,8 +4308,8 @@ function CFAMock() {
 
     // Build newHistory using ref (always current)
     const newHistory = [session, ...historyRef.current];
-    setHistory(newHistory); // update state for UI
-    historyRef.current = newHistory; // update ref immediately
+    setHistory(newHistory);
+    historyRef.current = newHistory;
 
     // Auto-escalation
     const topicHistory = historyRef.current.filter(h => h.topic === t && h.subtopic === st && h.difficulty === diff);
@@ -4320,15 +4320,17 @@ function CFAMock() {
       to: diff === "Easy" ? "Medium" : "Hard"
     });
 
-    // Save to storage — progressive fallback
-    // All sessions stats-only (no wrongs) — data is tiny, simple save
+    // Persist — both localStorage and Supabase use the synchronously-built values
     (async () => {
       const ok = await storageSet(STORAGE_KEY, newHistory.slice(0, 300));
       setSessionSaved(ok);
       if (ok && apiKey) syncToDrive(newHistory.slice(0, 100));
-      // Supabase sync (non-blocking)
       const sbCfg = getSupabaseConfig();
-      if (sbCfg) supabaseSync(sbCfg, newHistory.slice(0, 300), srDeck).then(ok => ok && setDriveStatus("synced")).catch(() => {});
+      if (sbCfg) {
+        const synced = await supabaseSync(sbCfg, newHistory.slice(0, 300), updatedSrDeck);
+        if (synced) setDriveStatus("synced");else setDriveStatus("error");
+        setTimeout(() => setDriveStatus(null), 4000);
+      }
     })();
   }, [screen]);
   const callClaude = async (prompt, maxTokens = 8000, {
