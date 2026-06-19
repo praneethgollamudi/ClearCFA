@@ -918,6 +918,7 @@ const QCACHE_KEY = "cfa_qcache_v1";
 const QCACHE_SLOTS = 2; // sets per topic+module+difficulty combo
 const QCACHE_MAX = 25; // max distinct combos to keep
 const API_LOG_KEY = "cfa_api_log_v1";
+const PASS_TREND_KEY = "cfa_pass_trend_v1";
 const MODEL_PRICING = {
   "claude-sonnet-4-6": {
     in: 3.00,
@@ -4325,6 +4326,12 @@ function CFAMock() {
       return {};
     }
   });
+  const [speedQTime, setSpeedQTime] = useState(100);
+  const speedDrillRef = useRef(null);
+  const [passTrend, setPassTrend] = useState([]);
+  const passTrendRef = useRef([]);
+  const [explainThisText, setExplainThisText] = useState(null);
+  const [explainThisLoading, setExplainThisLoading] = useState(false);
 
   // Auto-trigger focus refresh when flagged
   useEffect(() => {
@@ -4428,6 +4435,13 @@ function CFAMock() {
       try {
         const al = await storageGet(API_LOG_KEY);
         if (Array.isArray(al)) apiLogRef.current = al;
+      } catch {}
+      try {
+        const pt = await storageGet(PASS_TREND_KEY);
+        if (Array.isArray(pt)) {
+          setPassTrend(pt);
+          passTrendRef.current = pt;
+        }
       } catch {}
 
       // STEP 2c: Bidirectional Supabase merge
@@ -4620,6 +4634,36 @@ function CFAMock() {
     }
     return () => clearInterval(timerRef.current);
   }, [screen, count, endQuiz, fullExamMode]);
+  useEffect(() => {
+    clearInterval(speedDrillRef.current);
+    if (screen !== "quiz" || mode !== "speed_drill") return;
+    setSpeedQTime(100);
+    speedDrillRef.current = setInterval(() => {
+      setSpeedQTime(t => {
+        if (t <= 1) {
+          clearInterval(speedDrillRef.current);
+          const q = questionsRef.current[currentQ];
+          if (q && !answersRef.current[q.id]) {
+            setAnswers(a => ({
+              ...a,
+              [q.id]: "__timeout__"
+            }));
+            setTimeout(() => {
+              const qs = questionsRef.current;
+              const cur = currentQ;
+              if (cur < qs.length - 1) {
+                setCurrentQ(c => c + 1);
+                setShowExp(false);
+              } else endQuiz();
+            }, 700);
+          }
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(speedDrillRef.current);
+  }, [screen, mode, currentQ, endQuiz]);
   const sessionCommittedRef = useRef(false);
   useEffect(() => {
     if (screen !== "results") {
@@ -5449,6 +5493,9 @@ Reply with just "saved" when done.`
     if (mode === "guided") setShowExp(true);
   };
   const nextQ = () => {
+    clearInterval(speedDrillRef.current);
+    setExplainThisText(null);
+    setExplainThisLoading(false);
     if (currentQ < questions.length - 1) {
       setCurrentQ(q => q + 1);
       setShowExp(false);
@@ -5471,6 +5518,21 @@ Reply with just "saved" when done.`
   const sessionPct = questions.length ? Math.round(sessionScore / questions.length * 100) : 0;
   const lastSessionQuality = useMemo(() => lastSession ? getSessionQuality(lastSession) : null, [lastSession]);
   const passProbability = useMemo(() => getPassProbability(history, moduleReadiness, daysLeft), [history, moduleReadiness, daysLeft]);
+  useEffect(() => {
+    if (!passProbability || !history.length) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (passTrendRef.current.some(p => p.date === today)) return;
+    const entry = {
+      date: today,
+      prob: passProbability.probability,
+      acc: passProbability.currentAccuracy,
+      cov: passProbability.coveragePct
+    };
+    const updated = [...passTrendRef.current, entry].sort((a, b) => a.date < b.date ? -1 : 1).slice(-60);
+    passTrendRef.current = updated;
+    setPassTrend(updated);
+    storageSet(PASS_TREND_KEY, updated);
+  }, [passProbability, history.length]);
   const studyPace = useMemo(() => getStudyPace(history, daysLeft), [history, daysLeft]);
   const totalXP = useMemo(() => getTotalXP(history), [history]);
   const levelInfo = useMemo(() => getLevel(totalXP), [totalXP]);
@@ -6213,7 +6275,55 @@ Reply with just "saved" when done.`
       setSrAnswer(null);
       setScreen("srReview");
     } : undefined
-  })), studyPace?.burnoutRisk && /*#__PURE__*/React.createElement("div", {
+  })), (() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayQs = history.filter(h => h.dateKey === today).reduce((s, h) => s + h.total, 0);
+    const dailyTarget = daysLeft > 0 ? daysLeft <= 30 ? 30 : daysLeft <= 60 ? 25 : 20 : 20;
+    const pct = Math.min(100, Math.round(todayQs / dailyTarget * 100));
+    const done = todayQs >= dailyTarget;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: C.surface,
+        border: `1px solid ${done ? C.easy + "44" : C.border}`,
+        borderRadius: 10,
+        padding: "10px 14px",
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: done ? C.easy : C.textMid
+      }
+    }, "📅 Today", done ? " — target hit! 🎉" : ""), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        fontWeight: 800,
+        color: done ? C.easy : pct >= 60 ? C.medium : C.muted
+      }
+    }, todayQs, " / ", dailyTarget, " questions")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 5,
+        background: C.dim,
+        borderRadius: 3
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: "100%",
+        width: `${pct}%`,
+        background: done ? C.easy : pct >= 60 ? C.medium : C.accent,
+        borderRadius: 3,
+        transition: "width 0.4s"
+      }
+    })));
+  })(), studyPace?.burnoutRisk && /*#__PURE__*/React.createElement("div", {
     style: {
       background: `linear-gradient(135deg,${C.easy}12,${C.easy}06)`,
       border: `1px solid ${C.easy}33`,
@@ -7078,6 +7188,18 @@ Reply with just "saved" when done.`
         setCrossVignetteModule1(pairs[0]?.[0] || "");
         setCrossVignetteModule2(pairs[0]?.[1] || "");
         setCrossVignetteOpen(true);
+      }
+    }, {
+      key: "los_coverage",
+      label: "🗺 LOS Map",
+      style: {
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        color: C.textMid
+      },
+      action: () => {
+        trackUsage("los_coverage");
+        setScreen("losCoverage");
       }
     }].sort((a, b) => (usageStats[b.key]?.count || 0) - (usageStats[a.key]?.count || 0));
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
@@ -8924,7 +9046,7 @@ Reply with just "saved" when done.`
       display: "flex",
       gap: 9
     }
-  }, [["guided", "🧭 Guided", "Explanation + LOS tag after each answer"], ["exam", "⚡ Exam Sim", "No hints — results only at end"]].map(([val, label, desc]) => /*#__PURE__*/React.createElement("button", {
+  }, [["guided", "🧭 Guided", "Explanation + LOS tag after each answer"], ["exam", "⚡ Exam Sim", "No hints — results only at end"], ["speed_drill", "⏱ Speed Drill", "100s/question — auto-advance on timeout"]].map(([val, label, desc]) => /*#__PURE__*/React.createElement("button", {
     key: val,
     onClick: () => setMode(val),
     style: {
@@ -8965,40 +9087,88 @@ Reply with just "saved" when done.`
       display: "block",
       marginBottom: 10
     }
-  }, "Difficulty"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 7
-    }
-  }, DIFFICULTIES.map(d => {
-    const verbHint = {
-      Easy: "describe/define/identify",
-      Medium: "calculate/apply/contrast",
-      Hard: "evaluate/analyze/formulate"
-    }[d];
-    return /*#__PURE__*/React.createElement("button", {
-      key: d,
-      onClick: () => setDifficulty(d),
+  }, "Difficulty"), (() => {
+    const adaptiveDiff = (() => {
+      if (!topic || !subtopic) return null;
+      const mSessions = history.filter(h => h.topic === topic && h.subtopic === subtopic);
+      const byDiff = {};
+      mSessions.forEach(h => {
+        if (!byDiff[h.difficulty]) byDiff[h.difficulty] = {
+          total: 0,
+          count: 0
+        };
+        byDiff[h.difficulty].total += h.pct;
+        byDiff[h.difficulty].count += 1;
+      });
+      const avg = d => byDiff[d] ? Math.round(byDiff[d].total / byDiff[d].count) : null;
+      const medAvg = avg("Medium"),
+        hardAvg = avg("Hard"),
+        easyAvg = avg("Easy");
+      if (medAvg !== null && medAvg >= 75) return {
+        diff: "Hard",
+        reason: `You averaged ${medAvg}% on Medium — ready to level up`
+      };
+      if (hardAvg !== null && hardAvg < 50) return {
+        diff: "Medium",
+        reason: `${hardAvg}% on Hard — consolidate Medium first`
+      };
+      if (easyAvg !== null && easyAvg >= 80 && medAvg === null) return {
+        diff: "Medium",
+        reason: `${easyAvg}% on Easy — time to push harder`
+      };
+      return null;
+    })();
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
-        padding: "10px 12px",
-        borderRadius: 8,
-        fontSize: 13,
-        fontWeight: 600,
-        textAlign: "left",
-        cursor: "pointer",
-        border: difficulty === d ? `1.5px solid ${diffC[d]}` : `1.5px solid ${C.border}`,
-        background: difficulty === d ? diffC[d] + "18" : C.surface,
-        color: difficulty === d ? diffC[d] : C.muted
+        display: "flex",
+        flexDirection: "column",
+        gap: 7
       }
-    }, d, /*#__PURE__*/React.createElement("div", {
+    }, DIFFICULTIES.map(d => {
+      const verbHint = {
+        Easy: "describe/define/identify",
+        Medium: "calculate/apply/contrast",
+        Hard: "evaluate/analyze/formulate"
+      }[d];
+      return /*#__PURE__*/React.createElement("button", {
+        key: d,
+        onClick: () => setDifficulty(d),
+        style: {
+          padding: "10px 12px",
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 600,
+          textAlign: "left",
+          cursor: "pointer",
+          border: difficulty === d ? `1.5px solid ${diffC[d]}` : `1.5px solid ${C.border}`,
+          background: difficulty === d ? diffC[d] + "18" : C.surface,
+          color: difficulty === d ? diffC[d] : C.muted
+        }
+      }, d, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 9,
+          opacity: 0.6,
+          marginTop: 2
+        }
+      }, verbHint), adaptiveDiff?.diff === d && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 9,
+          color: C.easy,
+          marginTop: 2
+        }
+      }, "✓ Recommended"));
+    })), adaptiveDiff && /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 9,
-        opacity: 0.6,
-        marginTop: 2
+        marginTop: 8,
+        fontSize: 11,
+        color: adaptiveDiff.diff === "Hard" ? C.easy : C.medium,
+        background: C.surface,
+        border: `1px solid ${adaptiveDiff.diff === "Hard" ? C.easy + "33" : C.medium + "33"}`,
+        borderRadius: 7,
+        padding: "6px 10px"
       }
-    }, verbHint));
-  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    }, adaptiveDiff.diff === "Hard" ? "🔥" : "📉", " ", adaptiveDiff.reason));
+  })()), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     style: {
       fontSize: 11,
       fontWeight: 700,
