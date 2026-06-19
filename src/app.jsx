@@ -467,7 +467,7 @@ function getModuleReadiness(history){
     // LOS mastery per module
     const losStats={};
     moduleNames.forEach(m=>{losStats[m]=getLOSMastery(history,topic,m);});
-    return{topic,weight,modules:moduleNames,modulesCovered,untouchedModules,moduleStats,losStats,sessions:sessions.length,totalQs,accuracy,coverage,readiness,reliable,trend,trendDelta,lastSession:sessions.length?new Date(sessions[0].id).toLocaleDateString("en-IN",{day:"numeric",month:"short"}):null};
+    return{topic,weight,modules:moduleNames,modulesCovered,untouchedModules,moduleStats,losStats,sessions:sessions.length,totalQs,accuracy,coverage,readiness,reliable,trend,trendDelta,lastDate:sessions.length?sessions[0].dateKey||null:null,lastSession:sessions.length?new Date(sessions[0].id).toLocaleDateString("en-IN",{day:"numeric",month:"short"}):null};
   });
 }
 
@@ -3954,24 +3954,53 @@ Reply with just "saved" when done.`}]
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
         <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:12}}>To move the needle this week</div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9).slice(0,3).map(m=>(
-            <div key={m.topic} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.dim,borderRadius:9}}>
-              <div>
-                <div style={{fontSize:13,fontWeight:600,color:C.text}}>{m.topic}</div>
-                <div style={{fontSize:11,color:C.muted}}>Untested · {m.weight}% of exam</div>
-              </div>
-              <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(m.topic,m.modules[0],"Easy",5,"guided"),100);}} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:7,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>5 Qs →</button>
-            </div>
-          ))}
-          {moduleReadiness.filter(m=>m.accuracy!==null&&m.accuracy<65&&m.weight>=8).slice(0,2).map(m=>(
-            <div key={m.topic} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.dim,borderRadius:9}}>
-              <div>
-                <div style={{fontSize:13,fontWeight:600,color:C.text}}>{m.topic}</div>
-                <div style={{fontSize:11,color:C.hard}}>{m.accuracy}% accuracy · needs work</div>
-              </div>
-              <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(m.topic,m.untouchedModules[0]||m.modules[0],"Medium",5,"guided"),100);}} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:7,background:C.hard+"22",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>Drill →</button>
-            </div>
-          ))}
+          {(()=>{
+            const untested=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9).slice(0,3);
+            const weak=moduleReadiness.filter(m=>m.accuracy!==null&&m.accuracy<65&&m.weight>=8).slice(0,2);
+            const items=[...untested,...weak];
+            if(items.length>0) return(
+              <>
+                {untested.map(m=>(
+                  <div key={m.topic} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.dim,borderRadius:9}}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:600,color:C.text}}>{m.topic}</div>
+                      <div style={{fontSize:11,color:C.muted}}>Untested · {m.weight}% of exam</div>
+                    </div>
+                    <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(m.topic,m.modules[0],"Easy",5,"guided"),100);}} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:7,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>5 Qs →</button>
+                  </div>
+                ))}
+                {weak.map(m=>(
+                  <div key={m.topic} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.dim,borderRadius:9}}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:600,color:C.text}}>{m.topic}</div>
+                      <div style={{fontSize:11,color:C.hard}}>{m.accuracy}% accuracy · needs work</div>
+                    </div>
+                    <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(m.topic,m.untouchedModules[0]||m.modules[0],"Medium",5,"guided"),100);}} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:7,background:C.hard+"22",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>Drill →</button>
+                  </div>
+                ))}
+              </>
+            );
+            // Fallback: all high-weight topics started + no accuracy gaps → show stalest 3 by last session date
+            const stalest=moduleReadiness.filter(m=>m.weight>=8).sort((a,b)=>{
+              if(!a.lastDate&&!b.lastDate)return b.weight-a.weight;
+              if(!a.lastDate)return-1;if(!b.lastDate)return 1;
+              return a.lastDate<b.lastDate?-1:1;
+            }).slice(0,3);
+            return(
+              <>
+                <div style={{fontSize:12,color:C.easy,marginBottom:8,padding:"8px 12px",background:C.easy+"11",borderRadius:8}}>✅ Strong coverage — keep these sharp</div>
+                {stalest.map(m=>(
+                  <div key={m.topic} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.dim,borderRadius:9}}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:600,color:C.text}}>{m.topic}</div>
+                      <div style={{fontSize:11,color:C.muted}}>{m.accuracy!=null?`${m.accuracy}% accuracy · `:""}last drilled {m.lastDate||"a while ago"}</div>
+                    </div>
+                    <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(m.topic,m.modules[0],"Medium",5,"guided"),100);}} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:7,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>Revise →</button>
+                  </div>
+                ))}
+              </>
+            );
+          })()}
         </div>
       </div>
 
