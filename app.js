@@ -6250,60 +6250,7 @@ Reply with just "saved" when done.`
       color: C.hard,
       cursor: "pointer"
     }
-  }, t.split(" ")[0], " Hard →")))), streak > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "center",
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement(StreakFlame, {
-    streak: streak
-  })), (forgettingCurve.tomorrow > 0 || forgettingCurve.in3days > 0 || forgettingCurve.in7days > 0) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: 11,
-      padding: "10px 14px",
-      marginBottom: 10,
-      display: "flex",
-      gap: 4,
-      alignItems: "center",
-      flexWrap: "wrap"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: C.muted,
-      marginRight: 4
-    }
-  }, "SR forecast:"), forgettingCurve.tomorrow > 0 && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      background: C.hard + "18",
-      color: C.hard,
-      padding: "2px 8px",
-      borderRadius: 6,
-      fontWeight: 700
-    }
-  }, forgettingCurve.tomorrow, " tomorrow"), forgettingCurve.in3days > 0 && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      background: C.medium + "18",
-      color: C.medium,
-      padding: "2px 8px",
-      borderRadius: 6,
-      fontWeight: 700
-    }
-  }, forgettingCurve.in3days, " in 3d"), forgettingCurve.in7days > 0 && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      background: C.easy + "18",
-      color: C.easy,
-      padding: "2px 8px",
-      borderRadius: 6,
-      fontWeight: 700
-    }
-  }, forgettingCurve.in7days, " in 7d")), leeches.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, t.split(" ")[0], " Hard →")))), leeches.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       background: `linear-gradient(135deg,#1c0508,#12030a)`,
       border: `1px solid ${C.hard}44`,
@@ -6757,30 +6704,6 @@ Reply with just "saved" when done.`
     }
   }, "Custom Mock"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      trackUsage("fix_weakest");
-      const byReadiness = moduleReadiness.filter(m => m.weight >= 8).sort((a, b) => {
-        if (a.accuracy === null && b.accuracy === null) return b.weight - a.weight;
-        if (a.accuracy === null) return -1;
-        if (b.accuracy === null) return 1;
-        return a.accuracy - b.accuracy;
-      });
-      const target = byReadiness[0] || moduleReadiness[0];
-      const mod = target.untouchedModules?.[0] || target.modules?.[0];
-      if (target && mod) generateQuestions(target.topic, mod, "Medium", 10, "guided");
-    },
-    style: {
-      flex: 1,
-      padding: "11px",
-      borderRadius: 11,
-      fontSize: 12,
-      fontWeight: 700,
-      background: C.hard + "18",
-      border: `1px solid ${C.hard}44`,
-      color: C.hard,
-      cursor: "pointer"
-    }
-  }, "🎯 Fix Weakest"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
       trackUsage("wrongs_review");
       const wrongCards = Object.values(srDeck).filter(c => (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 30);
       if (wrongCards.length) {
@@ -6862,54 +6785,7 @@ Reply with just "saved" when done.`
       whiteSpace: "nowrap",
       textOverflow: "ellipsis"
     }
-  }, luckyDipSpinning ? `🎲 ${luckyDipLabel}` : "🎲 Lucky Dip — Surprise me!"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: 12,
-      padding: "11px 14px",
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      color: C.muted,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase"
-    }
-  }, "30-Day Activity"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      color: C.muted
-    }
-  }, totalQsAttempted, " Qs · ", Object.keys(qdb).length, " unique", totalWrongs > 0 ? ` · ` + totalWrongs + ` wrong` : "")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 3,
-      flexWrap: "wrap"
-    }
-  }, Object.entries(activity).reverse().map(([date, cnt]) => {
-    const bg = cnt === 0 ? C.border : cnt === 1 ? "#2d1f6e" : cnt === 2 ? "#4a35b0" : C.accent;
-    return /*#__PURE__*/React.createElement("div", {
-      key: date,
-      title: `${date}: ${cnt} session${cnt !== 1 ? "s" : ""}`,
-      style: {
-        width: 14,
-        height: 14,
-        borderRadius: 3,
-        background: bg,
-        transition: "background 0.2s"
-      }
-    });
-  }))), (() => {
+  }, luckyDipSpinning ? `🎲 ${luckyDipLabel}` : "🎲 Lucky Dip — Surprise me!"), (() => {
     const moreItems = [{
       key: "mix",
       label: "🎲 Mix",

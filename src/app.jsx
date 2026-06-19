@@ -3472,17 +3472,6 @@ Reply with just "saved" when done.`}]
         </div>
       </div>
     )}
-    {streak>0&&<div style={{display:"flex",justifyContent:"center",marginBottom:12}}><StreakFlame streak={streak}/></div>}
-
-    {/* Forgetting curve */}
-    {(forgettingCurve.tomorrow>0||forgettingCurve.in3days>0||forgettingCurve.in7days>0)&&(
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"10px 14px",marginBottom:10,display:"flex",gap:4,alignItems:"center",flexWrap:"wrap"}}>
-        <span style={{fontSize:11,color:C.muted,marginRight:4}}>SR forecast:</span>
-        {forgettingCurve.tomorrow>0&&<span style={{fontSize:12,background:C.hard+"18",color:C.hard,padding:"2px 8px",borderRadius:6,fontWeight:700}}>{forgettingCurve.tomorrow} tomorrow</span>}
-        {forgettingCurve.in3days>0&&<span style={{fontSize:12,background:C.medium+"18",color:C.medium,padding:"2px 8px",borderRadius:6,fontWeight:700}}>{forgettingCurve.in3days} in 3d</span>}
-        {forgettingCurve.in7days>0&&<span style={{fontSize:12,background:C.easy+"18",color:C.easy,padding:"2px 8px",borderRadius:6,fontWeight:700}}>{forgettingCurve.in7days} in 7d</span>}
-      </div>
-    )}
 
     {/* Leech alert */}
     {leeches.length>0&&(
@@ -3620,7 +3609,6 @@ Reply with just "saved" when done.`}]
     {/* Secondary actions row */}
     <div style={{display:"flex",gap:8,marginBottom:8}}>
       <button onClick={()=>{trackUsage("custom_mock");setScreen("setup");}} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>Custom Mock</button>
-      <button onClick={()=>{trackUsage("fix_weakest");const byReadiness=moduleReadiness.filter(m=>m.weight>=8).sort((a,b)=>{if(a.accuracy===null&&b.accuracy===null)return b.weight-a.weight;if(a.accuracy===null)return -1;if(b.accuracy===null)return 1;return a.accuracy-b.accuracy;});const target=byReadiness[0]||moduleReadiness[0];const mod=target.untouchedModules?.[0]||target.modules?.[0];if(target&&mod)generateQuestions(target.topic,mod,"Medium",10,"guided");}} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:700,background:C.hard+"18",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>🎯 Fix Weakest</button>
       <button onClick={()=>{
         trackUsage("wrongs_review");
         const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
@@ -3656,19 +3644,6 @@ Reply with just "saved" when done.`}]
       {luckyDipSpinning?`🎲 ${luckyDipLabel}`:"🎲 Lucky Dip — Surprise me!"}
     </button>
 
-    {/* Activity heatmap — compact */}
-    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"11px 14px",marginBottom:12}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <span style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>30-Day Activity</span>
-        <span style={{fontSize:10,color:C.muted}}>{totalQsAttempted} Qs · {Object.keys(qdb).length} unique{totalWrongs>0?` · `+totalWrongs+` wrong`:""}</span>
-      </div>
-      <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-        {Object.entries(activity).reverse().map(([date,cnt])=>{
-          const bg=cnt===0?C.border:cnt===1?"#2d1f6e":cnt===2?"#4a35b0":C.accent;
-          return <div key={date} title={`${date}: ${cnt} session${cnt!==1?"s":""}`} style={{width:14,height:14,borderRadius:3,background:bg,transition:"background 0.2s"}}/>;
-        })}
-      </div>
-    </div>
 
     {/* More actions — sorted by usage frequency, collapsed by default */}
     {(()=>{
