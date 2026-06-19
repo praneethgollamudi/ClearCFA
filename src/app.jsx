@@ -4398,6 +4398,17 @@ Reply with just "saved" when done.`}]
         </div>
       )}
       <div style={{height:3,background:C.border,borderRadius:2,marginBottom:18}}><div style={{height:"100%",width:`${(currentQ/questions.length)*100}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:2,transition:"width 0.35s"}}/></div>
+      {mode==="speed_drill"&&(
+        <div style={{marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+            <span style={{fontSize:10,color:speedQTime<=20?C.hard:C.muted,fontWeight:700}}>⏱ {speedQTime}s</span>
+            <span style={{fontSize:10,color:C.muted}}>speed drill</span>
+          </div>
+          <div style={{height:5,background:C.dim,borderRadius:3}}>
+            <div style={{height:"100%",width:`${(speedQTime/100)*100}%`,background:speedQTime<=20?C.hard:speedQTime<=50?C.medium:C.easy,borderRadius:3,transition:"width 0.9s linear"}}/>
+          </div>
+        </div>
+      )}
       <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
         {q.concept&&<Badge color={C.muted}>{q.concept}</Badge>}
         <Badge color={C.accent+"cc"}>{q._subtopic||subtopic}</Badge>
@@ -4408,7 +4419,7 @@ Reply with just "saved" when done.`}]
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,padding:"20px 22px",marginBottom:14,fontSize:14,lineHeight:1.8}}>{q.question}</div>
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
         {Object.entries(q.options).map(([key,val])=>{
-          const sel=answered===key,correct=key===q.answer,reveal=!!answered&&mode==="guided";
+          const sel=answered===key,correct=key===q.answer,reveal=!!answered&&(mode==="guided"||mode==="speed_drill");
           let bg=C.surface,border=C.border,col=C.text;
           if(reveal&&correct){bg="#041a0e";border="#22a05a";col="#4ade80";}
           else if(reveal&&sel&&!correct){bg="#1a0407";border=C.hard;col="#fca5a5";}
@@ -4424,6 +4435,29 @@ Reply with just "saved" when done.`}]
         </div>
       )}
       {mode==="exam"&&!answered&&<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"8px",animation:"pulse 2s infinite"}}>Select an answer to continue</div>}
+      {answered&&mode!=="speed_drill"&&(
+        <div style={{marginBottom:8}}>
+          {!explainThisText&&!explainThisLoading&&(
+            <button onClick={async()=>{
+              if(!apiKey){setExplainThisText("Add an API key (⚙ on home) to use Explain This.");return;}
+              setExplainThisLoading(true);
+              try{
+                const result=await callClaude(`You are a CFA L1 tutor. A student just answered this question:\n\nQuestion: ${q.question}\nCorrect answer: ${q.options[q.answer]} (${q.answer})\nConcept: ${q.concept||q.los_tested||""}\n\nIn 2-3 plain sentences, explain the core concept being tested and why the correct answer is right. Be direct, no preamble.`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"explain_this"});
+                setExplainThisText(typeof result==="string"?result:q.explanation||"");
+              }catch(e){setExplainThisText("Could not load explanation.");}
+              setExplainThisLoading(false);
+            }} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:600,background:"#09091a",border:`1px solid #22d3ee22`,color:"#22d3ee",cursor:"pointer"}}>
+              💡 Explain This
+            </button>
+          )}
+          {explainThisLoading&&<div style={{background:"#09091a",border:`1px solid #22d3ee22`,borderRadius:9,padding:"12px 14px",fontSize:12,color:C.muted}}>Thinking…</div>}
+          {explainThisText&&(
+            <div style={{background:"#09091a",border:`1px solid #22d3ee22`,borderRadius:9,padding:"12px 14px",fontSize:12,color:"#a0d8e8",lineHeight:1.7,animation:"fadeIn 0.2s ease"}}>
+              💡 {explainThisText}
+            </div>
+          )}
+        </div>
+      )}
       {answered&&(
         <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
           <button onClick={nextQ} style={{flex:1,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>{isLast?"See Results →":"Next →"}</button>
@@ -4854,6 +4888,52 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       ))}
     </>);
   }
+
+  if(screen==="losCoverage") return wrap(<>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+      <div><h2 style={{margin:0,fontSize:20,fontWeight:800}}>🗺 LOS Coverage</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>Which modules you've tested across all topics</div></div>
+      <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
+    </div>
+    {Object.entries(LOS).map(([t,{weight,modules}])=>{
+      const mods=Object.keys(modules);
+      const testedMods=mods.filter(m=>history.some(h=>h.topic===t&&h.subtopic===m));
+      const covPct=mods.length?Math.round((testedMods.length/mods.length)*100):0;
+      const topicAccSessions=history.filter(h=>h.topic===t);
+      const topicAcc=topicAccSessions.length?Math.round(topicAccSessions.reduce((s,h)=>s+h.pct,0)/topicAccSessions.length):null;
+      return(
+        <div key={t} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"12px 14px",marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.text}}>{t}</div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              {topicAcc!==null&&<span style={{fontSize:11,fontWeight:700,color:topicAcc>=70?C.easy:topicAcc>=50?C.medium:C.hard}}>{topicAcc}%</span>}
+              <span style={{fontSize:11,color:C.muted}}>{testedMods.length}/{mods.length} modules · {weight}%</span>
+            </div>
+          </div>
+          <div style={{height:4,background:C.border,borderRadius:2,marginBottom:10}}>
+            <div style={{height:"100%",width:`${covPct}%`,background:covPct>=70?C.easy:covPct>=40?C.medium:C.hard,borderRadius:2,transition:"width 0.4s"}}/>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+            {mods.map(m=>{
+              const mSessions=history.filter(h=>h.topic===t&&h.subtopic===m);
+              const mAcc=mSessions.length?Math.round(mSessions.reduce((s,h)=>s+h.pct,0)/mSessions.length):null;
+              const losM=getLOSMastery(history,t,m);
+              const tested=mSessions.length>0;
+              const bg=!tested?C.dim:mAcc>=70?"#041a0e":mAcc>=50?"#0a0a04":"#1a0407";
+              const border=!tested?C.border:mAcc>=70?C.easy+"44":mAcc>=50?C.medium+"44":C.hard+"44";
+              const col=!tested?C.muted:mAcc>=70?C.easy:mAcc>=50?C.medium:C.hard;
+              return(
+                <button key={m} onClick={()=>{setTopic(t);setSubtopic(m);setVignetteMode(false);setScreen("setup");}} style={{padding:"5px 9px",borderRadius:7,fontSize:10,fontWeight:600,background:bg,border:`1px solid ${border}`,color:col,cursor:"pointer",textAlign:"left"}}>
+                  {m.split(" ").slice(0,3).join(" ")}{m.split(" ").length>3?"…":""}
+                  {tested&&mAcc!==null&&<span style={{marginLeft:4,opacity:0.7}}>{mAcc}%</span>}
+                  {!tested&&<span style={{marginLeft:4,opacity:0.5}}>{losM.total} LOS</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    })}
+  </>);
 
   // ══ REVIEW WRONGS ══════════════════════════════════════════════════════════
   if(screen==="review"){

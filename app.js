@@ -7970,7 +7970,116 @@ Reply with just "saved" when done.`
       maxWidth: 360,
       margin: "0 auto"
     }
-  }, passProbability.advice)), /*#__PURE__*/React.createElement("div", {
+  }, passProbability.advice)), passTrend.length >= 2 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: "14px 16px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: C.muted,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 10
+    }
+  }, "Pass probability trend"), /*#__PURE__*/React.createElement("svg", {
+    width: "100%",
+    height: "90",
+    style: {
+      overflow: "visible"
+    },
+    viewBox: `0 0 360 90`,
+    preserveAspectRatio: "none"
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "trendGrad",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React.createElement("stop", {
+    offset: "0%",
+    stopColor: passProbability.color,
+    stopOpacity: "0.3"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "100%",
+    stopColor: passProbability.color,
+    stopOpacity: "0.02"
+  }))), (() => {
+    const n = passTrend.length;
+    const pts = passTrend.map((p, i) => {
+      const x = n === 1 ? 180 : Math.round(i / (n - 1) * 340 + 10);
+      const y = Math.round(80 - p.prob / 100 * 70);
+      return {
+        x,
+        y,
+        p
+      };
+    });
+    const polyPts = pts.map(p => `${p.x},${p.y}`).join(" ");
+    const areaPath = `M${pts[0].x},80 ` + pts.map(p => `L${p.x},${p.y}`).join(" ") + ` L${pts[pts.length - 1].x},80 Z`;
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: areaPath,
+      fill: "url(#trendGrad)"
+    }), /*#__PURE__*/React.createElement("polyline", {
+      points: polyPts,
+      fill: "none",
+      stroke: passProbability.color,
+      strokeWidth: "2",
+      strokeLinejoin: "round"
+    }), pts.map((pt, i) => /*#__PURE__*/React.createElement("g", {
+      key: i
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: pt.x,
+      cy: pt.y,
+      r: "4",
+      fill: pt.p.prob >= 70 ? C.easy : pt.p.prob >= 55 ? C.medium : C.hard,
+      stroke: C.bg,
+      strokeWidth: "1.5"
+    }), i === pts.length - 1 && /*#__PURE__*/React.createElement("text", {
+      x: pt.x,
+      y: pt.y - 8,
+      textAnchor: "middle",
+      fill: passProbability.color,
+      fontSize: "10",
+      fontWeight: "700"
+    }, pt.p.prob, "%"))), /*#__PURE__*/React.createElement("line", {
+      x1: "10",
+      y1: Math.round(80 - 70 * 0.7),
+      x2: "350",
+      y2: Math.round(80 - 70 * 0.7),
+      stroke: C.easy,
+      strokeWidth: "0.5",
+      strokeDasharray: "4 4",
+      opacity: "0.4"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: "355",
+      y: Math.round(80 - 70 * 0.7) + 4,
+      fill: C.easy,
+      fontSize: "8",
+      opacity: "0.6"
+    }, "70%"));
+  })()), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: C.muted
+    }
+  }, passTrend[0]?.date), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: C.muted
+    }
+  }, "today"))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.surface,
       border: `1px solid ${C.border}`,
@@ -9409,7 +9518,43 @@ Reply with just "saved" when done.`
         borderRadius: 2,
         transition: "width 0.35s"
       }
-    })), /*#__PURE__*/React.createElement("div", {
+    })), mode === "speed_drill" && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 4
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: speedQTime <= 20 ? C.hard : C.muted,
+        fontWeight: 700
+      }
+    }, "⏱ ", speedQTime, "s"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: C.muted
+      }
+    }, "speed drill")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 5,
+        background: C.dim,
+        borderRadius: 3
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: "100%",
+        width: `${speedQTime / 100 * 100}%`,
+        background: speedQTime <= 20 ? C.hard : speedQTime <= 50 ? C.medium : C.easy,
+        borderRadius: 3,
+        transition: "width 0.9s linear"
+      }
+    }))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 6,
@@ -9451,7 +9596,7 @@ Reply with just "saved" when done.`
     }, Object.entries(q.options).map(([key, val]) => {
       const sel = answered === key,
         correct = key === q.answer,
-        reveal = !!answered && mode === "guided";
+        reveal = !!answered && (mode === "guided" || mode === "speed_drill");
       let bg = C.surface,
         border = C.border,
         col = C.text;
@@ -9552,7 +9697,62 @@ Reply with just "saved" when done.`
         padding: "8px",
         animation: "pulse 2s infinite"
       }
-    }, "Select an answer to continue"), answered && /*#__PURE__*/React.createElement("div", {
+    }, "Select an answer to continue"), answered && mode !== "speed_drill" && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 8
+      }
+    }, !explainThisText && !explainThisLoading && /*#__PURE__*/React.createElement("button", {
+      onClick: async () => {
+        if (!apiKey) {
+          setExplainThisText("Add an API key (⚙ on home) to use Explain This.");
+          return;
+        }
+        setExplainThisLoading(true);
+        try {
+          const result = await callClaude(`You are a CFA L1 tutor. A student just answered this question:\n\nQuestion: ${q.question}\nCorrect answer: ${q.options[q.answer]} (${q.answer})\nConcept: ${q.concept || q.los_tested || ""}\n\nIn 2-3 plain sentences, explain the core concept being tested and why the correct answer is right. Be direct, no preamble.`, 300, {
+            model: "claude-haiku-4-5-20251001",
+            retries: 1,
+            retryDelay: 2000,
+            feature: "explain_this"
+          });
+          setExplainThisText(typeof result === "string" ? result : q.explanation || "");
+        } catch (e) {
+          setExplainThisText("Could not load explanation.");
+        }
+        setExplainThisLoading(false);
+      },
+      style: {
+        width: "100%",
+        padding: "9px",
+        borderRadius: 9,
+        fontSize: 12,
+        fontWeight: 600,
+        background: "#09091a",
+        border: `1px solid #22d3ee22`,
+        color: "#22d3ee",
+        cursor: "pointer"
+      }
+    }, "💡 Explain This"), explainThisLoading && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#09091a",
+        border: `1px solid #22d3ee22`,
+        borderRadius: 9,
+        padding: "12px 14px",
+        fontSize: 12,
+        color: C.muted
+      }
+    }, "Thinking…"), explainThisText && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#09091a",
+        border: `1px solid #22d3ee22`,
+        borderRadius: 9,
+        padding: "12px 14px",
+        fontSize: 12,
+        color: "#a0d8e8",
+        lineHeight: 1.7,
+        animation: "fadeIn 0.2s ease"
+      }
+    }, "💡 ", explainThisText)), answered && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8,
@@ -11101,6 +11301,143 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       }
     }, "Clear All")))));
   }
+  if (screen === "losCoverage") return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    style: {
+      margin: 0,
+      fontSize: 20,
+      fontWeight: 800
+    }
+  }, "🗺 LOS Coverage"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 2
+    }
+  }, "Which modules you've tested across all topics")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setScreen("home"),
+    style: {
+      background: "none",
+      border: "none",
+      color: C.muted,
+      cursor: "pointer",
+      fontSize: 13
+    }
+  }, "← Home")), Object.entries(LOS).map(([t, {
+    weight,
+    modules
+  }]) => {
+    const mods = Object.keys(modules);
+    const testedMods = mods.filter(m => history.some(h => h.topic === t && h.subtopic === m));
+    const covPct = mods.length ? Math.round(testedMods.length / mods.length * 100) : 0;
+    const topicAccSessions = history.filter(h => h.topic === t);
+    const topicAcc = topicAccSessions.length ? Math.round(topicAccSessions.reduce((s, h) => s + h.pct, 0) / topicAccSessions.length) : null;
+    return /*#__PURE__*/React.createElement("div", {
+      key: t,
+      style: {
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: 11,
+        padding: "12px 14px",
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: C.text
+      }
+    }, t), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8,
+        alignItems: "center"
+      }
+    }, topicAcc !== null && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: topicAcc >= 70 ? C.easy : topicAcc >= 50 ? C.medium : C.hard
+      }
+    }, topicAcc, "%"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, testedMods.length, "/", mods.length, " modules · ", weight, "%"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 4,
+        background: C.border,
+        borderRadius: 2,
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: "100%",
+        width: `${covPct}%`,
+        background: covPct >= 70 ? C.easy : covPct >= 40 ? C.medium : C.hard,
+        borderRadius: 2,
+        transition: "width 0.4s"
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 5
+      }
+    }, mods.map(m => {
+      const mSessions = history.filter(h => h.topic === t && h.subtopic === m);
+      const mAcc = mSessions.length ? Math.round(mSessions.reduce((s, h) => s + h.pct, 0) / mSessions.length) : null;
+      const losM = getLOSMastery(history, t, m);
+      const tested = mSessions.length > 0;
+      const bg = !tested ? C.dim : mAcc >= 70 ? "#041a0e" : mAcc >= 50 ? "#0a0a04" : "#1a0407";
+      const border = !tested ? C.border : mAcc >= 70 ? C.easy + "44" : mAcc >= 50 ? C.medium + "44" : C.hard + "44";
+      const col = !tested ? C.muted : mAcc >= 70 ? C.easy : mAcc >= 50 ? C.medium : C.hard;
+      return /*#__PURE__*/React.createElement("button", {
+        key: m,
+        onClick: () => {
+          setTopic(t);
+          setSubtopic(m);
+          setVignetteMode(false);
+          setScreen("setup");
+        },
+        style: {
+          padding: "5px 9px",
+          borderRadius: 7,
+          fontSize: 10,
+          fontWeight: 600,
+          background: bg,
+          border: `1px solid ${border}`,
+          color: col,
+          cursor: "pointer",
+          textAlign: "left"
+        }
+      }, m.split(" ").slice(0, 3).join(" "), m.split(" ").length > 3 ? "…" : "", tested && mAcc !== null && /*#__PURE__*/React.createElement("span", {
+        style: {
+          marginLeft: 4,
+          opacity: 0.7
+        }
+      }, mAcc, "%"), !tested && /*#__PURE__*/React.createElement("span", {
+        style: {
+          marginLeft: 4,
+          opacity: 0.5
+        }
+      }, losM.total, " LOS"));
+    })));
+  })));
 
   // ══ REVIEW WRONGS ══════════════════════════════════════════════════════════
   if (screen === "review") {
