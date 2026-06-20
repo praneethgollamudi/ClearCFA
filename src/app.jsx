@@ -477,7 +477,7 @@ function getModuleReadiness(history){
     const modulesCovered=[...new Set(sessions.map(h=>h.subtopic))];
     const coverage=modulesCovered.length/moduleNames.length;
     let wCorrect=0,wTotal=0;
-    sessions.forEach(s=>{const ageDays=(now-s.id)/86400000;const w=ageDays<=7?3:ageDays<=30?2:1;wCorrect+=s.score*w;wTotal+=s.total*w;});
+    sessions.forEach(s=>{const ageDays=(now-s.id)/86400000;const w=ageDays<=7?3:ageDays<=30?2:1;const sc=s.score??s.correct??Math.round(((s.pct||0)/100)*(s.total||0));wCorrect+=sc*w;wTotal+=(s.total||0)*w;});
     const accuracy=wTotal>0?Math.round((wCorrect/wTotal)*100):null;
     const recent3=sessions.slice(0,3),prev3=sessions.slice(3,6);
     const r3avg=recent3.length?recent3.reduce((s,h)=>s+h.pct,0)/recent3.length:null;
@@ -2583,6 +2583,8 @@ function CFAMock(){
 
   // Mirror history into a ref so endQuiz can always read current value
   useEffect(()=>{historyRef.current=history;},[history]);
+  // Keep authUserRef in sync (must be unconditional — cannot be after any early return)
+  useEffect(()=>{ authUserRef.current=authUser; },[authUser]);
 
   useEffect(()=>{
     const s=document.createElement("style");
@@ -3504,9 +3506,6 @@ Reply with just "saved" when done.`}]
     {aiCoachMessages.length>0&&<button onClick={()=>setAiCoachMessages([])} style={{marginTop:10,width:"100%",padding:"8px",borderRadius:8,fontSize:11,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Clear chat</button>}
   </>);
 
-  // Keep authUserRef in sync
-  React.useEffect(()=>{ authUserRef.current=authUser; },[authUser]);
-
   // ── Login screen ──
   if(!authUser){
     const isSignup=authMode==="signup";
@@ -3552,10 +3551,12 @@ Reply with just "saved" when done.`}]
       setAuthLoading(false);
     };
     return wrap(
-      <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:"32px 24px",textAlign:"center"}}>
-        <div style={{fontSize:44,marginBottom:16}}>📚</div>
-        <div style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:6}}>ClearCFA</div>
-        <div style={{fontSize:13,color:C.muted,marginBottom:28,lineHeight:1.6}}>{isSignup?"Create an account to sync your progress across devices.":"Sign in to continue your CFA prep."}</div>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",minHeight:"100vh",padding:"32px 24px",textAlign:"center"}}>
+        <div style={{marginBottom:28,paddingTop:16}}>
+          <div style={{fontSize:44,marginBottom:12}}>📚</div>
+          <div style={{fontSize:24,fontWeight:800,color:C.text,marginBottom:6}}>ClearCFA</div>
+          <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>{isSignup?"Create an account to sync your progress across devices.":"Sign in to continue your CFA L1 prep."}</div>
+        </div>
         <div style={{width:"100%",maxWidth:340}}>
           <input value={authEmail} onChange={e=>setAuthEmail(e.target.value.trim())}
             placeholder="your@email.com" type="email" autoComplete="email"
@@ -3580,6 +3581,27 @@ Reply with just "saved" when done.`}]
             style={{fontSize:12,color:C.accent,background:"none",border:"none",cursor:"pointer",marginTop:16,textDecoration:"underline"}}>
             {isSignup?"Already have an account? Sign in":"New here? Create an account"}
           </button>
+        </div>
+        {/* Value proposition */}
+        <div style={{marginTop:36,width:"100%",maxWidth:340}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>What you get</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10,textAlign:"left"}}>
+            {[
+              ["⚡","Office Mode","Daily 5-question drills — AI picks your weakest topic, every time"],
+              ["🧠","Spaced Repetition","Forgotten concepts resurface at exactly the right time"],
+              ["📊","Pass Probability","See your estimated pass chance update after every session"],
+              ["🎯","LOS-Anchored Questions","Every question tied to official 2026 CFA curriculum objectives"],
+              ["☁️","Cross-Device Sync","Progress saved to the cloud — pick up on any device"],
+            ].map(([icon,title,desc])=>(
+              <div key={title} style={{display:"flex",gap:12,padding:"10px 12px",borderRadius:10,background:C.surface,border:`1px solid ${C.border}`}}>
+                <span style={{fontSize:18,flexShrink:0,marginTop:1}}>{icon}</span>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:2}}>{title}</div>
+                  <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -3711,7 +3733,7 @@ Reply with just "saved" when done.`}]
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
         <StatCard label="Sessions" value={history.length||"–"} icon="📚"/>
         <StatCard label="Avg Score" value={overallPct?`${overallPct}%`:"–"} color={overallPct?(overallPct>=70?C.easy:C.hard):C.muted} icon="🎯"/>
-        <StatCard label="Predicted" value={predicted?`${predicted.low}–${predicted.high}%`:"–"} color={predicted?(predicted.score>=70?C.easy:C.hard):C.muted} sub={predicted?`${predicted.confidence}% conf`:"do 3+ sessions"} onClick={()=>setScreen("readiness")} icon="📈"/>
+        <StatCard label="Pass Prob" value={predicted?`${predicted.low}–${predicted.high}%`:passProbability?`${passProbability.probability}%`:"–"} color={predicted?(predicted.score>=70?C.easy:C.hard):passProbability?(passProbability.color):C.muted} sub={predicted?`${predicted.confidence}% conf`:passProbability?passProbability.label:`${history.length>=1?"more data needed":"do 3+ sessions"}`} onClick={()=>setScreen("readiness")} icon="📈"/>
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"✓"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":"all caught up"} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
@@ -4166,9 +4188,9 @@ Reply with just "saved" when done.`}]
       <div style={{background:`linear-gradient(135deg,${passProbability.color}18,${passProbability.color}08)`,border:`1px solid ${passProbability.color}44`,borderRadius:16,padding:"28px 24px",textAlign:"center",marginBottom:16}}>
         <div style={{fontSize:64,fontWeight:900,color:passProbability.color,lineHeight:1,marginBottom:8}}>{passProbability.probability}%</div>
         <div style={{fontSize:18,fontWeight:700,color:passProbability.color,marginBottom:6}}>
-          {passProbability.label === "On Track" ? "✓ On Track to Pass" : passProbability.label === "Marginal" ? "⚡ Marginal — needs work" : "⚠ At Risk — act now"}
+          {passProbability.label === "On Track" ? "✓ On Track to Pass" : passProbability.label === "Marginal" ? "⚡ Marginal — push harder" : history.length < 10 ? "🌱 Early days — keep going" : "⚠ At Risk — act now"}
         </div>
-        <div style={{fontSize:13,color:C.textMid,lineHeight:1.6,maxWidth:360,margin:"0 auto"}}>{passProbability.advice}</div>
+        <div style={{fontSize:13,color:C.textMid,lineHeight:1.6,maxWidth:360,margin:"0 auto"}}>{history.length < 10 && passProbability.label === "At Risk" ? "Your estimate is based on limited data — it'll sharpen after 10+ sessions. Focus on building the habit first." : passProbability.advice}</div>
       </div>
 
       {passTrend.length>=2&&(

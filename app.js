@@ -682,8 +682,9 @@ function getModuleReadiness(history) {
     sessions.forEach(s => {
       const ageDays = (now - s.id) / 86400000;
       const w = ageDays <= 7 ? 3 : ageDays <= 30 ? 2 : 1;
-      wCorrect += s.score * w;
-      wTotal += s.total * w;
+      const sc = s.score ?? s.correct ?? Math.round((s.pct || 0) / 100 * (s.total || 0));
+      wCorrect += sc * w;
+      wTotal += (s.total || 0) * w;
     });
     const accuracy = wTotal > 0 ? Math.round(wCorrect / wTotal * 100) : null;
     const recent3 = sessions.slice(0, 3),
@@ -4581,6 +4582,10 @@ function CFAMock() {
   useEffect(() => {
     historyRef.current = history;
   }, [history]);
+  // Keep authUserRef in sync (must be unconditional — cannot be after any early return)
+  useEffect(() => {
+    authUserRef.current = authUser;
+  }, [authUser]);
   useEffect(() => {
     const s = document.createElement("style");
     s.textContent = `@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeInScale{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}@keyframes glow{0%,100%{box-shadow:0 0 8px #6366f144}50%{box-shadow:0 0 18px #6366f188}}@keyframes correctFlash{0%{background:#022c22}50%{background:#064e3b}100%{background:#022c22}}@keyframes toastIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(-10px)}}*{box-sizing:border-box}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2a2848;border-radius:2px}button:focus-visible{outline:2px solid #6366f1;outline-offset:2px}`;
@@ -6188,11 +6193,6 @@ Reply with just "saved" when done.`
     }
   }, "Clear chat")));
 
-  // Keep authUserRef in sync
-  React.useEffect(() => {
-    authUserRef.current = authUser;
-  }, [authUser]);
-
   // ── Login screen ──
   if (!authUser) {
     const isSignup = authMode === "signup";
@@ -6268,19 +6268,23 @@ Reply with just "saved" when done.`
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
         minHeight: "100vh",
         padding: "32px 24px",
         textAlign: "center"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
+        marginBottom: 28,
+        paddingTop: 16
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
         fontSize: 44,
-        marginBottom: 16
+        marginBottom: 12
       }
     }, "📚"), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: 800,
         color: C.text,
         marginBottom: 6
@@ -6289,10 +6293,9 @@ Reply with just "saved" when done.`
       style: {
         fontSize: 13,
         color: C.muted,
-        marginBottom: 28,
         lineHeight: 1.6
       }
-    }, isSignup ? "Create an account to sync your progress across devices." : "Sign in to continue your CFA prep."), /*#__PURE__*/React.createElement("div", {
+    }, isSignup ? "Create an account to sync your progress across devices." : "Sign in to continue your CFA L1 prep.")), /*#__PURE__*/React.createElement("div", {
       style: {
         width: "100%",
         maxWidth: 340
@@ -6399,7 +6402,58 @@ Reply with just "saved" when done.`
         marginTop: 16,
         textDecoration: "underline"
       }
-    }, isSignup ? "Already have an account? Sign in" : "New here? Create an account"))));
+    }, isSignup ? "Already have an account? Sign in" : "New here? Create an account")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 36,
+        width: "100%",
+        maxWidth: 340
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        color: C.muted,
+        letterSpacing: "0.1em",
+        textTransform: "uppercase",
+        marginBottom: 16
+      }
+    }, "What you get"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        textAlign: "left"
+      }
+    }, [["⚡", "Office Mode", "Daily 5-question drills — AI picks your weakest topic, every time"], ["🧠", "Spaced Repetition", "Forgotten concepts resurface at exactly the right time"], ["📊", "Pass Probability", "See your estimated pass chance update after every session"], ["🎯", "LOS-Anchored Questions", "Every question tied to official 2026 CFA curriculum objectives"], ["☁️", "Cross-Device Sync", "Progress saved to the cloud — pick up on any device"]].map(([icon, title, desc]) => /*#__PURE__*/React.createElement("div", {
+      key: title,
+      style: {
+        display: "flex",
+        gap: 12,
+        padding: "10px 12px",
+        borderRadius: 10,
+        background: C.surface,
+        border: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 18,
+        flexShrink: 0,
+        marginTop: 1
+      }
+    }, icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: C.text,
+        marginBottom: 2
+      }
+    }, title), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        lineHeight: 1.5
+      }
+    }, desc))))))));
   }
 
   // ── Onboarding screen (shown once after sign-up) ──
@@ -6849,10 +6903,10 @@ Reply with just "saved" when done.`
     color: overallPct ? overallPct >= 70 ? C.easy : C.hard : C.muted,
     icon: "🎯"
   }), /*#__PURE__*/React.createElement(StatCard, {
-    label: "Predicted",
-    value: predicted ? `${predicted.low}–${predicted.high}%` : "–",
-    color: predicted ? predicted.score >= 70 ? C.easy : C.hard : C.muted,
-    sub: predicted ? `${predicted.confidence}% conf` : "do 3+ sessions",
+    label: "Pass Prob",
+    value: predicted ? `${predicted.low}–${predicted.high}%` : passProbability ? `${passProbability.probability}%` : "–",
+    color: predicted ? predicted.score >= 70 ? C.easy : C.hard : passProbability ? passProbability.color : C.muted,
+    sub: predicted ? `${predicted.confidence}% conf` : passProbability ? passProbability.label : `${history.length >= 1 ? "more data needed" : "do 3+ sessions"}`,
     onClick: () => setScreen("readiness"),
     icon: "📈"
   }), /*#__PURE__*/React.createElement(StatCard, {
@@ -8456,7 +8510,7 @@ Reply with just "saved" when done.`
       color: passProbability.color,
       marginBottom: 6
     }
-  }, passProbability.label === "On Track" ? "✓ On Track to Pass" : passProbability.label === "Marginal" ? "⚡ Marginal — needs work" : "⚠ At Risk — act now"), /*#__PURE__*/React.createElement("div", {
+  }, passProbability.label === "On Track" ? "✓ On Track to Pass" : passProbability.label === "Marginal" ? "⚡ Marginal — push harder" : history.length < 10 ? "🌱 Early days — keep going" : "⚠ At Risk — act now"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.textMid,
@@ -8464,7 +8518,7 @@ Reply with just "saved" when done.`
       maxWidth: 360,
       margin: "0 auto"
     }
-  }, passProbability.advice)), passTrend.length >= 2 && /*#__PURE__*/React.createElement("div", {
+  }, history.length < 10 && passProbability.label === "At Risk" ? "Your estimate is based on limited data — it'll sharpen after 10+ sessions. Focus on building the habit first." : passProbability.advice)), passTrend.length >= 2 && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.surface,
       border: `1px solid ${C.border}`,
