@@ -3,3 +3,6 @@ node_modules/
 *.log
 package.json
 package-lock.json
+react.min.js
+react-dom.min.js
+test.html
