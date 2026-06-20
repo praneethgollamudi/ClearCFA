@@ -3052,6 +3052,7 @@ function CFAMock(){
 
         const suggestions=candidates.sort((a,b)=>b._score-a._score).slice(0,3).map(({_score,...rest})=>rest);
         setFocusSuggestions(suggestions);
+        if(history.length===0) setSelectedFocus(0);
         setFocusLastGenerated(Date.now());
         storageSet("cfa_focus_cache",{suggestions,date:new Date().toISOString().slice(0,10)});
       }catch(e){setFocusError(`Error computing focus: ${e.message}`);}
@@ -3165,23 +3166,29 @@ Reply with just "saved" when done.`}]
     // ── No API key: use local templates as fallback ──
     // When an API key IS set, always use the API for exam-quality questions.
     if(!isVignette && !apiKey){
-      const localRaw=generateLocalQuestions(t,st,diff,cnt*3);
-      const seen=new Set();
-      const localQs=localRaw.filter(q=>{
-        const key=q.concept
-          ? q.concept.toLowerCase()
-          : (q.question||"").toLowerCase().replace(/\d+\.?\d*/g,"#").replace(/\s+/g," ").slice(0,80);
-        if(seen.has(key))return false;
-        seen.add(key);
-        return true;
-      }).slice(0,cnt);
-      if(localQs.length>=Math.min(cnt,3)){
-        setLoadingProgress(100);setLoadingMsg(`${localQs.length} questions ready (offline mode)`);
-        await new Promise(r=>setTimeout(r,300));
-        setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
-        setVignetteMode(false);
-        setQuestions(localQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);
-        setScreen("quiz");
+      try{
+        const localRaw=generateLocalQuestions(t,st,diff,cnt*3);
+        const seen=new Set();
+        const localQs=localRaw.filter(q=>{
+          const key=q.concept
+            ? q.concept.toLowerCase()
+            : (q.question||"").toLowerCase().replace(/\d+\.?\d*/g,"#").replace(/\s+/g," ").slice(0,80);
+          if(seen.has(key))return false;
+          seen.add(key);
+          return true;
+        }).slice(0,cnt);
+        if(localQs.length>=Math.min(cnt,3)){
+          setLoadingProgress(100);setLoadingMsg(`${localQs.length} questions ready (offline mode)`);
+          await new Promise(r=>setTimeout(r,300));
+          setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
+          setVignetteMode(false);
+          setQuestions(localQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);
+          setScreen("quiz");
+          setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+          return;
+        }
+      }catch(localErr){
+        setError(`Failed to load questions: ${localErr.message}`);
         setLoading(false);setLoadingProgress(0);generatingRef.current=false;
         return;
       }
@@ -4561,7 +4568,7 @@ Reply with just "saved" when done.`}]
         <button onClick={()=>setExitConfirm(true)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,flexShrink:0}}>← Home</button>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <div style={{fontSize:14,fontWeight:800,padding:"5px 14px",borderRadius:20,background:timeLeft<120?"#180308":C.surface,color:timeLeft<120?C.hard:C.muted,border:`1px solid ${timeLeft<120?C.hard+"55":C.border}`,transition:"all 0.3s"}}>⏱ {fmt(timeLeft)}</div>
-          {(()=>{const idealLeft=(questions.length-currentQ)*90;const paceRatio=timeLeft/Math.max(1,idealLeft);const paceCol=paceRatio>1.1?C.easy:paceRatio>0.8?C.medium:C.hard;const paceLabel=paceRatio>1.1?"On pace":paceRatio>0.8?"Watch pace":"Speed up";return timeLeft>0&&questions.length>1?<span style={{fontSize:10,color:paceCol,fontWeight:700,padding:"3px 7px",borderRadius:6,background:paceCol+"18"}}>{paceLabel}</span>:null;})()}
+          {(()=>{const idealLeft=(questions.length-currentQ)*90;const paceRatio=timeLeft/Math.max(1,idealLeft);const paceCol=paceRatio>1.1?C.easy:paceRatio>0.8?C.medium:C.hard;const paceLabel=paceRatio>1.1?"Ahead":paceRatio>0.8?"On track":"Speed up";return timeLeft>0&&questions.length>1?<span style={{fontSize:10,color:paceCol,fontWeight:700,padding:"3px 7px",borderRadius:6,background:paceCol+"18"}}>{paceLabel}</span>:null;})()}
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:13,color:C.muted}}><span style={{color:C.accentLight,fontWeight:800}}>{currentQ+1}</span>/{questions.length}</span><Badge color={diffC[difficulty]}>{difficulty}</Badge></div>
       </div>
@@ -4952,7 +4959,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         {/* Topic filter */}
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
           {["All",...Object.keys(LOS)].map(t=>(
-            <button key={t} onClick={()=>setHistoryFilter(t)} style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600,border:historyFilter===t?`1.5px solid ${C.accent}`:`1px solid ${C.border}`,background:historyFilter===t?C.accent+"20":C.surface,color:historyFilter===t?C.accentLight:C.muted,cursor:"pointer"}}>{t==="All"?"All Topics":t.split(" ")[0]}</button>
+            <button key={t} onClick={()=>setHistoryFilter(t)} style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600,border:historyFilter===t?`1.5px solid ${C.accent}`:`1px solid ${C.border}`,background:historyFilter===t?C.accent+"20":C.surface,color:historyFilter===t?C.accentLight:C.muted,cursor:"pointer"}}>{t==="All"?"All":{"Ethics":"Ethics","Quantitative Methods":"Quant","Economics":"Econ","Financial Statement Analysis":"FSA","Corporate Issuers":"Corp","Equity Investments":"Equity","Fixed Income":"Fixed Inc","Derivatives":"Derivs","Alternative Investments":"Alts","Portfolio Management":"Portfolio"}[t]||t.split(" ")[0]}</button>
           ))}
         </div>
         {filteredHistory.length===0?(

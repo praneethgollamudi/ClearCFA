@@ -5327,6 +5327,7 @@ function CFAMock() {
           ...rest
         }) => rest);
         setFocusSuggestions(suggestions);
+        if (history.length === 0) setSelectedFocus(0);
         setFocusLastGenerated(Date.now());
         storageSet("cfa_focus_cache", {
           suggestions,
@@ -5490,32 +5491,40 @@ Reply with just "saved" when done.`
     // ── No API key: use local templates as fallback ──
     // When an API key IS set, always use the API for exam-quality questions.
     if (!isVignette && !apiKey) {
-      const localRaw = generateLocalQuestions(t, st, diff, cnt * 3);
-      const seen = new Set();
-      const localQs = localRaw.filter(q => {
-        const key = q.concept ? q.concept.toLowerCase() : (q.question || "").toLowerCase().replace(/\d+\.?\d*/g, "#").replace(/\s+/g, " ").slice(0, 80);
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      }).slice(0, cnt);
-      if (localQs.length >= Math.min(cnt, 3)) {
-        setLoadingProgress(100);
-        setLoadingMsg(`${localQs.length} questions ready (offline mode)`);
-        await new Promise(r => setTimeout(r, 300));
-        setTopic(t);
-        setSubtopic(st);
-        setDifficulty(diff);
-        setCount(cnt);
-        setMode(m);
-        setVignetteMode(false);
-        setQuestions(localQs);
-        setAnswers({});
-        setFlaggedQ({});
-        setCurrentQ(0);
-        setShowExp(false);
-        setLastSession(null);
-        setFullExamMode(false);
-        setScreen("quiz");
+      try {
+        const localRaw = generateLocalQuestions(t, st, diff, cnt * 3);
+        const seen = new Set();
+        const localQs = localRaw.filter(q => {
+          const key = q.concept ? q.concept.toLowerCase() : (q.question || "").toLowerCase().replace(/\d+\.?\d*/g, "#").replace(/\s+/g, " ").slice(0, 80);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, cnt);
+        if (localQs.length >= Math.min(cnt, 3)) {
+          setLoadingProgress(100);
+          setLoadingMsg(`${localQs.length} questions ready (offline mode)`);
+          await new Promise(r => setTimeout(r, 300));
+          setTopic(t);
+          setSubtopic(st);
+          setDifficulty(diff);
+          setCount(cnt);
+          setMode(m);
+          setVignetteMode(false);
+          setQuestions(localQs);
+          setAnswers({});
+          setFlaggedQ({});
+          setCurrentQ(0);
+          setShowExp(false);
+          setLastSession(null);
+          setFullExamMode(false);
+          setScreen("quiz");
+          setLoading(false);
+          setLoadingProgress(0);
+          generatingRef.current = false;
+          return;
+        }
+      } catch (localErr) {
+        setError(`Failed to load questions: ${localErr.message}`);
         setLoading(false);
         setLoadingProgress(0);
         generatingRef.current = false;
@@ -9900,7 +9909,7 @@ Reply with just "saved" when done.`
       const idealLeft = (questions.length - currentQ) * 90;
       const paceRatio = timeLeft / Math.max(1, idealLeft);
       const paceCol = paceRatio > 1.1 ? C.easy : paceRatio > 0.8 ? C.medium : C.hard;
-      const paceLabel = paceRatio > 1.1 ? "On pace" : paceRatio > 0.8 ? "Watch pace" : "Speed up";
+      const paceLabel = paceRatio > 1.1 ? "Ahead" : paceRatio > 0.8 ? "On track" : "Speed up";
       return timeLeft > 0 && questions.length > 1 ? /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 10,
@@ -11342,7 +11351,18 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         color: historyFilter === t ? C.accentLight : C.muted,
         cursor: "pointer"
       }
-    }, t === "All" ? "All Topics" : t.split(" ")[0]))), filteredHistory.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    }, t === "All" ? "All" : {
+      "Ethics": "Ethics",
+      "Quantitative Methods": "Quant",
+      "Economics": "Econ",
+      "Financial Statement Analysis": "FSA",
+      "Corporate Issuers": "Corp",
+      "Equity Investments": "Equity",
+      "Fixed Income": "Fixed Inc",
+      "Derivatives": "Derivs",
+      "Alternative Investments": "Alts",
+      "Portfolio Management": "Portfolio"
+    }[t] || t.split(" ")[0]))), filteredHistory.length === 0 ? /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "center",
         padding: "32px 16px",
