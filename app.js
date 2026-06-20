@@ -199,7 +199,7 @@ async function storageHealth() {
   }
 }
 
-// Auth helpers — magic link via Supabase Auth
+// Auth helpers — email + password hashed to a stable user_id (no Supabase Auth needed)
 function getStoredAuth() {
   try {
     return JSON.parse(localStorage.getItem("cfa_auth") || "null");
@@ -217,54 +217,10 @@ function clearAuth() {
     localStorage.removeItem("cfa_auth");
   } catch {}
 }
-async function sendMagicLink(cfg, email) {
-  const redirectTo = "https://praneethgollamudi.github.io/ClearCFA/";
-  try {
-    const res = await fetch(`${cfg.url}/auth/v1/otp`, {
-      method: "POST",
-      headers: {
-        "apikey": cfg.key,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        email,
-        createUser: true,
-        options: {
-          emailRedirectTo: redirectTo
-        }
-      })
-    });
-    if (res.ok) return {
-      ok: true
-    };
-    const body = await res.json().catch(() => ({
-      message: res.statusText
-    }));
-    return {
-      ok: false,
-      error: body?.message || body?.error || `Request failed (${res.status})`
-    };
-  } catch (e) {
-    return {
-      ok: false,
-      error: e?.message || "Network error — check your connection"
-    };
-  }
-}
-async function exchangeToken(cfg, accessToken) {
-  const res = await fetch(`${cfg.url}/auth/v1/user`, {
-    headers: {
-      "apikey": cfg.key,
-      "Authorization": `Bearer ${accessToken}`
-    }
-  });
-  if (!res.ok) return null;
-  const user = await res.json();
-  return user?.id ? {
-    id: user.id,
-    email: user.email,
-    accessToken
-  } : null;
+async function deriveUserId(email, password) {
+  const text = email.toLowerCase().trim() + ":" + password;
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 // Supabase sync — saves entire data blob as one row, keyed to authenticated user
@@ -4522,7 +4478,7 @@ function CFAMock() {
   const [supabaseSyncing, setSupabaseSyncing] = useState(false);
   const [authUser, setAuthUser] = useState(() => getStoredAuth());
   const [authEmail, setAuthEmail] = useState("");
-  const [authSent, setAuthSent] = useState(false);
+  const [authPassword, setAuthPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const authUserRef = useRef(getStoredAuth());
@@ -4568,25 +4524,6 @@ function CFAMock() {
   const passTrendRef = useRef([]);
   const [explainThisText, setExplainThisText] = useState(null);
   const [explainThisLoading, setExplainThisLoading] = useState(false);
-
-  // Detect magic link token in URL hash on load (Supabase Auth redirect)
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes("access_token=")) {
-      const params = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
-      const token = params.get("access_token");
-      if (token) {
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        exchangeToken(SB_CFG, token).then(auth => {
-          if (auth) {
-            saveAuth(auth);
-            setAuthUser(auth);
-            authUserRef.current = auth;
-          }
-        });
-      }
-    }
-  }, []);
 
   // Auto-trigger focus refresh when flagged
   useEffect(() => {
@@ -6203,141 +6140,134 @@ Reply with just "saved" when done.`
     authUserRef.current = authUser;
   }, [authUser]);
 
-  // ── Magic link login screen — shown when not authenticated ──
-  if (!authUser) return wrap(/*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "100vh",
-      padding: "32px 24px",
-      textAlign: "center"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 44,
-      marginBottom: 16
-    }
-  }, "📚"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 22,
-      fontWeight: 800,
-      color: C.text,
-      marginBottom: 6
-    }
-  }, "ClearCFA"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: C.muted,
-      marginBottom: 32,
-      lineHeight: 1.6
-    }
-  }, "Sign in to sync your progress across all your devices."), !authSent ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: "100%",
-      maxWidth: 340
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    value: authEmail,
-    onChange: e => setAuthEmail(e.target.value.trim()),
-    onKeyDown: e => {
-      if (e.key === "Enter" && authEmail.includes("@")) document.getElementById("magic-btn").click();
-    },
-    placeholder: "your@email.com",
-    type: "email",
-    style: {
-      width: "100%",
-      padding: "13px 16px",
-      borderRadius: 11,
-      fontSize: 14,
-      background: C.surface,
-      border: `1.5px solid ${authEmail.includes("@") ? C.accent : C.border}`,
-      color: C.text,
-      outline: "none",
-      marginBottom: 10,
-      boxSizing: "border-box"
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    id: "magic-btn",
-    disabled: authLoading || !authEmail.includes("@"),
-    onClick: async () => {
-      setAuthError("");
-      setAuthLoading(true);
-      const result = await sendMagicLink(SB_CFG, authEmail);
-      setAuthLoading(false);
-      if (result.ok) setAuthSent(true);else setAuthError(result.error || "Something went wrong. Please try again.");
-    },
-    style: {
-      width: "100%",
-      padding: "13px",
-      borderRadius: 11,
-      fontSize: 14,
-      fontWeight: 800,
-      background: authEmail.includes("@") ? `linear-gradient(135deg,${C.accent},${C.accentLight})` : "#1a1a2e",
-      color: authEmail.includes("@") ? "#fff" : C.muted,
-      border: "none",
-      cursor: authEmail.includes("@") ? "pointer" : "default",
-      boxShadow: authEmail.includes("@") ? `0 4px 16px ${C.accent}44` : "none",
-      transition: "all 0.2s"
-    }
-  }, authLoading ? "Sending…" : "Send magic link →"), authError && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: C.hard,
-      marginTop: 10,
-      padding: "8px 12px",
-      background: "#200010",
-      borderRadius: 8,
-      border: `1px solid ${C.hard}44`
-    }
-  }, authError), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.muted,
-      marginTop: 12
-    }
-  }, "We'll email you a one-tap sign-in link. No password needed.")) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: "100%",
-      maxWidth: 340
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 40,
-      marginBottom: 12
-    }
-  }, "📬"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 700,
-      color: C.text,
-      marginBottom: 8
-    }
-  }, "Check your email"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: C.muted,
-      lineHeight: 1.65,
-      marginBottom: 20
-    }
-  }, "We sent a sign-in link to ", /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: C.accentLight
-    }
-  }, authEmail), ". Tap it to open ClearCFA and you'll be signed in automatically."), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setAuthSent(false);
-    },
-    style: {
-      fontSize: 12,
-      color: C.muted,
-      background: "none",
-      border: "none",
-      cursor: "pointer",
-      textDecoration: "underline"
-    }
-  }, "Use a different email"))));
+  // ── Login screen ──
+  if (!authUser) {
+    const canSubmit = authEmail.includes("@") && authPassword.length >= 6;
+    return wrap(/*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        padding: "32px 24px",
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 44,
+        marginBottom: 16
+      }
+    }, "📚"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 22,
+        fontWeight: 800,
+        color: C.text,
+        marginBottom: 6
+      }
+    }, "ClearCFA"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.muted,
+        marginBottom: 28,
+        lineHeight: 1.6
+      }
+    }, "Sign in to sync your progress across all your devices."), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: "100%",
+        maxWidth: 340
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      value: authEmail,
+      onChange: e => setAuthEmail(e.target.value.trim()),
+      placeholder: "your@email.com",
+      type: "email",
+      autoComplete: "email",
+      style: {
+        width: "100%",
+        padding: "13px 16px",
+        borderRadius: 11,
+        fontSize: 14,
+        background: C.surface,
+        border: `1.5px solid ${authEmail.includes("@") ? C.accent : C.border}`,
+        color: C.text,
+        outline: "none",
+        marginBottom: 10,
+        boxSizing: "border-box"
+      }
+    }), /*#__PURE__*/React.createElement("input", {
+      value: authPassword,
+      onChange: e => setAuthPassword(e.target.value),
+      onKeyDown: e => {
+        if (e.key === "Enter" && canSubmit) document.getElementById("signin-btn").click();
+      },
+      placeholder: "Password (min 6 characters)",
+      type: "password",
+      autoComplete: "current-password",
+      style: {
+        width: "100%",
+        padding: "13px 16px",
+        borderRadius: 11,
+        fontSize: 14,
+        background: C.surface,
+        border: `1.5px solid ${authPassword.length >= 6 ? C.accent : C.border}`,
+        color: C.text,
+        outline: "none",
+        marginBottom: 10,
+        boxSizing: "border-box"
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      id: "signin-btn",
+      disabled: authLoading || !canSubmit,
+      onClick: async () => {
+        setAuthError("");
+        setAuthLoading(true);
+        try {
+          const id = await deriveUserId(authEmail, authPassword);
+          const auth = {
+            id,
+            email: authEmail.toLowerCase().trim()
+          };
+          saveAuth(auth);
+          setAuthUser(auth);
+          authUserRef.current = auth;
+        } catch (e) {
+          setAuthError("Something went wrong. Please try again.");
+        }
+        setAuthLoading(false);
+      },
+      style: {
+        width: "100%",
+        padding: "13px",
+        borderRadius: 11,
+        fontSize: 14,
+        fontWeight: 800,
+        background: canSubmit ? `linear-gradient(135deg,${C.accent},${C.accentLight})` : "#1a1a2e",
+        color: canSubmit ? "#fff" : C.muted,
+        border: "none",
+        cursor: canSubmit ? "pointer" : "default",
+        boxShadow: canSubmit ? `0 4px 16px ${C.accent}44` : "none",
+        transition: "all 0.2s"
+      }
+    }, authLoading ? "Signing in…" : "Sign in →"), authError && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.hard,
+        marginTop: 10,
+        padding: "8px 12px",
+        background: "#200010",
+        borderRadius: 8,
+        border: `1px solid ${C.hard}44`
+      }
+    }, authError), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginTop: 14,
+        lineHeight: 1.6
+      }
+    }, "Use the same email and password on any device to access your data."))));
+  }
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if (screen === "home") return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, settingsOpen && /*#__PURE__*/React.createElement("div", {
