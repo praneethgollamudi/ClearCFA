@@ -2238,7 +2238,7 @@ function RevisionScreen({
       }
     }, w, "%"));
   })), tab === "notes" && (() => {
-    const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 5);
+    const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 8);
     if (!wrongCards.length) return null;
     return /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2259,129 +2259,189 @@ function RevisionScreen({
       }
     }, "⚠ Concepts you've missed in ", selTopic), wrongCards.map((card, i) => {
       const isExp = expandedWrong === i;
-      const modIdx = (topicData?.topics || []).findIndex(m => m.module && card.subtopic && (m.module.toLowerCase().includes(card.subtopic.toLowerCase()) || card.subtopic.toLowerCase().includes(m.module.toLowerCase())));
+      // Find the best-matching Power Notes module for this card
+      const topics = topicData?.topics || [];
+      let modIdx = topics.findIndex(m => m.module && card.subtopic && (m.module.toLowerCase().includes((card.subtopic || "").toLowerCase()) || (card.subtopic || "").toLowerCase().includes(m.module.toLowerCase())));
+      if (modIdx < 0) modIdx = topics.findIndex(m => m.module && card.concept && m.module.toLowerCase().includes((card.concept || "").split(" ")[0].toLowerCase()));
+      const matchedMod = modIdx >= 0 ? topics[modIdx] : null;
       return /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
-          borderLeft: `2px solid ${isExp ? "#e05070" : "#c0304466"}`,
-          paddingLeft: 10,
-          marginBottom: i < wrongCards.length - 1 ? 12 : 0,
+          borderLeft: `3px solid ${isExp ? "#e05070" : "#c0304444"}`,
+          paddingLeft: 12,
+          marginBottom: i < wrongCards.length - 1 ? 14 : 0
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
           cursor: "pointer"
         },
         onClick: () => setExpandedWrong(isExp ? null : i)
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start"
+          flex: 1
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 12,
           fontWeight: 700,
-          color: "#e2e2ff",
-          flex: 1
+          color: "#e2e2ff"
         }
-      }, card.concept || card.subtopic), /*#__PURE__*/React.createElement("span", {
+      }, card.concept || card.subtopic), card.los_tested && /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 10,
-          color: "#e05070",
-          fontWeight: 700,
-          marginLeft: 8,
-          flexShrink: 0
+          color: "#5050a0",
+          marginTop: 2,
+          lineHeight: 1.4
         }
-      }, isExp ? "▲" : "▼")), card.los_tested && /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 10,
-          color: "#6060a0",
-          marginTop: 1
-        }
-      }, "LOS: ", card.los_tested), !isExp && card.explanation && /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 11,
-          color: "#8080b0",
-          marginTop: 3,
-          lineHeight: 1.5
-        }
-      }, card.explanation.slice(0, 120), card.explanation.length > 120 ? "…" : ""), /*#__PURE__*/React.createElement("div", {
+      }, "LOS: ", card.los_tested), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 10,
           color: "#e05070",
           marginTop: 3,
           fontWeight: 600
         }
-      }, "Wrong ", card.wrongCount, "×"), isExp && /*#__PURE__*/React.createElement("div", {
+      }, "Wrong ", card.wrongCount, "×", matchedMod ? ` · tap to revise` : " · tap to expand")), /*#__PURE__*/React.createElement("span", {
         style: {
-          marginTop: 8
+          fontSize: 11,
+          color: "#e05070",
+          fontWeight: 700,
+          marginLeft: 8,
+          flexShrink: 0,
+          marginTop: 2
+        }
+      }, isExp ? "▲" : "▼")), isExp && /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginTop: 12
         },
         onClick: e => e.stopPropagation()
-      }, card.question && /*#__PURE__*/React.createElement("div", {
+      }, matchedMod ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
         style: {
-          fontSize: 12,
-          color: "#a0a0c0",
-          background: "#0a0a1e",
-          borderRadius: 8,
-          padding: "8px 10px",
-          marginBottom: 8,
-          lineHeight: 1.6,
-          whiteSpace: "pre-wrap"
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#7c5aed",
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          marginBottom: 8
+        }
+      }, "📚 ", matchedMod.module), /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: "#22c55e",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          marginBottom: 6
+        }
+      }, "✅ Key Rules"), matchedMod.rules.map((r, ri) => /*#__PURE__*/React.createElement("div", {
+        key: ri,
+        style: {
+          display: "flex",
+          gap: 8,
+          marginBottom: 6
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          fontSize: 10,
-          fontWeight: 700,
-          color: "#6060a0",
-          display: "block",
-          marginBottom: 4
+          color: "#22c55e",
+          fontSize: 11,
+          marginTop: 1,
+          flexShrink: 0
         }
-      }, "QUESTION"), card.question), card.explanation && /*#__PURE__*/React.createElement("div", {
+      }, "•"), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 12,
           color: "#c0c0e0",
-          lineHeight: 1.7,
-          marginBottom: 8,
-          whiteSpace: "pre-wrap"
+          lineHeight: 1.6
+        }
+      }, r)))), matchedMod.traps.length > 0 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginBottom: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
+          color: "#f59e0b",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          marginBottom: 6
+        }
+      }, "⚠ Common Traps"), matchedMod.traps.map((t, ti) => /*#__PURE__*/React.createElement("div", {
+        key: ti,
+        style: {
+          display: "flex",
+          gap: 8,
+          marginBottom: 6
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          fontSize: 10,
-          fontWeight: 700,
-          color: "#6060a0",
-          display: "block",
-          marginBottom: 4
+          color: "#f59e0b",
+          fontSize: 11,
+          marginTop: 1,
+          flexShrink: 0
         }
-      }, "EXPLANATION"), card.explanation), modIdx >= 0 && /*#__PURE__*/React.createElement("button", {
+      }, "•"), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 12,
+          color: "#c0c0e0",
+          lineHeight: 1.6
+        }
+      }, t)))), matchedMod.mnemonic && /*#__PURE__*/React.createElement("div", {
+        style: {
+          background: "#0f0a1e",
+          borderRadius: 8,
+          padding: "8px 10px",
+          marginBottom: 10,
+          fontSize: 11,
+          color: "#a78bfa",
+          lineHeight: 1.6,
+          fontStyle: "italic"
+        }
+      }, "💡 ", matchedMod.mnemonic), /*#__PURE__*/React.createElement("button", {
         onClick: () => {
           setExpandedModule(modIdx);
           setExpandedWrong(null);
-          setTimeout(() => {
-            document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({
-              behavior: "smooth",
-              block: "start"
-            });
-          }, 80);
+          setTimeout(() => document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          }), 80);
         },
         style: {
+          width: "100%",
+          padding: "8px",
+          borderRadius: 8,
           fontSize: 11,
           fontWeight: 700,
-          padding: "6px 12px",
-          borderRadius: 7,
           background: "#7c3aed22",
-          border: "1px solid #7c3aed55",
+          border: "1px solid #7c3aed44",
           color: "#a78bfa",
-          cursor: "pointer"
+          cursor: "pointer",
+          marginTop: 4
         }
-      }, "📚 Open \"", (topicData?.topics || [])[modIdx]?.module, "\" in Power Notes →"), modIdx < 0 && /*#__PURE__*/React.createElement("div", {
+      }, "Open full \"", matchedMod.module, "\" notes below ↓")) :
+      /*#__PURE__*/
+      /* No Power Notes match — show best available from stored card */
+      React.createElement("div", null, card.explanation && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: "#a0a0c0",
+          lineHeight: 1.7,
+          marginBottom: 10,
+          whiteSpace: "pre-wrap"
+        }
+      }, card.explanation), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11,
-          color: "#6060a0",
+          color: "#5050a0",
           fontStyle: "italic"
         }
-      }, "Review the ", /*#__PURE__*/React.createElement("strong", {
-        style: {
-          color: "#a0a0c0"
-        }
-      }, selTopic), " Power Notes below to study this concept.")));
+      }, "Review the ", selTopic, " Power Notes sections below for related content."))));
     }));
   })(), tab === "notes" && focusConcept && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9852,7 +9912,14 @@ Reply with just "saved" when done.`
       color: C.hard
     }, "Leech · ", card.wrongCount, "x wrong"), /*#__PURE__*/React.createElement(Badge, {
       color: C.muted
-    }, "EF: ", (card.ef || 2.5).toFixed(1))), /*#__PURE__*/React.createElement("div", {
+    }, "EF: ", (card.ef || 2.5).toFixed(1))), card.question && card.question.length < 150 && !card.question.trim().endsWith("?") ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: C.muted,
+        marginBottom: 4,
+        fontStyle: "italic"
+      }
+    }, "⚠ Older card — question context may be incomplete. Full context on next attempt.") : null, /*#__PURE__*/React.createElement("div", {
       style: {
         background: C.surface,
         border: `1px solid ${C.border}`,

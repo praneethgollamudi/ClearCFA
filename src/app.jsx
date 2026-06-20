@@ -1540,37 +1540,76 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
 
       {/* ── WRONG ANSWERS FOR THIS TOPIC ── */}
       {tab==="notes" && (()=>{
-        const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,5);
+        const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,8);
         if(!wrongCards.length) return null;
         return(
           <div style={{background:"#120818",border:`1px solid #c0304433`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
             <div style={{fontSize:11,fontWeight:700,color:"#e05070",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Concepts you've missed in {selTopic}</div>
             {wrongCards.map((card,i)=>{
               const isExp=expandedWrong===i;
-              const modIdx=(topicData?.topics||[]).findIndex(m=>m.module&&card.subtopic&&(m.module.toLowerCase().includes(card.subtopic.toLowerCase())||card.subtopic.toLowerCase().includes(m.module.toLowerCase())));
+              // Find the best-matching Power Notes module for this card
+              const topics=topicData?.topics||[];
+              let modIdx=topics.findIndex(m=>m.module&&card.subtopic&&(m.module.toLowerCase().includes((card.subtopic||"").toLowerCase())||(card.subtopic||"").toLowerCase().includes(m.module.toLowerCase())));
+              if(modIdx<0) modIdx=topics.findIndex(m=>m.module&&card.concept&&m.module.toLowerCase().includes((card.concept||"").split(" ")[0].toLowerCase()));
+              const matchedMod=modIdx>=0?topics[modIdx]:null;
               return(
-                <div key={i} style={{borderLeft:`2px solid ${isExp?"#e05070":"#c0304466"}`,paddingLeft:10,marginBottom:i<wrongCards.length-1?12:0,cursor:"pointer"}}
-                  onClick={()=>setExpandedWrong(isExp?null:i)}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#e2e2ff",flex:1}}>{card.concept||card.subtopic}</div>
-                    <span style={{fontSize:10,color:"#e05070",fontWeight:700,marginLeft:8,flexShrink:0}}>{isExp?"▲":"▼"}</span>
+                <div key={i} style={{borderLeft:`3px solid ${isExp?"#e05070":"#c0304444"}`,paddingLeft:12,marginBottom:i<wrongCards.length-1?14:0}}>
+                  {/* Always-visible header */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",cursor:"pointer"}} onClick={()=>setExpandedWrong(isExp?null:i)}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#e2e2ff"}}>{card.concept||card.subtopic}</div>
+                      {card.los_tested&&<div style={{fontSize:10,color:"#5050a0",marginTop:2,lineHeight:1.4}}>LOS: {card.los_tested}</div>}
+                      <div style={{fontSize:10,color:"#e05070",marginTop:3,fontWeight:600}}>Wrong {card.wrongCount}×{matchedMod?` · tap to revise`:" · tap to expand"}</div>
+                    </div>
+                    <span style={{fontSize:11,color:"#e05070",fontWeight:700,marginLeft:8,flexShrink:0,marginTop:2}}>{isExp?"▲":"▼"}</span>
                   </div>
-                  {card.los_tested&&<div style={{fontSize:10,color:"#6060a0",marginTop:1}}>LOS: {card.los_tested}</div>}
-                  {!isExp&&card.explanation&&<div style={{fontSize:11,color:"#8080b0",marginTop:3,lineHeight:1.5}}>{card.explanation.slice(0,120)}{card.explanation.length>120?"…":""}</div>}
-                  <div style={{fontSize:10,color:"#e05070",marginTop:3,fontWeight:600}}>Wrong {card.wrongCount}×</div>
+
+                  {/* Expanded: show curated Power Notes content for this concept */}
                   {isExp&&(
-                    <div style={{marginTop:8}} onClick={e=>e.stopPropagation()}>
-                      {card.question&&<div style={{fontSize:12,color:"#a0a0c0",background:"#0a0a1e",borderRadius:8,padding:"8px 10px",marginBottom:8,lineHeight:1.6,whiteSpace:"pre-wrap"}}><span style={{fontSize:10,fontWeight:700,color:"#6060a0",display:"block",marginBottom:4}}>QUESTION</span>{card.question}</div>}
-                      {card.explanation&&<div style={{fontSize:12,color:"#c0c0e0",lineHeight:1.7,marginBottom:8,whiteSpace:"pre-wrap"}}><span style={{fontSize:10,fontWeight:700,color:"#6060a0",display:"block",marginBottom:4}}>EXPLANATION</span>{card.explanation}</div>}
-                      {modIdx>=0&&(
-                        <button onClick={()=>{setExpandedModule(modIdx);setExpandedWrong(null);setTimeout(()=>{document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"})},80);}}
-                          style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:7,background:"#7c3aed22",border:"1px solid #7c3aed55",color:"#a78bfa",cursor:"pointer"}}>
-                          📚 Open "{(topicData?.topics||[])[modIdx]?.module}" in Power Notes →
-                        </button>
-                      )}
-                      {modIdx<0&&(
-                        <div style={{fontSize:11,color:"#6060a0",fontStyle:"italic"}}>
-                          Review the <strong style={{color:"#a0a0c0"}}>{selTopic}</strong> Power Notes below to study this concept.
+                    <div style={{marginTop:12}} onClick={e=>e.stopPropagation()}>
+                      {matchedMod?(
+                        <>
+                          <div style={{fontSize:11,fontWeight:700,color:"#7c5aed",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>
+                            📚 {matchedMod.module}
+                          </div>
+                          {/* Key Rules */}
+                          <div style={{marginBottom:10}}>
+                            <div style={{fontSize:10,fontWeight:800,color:"#22c55e",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>✅ Key Rules</div>
+                            {matchedMod.rules.map((r,ri)=>(
+                              <div key={ri} style={{display:"flex",gap:8,marginBottom:6}}>
+                                <span style={{color:"#22c55e",fontSize:11,marginTop:1,flexShrink:0}}>•</span>
+                                <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.6}}>{r}</span>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Traps */}
+                          {matchedMod.traps.length>0&&(
+                            <div style={{marginBottom:10}}>
+                              <div style={{fontSize:10,fontWeight:800,color:"#f59e0b",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>⚠ Common Traps</div>
+                              {matchedMod.traps.map((t,ti)=>(
+                                <div key={ti} style={{display:"flex",gap:8,marginBottom:6}}>
+                                  <span style={{color:"#f59e0b",fontSize:11,marginTop:1,flexShrink:0}}>•</span>
+                                  <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.6}}>{t}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Mnemonic */}
+                          {matchedMod.mnemonic&&(
+                            <div style={{background:"#0f0a1e",borderRadius:8,padding:"8px 10px",marginBottom:10,fontSize:11,color:"#a78bfa",lineHeight:1.6,fontStyle:"italic"}}>
+                              💡 {matchedMod.mnemonic}
+                            </div>
+                          )}
+                          <button onClick={()=>{setExpandedModule(modIdx);setExpandedWrong(null);setTimeout(()=>document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"}),80);}}
+                            style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:"#7c3aed22",border:"1px solid #7c3aed44",color:"#a78bfa",cursor:"pointer",marginTop:4}}>
+                            Open full "{matchedMod.module}" notes below ↓
+                          </button>
+                        </>
+                      ):(
+                        /* No Power Notes match — show best available from stored card */
+                        <div>
+                          {card.explanation&&<div style={{fontSize:12,color:"#a0a0c0",lineHeight:1.7,marginBottom:10,whiteSpace:"pre-wrap"}}>{card.explanation}</div>}
+                          <div style={{fontSize:11,color:"#5050a0",fontStyle:"italic"}}>Review the {selTopic} Power Notes sections below for related content.</div>
                         </div>
                       )}
                     </div>
@@ -4596,6 +4635,7 @@ Reply with just "saved" when done.`}]
         {isLeech&&<Badge color={C.hard}>Leech · {card.wrongCount}x wrong</Badge>}
         <Badge color={C.muted}>EF: {(card.ef||2.5).toFixed(1)}</Badge>
       </div>
+      {card.question&&(card.question.length<150)&&!card.question.trim().endsWith("?")?<div style={{fontSize:10,color:C.muted,marginBottom:4,fontStyle:"italic"}}>⚠ Older card — question context may be incomplete. Full context on next attempt.</div>:null}
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"20px",marginBottom:14,fontSize:14,lineHeight:1.8,whiteSpace:"pre-wrap"}}>{card.question}</div>
       {!srAnswer?(
         <>
