@@ -1134,13 +1134,19 @@ function XPBar({
   xp,
   nextXP
 }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const thresholds = [0, 500, 1200, 2500, 5000, 9000, 15000, 25000];
+  const labels = ["Beginner", "Analyst I", "Analyst II", "Associate", "Senior Associate", "CFA Candidate", "CFA Ready", "CFA Master"];
+  const icons = ["🌱", "📊", "📈", "🏢", "⭐", "🎓", "🏆", "👑"];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.surface,
       border: `1px solid ${C.border}`,
       borderRadius: 11,
-      padding: "11px 14px"
-    }
+      padding: "11px 14px",
+      cursor: "pointer"
+    },
+    onClick: () => setExpanded(v => !v)
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -1175,10 +1181,23 @@ function XPBar({
     }
   }, label))), /*#__PURE__*/React.createElement("div", {
     style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 10,
       color: C.muted
     }
-  }, xp.toLocaleString(), " / ", nextXP.toLocaleString(), " XP")), /*#__PURE__*/React.createElement("div", {
+  }, xp.toLocaleString(), " / ", nextXP.toLocaleString(), " XP"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.muted,
+      transition: "transform 0.2s",
+      transform: expanded ? "rotate(180deg)" : "none"
+    }
+  }, "▾"))), /*#__PURE__*/React.createElement("div", {
     style: {
       height: 5,
       background: C.dim,
@@ -1194,6 +1213,79 @@ function XPBar({
       transition: "width 0.6s ease",
       boxShadow: `0 0 8px ${C.reward}66`
     }
+  })), expanded && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      animation: "fadeIn 0.15s ease"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.muted,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 2
+    }
+  }, "Full Progression"), labels.map((lbl, i) => {
+    const reached = xp >= thresholds[i];
+    const current = i === level - 1;
+    const pct = current ? progress : reached ? 100 : 0;
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        opacity: reached ? 1 : 0.4
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        width: 20,
+        textAlign: "center",
+        flexShrink: 0
+      }
+    }, icons[i]), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 3
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        fontWeight: current ? 800 : 600,
+        color: current ? C.rewardLight : reached ? C.textMid : C.muted
+      }
+    }, lbl, current && " ← you"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: C.muted
+      }
+    }, thresholds[i].toLocaleString(), " XP")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 3,
+        background: C.dim,
+        borderRadius: 2,
+        overflow: "hidden"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: "100%",
+        width: `${pct}%`,
+        background: current ? `linear-gradient(90deg,${C.reward},${C.rewardLight})` : reached ? "#4ade8066" : "transparent",
+        borderRadius: 2
+      }
+    }))));
   })));
 }
 function StatCard({

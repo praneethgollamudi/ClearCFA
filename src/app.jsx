@@ -787,8 +787,12 @@ function qcAdd(cache,t,st,diff,questions){
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
 function XPBar({ level, progress, label, xp, nextXP }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const thresholds = [0,500,1200,2500,5000,9000,15000,25000];
+  const labels = ["Beginner","Analyst I","Analyst II","Associate","Senior Associate","CFA Candidate","CFA Ready","CFA Master"];
+  const icons = ["🌱","📊","📈","🏢","⭐","🎓","🏆","👑"];
   return (
-    <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:11, padding:"11px 14px" }}>
+    <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:11, padding:"11px 14px", cursor:"pointer" }} onClick={()=>setExpanded(v=>!v)}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
         <div style={{ display:"flex", alignItems:"center", gap:7 }}>
           <div style={{ width:22, height:22, borderRadius:6, background:`linear-gradient(135deg,${C.reward},${C.rewardLight})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#000" }}>{level}</div>
@@ -796,11 +800,38 @@ function XPBar({ level, progress, label, xp, nextXP }) {
             <div style={{ fontSize:12, fontWeight:700, color:C.rewardLight }}>{label}</div>
           </div>
         </div>
-        <div style={{ fontSize:10, color:C.muted }}>{xp.toLocaleString()} / {nextXP.toLocaleString()} XP</div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ fontSize:10, color:C.muted }}>{xp.toLocaleString()} / {nextXP.toLocaleString()} XP</div>
+          <div style={{ fontSize:10, color:C.muted, transition:"transform 0.2s", transform:expanded?"rotate(180deg)":"none" }}>▾</div>
+        </div>
       </div>
       <div style={{ height:5, background:C.dim, borderRadius:3, overflow:"hidden" }}>
         <div style={{ height:"100%", width:`${progress}%`, background:`linear-gradient(90deg,${C.reward},${C.rewardLight})`, borderRadius:3, transition:"width 0.6s ease", boxShadow:`0 0 8px ${C.reward}66` }} />
       </div>
+      {expanded&&(
+        <div style={{ marginTop:12, display:"flex", flexDirection:"column", gap:6, animation:"fadeIn 0.15s ease" }}>
+          <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:2 }}>Full Progression</div>
+          {labels.map((lbl,i)=>{
+            const reached = xp >= thresholds[i];
+            const current = i === level-1;
+            const pct = current ? progress : reached ? 100 : 0;
+            return (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:9, opacity:reached?1:0.4 }}>
+                <div style={{ fontSize:14, width:20, textAlign:"center", flexShrink:0 }}>{icons[i]}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                    <span style={{ fontSize:11, fontWeight:current?800:600, color:current?C.rewardLight:reached?C.textMid:C.muted }}>{lbl}{current&&" ← you"}</span>
+                    <span style={{ fontSize:10, color:C.muted }}>{thresholds[i].toLocaleString()} XP</span>
+                  </div>
+                  <div style={{ height:3, background:C.dim, borderRadius:2, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${pct}%`, background:current?`linear-gradient(90deg,${C.reward},${C.rewardLight})`:reached?"#4ade8066":"transparent", borderRadius:2 }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
