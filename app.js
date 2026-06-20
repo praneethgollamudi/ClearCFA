@@ -4944,10 +4944,10 @@ function CFAMock() {
         concept: (q.concept || st).slice(0, 60),
         topic: t,
         subtopic: st,
-        question: (q.question || "").slice(0, 600),
+        question: q.question || "",
         options: q.options,
         answer: q.answer,
-        explanation: (q.explanation || "").slice(0, 500),
+        explanation: (q.explanation || "").slice(0, 1200),
         los_tested: (q.los_tested || "").slice(0, 120),
         wrongCount: 0
       };

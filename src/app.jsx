@@ -2839,7 +2839,7 @@ function CFAMock(){
       const isFlagged=!!flagged[q.id];
       if(correct&&!isFlagged) return; // skip correct+unflagged
       const key=`${t}|||${st}|||${q.id}`;
-      const existing=updatedSrDeck[key]||{concept:(q.concept||st).slice(0,60),topic:t,subtopic:st,question:(q.question||"").slice(0,600),options:q.options,answer:q.answer,explanation:(q.explanation||"").slice(0,500),los_tested:(q.los_tested||"").slice(0,120),wrongCount:0};
+      const existing=updatedSrDeck[key]||{concept:(q.concept||st).slice(0,60),topic:t,subtopic:st,question:(q.question||""),options:q.options,answer:q.answer,explanation:(q.explanation||"").slice(0,1200),los_tested:(q.los_tested||"").slice(0,120),wrongCount:0};
       const card=sm2Update(existing,correct);
       if(!correct) card.wrongCount=(existing.wrongCount||0)+1;
       if(isFlagged&&correct){
