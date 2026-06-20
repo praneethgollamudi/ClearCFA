@@ -696,6 +696,7 @@ const QCACHE_MAX   = 25;  // max distinct combos to keep
 const API_LOG_KEY  = "cfa_api_log_v1";
 const PASS_TREND_KEY = "cfa_pass_trend_v1";
 const PLAN_KEY       = "cfa_week_plan_v1";
+const DYNAMIC_PN_KEY = "cfa_dynamic_pn_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
 
@@ -1556,6 +1557,17 @@ async function askClaudeText(apiKey, prompt, maxTokens=400){
 }
 
 // ─── REVISION SCREEN COMPONENTS ──────────────────────────────────────────────
+function generatePNModule(card){
+  const moduleName=((card.subtopic||card.concept||"").trim())||"General Concept";
+  const explanation=card.explanation||"";
+  const sents=explanation.split(/(?<=[.;!?])\s+/).map(s=>s.trim()).filter(s=>s.length>12);
+  const rules=sents.slice(0,6);
+  if(card.los_tested&&rules.length<6) rules.push(`LOS: ${card.los_tested}`);
+  const traps=sents.filter(s=>/however|but\s|not\s|unlike|careful|trap|confusion|mistake|distinguish|differ/i.test(s)).slice(0,3);
+  if(!traps.length&&explanation) traps.push(`Don't confuse: review the distinction carefully for ${moduleName}.`);
+  return{module:moduleName,rules:rules.length?rules:[explanation.slice(0,300)].filter(Boolean),traps,mnemonic:"",_auto:true};
+}
+
 function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="", srDeck={}, focusConcept=null}){
   const [selTopic, setSelTopic] = useState(initialTopic || Object.keys(POWER_NOTES)[0]);
   const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
@@ -1569,8 +1581,12 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
   const [explainLoading, setExplainLoading] = useState(null);
   const [explainOpen, setExplainOpen] = useState(null);
   const [expandedWrong, setExpandedWrong] = useState(null);
+  const [dynamicPN, setDynamicPN] = useState(()=>{try{return JSON.parse(localStorage.getItem(DYNAMIC_PN_KEY)||"{}");}catch{return {};}});
 
-  const topicData = POWER_NOTES[selTopic];
+  // Merge static POWER_NOTES with any auto-generated dynamic modules
+  const staticTopics = POWER_NOTES[selTopic]?.topics || [];
+  const dynamicTopics = dynamicPN[selTopic] || [];
+  const topicData = {topics:[...staticTopics, ...dynamicTopics]};
   const formulaData = FORMULAS[selTopic] || [];
   const allFormulas = Object.values(FORMULAS).flat();
 
@@ -1578,6 +1594,34 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
   const drillTotal = drillData.length;
   const drillCard = drillData[drillIdx] || null;
   const drillProgress = Object.keys(drillResult).length;
+
+  // Auto-generate Power Notes modules for missed concepts with no existing match
+  useEffect(()=>{
+    if(tab!=="notes") return;
+    const allTopics=topicData.topics;
+    const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).slice(0,8);
+    const unmatched=wrongCards.filter(card=>{
+      const sub=(card.subtopic||"").toLowerCase();
+      const con=(card.concept||"").split(" ")[0].toLowerCase();
+      const idx=allTopics.findIndex(m=>m.module&&(m.module.toLowerCase().includes(sub)||sub.includes(m.module.toLowerCase())));
+      if(idx>=0) return false;
+      const idx2=allTopics.findIndex(m=>m.module&&con&&m.module.toLowerCase().includes(con));
+      return idx2<0;
+    });
+    if(!unmatched.length) return;
+    const existing=dynamicPN[selTopic]||[];
+    const toAdd=[];
+    for(const card of unmatched){
+      const name=((card.subtopic||card.concept||"").trim());
+      if(!name) continue;
+      if([...existing,...toAdd].some(m=>m.module.toLowerCase()===name.toLowerCase())) continue;
+      toAdd.push(generatePNModule(card));
+    }
+    if(!toAdd.length) return;
+    const updated={...dynamicPN,[selTopic]:[...existing,...toAdd]};
+    setDynamicPN(updated);
+    try{localStorage.setItem(DYNAMIC_PN_KEY,JSON.stringify(updated));}catch{}
+  },[selTopic,tab,srDeck]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div style={{fontFamily:"system-ui,sans-serif",background:C.bg,minHeight:"100vh",padding:"16px 16px 40px"}}>
@@ -1624,74 +1668,88 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
       {tab==="notes" && (()=>{
         const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,8);
         if(!wrongCards.length) return null;
-        // Deduplicate by matched module — show each module's content once even if multiple cards hit it
         const seenModIdx=new Set();
         const topics=topicData?.topics||[];
         return(
           <div style={{marginBottom:14}}>
             <div style={{fontSize:11,fontWeight:700,color:"#e05070",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Concepts you've missed in {selTopic}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {wrongCards.map((card,i)=>{
               let modIdx=topics.findIndex(m=>m.module&&(m.module.toLowerCase().includes((card.subtopic||"").toLowerCase())||(card.subtopic||"").toLowerCase().includes(m.module.toLowerCase())));
               if(modIdx<0) modIdx=topics.findIndex(m=>m.module&&card.concept&&m.module.toLowerCase().includes((card.concept||"").split(" ")[0].toLowerCase()));
               const matchedMod=modIdx>=0?topics[modIdx]:null;
               const dupeModule=matchedMod&&seenModIdx.has(modIdx);
               if(matchedMod) seenModIdx.add(modIdx);
+              const isOpen=expandedWrong===i;
+              const isAuto=matchedMod?._auto;
               return(
-                <div key={i} style={{background:"#0e0818",border:`1px solid #c0304433`,borderRadius:12,padding:"12px 14px"}}>
-                  {/* Concept header */}
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-                    <div style={{flex:1}}>
+                <div key={i} style={{background:"#0e0818",border:`1px solid ${isOpen?"#c03044":"#c0304433"}`,borderRadius:12,overflow:"hidden",transition:"border-color 0.15s"}}>
+                  {/* Tap-to-expand header */}
+                  <button onClick={()=>setExpandedWrong(isOpen?null:i)}
+                    style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"12px 14px",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}>
+                    <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:13,fontWeight:700,color:"#e2e2ff"}}>{card.concept||card.subtopic}</div>
-                      {card.los_tested&&<div style={{fontSize:10,color:"#5050a0",marginTop:3,lineHeight:1.5}}>LOS: {card.los_tested}</div>}
+                      {matchedMod&&<div style={{fontSize:10,color:isAuto?"#6060b0":"#5050a0",marginTop:3}}>{isAuto?"✦ Auto-generated notes":"📚 "+matchedMod.module}</div>}
+                      {!matchedMod&&<div style={{fontSize:10,color:"#5050a0",marginTop:3,fontStyle:"italic"}}>Tap to review</div>}
                     </div>
-                    <span style={{fontSize:10,background:"#e05070",color:"#fff",fontWeight:700,padding:"2px 7px",borderRadius:5,flexShrink:0,marginLeft:8}}>Wrong {card.wrongCount}×</span>
-                  </div>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,marginLeft:8}}>
+                      <span style={{fontSize:10,background:"#e05070",color:"#fff",fontWeight:700,padding:"2px 7px",borderRadius:5}}>Wrong {card.wrongCount}×</span>
+                      <span style={{fontSize:12,color:"#6060a0"}}>{isOpen?"▲":"▼"}</span>
+                    </div>
+                  </button>
 
-                  {dupeModule?(
-                    /* Same module already shown above — just link */
-                    <div style={{fontSize:11,color:"#6060a0",fontStyle:"italic"}}>Same module as above — see rules & traps above.</div>
-                  ):matchedMod?(
-                    <>
-                      <div style={{fontSize:10,fontWeight:800,color:"#7c5aed",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:8}}>📚 {matchedMod.module}</div>
-                      {/* Rules */}
-                      <div style={{marginBottom:10}}>
-                        <div style={{fontSize:10,fontWeight:800,color:"#22c55e",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>✅ Key Rules</div>
-                        {matchedMod.rules.map((r,ri)=>(
-                          <div key={ri} style={{display:"flex",gap:8,marginBottom:7}}>
-                            <span style={{color:"#22c55e",fontSize:11,marginTop:2,flexShrink:0}}>•</span>
-                            <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.65}}>{r}</span>
-                          </div>
-                        ))}
-                      </div>
-                      {/* Traps */}
-                      {matchedMod.traps.length>0&&(
-                        <div style={{marginBottom:10}}>
-                          <div style={{fontSize:10,fontWeight:800,color:"#f59e0b",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>⚠ Common Traps</div>
-                          {matchedMod.traps.map((t,ti)=>(
-                            <div key={ti} style={{display:"flex",gap:8,marginBottom:7}}>
-                              <span style={{color:"#f59e0b",fontSize:11,marginTop:2,flexShrink:0}}>•</span>
-                              <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.65}}>{t}</span>
+                  {/* Expandable content */}
+                  {isOpen&&(
+                    <div style={{padding:"0 14px 14px",borderTop:"1px solid #c0304422"}}>
+                      {card.los_tested&&<div style={{fontSize:10,color:"#5050a0",marginBottom:10,lineHeight:1.5}}>LOS: {card.los_tested}</div>}
+                      {dupeModule?(
+                        <div style={{fontSize:11,color:"#6060a0",fontStyle:"italic"}}>Same module as a card above — see rules & traps above.</div>
+                      ):matchedMod?(
+                        <>
+                          {isAuto&&<div style={{fontSize:10,color:"#6060b0",fontStyle:"italic",marginBottom:8}}>Auto-generated from your answer history · review for accuracy</div>}
+                          <div style={{fontSize:10,fontWeight:800,color:"#7c5aed",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:8}}>📚 {matchedMod.module}</div>
+                          {/* Rules */}
+                          {matchedMod.rules.length>0&&(
+                            <div style={{marginBottom:10}}>
+                              <div style={{fontSize:10,fontWeight:800,color:"#22c55e",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>✅ Key Rules</div>
+                              {matchedMod.rules.map((r,ri)=>(
+                                <div key={ri} style={{display:"flex",gap:8,marginBottom:7}}>
+                                  <span style={{color:"#22c55e",fontSize:11,marginTop:2,flexShrink:0}}>•</span>
+                                  <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.65}}>{r}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
+                          {/* Traps */}
+                          {matchedMod.traps.length>0&&(
+                            <div style={{marginBottom:10}}>
+                              <div style={{fontSize:10,fontWeight:800,color:"#f59e0b",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>⚠ Common Traps</div>
+                              {matchedMod.traps.map((t,ti)=>(
+                                <div key={ti} style={{display:"flex",gap:8,marginBottom:7}}>
+                                  <span style={{color:"#f59e0b",fontSize:11,marginTop:2,flexShrink:0}}>•</span>
+                                  <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.65}}>{t}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Mnemonic */}
+                          {matchedMod.mnemonic&&(
+                            <div style={{background:"#0f0a1e",borderRadius:8,padding:"8px 10px",marginBottom:10,fontSize:11,color:"#a78bfa",lineHeight:1.6,fontStyle:"italic"}}>
+                              💡 {matchedMod.mnemonic}
+                            </div>
+                          )}
+                          <button onClick={()=>{setExpandedModule(modIdx);setTimeout(()=>document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"}),80);}}
+                            style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:"#7c3aed22",border:"1px solid #7c3aed44",color:"#a78bfa",cursor:"pointer"}}>
+                            {isAuto?`View auto-generated "${matchedMod.module}" notes below ↓`:`Open full "${matchedMod.module}" notes below ↓`}
+                          </button>
+                        </>
+                      ):(
+                        /* Should rarely appear — dynamic gen covers this in the effect */
+                        <div>
+                          {card.explanation&&<div style={{fontSize:12,color:"#a0a0c0",lineHeight:1.7,marginBottom:8,whiteSpace:"pre-wrap"}}>{card.explanation}</div>}
+                          <div style={{fontSize:11,color:"#5050a0",fontStyle:"italic"}}>Loading notes... refresh to see auto-generated content.</div>
                         </div>
                       )}
-                      {/* Mnemonic */}
-                      {matchedMod.mnemonic&&(
-                        <div style={{background:"#0f0a1e",borderRadius:8,padding:"8px 10px",marginBottom:10,fontSize:11,color:"#a78bfa",lineHeight:1.6,fontStyle:"italic"}}>
-                          💡 {matchedMod.mnemonic}
-                        </div>
-                      )}
-                      <button onClick={()=>{setExpandedModule(modIdx);setTimeout(()=>document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"}),80);}}
-                        style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:"#7c3aed22",border:"1px solid #7c3aed44",color:"#a78bfa",cursor:"pointer"}}>
-                        Open full "{matchedMod.module}" notes below ↓
-                      </button>
-                    </>
-                  ):(
-                    /* No Power Notes match */
-                    <div>
-                      {card.explanation&&<div style={{fontSize:12,color:"#a0a0c0",lineHeight:1.7,marginBottom:8,whiteSpace:"pre-wrap"}}>{card.explanation}</div>}
-                      <div style={{fontSize:11,color:"#5050a0",fontStyle:"italic"}}>Review the {selTopic} Power Notes sections below for related content.</div>
                     </div>
                   )}
                 </div>
@@ -1721,8 +1779,8 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
                 <button onClick={()=>setExpandedModule(isOpen?null:mi)}
                   style={{width:"100%",padding:"13px 16px",background:"none",border:"none",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
                   <div>
-                    <div style={{fontSize:13,fontWeight:700,color:C.text}}>{mod.module}</div>
-                    <div style={{fontSize:11,color:C.muted,marginTop:2}}>{mod.rules.length} rules · {mod.traps.length} traps{mod.mnemonic?" · 1 mnemonic":""}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.text}}>{mod.module}{mod._auto&&<span style={{fontSize:9,fontWeight:600,color:"#6060b0",marginLeft:6,verticalAlign:"middle"}}>✦ auto</span>}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:2}}>{mod.rules.length} rules · {mod.traps.length} traps{mod.mnemonic?" · 1 mnemonic":""}{mod._auto?" · from your mistakes":""}</div>
                   </div>
                   <span style={{fontSize:12,color:C.accentLight,fontWeight:700,flexShrink:0,marginLeft:8}}>{isOpen?"▲":"▼"}</span>
                 </button>

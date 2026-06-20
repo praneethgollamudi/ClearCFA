@@ -987,6 +987,7 @@ const QCACHE_MAX = 25; // max distinct combos to keep
 const API_LOG_KEY = "cfa_api_log_v1";
 const PASS_TREND_KEY = "cfa_pass_trend_v1";
 const PLAN_KEY = "cfa_week_plan_v1";
+const DYNAMIC_PN_KEY = "cfa_dynamic_pn_v1";
 const MODEL_PRICING = {
   "claude-sonnet-4-6": {
     in: 3.00,
@@ -2136,6 +2137,22 @@ async function askClaudeText(apiKey, prompt, maxTokens = 400) {
 }
 
 // ─── REVISION SCREEN COMPONENTS ──────────────────────────────────────────────
+function generatePNModule(card) {
+  const moduleName = (card.subtopic || card.concept || "").trim() || "General Concept";
+  const explanation = card.explanation || "";
+  const sents = explanation.split(/(?<=[.;!?])\s+/).map(s => s.trim()).filter(s => s.length > 12);
+  const rules = sents.slice(0, 6);
+  if (card.los_tested && rules.length < 6) rules.push(`LOS: ${card.los_tested}`);
+  const traps = sents.filter(s => /however|but\s|not\s|unlike|careful|trap|confusion|mistake|distinguish|differ/i.test(s)).slice(0, 3);
+  if (!traps.length && explanation) traps.push(`Don't confuse: review the distinction carefully for ${moduleName}.`);
+  return {
+    module: moduleName,
+    rules: rules.length ? rules : [explanation.slice(0, 300)].filter(Boolean),
+    traps,
+    mnemonic: "",
+    _auto: true
+  };
+}
 function RevisionScreen({
   onBack,
   initialTopic = null,
@@ -2156,13 +2173,60 @@ function RevisionScreen({
   const [explainLoading, setExplainLoading] = useState(null);
   const [explainOpen, setExplainOpen] = useState(null);
   const [expandedWrong, setExpandedWrong] = useState(null);
-  const topicData = POWER_NOTES[selTopic];
+  const [dynamicPN, setDynamicPN] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(DYNAMIC_PN_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  // Merge static POWER_NOTES with any auto-generated dynamic modules
+  const staticTopics = POWER_NOTES[selTopic]?.topics || [];
+  const dynamicTopics = dynamicPN[selTopic] || [];
+  const topicData = {
+    topics: [...staticTopics, ...dynamicTopics]
+  };
   const formulaData = FORMULAS[selTopic] || [];
   const allFormulas = Object.values(FORMULAS).flat();
   const drillData = formulaData.length > 0 ? formulaData : allFormulas;
   const drillTotal = drillData.length;
   const drillCard = drillData[drillIdx] || null;
   const drillProgress = Object.keys(drillResult).length;
+
+  // Auto-generate Power Notes modules for missed concepts with no existing match
+  useEffect(() => {
+    if (tab !== "notes") return;
+    const allTopics = topicData.topics;
+    const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).slice(0, 8);
+    const unmatched = wrongCards.filter(card => {
+      const sub = (card.subtopic || "").toLowerCase();
+      const con = (card.concept || "").split(" ")[0].toLowerCase();
+      const idx = allTopics.findIndex(m => m.module && (m.module.toLowerCase().includes(sub) || sub.includes(m.module.toLowerCase())));
+      if (idx >= 0) return false;
+      const idx2 = allTopics.findIndex(m => m.module && con && m.module.toLowerCase().includes(con));
+      return idx2 < 0;
+    });
+    if (!unmatched.length) return;
+    const existing = dynamicPN[selTopic] || [];
+    const toAdd = [];
+    for (const card of unmatched) {
+      const name = (card.subtopic || card.concept || "").trim();
+      if (!name) continue;
+      if ([...existing, ...toAdd].some(m => m.module.toLowerCase() === name.toLowerCase())) continue;
+      toAdd.push(generatePNModule(card));
+    }
+    if (!toAdd.length) return;
+    const updated = {
+      ...dynamicPN,
+      [selTopic]: [...existing, ...toAdd]
+    };
+    setDynamicPN(updated);
+    try {
+      localStorage.setItem(DYNAMIC_PN_KEY, JSON.stringify(updated));
+    } catch {}
+  }, [selTopic, tab, srDeck]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "system-ui,sans-serif",
@@ -2260,7 +2324,6 @@ function RevisionScreen({
   })), tab === "notes" && (() => {
     const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 8);
     if (!wrongCards.length) return null;
-    // Deduplicate by matched module — show each module's content once even if multiple cards hit it
     const seenModIdx = new Set();
     const topics = topicData?.topics || [];
     return /*#__PURE__*/React.createElement("div", {
@@ -2280,7 +2343,7 @@ function RevisionScreen({
       style: {
         display: "flex",
         flexDirection: "column",
-        gap: 12
+        gap: 8
       }
     }, wrongCards.map((card, i) => {
       let modIdx = topics.findIndex(m => m.module && (m.module.toLowerCase().includes((card.subtopic || "").toLowerCase()) || (card.subtopic || "").toLowerCase().includes(m.module.toLowerCase())));
@@ -2288,24 +2351,34 @@ function RevisionScreen({
       const matchedMod = modIdx >= 0 ? topics[modIdx] : null;
       const dupeModule = matchedMod && seenModIdx.has(modIdx);
       if (matchedMod) seenModIdx.add(modIdx);
+      const isOpen = expandedWrong === i;
+      const isAuto = matchedMod?._auto;
       return /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
           background: "#0e0818",
-          border: `1px solid #c0304433`,
+          border: `1px solid ${isOpen ? "#c03044" : "#c0304433"}`,
           borderRadius: 12,
-          padding: "12px 14px"
+          overflow: "hidden",
+          transition: "border-color 0.15s"
         }
-      }, /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => setExpandedWrong(isOpen ? null : i),
         style: {
+          width: "100%",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: 10
+          padding: "12px 14px",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left"
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          flex: 1
+          flex: 1,
+          minWidth: 0
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -2313,34 +2386,67 @@ function RevisionScreen({
           fontWeight: 700,
           color: "#e2e2ff"
         }
-      }, card.concept || card.subtopic), card.los_tested && /*#__PURE__*/React.createElement("div", {
+      }, card.concept || card.subtopic), matchedMod && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: isAuto ? "#6060b0" : "#5050a0",
+          marginTop: 3
+        }
+      }, isAuto ? "✦ Auto-generated notes" : "📚 " + matchedMod.module), !matchedMod && /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 10,
           color: "#5050a0",
           marginTop: 3,
-          lineHeight: 1.5
+          fontStyle: "italic"
         }
-      }, "LOS: ", card.los_tested)), /*#__PURE__*/React.createElement("span", {
+      }, "Tap to review")), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          flexShrink: 0,
+          marginLeft: 8
+        }
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 10,
           background: "#e05070",
           color: "#fff",
           fontWeight: 700,
           padding: "2px 7px",
-          borderRadius: 5,
-          flexShrink: 0,
-          marginLeft: 8
+          borderRadius: 5
         }
-      }, "Wrong ", card.wrongCount, "×")), dupeModule ?
-      /*#__PURE__*/
-      /* Same module already shown above — just link */
-      React.createElement("div", {
+      }, "Wrong ", card.wrongCount, "×"), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 12,
+          color: "#6060a0"
+        }
+      }, isOpen ? "▲" : "▼"))), isOpen && /*#__PURE__*/React.createElement("div", {
+        style: {
+          padding: "0 14px 14px",
+          borderTop: "1px solid #c0304422"
+        }
+      }, card.los_tested && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: "#5050a0",
+          marginBottom: 10,
+          lineHeight: 1.5
+        }
+      }, "LOS: ", card.los_tested), dupeModule ? /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11,
           color: "#6060a0",
           fontStyle: "italic"
         }
-      }, "Same module as above — see rules & traps above.") : matchedMod ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      }, "Same module as a card above — see rules & traps above.") : matchedMod ? /*#__PURE__*/React.createElement(React.Fragment, null, isAuto && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: "#6060b0",
+          fontStyle: "italic",
+          marginBottom: 8
+        }
+      }, "Auto-generated from your answer history · review for accuracy"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 10,
           fontWeight: 800,
@@ -2349,7 +2455,7 @@ function RevisionScreen({
           textTransform: "uppercase",
           marginBottom: 8
         }
-      }, "📚 ", matchedMod.module), /*#__PURE__*/React.createElement("div", {
+      }, "📚 ", matchedMod.module), matchedMod.rules.length > 0 && /*#__PURE__*/React.createElement("div", {
         style: {
           marginBottom: 10
         }
@@ -2445,9 +2551,9 @@ function RevisionScreen({
           color: "#a78bfa",
           cursor: "pointer"
         }
-      }, "Open full \"", matchedMod.module, "\" notes below ↓")) :
+      }, isAuto ? `View auto-generated "${matchedMod.module}" notes below ↓` : `Open full "${matchedMod.module}" notes below ↓`)) :
       /*#__PURE__*/
-      /* No Power Notes match */
+      /* Should rarely appear — dynamic gen covers this in the effect */
       React.createElement("div", null, card.explanation && /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 12,
@@ -2462,7 +2568,7 @@ function RevisionScreen({
           color: "#5050a0",
           fontStyle: "italic"
         }
-      }, "Review the ", selTopic, " Power Notes sections below for related content.")));
+      }, "Loading notes... refresh to see auto-generated content."))));
     })));
   })(), tab === "notes" && focusConcept && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2522,13 +2628,21 @@ function RevisionScreen({
         fontWeight: 700,
         color: C.text
       }
-    }, mod.module), /*#__PURE__*/React.createElement("div", {
+    }, mod.module, mod._auto && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 9,
+        fontWeight: 600,
+        color: "#6060b0",
+        marginLeft: 6,
+        verticalAlign: "middle"
+      }
+    }, "✦ auto")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginTop: 2
       }
-    }, mod.rules.length, " rules · ", mod.traps.length, " traps", mod.mnemonic ? " · 1 mnemonic" : "")), /*#__PURE__*/React.createElement("span", {
+    }, mod.rules.length, " rules · ", mod.traps.length, " traps", mod.mnemonic ? " · 1 mnemonic" : "", mod._auto ? " · from your mistakes" : "")), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         color: C.accentLight,
