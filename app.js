@@ -2135,6 +2135,7 @@ function RevisionScreen({
   const [explainCache, setExplainCache] = useState({});
   const [explainLoading, setExplainLoading] = useState(null);
   const [explainOpen, setExplainOpen] = useState(null);
+  const [expandedWrong, setExpandedWrong] = useState(null);
   const topicData = POWER_NOTES[selTopic];
   const formulaData = FORMULAS[selTopic] || [];
   const allFormulas = Object.values(FORMULAS).flat();
@@ -2256,40 +2257,132 @@ function RevisionScreen({
         textTransform: "uppercase",
         letterSpacing: "0.08em"
       }
-    }, "⚠ Concepts you've missed in ", selTopic), wrongCards.map((card, i) => /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: {
-        borderLeft: `2px solid #c0304466`,
-        paddingLeft: 10,
-        marginBottom: i < wrongCards.length - 1 ? 10 : 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        fontWeight: 700,
-        color: "#e2e2ff"
-      }
-    }, card.concept || card.subtopic), card.los_tested && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        color: "#6060a0",
-        marginTop: 1
-      }
-    }, "LOS: ", card.los_tested), card.explanation && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: "#8080b0",
-        marginTop: 3,
-        lineHeight: 1.5
-      }
-    }, card.explanation.slice(0, 130), card.explanation.length > 130 ? "…" : ""), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        color: "#e05070",
-        marginTop: 3,
-        fontWeight: 600
-      }
-    }, "Wrong ", card.wrongCount, "×"))));
+    }, "⚠ Concepts you've missed in ", selTopic), wrongCards.map((card, i) => {
+      const isExp = expandedWrong === i;
+      const modIdx = (topicData?.topics || []).findIndex(m => m.module && card.subtopic && (m.module.toLowerCase().includes(card.subtopic.toLowerCase()) || card.subtopic.toLowerCase().includes(m.module.toLowerCase())));
+      return /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          borderLeft: `2px solid ${isExp ? "#e05070" : "#c0304466"}`,
+          paddingLeft: 10,
+          marginBottom: i < wrongCards.length - 1 ? 12 : 0,
+          cursor: "pointer"
+        },
+        onClick: () => setExpandedWrong(isExp ? null : i)
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#e2e2ff",
+          flex: 1
+        }
+      }, card.concept || card.subtopic), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 10,
+          color: "#e05070",
+          fontWeight: 700,
+          marginLeft: 8,
+          flexShrink: 0
+        }
+      }, isExp ? "▲" : "▼")), card.los_tested && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: "#6060a0",
+          marginTop: 1
+        }
+      }, "LOS: ", card.los_tested), !isExp && card.explanation && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: "#8080b0",
+          marginTop: 3,
+          lineHeight: 1.5
+        }
+      }, card.explanation.slice(0, 120), card.explanation.length > 120 ? "…" : ""), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: "#e05070",
+          marginTop: 3,
+          fontWeight: 600
+        }
+      }, "Wrong ", card.wrongCount, "×"), isExp && /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginTop: 8
+        },
+        onClick: e => e.stopPropagation()
+      }, card.question && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: "#a0a0c0",
+          background: "#0a0a1e",
+          borderRadius: 8,
+          padding: "8px 10px",
+          marginBottom: 8,
+          lineHeight: 1.6,
+          whiteSpace: "pre-wrap"
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 10,
+          fontWeight: 700,
+          color: "#6060a0",
+          display: "block",
+          marginBottom: 4
+        }
+      }, "QUESTION"), card.question), card.explanation && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: "#c0c0e0",
+          lineHeight: 1.7,
+          marginBottom: 8,
+          whiteSpace: "pre-wrap"
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 10,
+          fontWeight: 700,
+          color: "#6060a0",
+          display: "block",
+          marginBottom: 4
+        }
+      }, "EXPLANATION"), card.explanation), modIdx >= 0 && /*#__PURE__*/React.createElement("button", {
+        onClick: () => {
+          setExpandedModule(modIdx);
+          setExpandedWrong(null);
+          setTimeout(() => {
+            document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({
+              behavior: "smooth",
+              block: "start"
+            });
+          }, 80);
+        },
+        style: {
+          fontSize: 11,
+          fontWeight: 700,
+          padding: "6px 12px",
+          borderRadius: 7,
+          background: "#7c3aed22",
+          border: "1px solid #7c3aed55",
+          color: "#a78bfa",
+          cursor: "pointer"
+        }
+      }, "📚 Open \"", (topicData?.topics || [])[modIdx]?.module, "\" in Power Notes →"), modIdx < 0 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: "#6060a0",
+          fontStyle: "italic"
+        }
+      }, "Review the ", /*#__PURE__*/React.createElement("strong", {
+        style: {
+          color: "#a0a0c0"
+        }
+      }, selTopic), " Power Notes below to study this concept.")));
+    }));
   })(), tab === "notes" && focusConcept && /*#__PURE__*/React.createElement("div", {
     style: {
       background: `${C.accent}15`,
@@ -2321,6 +2414,7 @@ function RevisionScreen({
     const isOpen = expandedModule === mi;
     return /*#__PURE__*/React.createElement("div", {
       key: mi,
+      id: `pn-mod-${mi}`,
       style: {
         background: C.surface,
         border: `1px solid ${isOpen ? C.accent + "55" : C.border}`,
@@ -4505,8 +4599,7 @@ function generateLocalQuestions(topic, module, difficulty, count) {
 }
 
 // Remove SR cards whose question was truncated by the old 600-char storage limit.
-// Truncated cards have question.length === 600 (exact splice boundary) or end without
-// sentence-ending punctuation while being suspiciously long (>= 400 chars).
+// Only exact 600-char matches are safe to auto-delete (slice(0,600) boundary).
 function purgeTruncatedSR(deck) {
   if (!deck || typeof deck !== "object") return deck || {};
   const cleaned = {
@@ -4514,11 +4607,7 @@ function purgeTruncatedSR(deck) {
   };
   let changed = false;
   for (const [k, c] of Object.entries(cleaned)) {
-    const q = (c.question || "").trim();
-    const len = q.length;
-    const lastCh = q[len - 1] || "";
-    const midSentence = ![".", "?", ":", '"', "'", ")"].includes(lastCh);
-    if (len === 600 || len >= 590 && midSentence) {
+    if ((c.question || "").length === 600) {
       delete cleaned[k];
       changed = true;
     }
@@ -4908,11 +4997,11 @@ function CFAMock() {
         concept: v.concept,
         topic: v.topic,
         subtopic: v.subtopic,
-        question: (v.question || "").slice(0, 120),
+        question: v.question || "",
         options: v.options,
         answer: v.answer,
-        explanation: (v.explanation || "").slice(0, 200),
-        los_tested: (v.los_tested || "").slice(0, 80),
+        explanation: (v.explanation || "").slice(0, 1200),
+        los_tested: (v.los_tested || "").slice(0, 200),
         wrongCount: v.wrongCount || 0,
         interval: v.interval,
         repetitions: v.repetitions,

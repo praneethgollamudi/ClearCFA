@@ -1486,6 +1486,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
   const [explainCache, setExplainCache] = useState({});
   const [explainLoading, setExplainLoading] = useState(null);
   const [explainOpen, setExplainOpen] = useState(null);
+  const [expandedWrong, setExpandedWrong] = useState(null);
 
   const topicData = POWER_NOTES[selTopic];
   const formulaData = FORMULAS[selTopic] || [];
@@ -1544,14 +1545,39 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
         return(
           <div style={{background:"#120818",border:`1px solid #c0304433`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
             <div style={{fontSize:11,fontWeight:700,color:"#e05070",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Concepts you've missed in {selTopic}</div>
-            {wrongCards.map((card,i)=>(
-              <div key={i} style={{borderLeft:`2px solid #c0304466`,paddingLeft:10,marginBottom:i<wrongCards.length-1?10:0}}>
-                <div style={{fontSize:12,fontWeight:700,color:"#e2e2ff"}}>{card.concept||card.subtopic}</div>
-                {card.los_tested&&<div style={{fontSize:10,color:"#6060a0",marginTop:1}}>LOS: {card.los_tested}</div>}
-                {card.explanation&&<div style={{fontSize:11,color:"#8080b0",marginTop:3,lineHeight:1.5}}>{card.explanation.slice(0,130)}{card.explanation.length>130?"…":""}</div>}
-                <div style={{fontSize:10,color:"#e05070",marginTop:3,fontWeight:600}}>Wrong {card.wrongCount}×</div>
-              </div>
-            ))}
+            {wrongCards.map((card,i)=>{
+              const isExp=expandedWrong===i;
+              const modIdx=(topicData?.topics||[]).findIndex(m=>m.module&&card.subtopic&&(m.module.toLowerCase().includes(card.subtopic.toLowerCase())||card.subtopic.toLowerCase().includes(m.module.toLowerCase())));
+              return(
+                <div key={i} style={{borderLeft:`2px solid ${isExp?"#e05070":"#c0304466"}`,paddingLeft:10,marginBottom:i<wrongCards.length-1?12:0,cursor:"pointer"}}
+                  onClick={()=>setExpandedWrong(isExp?null:i)}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#e2e2ff",flex:1}}>{card.concept||card.subtopic}</div>
+                    <span style={{fontSize:10,color:"#e05070",fontWeight:700,marginLeft:8,flexShrink:0}}>{isExp?"▲":"▼"}</span>
+                  </div>
+                  {card.los_tested&&<div style={{fontSize:10,color:"#6060a0",marginTop:1}}>LOS: {card.los_tested}</div>}
+                  {!isExp&&card.explanation&&<div style={{fontSize:11,color:"#8080b0",marginTop:3,lineHeight:1.5}}>{card.explanation.slice(0,120)}{card.explanation.length>120?"…":""}</div>}
+                  <div style={{fontSize:10,color:"#e05070",marginTop:3,fontWeight:600}}>Wrong {card.wrongCount}×</div>
+                  {isExp&&(
+                    <div style={{marginTop:8}} onClick={e=>e.stopPropagation()}>
+                      {card.question&&<div style={{fontSize:12,color:"#a0a0c0",background:"#0a0a1e",borderRadius:8,padding:"8px 10px",marginBottom:8,lineHeight:1.6,whiteSpace:"pre-wrap"}}><span style={{fontSize:10,fontWeight:700,color:"#6060a0",display:"block",marginBottom:4}}>QUESTION</span>{card.question}</div>}
+                      {card.explanation&&<div style={{fontSize:12,color:"#c0c0e0",lineHeight:1.7,marginBottom:8,whiteSpace:"pre-wrap"}}><span style={{fontSize:10,fontWeight:700,color:"#6060a0",display:"block",marginBottom:4}}>EXPLANATION</span>{card.explanation}</div>}
+                      {modIdx>=0&&(
+                        <button onClick={()=>{setExpandedModule(modIdx);setExpandedWrong(null);setTimeout(()=>{document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"})},80);}}
+                          style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:7,background:"#7c3aed22",border:"1px solid #7c3aed55",color:"#a78bfa",cursor:"pointer"}}>
+                          📚 Open "{(topicData?.topics||[])[modIdx]?.module}" in Power Notes →
+                        </button>
+                      )}
+                      {modIdx<0&&(
+                        <div style={{fontSize:11,color:"#6060a0",fontStyle:"italic"}}>
+                          Review the <strong style={{color:"#a0a0c0"}}>{selTopic}</strong> Power Notes below to study this concept.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
       })()}
@@ -1570,7 +1596,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
           {topicData.topics.map((mod,mi)=>{
             const isOpen = expandedModule===mi;
             return(
-              <div key={mi} style={{background:C.surface,border:`1px solid ${isOpen?C.accent+"55":C.border}`,borderRadius:13,overflow:"hidden",transition:"border-color 0.15s"}}>
+              <div key={mi} id={`pn-mod-${mi}`} style={{background:C.surface,border:`1px solid ${isOpen?C.accent+"55":C.border}`,borderRadius:13,overflow:"hidden",transition:"border-color 0.15s"}}>
                 {/* Module header */}
                 <button onClick={()=>setExpandedModule(isOpen?null:mi)}
                   style={{width:"100%",padding:"13px 16px",background:"none",border:"none",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
@@ -2498,18 +2524,13 @@ function generateLocalQuestions(topic, module, difficulty, count) {
 }
 
 // Remove SR cards whose question was truncated by the old 600-char storage limit.
-// Truncated cards have question.length === 600 (exact splice boundary) or end without
-// sentence-ending punctuation while being suspiciously long (>= 400 chars).
+// Only exact 600-char matches are safe to auto-delete (slice(0,600) boundary).
 function purgeTruncatedSR(deck){
   if(!deck||typeof deck!=="object") return deck||{};
   const cleaned={...deck};
   let changed=false;
   for(const [k,c] of Object.entries(cleaned)){
-    const q=(c.question||"").trim();
-    const len=q.length;
-    const lastCh=q[len-1]||"";
-    const midSentence=![".","?",":",'"',"'",")"].includes(lastCh);
-    if(len===600||(len>=590&&midSentence)){delete cleaned[k];changed=true;}
+    if((c.question||"").length===600){delete cleaned[k];changed=true;}
   }
   return changed?cleaned:deck;
 }
@@ -2775,10 +2796,10 @@ function CFAMock(){
     // Cap at 200 cards, strip options/question to save space (kept in SR review from state)
     const pruned=Object.fromEntries(sorted.slice(0,200).map(([k,v])=>[k,{
       concept:v.concept,topic:v.topic,subtopic:v.subtopic,
-      question:(v.question||"").slice(0,120),
+      question:(v.question||""),
       options:v.options,answer:v.answer,
-      explanation:(v.explanation||"").slice(0,200),
-      los_tested:(v.los_tested||"").slice(0,80),
+      explanation:(v.explanation||"").slice(0,1200),
+      los_tested:(v.los_tested||"").slice(0,200),
       wrongCount:v.wrongCount||0,interval:v.interval,
       repetitions:v.repetitions,ef:v.ef,nextReview:v.nextReview
     }]));
