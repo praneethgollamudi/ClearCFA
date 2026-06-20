@@ -199,13 +199,20 @@ async function storageHealth() {
     return false;
   }
 }
+function getSyncId() {
+  try {
+    return localStorage.getItem("cfa_sync_id") || "default";
+  } catch {
+    return "default";
+  }
+}
 
 // Supabase sync — saves entire data blob as one row
 async function supabaseSync(cfg, history, srDeck, usageStats = {}) {
   if (!cfg || !cfg.url || !cfg.key) return false;
   try {
     const payload = {
-      user_id: "default",
+      user_id: getSyncId(),
       data: JSON.stringify({
         version: 3,
         history,
@@ -240,7 +247,7 @@ async function supabaseSync(cfg, history, srDeck, usageStats = {}) {
 async function supabaseLoad(cfg) {
   if (!cfg || !cfg.url || !cfg.key) return null;
   try {
-    const res = await fetch(`${cfg.url}/rest/v1/sessions?user_id=eq.default&order=updated_at.desc&limit=1`, {
+    const res = await fetch(`${cfg.url}/rest/v1/sessions?user_id=eq.${encodeURIComponent(getSyncId())}&order=updated_at.desc&limit=1`, {
       headers: {
         "apikey": cfg.key,
         "Authorization": `Bearer ${cfg.key}`
@@ -4453,6 +4460,8 @@ function CFAMock() {
   const [supabaseUrl, setSupabaseUrl] = useState(() => getSupabaseConfig()?.url || "");
   const [supabaseKey, setSupabaseKey] = useState(() => getSupabaseConfig()?.key || "");
   const [supabaseSyncing, setSupabaseSyncing] = useState(false);
+  const [syncId, setSyncId] = useState(() => getSyncId());
+  const [syncIdInput, setSyncIdInput] = useState(() => getSyncId());
   const [syncImportCfg, setSyncImportCfg] = useState(null); // pending import from #sync= URL
   const [needsFocusRefresh, setNeedsFocusRefresh] = useState(false);
   const [examDate, setExamDate] = useState(EXAM_DATE);
@@ -12198,6 +12207,68 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     }
   }, "Connect a free Supabase database for unlimited, permanent session storage. Your data syncs automatically after every session."), /*#__PURE__*/React.createElement("div", {
     style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.muted,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      display: "block",
+      marginBottom: 5
+    }
+  }, "Your Sync ID ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.muted,
+      fontWeight: 400,
+      textTransform: "none"
+    }
+  }, "— any word or your email")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 7
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: syncIdInput,
+    onChange: e => setSyncIdInput(e.target.value.trim()),
+    placeholder: "e.g. praneeth@gmail.com or praneeth2024",
+    style: {
+      flex: 1,
+      padding: "10px 12px",
+      borderRadius: 9,
+      fontSize: 12,
+      background: C.surface,
+      border: `1.5px solid ${syncIdInput && syncIdInput !== "default" ? "#44aa8844" : C.border}`,
+      color: C.text,
+      outline: "none"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const id = syncIdInput || "default";
+      localStorage.setItem("cfa_sync_id", id);
+      setSyncId(id);
+    },
+    style: {
+      padding: "10px 14px",
+      borderRadius: 9,
+      fontSize: 12,
+      fontWeight: 700,
+      background: syncIdInput === syncId ? "#1a2a1a" : "#22c55e22",
+      border: `1px solid ${syncIdInput === syncId ? "#2a3a2a" : "#22c55e44"}`,
+      color: syncIdInput === syncId ? C.muted : "#22c55e",
+      cursor: "pointer",
+      flexShrink: 0
+    }
+  }, syncIdInput === syncId ? "Saved ✓" : "Save")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.muted,
+      marginTop: 5
+    }
+  }, "Use the same ID on every device — that's all you need to sync.")), /*#__PURE__*/React.createElement("div", {
+    style: {
       marginBottom: 8
     }
   }, /*#__PURE__*/React.createElement("label", {
@@ -12321,7 +12392,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       padding: "8px 12px",
       marginBottom: 8
     }
-  }, "✅ Supabase connected · ", history.length, " session", history.length !== 1 ? "s" : "", " · ", Object.keys(srDeckRef.current).length, " SR cards"), /*#__PURE__*/React.createElement("button", {
+  }, "✅ Supabase connected · ID: ", /*#__PURE__*/React.createElement("strong", null, syncId), " · ", history.length, " session", history.length !== 1 ? "s" : "", " · ", Object.keys(srDeckRef.current).length, " SR cards"), /*#__PURE__*/React.createElement("button", {
     onClick: async () => {
       if (!supabaseCfg) return;
       setSupabaseSyncing(true);
@@ -12342,9 +12413,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       cursor: "pointer",
       marginBottom: 8
     }
-  }, supabaseSyncing ? "Syncing…" : "⬆ Sync All Data to Supabase Now"), /*#__PURE__*/React.createElement(SyncCodeBox, {
-    cfg: supabaseCfg
-  }))), /*#__PURE__*/React.createElement("div", {
+  }, supabaseSyncing ? "Syncing…" : "⬆ Sync All Data to Supabase Now"))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 16,
       paddingTop: 16,

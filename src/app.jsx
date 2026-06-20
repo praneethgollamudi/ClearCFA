@@ -139,12 +139,14 @@ async function storageHealth(){
   try{localStorage.setItem("__hc__","1");localStorage.removeItem("__hc__");return true;}catch{return false;}
 }
 
+function getSyncId(){ try{ return localStorage.getItem("cfa_sync_id")||"default"; }catch{ return "default"; } }
+
 // Supabase sync — saves entire data blob as one row
 async function supabaseSync(cfg, history, srDeck, usageStats={}){
   if(!cfg||!cfg.url||!cfg.key) return false;
   try{
     const payload={
-      user_id:"default",
+      user_id: getSyncId(),
       data:JSON.stringify({version:3,history,srDeck,usageStats,savedAt:new Date().toISOString()}),
       updated_at:new Date().toISOString()
     };
@@ -173,7 +175,7 @@ async function supabaseSync(cfg, history, srDeck, usageStats={}){
 async function supabaseLoad(cfg){
   if(!cfg||!cfg.url||!cfg.key) return null;
   try{
-    const res=await fetch(`${cfg.url}/rest/v1/sessions?user_id=eq.default&order=updated_at.desc&limit=1`,{
+    const res=await fetch(`${cfg.url}/rest/v1/sessions?user_id=eq.${encodeURIComponent(getSyncId())}&order=updated_at.desc&limit=1`,{
       headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
     });
     const rows=await res.json();
@@ -2500,6 +2502,8 @@ function CFAMock(){
   const [supabaseUrl,setSupabaseUrl]=useState(()=>getSupabaseConfig()?.url||"");
   const [supabaseKey,setSupabaseKey]=useState(()=>getSupabaseConfig()?.key||"");
   const [supabaseSyncing,setSupabaseSyncing]=useState(false);
+  const [syncId,setSyncId]=useState(()=>getSyncId());
+  const [syncIdInput,setSyncIdInput]=useState(()=>getSyncId());
   const [syncImportCfg,setSyncImportCfg]=useState(null); // pending import from #sync= URL
   const [needsFocusRefresh,setNeedsFocusRefresh]=useState(false);
   const [examDate,setExamDate]=useState(EXAM_DATE);
@@ -5169,6 +5173,22 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
       <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}}>🗄 Supabase (Reliable Storage)</div>
       <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.6}}>Connect a free Supabase database for unlimited, permanent session storage. Your data syncs automatically after every session.</div>
+      <div style={{marginBottom:10}}>
+        <label style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:5}}>Your Sync ID <span style={{color:C.muted,fontWeight:400,textTransform:"none"}}>— any word or your email</span></label>
+        <div style={{display:"flex",gap:7}}>
+          <input value={syncIdInput} onChange={e=>setSyncIdInput(e.target.value.trim())}
+            placeholder="e.g. praneeth@gmail.com or praneeth2024"
+            style={{flex:1,padding:"10px 12px",borderRadius:9,fontSize:12,background:C.surface,border:`1.5px solid ${syncIdInput&&syncIdInput!=="default"?"#44aa8844":C.border}`,color:C.text,outline:"none"}}/>
+          <button onClick={()=>{
+            const id=syncIdInput||"default";
+            localStorage.setItem("cfa_sync_id",id);
+            setSyncId(id);
+          }} style={{padding:"10px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:syncIdInput===syncId?"#1a2a1a":"#22c55e22",border:`1px solid ${syncIdInput===syncId?"#2a3a2a":"#22c55e44"}`,color:syncIdInput===syncId?C.muted:"#22c55e",cursor:"pointer",flexShrink:0}}>
+            {syncIdInput===syncId?"Saved ✓":"Save"}
+          </button>
+        </div>
+        <div style={{fontSize:10,color:C.muted,marginTop:5}}>Use the same ID on every device — that's all you need to sync.</div>
+      </div>
       <div style={{marginBottom:8}}>
         <label style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:5}}>Project URL</label>
         <input value={supabaseUrl} onChange={e=>setSupabaseUrl(e.target.value)} placeholder="https://xxxx.supabase.co"
@@ -5205,7 +5225,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       {supabaseCfg&&(
         <div style={{marginBottom:12}}>
           <div style={{fontSize:11,color:"#22c55e",background:"#0a1f0a",borderRadius:8,padding:"8px 12px",marginBottom:8}}>
-            ✅ Supabase connected · {history.length} session{history.length!==1?"s":""} · {Object.keys(srDeckRef.current).length} SR cards
+            ✅ Supabase connected · ID: <strong>{syncId}</strong> · {history.length} session{history.length!==1?"s":""} · {Object.keys(srDeckRef.current).length} SR cards
           </div>
           <button onClick={async()=>{
             if(!supabaseCfg)return;
@@ -5218,8 +5238,6 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
             background:"#0a1f2a",border:`1.5px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer",marginBottom:8}}>
             {supabaseSyncing?"Syncing…":"⬆ Sync All Data to Supabase Now"}
           </button>
-          {/* Device transfer — copy sync code to set up another device instantly */}
-          <SyncCodeBox cfg={supabaseCfg}/>
         </div>
       )}
     </div>
