@@ -480,18 +480,18 @@ function getModuleReadiness(history){
     sessions.forEach(s=>{const ageDays=(now-s.id)/86400000;const w=ageDays<=7?3:ageDays<=30?2:1;const sc=s.score??s.correct??Math.round(((s.pct||0)/100)*(s.total||0));wCorrect+=sc*w;wTotal+=(s.total||0)*w;});
     const accuracy=wTotal>0?Math.round((wCorrect/wTotal)*100):null;
     const recent3=sessions.slice(0,3),prev3=sessions.slice(3,6);
-    const r3avg=recent3.length?recent3.reduce((s,h)=>s+h.pct,0)/recent3.length:null;
-    const p3avg=prev3.length?prev3.reduce((s,h)=>s+h.pct,0)/prev3.length:null;
+    const r3avg=recent3.length?recent3.reduce((s,h)=>s+(h.pct||0),0)/recent3.length:null;
+    const p3avg=prev3.length?prev3.reduce((s,h)=>s+(h.pct||0),0)/prev3.length:null;
     const trend=(r3avg!==null&&p3avg!==null)?(r3avg-p3avg>3?"up":r3avg-p3avg<-3?"down":"flat"):null;
     const trendDelta=r3avg!==null&&p3avg!==null?Math.round(r3avg-p3avg):null;
-    const totalQs=sessions.reduce((s,h)=>s+h.total,0);
+    const totalQs=sessions.reduce((s,h)=>s+(h.total||0),0);
     const reliable=totalQs>=10;
     let readiness=0;
     if(accuracy!==null){readiness=Math.round(accuracy*0.55+coverage*100*0.30+Math.min(sessions.length*3,15));if(!reliable)readiness=Math.round(readiness*0.7);}
     readiness=Math.min(99,readiness);
     const untouchedModules=moduleNames.filter(m=>!modulesCovered.includes(m));
     const moduleStats={};
-    moduleNames.forEach(m=>{const ms=sessions.filter(h=>h.subtopic===m);moduleStats[m]=ms.length?{pct:Math.round(ms.reduce((s,h)=>s+h.pct,0)/ms.length),sessions:ms.length,totalQs:ms.reduce((s,h)=>s+h.total,0)}:null;});
+    moduleNames.forEach(m=>{const ms=sessions.filter(h=>h.subtopic===m);moduleStats[m]=ms.length?{pct:Math.round(ms.reduce((s,h)=>s+(h.pct||0),0)/ms.length),sessions:ms.length,totalQs:ms.reduce((s,h)=>s+(h.total||0),0)}:null;});
     // LOS mastery per module
     const losStats={};
     moduleNames.forEach(m=>{losStats[m]=getLOSMastery(history,topic,m);});
@@ -531,8 +531,8 @@ function getTopicTrends(history){
   Object.keys(LOS).forEach(t=>{
     const s=history.filter(h=>h.topic===t).slice(0,6);
     if(s.length<2){out[t]=null;return;}
-    const r=s.slice(0,3).reduce((a,h)=>a+h.pct,0)/Math.min(3,s.length);
-    const p=s.slice(3,6).reduce((a,h)=>a+h.pct,0)/Math.max(1,s.slice(3,6).length);
+    const r=s.slice(0,3).reduce((a,h)=>a+(h.pct||0),0)/Math.min(3,s.length);
+    const p=s.slice(3,6).reduce((a,h)=>a+(h.pct||0),0)/Math.max(1,s.slice(3,6).length);
     out[t]={recent:Math.round(r),prev:Math.round(p),delta:Math.round(r-p)};
   });
   return out;
@@ -561,8 +561,8 @@ function getPassProbability(history, moduleReadiness, daysLeft) {
   // Trajectory: improving or declining?
   const recentSessions = history.slice(0, 5);
   const olderSessions = history.slice(5, 10);
-  const recentAvg = recentSessions.length ? recentSessions.reduce((s, h) => s + h.pct, 0) / recentSessions.length : currentAccuracy;
-  const olderAvg = olderSessions.length ? olderSessions.reduce((s, h) => s + h.pct, 0) / olderSessions.length : recentAvg;
+  const recentAvg = recentSessions.length ? recentSessions.reduce((s, h) => s + (h.pct||0), 0) / recentSessions.length : currentAccuracy;
+  const olderAvg = olderSessions.length ? olderSessions.reduce((s, h) => s + (h.pct||0), 0) / olderSessions.length : recentAvg;
   const trajectory = recentAvg - olderAvg; // positive = improving
 
   // Time factor: days left relative to what's needed
@@ -622,7 +622,7 @@ function getStudyPace(history, daysLeft) {
   });
   const sessionsPerWeek7 = last7.length;
   const sessionsPerWeek30 = Math.round((last30.length / 30) * 7);
-  const qPerDay7 = last7.length ? Math.round(last7.reduce((s,h)=>s+h.total,0) / 7) : 0;
+  const qPerDay7 = last7.length ? Math.round(last7.reduce((s,h)=>s+(h.total||0),0) / 7) : 0;
 
   // Burnout detection: last session was >3 days ago AND had 7+ sessions before
   const daysSinceLastSession = history.length ? Math.floor((Date.now() - history[0].id) / 86400000) : 999;
@@ -3332,12 +3332,12 @@ Reply with just "saved" when done.`}]
   const moduleReadiness=useMemo(()=>getModuleReadiness(history),[history]);
   const predicted=useMemo(()=>getPredictedScore(moduleReadiness),[moduleReadiness]);
   const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));const streak=getStreak(history);
-  const overallPct=history.length?Math.round(history.reduce((s,h)=>s+h.pct,0)/history.length):null;
+  const overallPct=history.length?Math.round(history.reduce((s,h)=>s+(h.pct||0),0)/history.length):null;
   const dueCards=useMemo(()=>getDueCards(srDeck),[srDeck]);
   const leeches=useMemo(()=>getLeeches(srDeck),[srDeck]);
   const forgettingCurve=useMemo(()=>getForgettingCurve(srDeck),[srDeck]);
   const activity=useMemo(()=>getLast30DaysActivity(history),[history]);
-  const totalQsAttempted=history.reduce((s,h)=>s+h.total,0);
+  const totalQsAttempted=history.reduce((s,h)=>s+(h.total||0),0);
   const wrongPatterns=useMemo(()=>getWrongAnswerPatterns(history),[history]);
   const sessionScore=questions.filter(q=>answers[q.id]===q.answer).length;
   const sessionPct=questions.length?Math.round((sessionScore/questions.length)*100):0;
@@ -3634,6 +3634,83 @@ Reply with just "saved" when done.`}]
     </div>
   );
 
+  // ══ WEEKLY PLAN SCREEN ══════════════════════════════════════════════════════
+  if(weeklyPlanScreen) return wrap(<>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+      <div>
+        <h2 style={{margin:0,fontSize:22,fontWeight:800}}>Weekly Study Plan</h2>
+        <div style={{fontSize:12,color:C.muted,marginTop:3}}>Built around your schedule · AI-generated</div>
+      </div>
+      <button onClick={()=>setWeeklyPlanScreen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Back</button>
+    </div>
+
+    {/* Hours input */}
+    {!weeklyPlan && !weeklyPlanLoading && (
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px",marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:700,marginBottom:4}}>How many hours can you study this week?</div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.5}}>Be honest. 5 realistic hours beats 10 optimistic ones.</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
+          {[2,3,5,7,10,14].map(h=>(
+            <button key={h} onClick={()=>setHoursThisWeek(h)} style={{padding:"8px 14px",borderRadius:8,fontSize:13,fontWeight:700,border:hoursThisWeek===h?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:hoursThisWeek===h?C.accent+"20":C.surface,color:hoursThisWeek===h?C.accentLight:C.muted,cursor:"pointer"}}>
+              {h}h
+            </button>
+          ))}
+        </div>
+        <div style={{fontSize:11,color:C.muted,marginBottom:16}}>{hoursThisWeek} hours ≈ {Math.round(hoursThisWeek*60/7)} min/day average · {Math.round(hoursThisWeek*60/15)} bite-sized 15-min sessions possible</div>
+        <button onClick={generateWeeklyPlan} style={{width:"100%",padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
+          Generate My Plan →
+        </button>
+        {weeklyPlanError&&<div style={{fontSize:12,color:C.hard,marginTop:10,padding:"8px 12px",background:C.errorBg,borderRadius:8}}>{weeklyPlanError}</div>}
+      </div>
+    )}
+
+    {weeklyPlanLoading&&(
+      <div style={{textAlign:"center",padding:"40px 0"}}>
+        <div style={{fontSize:28,marginBottom:12,animation:"pulse 1.5s infinite"}}>🗓</div>
+        <div style={{fontSize:14,color:C.muted}}>Building your personalised plan…</div>
+        <div style={{fontSize:12,color:C.muted,marginTop:6,opacity:0.6}}>Analysing gaps, SR deck, and exam weight</div>
+      </div>
+    )}
+
+    {weeklyPlan&&!weeklyPlanLoading&&(<>
+      {/* Headline */}
+      <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+        <div style={{fontSize:14,fontWeight:700,color:C.accentLight,marginBottom:4}}>{weeklyPlan.headline}</div>
+        <div style={{fontSize:12,color:C.muted}}>{weeklyPlan.totalMinutes} min total · {hoursThisWeek}h available</div>
+      </div>
+
+      {/* Day-by-day */}
+      <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
+        {(weeklyPlan.days||[]).map((day,di)=>(
+          <div key={di} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px"}}>
+            <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:10}}>{day.day}</div>
+            {(day.sessions||[]).map((session,si)=>(
+              <div key={si} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"10px 12px",background:C.dim,borderRadius:9,marginBottom:6}}>
+                <div style={{flex:1,marginRight:10}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
+                    <span style={{fontSize:12,fontWeight:700,color:C.text}}>{session.title}</span>
+                    <span style={{fontSize:9,padding:"1px 6px",borderRadius:10,background:session.type==="sr"?C.accent+"22":session.type==="review"?C.medium+"22":C.easy+"22",color:session.type==="sr"?C.accentLight:session.type==="review"?C.medium:C.easy,fontWeight:700,textTransform:"uppercase"}}>{session.type}</span>
+                  </div>
+                  <div style={{fontSize:11,color:C.muted}}>{session.module} · {session.durationMin}min · {session.count}Q · {session.difficulty}</div>
+                  <div style={{fontSize:11,color:C.muted,fontStyle:"italic",marginTop:2}}>{session.why}</div>
+                </div>
+                <button onClick={()=>{setWeeklyPlanScreen(false);generateQuestions(session.topic,session.module,session.difficulty,session.count,"guided");}} style={{fontSize:11,fontWeight:700,padding:"6px 11px",borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0}}>Start</button>
+              </div>
+            ))}
+            {(!day.sessions||day.sessions.length===0)&&<div style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>Rest day — review your notes</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* Key message */}
+      <div style={{background:C.dim,borderRadius:10,padding:"12px 14px",fontSize:12,color:C.textMid,lineHeight:1.6,marginBottom:14,fontStyle:"italic"}}>
+        "{weeklyPlan.keyMessage}"
+      </div>
+
+      <button onClick={()=>{setWeeklyPlan(null);setWeeklyPlanError("");}} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Regenerate with different hours</button>
+    </>)}
+  </>);
+
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
     {/* Settings drawer overlay */}
@@ -3741,7 +3818,7 @@ Reply with just "saved" when done.`}]
     {/* Daily target tracker */}
     {(()=>{
       const today=new Date().toISOString().slice(0,10);
-      const todayQs=history.filter(h=>h.dateKey===today).reduce((s,h)=>s+h.total,0);
+      const todayQs=history.filter(h=>h.dateKey===today).reduce((s,h)=>s+(h.total||0),0);
       const baseTarget=daysLeft>0?(daysLeft<=30?30:daysLeft<=60?25:20):20;
       const dailyTarget=history.length<5?Math.max(10,Math.round(baseTarget*(0.4+history.length*0.12))):baseTarget;
       const pct=Math.min(100,Math.round((todayQs/dailyTarget)*100));
@@ -4313,83 +4390,6 @@ Reply with just "saved" when done.`}]
     </>)}
   </>);
 
-  // ══ WEEKLY PLAN SCREEN ══════════════════════════════════════════════════════
-  if(weeklyPlanScreen) return wrap(<>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-      <div>
-        <h2 style={{margin:0,fontSize:22,fontWeight:800}}>Weekly Study Plan</h2>
-        <div style={{fontSize:12,color:C.muted,marginTop:3}}>Built around your schedule · AI-generated</div>
-      </div>
-      <button onClick={()=>setWeeklyPlanScreen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Back</button>
-    </div>
-
-    {/* Hours input */}
-    {!weeklyPlan && !weeklyPlanLoading && (
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px",marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,marginBottom:4}}>How many hours can you study this week?</div>
-        <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.5}}>Be honest. 5 realistic hours beats 10 optimistic ones.</div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
-          {[2,3,5,7,10,14].map(h=>(
-            <button key={h} onClick={()=>setHoursThisWeek(h)} style={{padding:"8px 14px",borderRadius:8,fontSize:13,fontWeight:700,border:hoursThisWeek===h?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:hoursThisWeek===h?C.accent+"20":C.surface,color:hoursThisWeek===h?C.accentLight:C.muted,cursor:"pointer"}}>
-              {h}h
-            </button>
-          ))}
-        </div>
-        <div style={{fontSize:11,color:C.muted,marginBottom:16}}>{hoursThisWeek} hours ≈ {Math.round(hoursThisWeek*60/7)} min/day average · {Math.round(hoursThisWeek*60/15)} bite-sized 15-min sessions possible</div>
-        <button onClick={generateWeeklyPlan} style={{width:"100%",padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
-          Generate My Plan →
-        </button>
-        {weeklyPlanError&&<div style={{fontSize:12,color:C.hard,marginTop:10,padding:"8px 12px",background:C.errorBg,borderRadius:8}}>{weeklyPlanError}</div>}
-      </div>
-    )}
-
-    {weeklyPlanLoading&&(
-      <div style={{textAlign:"center",padding:"40px 0"}}>
-        <div style={{fontSize:28,marginBottom:12,animation:"pulse 1.5s infinite"}}>🗓</div>
-        <div style={{fontSize:14,color:C.muted}}>Building your personalised plan…</div>
-        <div style={{fontSize:12,color:C.muted,marginTop:6,opacity:0.6}}>Analysing gaps, SR deck, and exam weight</div>
-      </div>
-    )}
-
-    {weeklyPlan&&!weeklyPlanLoading&&(<>
-      {/* Headline */}
-      <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
-        <div style={{fontSize:14,fontWeight:700,color:C.accentLight,marginBottom:4}}>{weeklyPlan.headline}</div>
-        <div style={{fontSize:12,color:C.muted}}>{weeklyPlan.totalMinutes} min total · {hoursThisWeek}h available</div>
-      </div>
-
-      {/* Day-by-day */}
-      <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
-        {(weeklyPlan.days||[]).map((day,di)=>(
-          <div key={di} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px"}}>
-            <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:10}}>{day.day}</div>
-            {(day.sessions||[]).map((session,si)=>(
-              <div key={si} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"10px 12px",background:C.dim,borderRadius:9,marginBottom:6}}>
-                <div style={{flex:1,marginRight:10}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
-                    <span style={{fontSize:12,fontWeight:700,color:C.text}}>{session.title}</span>
-                    <span style={{fontSize:9,padding:"1px 6px",borderRadius:10,background:session.type==="sr"?C.accent+"22":session.type==="review"?C.medium+"22":C.easy+"22",color:session.type==="sr"?C.accentLight:session.type==="review"?C.medium:C.easy,fontWeight:700,textTransform:"uppercase"}}>{session.type}</span>
-                  </div>
-                  <div style={{fontSize:11,color:C.muted}}>{session.module} · {session.durationMin}min · {session.count}Q · {session.difficulty}</div>
-                  <div style={{fontSize:11,color:C.muted,fontStyle:"italic",marginTop:2}}>{session.why}</div>
-                </div>
-                <button onClick={()=>{setWeeklyPlanScreen(false);generateQuestions(session.topic,session.module,session.difficulty,session.count,"guided");}} style={{fontSize:11,fontWeight:700,padding:"6px 11px",borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0}}>Start</button>
-              </div>
-            ))}
-            {(!day.sessions||day.sessions.length===0)&&<div style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>Rest day — review your notes</div>}
-          </div>
-        ))}
-      </div>
-
-      {/* Key message */}
-      <div style={{background:C.dim,borderRadius:10,padding:"12px 14px",fontSize:12,color:C.textMid,lineHeight:1.6,marginBottom:14,fontStyle:"italic"}}>
-        "{weeklyPlan.keyMessage}"
-      </div>
-
-      <button onClick={()=>{setWeeklyPlan(null);setWeeklyPlanError("");}} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Regenerate with different hours</button>
-    </>)}
-  </>);
-
   // ══ SR REVIEW ═════════════════════════════════════════════════════════════
   if(screen==="srReview"){
     const card=srQueue[srIdx];
@@ -4508,7 +4508,7 @@ Reply with just "saved" when done.`}]
         <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
           {TOPIC_MAP[topic].subtopics.map(m=>{
             const mH=history.filter(h=>h.topic===topic&&h.subtopic===m);
-            const mPct=mH.length?Math.round(mH.reduce((a,h)=>a+h.pct,0)/mH.length):null;
+            const mPct=mH.length?Math.round(mH.reduce((a,h)=>a+(h.pct||0),0)/mH.length):null;
             const losCount=LOS[topic]?.modules[m]?.length||0;
             const losM=getLOSMastery(history,topic,m);
             return(
@@ -4553,7 +4553,7 @@ Reply with just "saved" when done.`}]
             if(!topic||!subtopic)return null;
             const mSessions=history.filter(h=>h.topic===topic&&h.subtopic===subtopic);
             const byDiff={};
-            mSessions.forEach(h=>{if(!byDiff[h.difficulty])byDiff[h.difficulty]={total:0,count:0};byDiff[h.difficulty].total+=h.pct;byDiff[h.difficulty].count+=1;});
+            mSessions.forEach(h=>{if(!byDiff[h.difficulty])byDiff[h.difficulty]={total:0,count:0};byDiff[h.difficulty].total+=(h.pct||0);byDiff[h.difficulty].count+=1;});
             const avg=d=>byDiff[d]?Math.round(byDiff[d].total/byDiff[d].count):null;
             const medAvg=avg("Medium"),hardAvg=avg("Hard"),easyAvg=avg("Easy");
             if(medAvg!==null&&medAvg>=75)return{diff:"Hard",reason:`You averaged ${medAvg}% on Medium — ready to level up`};
@@ -4903,7 +4903,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
               <div style={{display:"flex",gap:2,flexWrap:"wrap"}}>
                 {Object.entries(modules).map(([mod,stmts])=>{
                   const modSessions=topicSessions.filter(h=>h.subtopic===mod);
-                  const modPct=modSessions.length?Math.round(modSessions.reduce((s,h)=>s+h.pct,0)/modSessions.length):null;
+                  const modPct=modSessions.length?Math.round(modSessions.reduce((s,h)=>s+(h.pct||0),0)/modSessions.length):null;
                   return stmts.map((_,i)=><LOSHeatmapCell key={`${mod}_${i}`} tested={modPct!==null} pct={modPct||0}/>);
                 })}
               </div>
@@ -4963,8 +4963,8 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
 
   // ══ DASHBOARD ══════════════════════════════════════════════════════════════
   if(screen==="dashboard"){
-    const totalQs=history.reduce((s,h)=>s+h.total,0);
-    const subMap={};history.forEach(s=>{const k=`${s.topic}|||${s.subtopic}`;if(!subMap[k])subMap[k]={topic:s.topic,subtopic:s.subtopic,correct:0,total:0,sessions:0};subMap[k].correct+=s.score;subMap[k].total+=s.total;subMap[k].sessions+=1;});
+    const totalQs=history.reduce((s,h)=>s+(h.total||0),0);
+    const subMap={};history.forEach(s=>{const k=`${s.topic}|||${s.subtopic}`;if(!subMap[k])subMap[k]={topic:s.topic,subtopic:s.subtopic,correct:0,total:0,sessions:0};subMap[k].correct+=(s.score||0);subMap[k].total+=(s.total||0);subMap[k].sessions+=1;});
     const subStats=Object.values(subMap).map(s=>({...s,pct:Math.round((s.correct/s.total)*100)})).sort((a,b)=>a.pct-b.pct);
     const filteredHistory=historyFilter==="All"?history:history.filter(h=>h.topic===historyFilter);
     const avgQuality=history.length?Math.round(history.map(s=>getSessionQuality(s)?.quality||0).reduce((a,b)=>a+b,0)/history.length):null;
@@ -5173,7 +5173,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       const testedMods=mods.filter(m=>history.some(h=>h.topic===t&&h.subtopic===m));
       const covPct=mods.length?Math.round((testedMods.length/mods.length)*100):0;
       const topicAccSessions=history.filter(h=>h.topic===t);
-      const topicAcc=topicAccSessions.length?Math.round(topicAccSessions.reduce((s,h)=>s+h.pct,0)/topicAccSessions.length):null;
+      const topicAcc=topicAccSessions.length?Math.round(topicAccSessions.reduce((s,h)=>s+(h.pct||0),0)/topicAccSessions.length):null;
       return(
         <div key={t} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"12px 14px",marginBottom:10}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
@@ -5189,7 +5189,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
             {mods.map(m=>{
               const mSessions=history.filter(h=>h.topic===t&&h.subtopic===m);
-              const mAcc=mSessions.length?Math.round(mSessions.reduce((s,h)=>s+h.pct,0)/mSessions.length):null;
+              const mAcc=mSessions.length?Math.round(mSessions.reduce((s,h)=>s+(h.pct||0),0)/mSessions.length):null;
               const losM=getLOSMastery(history,t,m);
               const tested=mSessions.length>0;
               const bg=!tested?C.dim:mAcc>=70?"#041a0e":mAcc>=50?"#0a0a04":"#1a0407";
