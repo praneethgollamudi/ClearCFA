@@ -2240,13 +2240,12 @@ function RevisionScreen({
   })), tab === "notes" && (() => {
     const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 8);
     if (!wrongCards.length) return null;
+    // Deduplicate by matched module — show each module's content once even if multiple cards hit it
+    const seenModIdx = new Set();
+    const topics = topicData?.topics || [];
     return /*#__PURE__*/React.createElement("div", {
       style: {
-        background: "#120818",
-        border: `1px solid #c0304433`,
-        borderRadius: 12,
-        padding: "12px 14px",
-        marginBottom: 12
+        marginBottom: 14
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2257,35 +2256,40 @@ function RevisionScreen({
         textTransform: "uppercase",
         letterSpacing: "0.08em"
       }
-    }, "⚠ Concepts you've missed in ", selTopic), wrongCards.map((card, i) => {
-      const isExp = expandedWrong === i;
-      // Find the best-matching Power Notes module for this card
-      const topics = topicData?.topics || [];
-      let modIdx = topics.findIndex(m => m.module && card.subtopic && (m.module.toLowerCase().includes((card.subtopic || "").toLowerCase()) || (card.subtopic || "").toLowerCase().includes(m.module.toLowerCase())));
+    }, "⚠ Concepts you've missed in ", selTopic), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 12
+      }
+    }, wrongCards.map((card, i) => {
+      let modIdx = topics.findIndex(m => m.module && (m.module.toLowerCase().includes((card.subtopic || "").toLowerCase()) || (card.subtopic || "").toLowerCase().includes(m.module.toLowerCase())));
       if (modIdx < 0) modIdx = topics.findIndex(m => m.module && card.concept && m.module.toLowerCase().includes((card.concept || "").split(" ")[0].toLowerCase()));
       const matchedMod = modIdx >= 0 ? topics[modIdx] : null;
+      const dupeModule = matchedMod && seenModIdx.has(modIdx);
+      if (matchedMod) seenModIdx.add(modIdx);
       return /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
-          borderLeft: `3px solid ${isExp ? "#e05070" : "#c0304444"}`,
-          paddingLeft: 12,
-          marginBottom: i < wrongCards.length - 1 ? 14 : 0
+          background: "#0e0818",
+          border: `1px solid #c0304433`,
+          borderRadius: 12,
+          padding: "12px 14px"
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          cursor: "pointer"
-        },
-        onClick: () => setExpandedWrong(isExp ? null : i)
+          marginBottom: 10
+        }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           flex: 1
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: 700,
           color: "#e2e2ff"
         }
@@ -2293,36 +2297,35 @@ function RevisionScreen({
         style: {
           fontSize: 10,
           color: "#5050a0",
-          marginTop: 2,
-          lineHeight: 1.4
+          marginTop: 3,
+          lineHeight: 1.5
         }
-      }, "LOS: ", card.los_tested), /*#__PURE__*/React.createElement("div", {
+      }, "LOS: ", card.los_tested)), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 10,
-          color: "#e05070",
-          marginTop: 3,
-          fontWeight: 600
-        }
-      }, "Wrong ", card.wrongCount, "×", matchedMod ? ` · tap to revise` : " · tap to expand")), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 11,
-          color: "#e05070",
+          background: "#e05070",
+          color: "#fff",
           fontWeight: 700,
-          marginLeft: 8,
+          padding: "2px 7px",
+          borderRadius: 5,
           flexShrink: 0,
-          marginTop: 2
+          marginLeft: 8
         }
-      }, isExp ? "▲" : "▼")), isExp && /*#__PURE__*/React.createElement("div", {
-        style: {
-          marginTop: 12
-        },
-        onClick: e => e.stopPropagation()
-      }, matchedMod ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      }, "Wrong ", card.wrongCount, "×")), dupeModule ?
+      /*#__PURE__*/
+      /* Same module already shown above — just link */
+      React.createElement("div", {
         style: {
           fontSize: 11,
-          fontWeight: 700,
+          color: "#6060a0",
+          fontStyle: "italic"
+        }
+      }, "Same module as above — see rules & traps above.") : matchedMod ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 800,
           color: "#7c5aed",
-          letterSpacing: "0.06em",
+          letterSpacing: "0.07em",
           textTransform: "uppercase",
           marginBottom: 8
         }
@@ -2335,7 +2338,7 @@ function RevisionScreen({
           fontSize: 10,
           fontWeight: 800,
           color: "#22c55e",
-          letterSpacing: "0.08em",
+          letterSpacing: "0.07em",
           textTransform: "uppercase",
           marginBottom: 6
         }
@@ -2344,20 +2347,20 @@ function RevisionScreen({
         style: {
           display: "flex",
           gap: 8,
-          marginBottom: 6
+          marginBottom: 7
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
           color: "#22c55e",
           fontSize: 11,
-          marginTop: 1,
+          marginTop: 2,
           flexShrink: 0
         }
       }, "•"), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 12,
           color: "#c0c0e0",
-          lineHeight: 1.6
+          lineHeight: 1.65
         }
       }, r)))), matchedMod.traps.length > 0 && /*#__PURE__*/React.createElement("div", {
         style: {
@@ -2368,7 +2371,7 @@ function RevisionScreen({
           fontSize: 10,
           fontWeight: 800,
           color: "#f59e0b",
-          letterSpacing: "0.08em",
+          letterSpacing: "0.07em",
           textTransform: "uppercase",
           marginBottom: 6
         }
@@ -2377,20 +2380,20 @@ function RevisionScreen({
         style: {
           display: "flex",
           gap: 8,
-          marginBottom: 6
+          marginBottom: 7
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
           color: "#f59e0b",
           fontSize: 11,
-          marginTop: 1,
+          marginTop: 2,
           flexShrink: 0
         }
       }, "•"), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 12,
           color: "#c0c0e0",
-          lineHeight: 1.6
+          lineHeight: 1.65
         }
       }, t)))), matchedMod.mnemonic && /*#__PURE__*/React.createElement("div", {
         style: {
@@ -2406,7 +2409,6 @@ function RevisionScreen({
       }, "💡 ", matchedMod.mnemonic), /*#__PURE__*/React.createElement("button", {
         onClick: () => {
           setExpandedModule(modIdx);
-          setExpandedWrong(null);
           setTimeout(() => document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({
             behavior: "smooth",
             block: "start"
@@ -2421,18 +2423,17 @@ function RevisionScreen({
           background: "#7c3aed22",
           border: "1px solid #7c3aed44",
           color: "#a78bfa",
-          cursor: "pointer",
-          marginTop: 4
+          cursor: "pointer"
         }
       }, "Open full \"", matchedMod.module, "\" notes below ↓")) :
       /*#__PURE__*/
-      /* No Power Notes match — show best available from stored card */
+      /* No Power Notes match */
       React.createElement("div", null, card.explanation && /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 12,
           color: "#a0a0c0",
           lineHeight: 1.7,
-          marginBottom: 10,
+          marginBottom: 8,
           whiteSpace: "pre-wrap"
         }
       }, card.explanation), /*#__PURE__*/React.createElement("div", {
@@ -2441,8 +2442,8 @@ function RevisionScreen({
           color: "#5050a0",
           fontStyle: "italic"
         }
-      }, "Review the ", selTopic, " Power Notes sections below for related content."))));
-    }));
+      }, "Review the ", selTopic, " Power Notes sections below for related content.")));
+    })));
   })(), tab === "notes" && focusConcept && /*#__PURE__*/React.createElement("div", {
     style: {
       background: `${C.accent}15`,

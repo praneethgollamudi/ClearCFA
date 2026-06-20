@@ -1542,81 +1542,80 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
       {tab==="notes" && (()=>{
         const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,8);
         if(!wrongCards.length) return null;
+        // Deduplicate by matched module — show each module's content once even if multiple cards hit it
+        const seenModIdx=new Set();
+        const topics=topicData?.topics||[];
         return(
-          <div style={{background:"#120818",border:`1px solid #c0304433`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+          <div style={{marginBottom:14}}>
             <div style={{fontSize:11,fontWeight:700,color:"#e05070",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Concepts you've missed in {selTopic}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {wrongCards.map((card,i)=>{
-              const isExp=expandedWrong===i;
-              // Find the best-matching Power Notes module for this card
-              const topics=topicData?.topics||[];
-              let modIdx=topics.findIndex(m=>m.module&&card.subtopic&&(m.module.toLowerCase().includes((card.subtopic||"").toLowerCase())||(card.subtopic||"").toLowerCase().includes(m.module.toLowerCase())));
+              let modIdx=topics.findIndex(m=>m.module&&(m.module.toLowerCase().includes((card.subtopic||"").toLowerCase())||(card.subtopic||"").toLowerCase().includes(m.module.toLowerCase())));
               if(modIdx<0) modIdx=topics.findIndex(m=>m.module&&card.concept&&m.module.toLowerCase().includes((card.concept||"").split(" ")[0].toLowerCase()));
               const matchedMod=modIdx>=0?topics[modIdx]:null;
+              const dupeModule=matchedMod&&seenModIdx.has(modIdx);
+              if(matchedMod) seenModIdx.add(modIdx);
               return(
-                <div key={i} style={{borderLeft:`3px solid ${isExp?"#e05070":"#c0304444"}`,paddingLeft:12,marginBottom:i<wrongCards.length-1?14:0}}>
-                  {/* Always-visible header */}
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",cursor:"pointer"}} onClick={()=>setExpandedWrong(isExp?null:i)}>
+                <div key={i} style={{background:"#0e0818",border:`1px solid #c0304433`,borderRadius:12,padding:"12px 14px"}}>
+                  {/* Concept header */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#e2e2ff"}}>{card.concept||card.subtopic}</div>
-                      {card.los_tested&&<div style={{fontSize:10,color:"#5050a0",marginTop:2,lineHeight:1.4}}>LOS: {card.los_tested}</div>}
-                      <div style={{fontSize:10,color:"#e05070",marginTop:3,fontWeight:600}}>Wrong {card.wrongCount}×{matchedMod?` · tap to revise`:" · tap to expand"}</div>
+                      <div style={{fontSize:13,fontWeight:700,color:"#e2e2ff"}}>{card.concept||card.subtopic}</div>
+                      {card.los_tested&&<div style={{fontSize:10,color:"#5050a0",marginTop:3,lineHeight:1.5}}>LOS: {card.los_tested}</div>}
                     </div>
-                    <span style={{fontSize:11,color:"#e05070",fontWeight:700,marginLeft:8,flexShrink:0,marginTop:2}}>{isExp?"▲":"▼"}</span>
+                    <span style={{fontSize:10,background:"#e05070",color:"#fff",fontWeight:700,padding:"2px 7px",borderRadius:5,flexShrink:0,marginLeft:8}}>Wrong {card.wrongCount}×</span>
                   </div>
 
-                  {/* Expanded: show curated Power Notes content for this concept */}
-                  {isExp&&(
-                    <div style={{marginTop:12}} onClick={e=>e.stopPropagation()}>
-                      {matchedMod?(
-                        <>
-                          <div style={{fontSize:11,fontWeight:700,color:"#7c5aed",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>
-                            📚 {matchedMod.module}
+                  {dupeModule?(
+                    /* Same module already shown above — just link */
+                    <div style={{fontSize:11,color:"#6060a0",fontStyle:"italic"}}>Same module as above — see rules & traps above.</div>
+                  ):matchedMod?(
+                    <>
+                      <div style={{fontSize:10,fontWeight:800,color:"#7c5aed",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:8}}>📚 {matchedMod.module}</div>
+                      {/* Rules */}
+                      <div style={{marginBottom:10}}>
+                        <div style={{fontSize:10,fontWeight:800,color:"#22c55e",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>✅ Key Rules</div>
+                        {matchedMod.rules.map((r,ri)=>(
+                          <div key={ri} style={{display:"flex",gap:8,marginBottom:7}}>
+                            <span style={{color:"#22c55e",fontSize:11,marginTop:2,flexShrink:0}}>•</span>
+                            <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.65}}>{r}</span>
                           </div>
-                          {/* Key Rules */}
-                          <div style={{marginBottom:10}}>
-                            <div style={{fontSize:10,fontWeight:800,color:"#22c55e",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>✅ Key Rules</div>
-                            {matchedMod.rules.map((r,ri)=>(
-                              <div key={ri} style={{display:"flex",gap:8,marginBottom:6}}>
-                                <span style={{color:"#22c55e",fontSize:11,marginTop:1,flexShrink:0}}>•</span>
-                                <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.6}}>{r}</span>
-                              </div>
-                            ))}
-                          </div>
-                          {/* Traps */}
-                          {matchedMod.traps.length>0&&(
-                            <div style={{marginBottom:10}}>
-                              <div style={{fontSize:10,fontWeight:800,color:"#f59e0b",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>⚠ Common Traps</div>
-                              {matchedMod.traps.map((t,ti)=>(
-                                <div key={ti} style={{display:"flex",gap:8,marginBottom:6}}>
-                                  <span style={{color:"#f59e0b",fontSize:11,marginTop:1,flexShrink:0}}>•</span>
-                                  <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.6}}>{t}</span>
-                                </div>
-                              ))}
+                        ))}
+                      </div>
+                      {/* Traps */}
+                      {matchedMod.traps.length>0&&(
+                        <div style={{marginBottom:10}}>
+                          <div style={{fontSize:10,fontWeight:800,color:"#f59e0b",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>⚠ Common Traps</div>
+                          {matchedMod.traps.map((t,ti)=>(
+                            <div key={ti} style={{display:"flex",gap:8,marginBottom:7}}>
+                              <span style={{color:"#f59e0b",fontSize:11,marginTop:2,flexShrink:0}}>•</span>
+                              <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.65}}>{t}</span>
                             </div>
-                          )}
-                          {/* Mnemonic */}
-                          {matchedMod.mnemonic&&(
-                            <div style={{background:"#0f0a1e",borderRadius:8,padding:"8px 10px",marginBottom:10,fontSize:11,color:"#a78bfa",lineHeight:1.6,fontStyle:"italic"}}>
-                              💡 {matchedMod.mnemonic}
-                            </div>
-                          )}
-                          <button onClick={()=>{setExpandedModule(modIdx);setExpandedWrong(null);setTimeout(()=>document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"}),80);}}
-                            style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:"#7c3aed22",border:"1px solid #7c3aed44",color:"#a78bfa",cursor:"pointer",marginTop:4}}>
-                            Open full "{matchedMod.module}" notes below ↓
-                          </button>
-                        </>
-                      ):(
-                        /* No Power Notes match — show best available from stored card */
-                        <div>
-                          {card.explanation&&<div style={{fontSize:12,color:"#a0a0c0",lineHeight:1.7,marginBottom:10,whiteSpace:"pre-wrap"}}>{card.explanation}</div>}
-                          <div style={{fontSize:11,color:"#5050a0",fontStyle:"italic"}}>Review the {selTopic} Power Notes sections below for related content.</div>
+                          ))}
                         </div>
                       )}
+                      {/* Mnemonic */}
+                      {matchedMod.mnemonic&&(
+                        <div style={{background:"#0f0a1e",borderRadius:8,padding:"8px 10px",marginBottom:10,fontSize:11,color:"#a78bfa",lineHeight:1.6,fontStyle:"italic"}}>
+                          💡 {matchedMod.mnemonic}
+                        </div>
+                      )}
+                      <button onClick={()=>{setExpandedModule(modIdx);setTimeout(()=>document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"}),80);}}
+                        style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:"#7c3aed22",border:"1px solid #7c3aed44",color:"#a78bfa",cursor:"pointer"}}>
+                        Open full "{matchedMod.module}" notes below ↓
+                      </button>
+                    </>
+                  ):(
+                    /* No Power Notes match */
+                    <div>
+                      {card.explanation&&<div style={{fontSize:12,color:"#a0a0c0",lineHeight:1.7,marginBottom:8,whiteSpace:"pre-wrap"}}>{card.explanation}</div>}
+                      <div style={{fontSize:11,color:"#5050a0",fontStyle:"italic"}}>Review the {selTopic} Power Notes sections below for related content.</div>
                     </div>
                   )}
                 </div>
               );
             })}
+            </div>
           </div>
         );
       })()}
