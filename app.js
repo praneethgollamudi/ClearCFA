@@ -153,14 +153,13 @@ const MISCONCEPTIONS = {
 // ─── STORAGE (localStorage + optional Supabase sync) ─────────────────────────
 const BACKUP_KEY = "cfa_backup_v7";
 
-// Supabase config — set via app settings, persisted in localStorage
-function getSupabaseConfig() {
-  try {
-    return JSON.parse(localStorage.getItem("cfa_supabase_config") || "null");
-  } catch {
-    return null;
-  }
-}
+// Supabase — hardcoded shared backend
+const SUPABASE_URL = "https://uucxyuqxqjpbxecemdvf.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1Y3h5dXF4cWpwYnhlY2VtZHZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDY3MDcsImV4cCI6MjA5NzM4MjcwN30.5JkNrudEoiKSE85gaDA2jfgVb6ZEgSUBpjoRVbVAlv4";
+const SB_CFG = {
+  url: SUPABASE_URL,
+  key: SUPABASE_KEY
+};
 
 // localStorage-based storage (primary — works in real browsers with no size limits)
 async function storageGet(key) {
@@ -4504,16 +4503,12 @@ function CFAMock() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeyScreen, setApiKeyScreen] = useState(false);
   const [driveStatus, setDriveStatus] = useState(null); // null | "syncing" | "synced" | "error"
-  const [supabaseCfg, setSupabaseCfg] = useState(() => getSupabaseConfig());
-  const [supabaseUrl, setSupabaseUrl] = useState(() => getSupabaseConfig()?.url || "");
-  const [supabaseKey, setSupabaseKey] = useState(() => getSupabaseConfig()?.key || "");
   const [supabaseSyncing, setSupabaseSyncing] = useState(false);
   const [authUser, setAuthUser] = useState(() => getStoredAuth());
   const [authEmail, setAuthEmail] = useState("");
   const [authSent, setAuthSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const authUserRef = useRef(getStoredAuth());
-  const [syncImportCfg, setSyncImportCfg] = useState(null);
   const [needsFocusRefresh, setNeedsFocusRefresh] = useState(false);
   const [examDate, setExamDate] = useState(EXAM_DATE);
   const [examDateInput, setExamDateInput] = useState("2026-08-19");
@@ -4565,16 +4560,13 @@ function CFAMock() {
       const token = params.get("access_token");
       if (token) {
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        const cfg = getSupabaseConfig();
-        if (cfg) {
-          exchangeToken(cfg, token).then(auth => {
-            if (auth) {
-              saveAuth(auth);
-              setAuthUser(auth);
-              authUserRef.current = auth;
-            }
-          });
-        }
+        exchangeToken(SB_CFG, token).then(auth => {
+          if (auth) {
+            saveAuth(auth);
+            setAuthUser(auth);
+            authUserRef.current = auth;
+          }
+        });
       }
     }
   }, []);
@@ -4692,10 +4684,9 @@ function CFAMock() {
 
       // STEP 2c: Bidirectional Supabase merge
       // Pull if Supabase is ahead; push if local is ahead (ensures progress is never lost)
-      const sbCfg = getSupabaseConfig();
-      if (sbCfg) {
+      {
         try {
-          const sbData = await supabaseLoad(sbCfg, authUserRef.current);
+          const sbData = await supabaseLoad(SB_CFG, authUserRef.current);
           const sbCount = sbData && Array.isArray(sbData.history) ? sbData.history.length : 0;
           if (sbData && sbCount > bestHistory.length) {
             // Supabase has more sessions — pull and cache locally
@@ -4712,7 +4703,7 @@ function CFAMock() {
             }
           } else if (bestHistory.length > sbCount) {
             // Local is ahead — push to Supabase in background
-            supabaseSync(sbCfg, bestHistory, bestSR || {}, usageStatsRef.current, authUserRef.current).catch(() => {});
+            supabaseSync(SB_CFG, bestHistory, bestSR || {}, usageStatsRef.current, authUserRef.current).catch(() => {});
           }
           // Merge usageStats from Supabase (take max count per key — union of all sessions)
           if (sbData?.usageStats && typeof sbData.usageStats === "object") {
@@ -5059,12 +5050,9 @@ function CFAMock() {
       const ok = await storageSet(STORAGE_KEY, newHistory.slice(0, 300));
       setSessionSaved(ok);
       if (ok && apiKey) syncToDrive(newHistory.slice(0, 100));
-      const sbCfg = getSupabaseConfig();
-      if (sbCfg) {
-        const synced = await supabaseSync(sbCfg, newHistory.slice(0, 300), updatedSrDeck, usageStatsRef.current, authUserRef.current);
-        if (synced) setDriveStatus("synced");else setDriveStatus("error");
-        setTimeout(() => setDriveStatus(null), 4000);
-      }
+      const synced = await supabaseSync(SB_CFG, newHistory.slice(0, 300), updatedSrDeck, usageStatsRef.current, authUserRef.current);
+      if (synced) setDriveStatus("synced");else setDriveStatus("error");
+      setTimeout(() => setDriveStatus(null), 4000);
     })();
   }, [screen]);
   const callClaude = async (prompt, maxTokens = 8000, {
@@ -6198,8 +6186,8 @@ Reply with just "saved" when done.`
     authUserRef.current = authUser;
   }, [authUser]);
 
-  // ── Magic link login screen — shown when Supabase is configured but not authenticated ──
-  if (supabaseCfg && !authUser) return wrap(/*#__PURE__*/React.createElement("div", {
+  // ── Magic link login screen — shown when not authenticated ──
+  if (!authUser) return wrap(/*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
@@ -6258,7 +6246,7 @@ Reply with just "saved" when done.`
     disabled: authLoading || !authEmail.includes("@"),
     onClick: async () => {
       setAuthLoading(true);
-      const ok = await sendMagicLink(supabaseCfg, authEmail);
+      const ok = await sendMagicLink(SB_CFG, authEmail);
       setAuthLoading(false);
       if (ok) setAuthSent(true);
     },
@@ -6321,128 +6309,7 @@ Reply with just "saved" when done.`
       cursor: "pointer",
       textDecoration: "underline"
     }
-  }, "Use a different email")), supabaseCfg && /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      clearAuth();
-      setAuthUser(null);
-    },
-    style: {
-      position: "absolute",
-      bottom: 24,
-      fontSize: 11,
-      color: C.muted,
-      background: "none",
-      border: "none",
-      cursor: "pointer"
-    }
-  }, "⚙ Change Supabase settings")));
-
-  // ── Sync import banner (shown on any screen when #sync= URL was detected) ──
-  if (syncImportCfg) return wrap(/*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "100vh",
-      padding: "32px 20px",
-      textAlign: "center"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 48,
-      marginBottom: 16
-    }
-  }, "📲"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 18,
-      fontWeight: 800,
-      color: C.text,
-      marginBottom: 8
-    }
-  }, "Connect this device?"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: C.muted,
-      lineHeight: 1.6,
-      marginBottom: 6
-    }
-  }, "This will link ", /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: C.text
-    }
-  }, "ClearCFA on this device"), " to your Supabase account and load all your sessions, SR deck, and progress."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.muted,
-      background: C.surface,
-      borderRadius: 8,
-      padding: "8px 14px",
-      marginBottom: 24,
-      border: `1px solid ${C.border}`
-    }
-  }, syncImportCfg.url), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 10,
-      width: "100%",
-      maxWidth: 320
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: async () => {
-      const cfg = {
-        url: syncImportCfg.url,
-        key: syncImportCfg.key
-      };
-      localStorage.setItem("cfa_supabase_config", JSON.stringify(cfg));
-      setSupabaseCfg(cfg);
-      setSupabaseUrl(cfg.url);
-      setSupabaseKey(cfg.key);
-      setSyncImportCfg(null);
-      // Pull data immediately
-      try {
-        const sbData = await supabaseLoad(cfg);
-        if (sbData?.history?.length) {
-          const h = sbData.history.map(s => ({
-            ...s,
-            wrongs: []
-          }));
-          setHistory(h);
-          historyRef.current = h;
-          storageSet(STORAGE_KEY, h);
-        }
-        if (sbData?.srDeck) {
-          setSrDeck(sbData.srDeck);
-          srDeckRef.current = sbData.srDeck;
-          storageSet(SR_KEY, sbData.srDeck);
-        }
-      } catch {}
-    },
-    style: {
-      padding: "14px",
-      borderRadius: 11,
-      fontSize: 14,
-      fontWeight: 800,
-      background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
-      color: "#fff",
-      border: "none",
-      cursor: "pointer",
-      boxShadow: `0 4px 16px ${C.accent}44`
-    }
-  }, "Yes, connect this device →"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setSyncImportCfg(null),
-    style: {
-      padding: "12px",
-      borderRadius: 11,
-      fontSize: 13,
-      fontWeight: 600,
-      background: "none",
-      border: `1px solid ${C.border}`,
-      color: C.muted,
-      cursor: "pointer"
-    }
-  }, "Not now"))));
+  }, "Use a different email"))));
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if (screen === "home") return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, settingsOpen && /*#__PURE__*/React.createElement("div", {
@@ -6527,10 +6394,9 @@ Reply with just "saved" when done.`
     }
   }, "✓")), /*#__PURE__*/React.createElement("button", {
     onClick: async () => {
-      if (!supabaseCfg) return;
       setSupabaseSyncing(true);
       setDriveStatus("syncing");
-      const ok = await supabaseSync(supabaseCfg, history, srDeckRef.current, usageStatsRef.current, authUserRef.current);
+      const ok = await supabaseSync(SB_CFG, history, srDeckRef.current, usageStatsRef.current, authUserRef.current);
       setDriveStatus(ok ? "synced" : "error");
       setTimeout(() => setDriveStatus(null), 4000);
       setSupabaseSyncing(false);
@@ -6542,10 +6408,10 @@ Reply with just "saved" when done.`
       gap: 12,
       padding: "13px 14px",
       borderRadius: 12,
-      background: supabaseCfg ? "#080f18" : C.surface,
-      border: `1px solid ${supabaseCfg ? "#22d3ee33" : C.border}`,
+      background: "#080f18",
+      border: `1px solid #22d3ee33`,
       color: C.text,
-      cursor: supabaseCfg ? "pointer" : "default",
+      cursor: "pointer",
       marginBottom: 9,
       textAlign: "left"
     }
@@ -6562,13 +6428,13 @@ Reply with just "saved" when done.`
       fontSize: 13,
       fontWeight: 700
     }
-  }, "Supabase Cloud Sync"), /*#__PURE__*/React.createElement("div", {
+  }, "Cloud Sync"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginTop: 1
     }
-  }, supabaseCfg ? supabaseSyncing ? "Syncing…" : `${history.length} sessions · ${Object.keys(srDeckRef.current).length} SR cards · ${Object.keys(usageStatsRef.current).length} usage events${driveStatus === "synced" ? " · synced ✓" : driveStatus === "error" ? " · sync failed ✗" : " · tap to sync"}` : "Configure in quiz setup screen")), supabaseCfg && /*#__PURE__*/React.createElement("span", {
+  }, supabaseSyncing ? "Syncing…" : `${history.length} sessions · ${Object.keys(srDeckRef.current).length} SR cards${driveStatus === "synced" ? " · synced ✓" : driveStatus === "error" ? " · sync failed ✗" : " · tap to sync"}`)), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: driveStatus === "synced" ? C.easy : driveStatus === "error" ? C.hard : "#22d3ee",
@@ -12400,161 +12266,19 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       color: C.text,
       marginBottom: 6
     }
-  }, "🗄 Supabase (Reliable Storage)"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.muted,
-      marginBottom: 10,
-      lineHeight: 1.6
-    }
-  }, "Connect a free Supabase database for unlimited, permanent session storage. Your data syncs automatically after every session."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      color: C.muted,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      display: "block",
-      marginBottom: 5
-    }
-  }, "Project URL"), /*#__PURE__*/React.createElement("input", {
-    value: supabaseUrl,
-    onChange: e => setSupabaseUrl(e.target.value),
-    placeholder: "https://xxxx.supabase.co",
-    style: {
-      width: "100%",
-      padding: "10px 12px",
-      borderRadius: 9,
-      fontSize: 12,
-      background: C.surface,
-      border: `1.5px solid ${supabaseUrl ? "#44aa8844" : C.border}`,
-      color: C.text,
-      outline: "none",
-      boxSizing: "border-box"
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      color: C.muted,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      display: "block",
-      marginBottom: 5
-    }
-  }, "Anon Public Key"), /*#__PURE__*/React.createElement("input", {
-    value: supabaseKey,
-    onChange: e => setSupabaseKey(e.target.value),
-    placeholder: "eyJhbGci...",
-    style: {
-      width: "100%",
-      padding: "10px 12px",
-      borderRadius: 9,
-      fontSize: 12,
-      background: C.surface,
-      border: `1.5px solid ${supabaseKey ? "#44aa8844" : C.border}`,
-      color: C.text,
-      outline: "none",
-      boxSizing: "border-box"
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 9,
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: async () => {
-      if (!supabaseUrl || !supabaseKey) {
-        return;
-      }
-      setSupabaseSyncing(true);
-      const cfg = {
-        url: supabaseUrl.replace(/\/$/, ""),
-        key: supabaseKey
-      };
-      const ok = await supabaseSync(cfg, history, srDeckRef.current, usageStatsRef.current);
-      if (ok) {
-        localStorage.setItem("cfa_supabase_config", JSON.stringify(cfg));
-        setSupabaseCfg(cfg);
-        setDriveStatus("synced");
-        setTimeout(() => setDriveStatus(null), 3000);
-      } else setDriveStatus("error");
-      setSupabaseSyncing(false);
-    },
-    style: {
-      flex: 2,
-      padding: "11px",
-      borderRadius: 9,
-      fontSize: 13,
-      fontWeight: 700,
-      background: supabaseUrl && supabaseKey ? `linear-gradient(135deg,#22c55e,#16a34a)` : "#1a2a1a",
-      color: supabaseUrl && supabaseKey ? "#fff" : "#4a6a4a",
-      border: "none",
-      cursor: "pointer"
-    }
-  }, supabaseSyncing ? "Testing…" : "Save & Test Connection"), supabaseCfg && /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      localStorage.removeItem("cfa_supabase_config");
-      setSupabaseCfg(null);
-      setSupabaseUrl("");
-      setSupabaseKey("");
-    },
-    style: {
-      flex: 1,
-      padding: "11px",
-      borderRadius: 9,
-      fontSize: 12,
-      fontWeight: 600,
-      background: "#200010",
-      border: `1px solid ${C.hard}44`,
-      color: C.hard,
-      cursor: "pointer"
-    }
-  }, "Disconnect")), supabaseCfg && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, "☁ Cloud Sync"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: "#22c55e",
       background: "#0a1f0a",
       borderRadius: 8,
       padding: "8px 12px",
-      marginBottom: 8
+      marginBottom: 10
     }
   }, "✅ Signed in as ", /*#__PURE__*/React.createElement("strong", null, authUser?.email || "unknown"), " · ", history.length, " session", history.length !== 1 ? "s" : "", " · ", Object.keys(srDeckRef.current).length, " SR cards"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      clearAuth();
-      setAuthUser(null);
-      authUserRef.current = null;
-    },
-    style: {
-      width: "100%",
-      padding: "8px",
-      borderRadius: 8,
-      fontSize: 12,
-      fontWeight: 600,
-      background: "#200010",
-      border: `1px solid ${C.hard}44`,
-      color: C.hard,
-      cursor: "pointer",
-      marginBottom: 8
-    }
-  }, "Sign out"), /*#__PURE__*/React.createElement("button", {
     onClick: async () => {
-      if (!supabaseCfg) return;
       setSupabaseSyncing(true);
-      const ok = await supabaseSync(supabaseCfg, history, srDeckRef.current, usageStatsRef.current, authUserRef.current);
+      const ok = await supabaseSync(SB_CFG, history, srDeckRef.current, usageStatsRef.current, authUserRef.current);
       setDriveStatus(ok ? "synced" : "error");
       setTimeout(() => setDriveStatus(null), 4000);
       setSupabaseSyncing(false);
@@ -12571,7 +12295,24 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       cursor: "pointer",
       marginBottom: 8
     }
-  }, supabaseSyncing ? "Syncing…" : "⬆ Sync All Data to Supabase Now"))), /*#__PURE__*/React.createElement("div", {
+  }, supabaseSyncing ? "Syncing…" : "⬆ Sync All Data Now"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      clearAuth();
+      setAuthUser(null);
+      authUserRef.current = null;
+    },
+    style: {
+      width: "100%",
+      padding: "8px",
+      borderRadius: 8,
+      fontSize: 12,
+      fontWeight: 600,
+      background: "#200010",
+      border: `1px solid ${C.hard}44`,
+      color: C.hard,
+      cursor: "pointer"
+    }
+  }, "Sign out")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 16,
       paddingTop: 16,
