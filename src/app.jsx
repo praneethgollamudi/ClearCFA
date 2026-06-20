@@ -1666,34 +1666,51 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
 
       {/* ── WRONG ANSWERS FOR THIS TOPIC ── */}
       {tab==="notes" && (()=>{
-        const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,8);
+        const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,12);
         if(!wrongCards.length) return null;
-        const seenModIdx=new Set();
         const topics=topicData?.topics||[];
+        // Group by matched module; unmatched cards each get their own group
+        const groups=[];
+        for(const card of wrongCards){
+          let modIdx=topics.findIndex(m=>m.module&&(m.module.toLowerCase().includes((card.subtopic||"").toLowerCase())||(card.subtopic||"").toLowerCase().includes(m.module.toLowerCase())));
+          if(modIdx<0) modIdx=topics.findIndex(m=>m.module&&card.concept&&m.module.toLowerCase().includes((card.concept||"").split(" ")[0].toLowerCase()));
+          if(modIdx>=0){
+            const existing=groups.find(g=>g.modIdx===modIdx);
+            if(existing){existing.cards.push(card);}
+            else{groups.push({modIdx,matchedMod:topics[modIdx],cards:[card]});}
+          } else {
+            groups.push({modIdx:-1,matchedMod:null,cards:[card]});
+          }
+        }
         return(
           <div style={{marginBottom:14}}>
             <div style={{fontSize:11,fontWeight:700,color:"#e05070",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Concepts you've missed in {selTopic}</div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {wrongCards.map((card,i)=>{
-              let modIdx=topics.findIndex(m=>m.module&&(m.module.toLowerCase().includes((card.subtopic||"").toLowerCase())||(card.subtopic||"").toLowerCase().includes(m.module.toLowerCase())));
-              if(modIdx<0) modIdx=topics.findIndex(m=>m.module&&card.concept&&m.module.toLowerCase().includes((card.concept||"").split(" ")[0].toLowerCase()));
-              const matchedMod=modIdx>=0?topics[modIdx]:null;
-              const dupeModule=matchedMod&&seenModIdx.has(modIdx);
-              if(matchedMod) seenModIdx.add(modIdx);
-              const isOpen=expandedWrong===i;
+            {groups.map((group,gi)=>{
+              const{modIdx,matchedMod,cards}=group;
+              const isOpen=expandedWrong===gi;
               const isAuto=matchedMod?._auto;
+              const totalWrong=cards.reduce((s,c)=>s+(c.wrongCount||0),0);
               return(
-                <div key={i} style={{background:"#0e0818",border:`1px solid ${isOpen?"#c03044":"#c0304433"}`,borderRadius:12,overflow:"hidden",transition:"border-color 0.15s"}}>
+                <div key={gi} style={{background:"#0e0818",border:`1px solid ${isOpen?"#c03044":"#c0304433"}`,borderRadius:12,overflow:"hidden",transition:"border-color 0.15s"}}>
                   {/* Tap-to-expand header */}
-                  <button onClick={()=>setExpandedWrong(isOpen?null:i)}
+                  <button onClick={()=>setExpandedWrong(isOpen?null:gi)}
                     style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"12px 14px",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:"#e2e2ff"}}>{card.concept||card.subtopic}</div>
-                      {matchedMod&&<div style={{fontSize:10,color:isAuto?"#6060b0":"#5050a0",marginTop:3}}>{isAuto?"✦ Auto-generated notes":"📚 "+matchedMod.module}</div>}
-                      {!matchedMod&&<div style={{fontSize:10,color:"#5050a0",marginTop:3,fontStyle:"italic"}}>Tap to review</div>}
+                      <div style={{fontSize:13,fontWeight:700,color:"#e2e2ff"}}>
+                        {matchedMod?<>📚 {matchedMod.module}{isAuto&&<span style={{fontSize:9,fontWeight:600,color:"#6060b0",marginLeft:6}}>✦ auto</span>}</> : (cards[0].concept||cards[0].subtopic)}
+                      </div>
+                      {/* All concept names in this group as inline chips */}
+                      <div style={{display:"flex",flexWrap:"wrap",gap:"4px 6px",marginTop:5}}>
+                        {cards.map((c,ci)=>(
+                          <span key={ci} style={{fontSize:10,background:"#1a0a28",border:"1px solid #c0304444",borderRadius:4,padding:"1px 6px",color:"#9090c0"}}>
+                            {c.concept||c.subtopic} <span style={{color:"#e05070",fontWeight:700}}>×{c.wrongCount}</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,marginLeft:8}}>
-                      <span style={{fontSize:10,background:"#e05070",color:"#fff",fontWeight:700,padding:"2px 7px",borderRadius:5}}>Wrong {card.wrongCount}×</span>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,marginLeft:8,marginTop:2}}>
+                      <span style={{fontSize:10,background:"#e05070",color:"#fff",fontWeight:700,padding:"2px 7px",borderRadius:5,whiteSpace:"nowrap"}}>{totalWrong} wrong</span>
                       <span style={{fontSize:12,color:"#6060a0"}}>{isOpen?"▲":"▼"}</span>
                     </div>
                   </button>
@@ -1701,14 +1718,9 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
                   {/* Expandable content */}
                   {isOpen&&(
                     <div style={{padding:"0 14px 14px",borderTop:"1px solid #c0304422"}}>
-                      {card.los_tested&&<div style={{fontSize:10,color:"#5050a0",marginBottom:10,lineHeight:1.5}}>LOS: {card.los_tested}</div>}
-                      {dupeModule?(
-                        <div style={{fontSize:11,color:"#6060a0",fontStyle:"italic"}}>Same module as a card above — see rules & traps above.</div>
-                      ):matchedMod?(
+                      {isAuto&&<div style={{fontSize:10,color:"#6060b0",fontStyle:"italic",marginBottom:10}}>Auto-generated from your answer history · verify with curriculum</div>}
+                      {matchedMod?(
                         <>
-                          {isAuto&&<div style={{fontSize:10,color:"#6060b0",fontStyle:"italic",marginBottom:8}}>Auto-generated from your answer history · review for accuracy</div>}
-                          <div style={{fontSize:10,fontWeight:800,color:"#7c5aed",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:8}}>📚 {matchedMod.module}</div>
-                          {/* Rules */}
                           {matchedMod.rules.length>0&&(
                             <div style={{marginBottom:10}}>
                               <div style={{fontSize:10,fontWeight:800,color:"#22c55e",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>✅ Key Rules</div>
@@ -1720,7 +1732,6 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
                               ))}
                             </div>
                           )}
-                          {/* Traps */}
                           {matchedMod.traps.length>0&&(
                             <div style={{marginBottom:10}}>
                               <div style={{fontSize:10,fontWeight:800,color:"#f59e0b",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>⚠ Common Traps</div>
@@ -1732,7 +1743,6 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
                               ))}
                             </div>
                           )}
-                          {/* Mnemonic */}
                           {matchedMod.mnemonic&&(
                             <div style={{background:"#0f0a1e",borderRadius:8,padding:"8px 10px",marginBottom:10,fontSize:11,color:"#a78bfa",lineHeight:1.6,fontStyle:"italic"}}>
                               💡 {matchedMod.mnemonic}
@@ -1740,14 +1750,13 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
                           )}
                           <button onClick={()=>{setExpandedModule(modIdx);setTimeout(()=>document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"}),80);}}
                             style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:"#7c3aed22",border:"1px solid #7c3aed44",color:"#a78bfa",cursor:"pointer"}}>
-                            {isAuto?`View auto-generated "${matchedMod.module}" notes below ↓`:`Open full "${matchedMod.module}" notes below ↓`}
+                            {isAuto?`View "${matchedMod.module}" notes below ↓`:`Open full "${matchedMod.module}" notes below ↓`}
                           </button>
                         </>
                       ):(
-                        /* Should rarely appear — dynamic gen covers this in the effect */
                         <div>
-                          {card.explanation&&<div style={{fontSize:12,color:"#a0a0c0",lineHeight:1.7,marginBottom:8,whiteSpace:"pre-wrap"}}>{card.explanation}</div>}
-                          <div style={{fontSize:11,color:"#5050a0",fontStyle:"italic"}}>Loading notes... refresh to see auto-generated content.</div>
+                          {cards[0].explanation&&<div style={{fontSize:12,color:"#a0a0c0",lineHeight:1.7,marginBottom:8,whiteSpace:"pre-wrap"}}>{cards[0].explanation}</div>}
+                          <div style={{fontSize:11,color:"#5050a0",fontStyle:"italic"}}>Refresh to load auto-generated notes for this concept.</div>
                         </div>
                       )}
                     </div>

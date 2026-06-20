@@ -2322,10 +2322,33 @@ function RevisionScreen({
       }
     }, w, "%"));
   })), tab === "notes" && (() => {
-    const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 8);
+    const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 12);
     if (!wrongCards.length) return null;
-    const seenModIdx = new Set();
     const topics = topicData?.topics || [];
+    // Group by matched module; unmatched cards each get their own group
+    const groups = [];
+    for (const card of wrongCards) {
+      let modIdx = topics.findIndex(m => m.module && (m.module.toLowerCase().includes((card.subtopic || "").toLowerCase()) || (card.subtopic || "").toLowerCase().includes(m.module.toLowerCase())));
+      if (modIdx < 0) modIdx = topics.findIndex(m => m.module && card.concept && m.module.toLowerCase().includes((card.concept || "").split(" ")[0].toLowerCase()));
+      if (modIdx >= 0) {
+        const existing = groups.find(g => g.modIdx === modIdx);
+        if (existing) {
+          existing.cards.push(card);
+        } else {
+          groups.push({
+            modIdx,
+            matchedMod: topics[modIdx],
+            cards: [card]
+          });
+        }
+      } else {
+        groups.push({
+          modIdx: -1,
+          matchedMod: null,
+          cards: [card]
+        });
+      }
+    }
     return /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 14
@@ -2345,16 +2368,17 @@ function RevisionScreen({
         flexDirection: "column",
         gap: 8
       }
-    }, wrongCards.map((card, i) => {
-      let modIdx = topics.findIndex(m => m.module && (m.module.toLowerCase().includes((card.subtopic || "").toLowerCase()) || (card.subtopic || "").toLowerCase().includes(m.module.toLowerCase())));
-      if (modIdx < 0) modIdx = topics.findIndex(m => m.module && card.concept && m.module.toLowerCase().includes((card.concept || "").split(" ")[0].toLowerCase()));
-      const matchedMod = modIdx >= 0 ? topics[modIdx] : null;
-      const dupeModule = matchedMod && seenModIdx.has(modIdx);
-      if (matchedMod) seenModIdx.add(modIdx);
-      const isOpen = expandedWrong === i;
+    }, groups.map((group, gi) => {
+      const {
+        modIdx,
+        matchedMod,
+        cards
+      } = group;
+      const isOpen = expandedWrong === gi;
       const isAuto = matchedMod?._auto;
+      const totalWrong = cards.reduce((s, c) => s + (c.wrongCount || 0), 0);
       return /*#__PURE__*/React.createElement("div", {
-        key: i,
+        key: gi,
         style: {
           background: "#0e0818",
           border: `1px solid ${isOpen ? "#c03044" : "#c0304433"}`,
@@ -2363,7 +2387,7 @@ function RevisionScreen({
           transition: "border-color 0.15s"
         }
       }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => setExpandedWrong(isOpen ? null : i),
+        onClick: () => setExpandedWrong(isOpen ? null : gi),
         style: {
           width: "100%",
           display: "flex",
@@ -2386,26 +2410,43 @@ function RevisionScreen({
           fontWeight: 700,
           color: "#e2e2ff"
         }
-      }, card.concept || card.subtopic), matchedMod && /*#__PURE__*/React.createElement("div", {
+      }, matchedMod ? /*#__PURE__*/React.createElement(React.Fragment, null, "📚 ", matchedMod.module, isAuto && /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 9,
+          fontWeight: 600,
+          color: "#6060b0",
+          marginLeft: 6
+        }
+      }, "✦ auto")) : cards[0].concept || cards[0].subtopic), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "4px 6px",
+          marginTop: 5
+        }
+      }, cards.map((c, ci) => /*#__PURE__*/React.createElement("span", {
+        key: ci,
         style: {
           fontSize: 10,
-          color: isAuto ? "#6060b0" : "#5050a0",
-          marginTop: 3
+          background: "#1a0a28",
+          border: "1px solid #c0304444",
+          borderRadius: 4,
+          padding: "1px 6px",
+          color: "#9090c0"
         }
-      }, isAuto ? "✦ Auto-generated notes" : "📚 " + matchedMod.module), !matchedMod && /*#__PURE__*/React.createElement("div", {
+      }, c.concept || c.subtopic, " ", /*#__PURE__*/React.createElement("span", {
         style: {
-          fontSize: 10,
-          color: "#5050a0",
-          marginTop: 3,
-          fontStyle: "italic"
+          color: "#e05070",
+          fontWeight: 700
         }
-      }, "Tap to review")), /*#__PURE__*/React.createElement("div", {
+      }, "×", c.wrongCount))))), /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           alignItems: "center",
           gap: 6,
           flexShrink: 0,
-          marginLeft: 8
+          marginLeft: 8,
+          marginTop: 2
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
@@ -2414,9 +2455,10 @@ function RevisionScreen({
           color: "#fff",
           fontWeight: 700,
           padding: "2px 7px",
-          borderRadius: 5
+          borderRadius: 5,
+          whiteSpace: "nowrap"
         }
-      }, "Wrong ", card.wrongCount, "×"), /*#__PURE__*/React.createElement("span", {
+      }, totalWrong, " wrong"), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 12,
           color: "#6060a0"
@@ -2426,36 +2468,14 @@ function RevisionScreen({
           padding: "0 14px 14px",
           borderTop: "1px solid #c0304422"
         }
-      }, card.los_tested && /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 10,
-          color: "#5050a0",
-          marginBottom: 10,
-          lineHeight: 1.5
-        }
-      }, "LOS: ", card.los_tested), dupeModule ? /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 11,
-          color: "#6060a0",
-          fontStyle: "italic"
-        }
-      }, "Same module as a card above — see rules & traps above.") : matchedMod ? /*#__PURE__*/React.createElement(React.Fragment, null, isAuto && /*#__PURE__*/React.createElement("div", {
+      }, isAuto && /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 10,
           color: "#6060b0",
           fontStyle: "italic",
-          marginBottom: 8
+          marginBottom: 10
         }
-      }, "Auto-generated from your answer history · review for accuracy"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 10,
-          fontWeight: 800,
-          color: "#7c5aed",
-          letterSpacing: "0.07em",
-          textTransform: "uppercase",
-          marginBottom: 8
-        }
-      }, "📚 ", matchedMod.module), matchedMod.rules.length > 0 && /*#__PURE__*/React.createElement("div", {
+      }, "Auto-generated from your answer history · verify with curriculum"), matchedMod ? /*#__PURE__*/React.createElement(React.Fragment, null, matchedMod.rules.length > 0 && /*#__PURE__*/React.createElement("div", {
         style: {
           marginBottom: 10
         }
@@ -2551,10 +2571,7 @@ function RevisionScreen({
           color: "#a78bfa",
           cursor: "pointer"
         }
-      }, isAuto ? `View auto-generated "${matchedMod.module}" notes below ↓` : `Open full "${matchedMod.module}" notes below ↓`)) :
-      /*#__PURE__*/
-      /* Should rarely appear — dynamic gen covers this in the effect */
-      React.createElement("div", null, card.explanation && /*#__PURE__*/React.createElement("div", {
+      }, isAuto ? `View "${matchedMod.module}" notes below ↓` : `Open full "${matchedMod.module}" notes below ↓`)) : /*#__PURE__*/React.createElement("div", null, cards[0].explanation && /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 12,
           color: "#a0a0c0",
@@ -2562,13 +2579,13 @@ function RevisionScreen({
           marginBottom: 8,
           whiteSpace: "pre-wrap"
         }
-      }, card.explanation), /*#__PURE__*/React.createElement("div", {
+      }, cards[0].explanation), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11,
           color: "#5050a0",
           fontStyle: "italic"
         }
-      }, "Loading notes... refresh to see auto-generated content."))));
+      }, "Refresh to load auto-generated notes for this concept."))));
     })));
   })(), tab === "notes" && focusConcept && /*#__PURE__*/React.createElement("div", {
     style: {
