@@ -3013,7 +3013,7 @@ function CFAMock(){
         due.forEach(c=>{const k=c.topic+"|"+c.subtopic;dueByModule[k]=(dueByModule[k]||{topic:c.topic,module:c.subtopic,count:0});dueByModule[k].count++;});
         Object.values(dueByModule).sort((a,b)=>b.count-a.count).slice(0,2).forEach(d=>{
           if(!candidates.find(c=>c.topic===d.topic&&c.module===d.module))
-            candidates.push({topic:d.topic,module:d.module,difficulty:"Medium",reason:`${d.count} spaced-repetition card${d.count>1?"s are":" is"} due today — review now to lock in retention.`,urgency:"high",count:5,mode:"guided",_score:800+d.count*10});
+            candidates.push({topic:d.topic,module:d.module,difficulty:"Medium",reason:`${d.count} spaced-repetition card${d.count>1?"s are":" is"} due today — review now to lock in retention.`,urgency:"high",count:d.count,mode:"sr_review",_score:800+d.count*10});
         });
 
         // 3. Weak accuracy on high-weight topics (<65%)
@@ -3866,17 +3866,17 @@ Reply with just "saved" when done.`}]
               <div style={{fontSize:12,color:C.textMid,lineHeight:1.55,marginBottom:selectedFocus===i?12:0}}>{s.reason}</div>
               {selectedFocus===i&&(
                 <div onClick={e=>e.stopPropagation()}>
-                  <div style={{display:"flex",gap:6,marginBottom:8}}>
+                  {s.mode!=="sr_review"&&<div style={{display:"flex",gap:6,marginBottom:8}}>
                     {[5,10,15].map(n=>(
                       <button key={n} onClick={e=>{e.stopPropagation();setFocusCount(n);}}
                         style={{flex:1,padding:"6px 0",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",border:focusCount===n?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:focusCount===n?C.accent+"22":C.surface,color:focusCount===n?C.accentLight:C.muted,transition:"all 0.15s"}}>
                         {n} Qs
                       </button>
                     ))}
-                  </div>
-                  <button onClick={e=>{e.stopPropagation();generateQuestions(s.topic,s.module,s.difficulty,focusCount,s.mode||"guided");}}
+                  </div>}
+                  <button onClick={e=>{e.stopPropagation();if(s.mode==="sr_review"){const cards=dueCards.filter(c=>c.topic===s.topic&&c.subtopic===s.module).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));if(cards.length){trackUsage("sr_review");setSrQueue(cards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}else{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}}else{generateQuestions(s.topic,s.module,s.difficulty,focusCount,s.mode||"guided");}}}
                     style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`}}>
-                    Start {focusCount} Questions →
+                    {s.mode==="sr_review"?`Review ${s.count} SR Card${s.count!==1?"s":""}  →`:`Start ${focusCount} Questions →`}
                   </button>
                 </div>
               )}

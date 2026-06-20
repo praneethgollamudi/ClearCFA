@@ -5242,8 +5242,8 @@ function CFAMock() {
             difficulty: "Medium",
             reason: `${d.count} spaced-repetition card${d.count > 1 ? "s are" : " is"} due today — review now to lock in retention.`,
             urgency: "high",
-            count: 5,
-            mode: "guided",
+            count: d.count,
+            mode: "sr_review",
             _score: 800 + d.count * 10
           });
         });
@@ -7323,7 +7323,7 @@ Reply with just "saved" when done.`
     }
   }, s.reason), selectedFocus === i && /*#__PURE__*/React.createElement("div", {
     onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React.createElement("div", {
+  }, s.mode !== "sr_review" && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -7350,7 +7350,24 @@ Reply with just "saved" when done.`
   }, n, " Qs"))), /*#__PURE__*/React.createElement("button", {
     onClick: e => {
       e.stopPropagation();
-      generateQuestions(s.topic, s.module, s.difficulty, focusCount, s.mode || "guided");
+      if (s.mode === "sr_review") {
+        const cards = dueCards.filter(c => c.topic === s.topic && c.subtopic === s.module).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0));
+        if (cards.length) {
+          trackUsage("sr_review");
+          setSrQueue(cards);
+          setSrIdx(0);
+          setSrAnswer(null);
+          setScreen("srReview");
+        } else {
+          trackUsage("sr_review");
+          setSrQueue([...dueCards].sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 20));
+          setSrIdx(0);
+          setSrAnswer(null);
+          setScreen("srReview");
+        }
+      } else {
+        generateQuestions(s.topic, s.module, s.difficulty, focusCount, s.mode || "guided");
+      }
     },
     style: {
       width: "100%",
@@ -7364,7 +7381,7 @@ Reply with just "saved" when done.`
       cursor: "pointer",
       boxShadow: `0 4px 12px ${C.accent}44`
     }
-  }, "Start ", focusCount, " Questions →")))))), (() => {
+  }, s.mode === "sr_review" ? `Review ${s.count} SR Card${s.count !== 1 ? "s" : ""}  →` : `Start ${focusCount} Questions →`)))))), (() => {
     const omSessions = history.filter(h => h.isOfficeMode);
     const omStreak = (() => {
       let s = 0,
