@@ -1669,7 +1669,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
         const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,12);
         if(!wrongCards.length) return null;
         const topics=topicData?.topics||[];
-        // Group by matched module; unmatched cards each get their own group
+        // Group by matched module; unmatched cards each get their own entry
         const groups=[];
         for(const card of wrongCards){
           let modIdx=topics.findIndex(m=>m.module&&(m.module.toLowerCase().includes((card.subtopic||"").toLowerCase())||(card.subtopic||"").toLowerCase().includes(m.module.toLowerCase())));
@@ -1685,83 +1685,35 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
         return(
           <div style={{marginBottom:14}}>
             <div style={{fontSize:11,fontWeight:700,color:"#e05070",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Concepts you've missed in {selTopic}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
             {groups.map((group,gi)=>{
               const{modIdx,matchedMod,cards}=group;
-              const isOpen=expandedWrong===gi;
               const isAuto=matchedMod?._auto;
               const totalWrong=cards.reduce((s,c)=>s+(c.wrongCount||0),0);
               return(
-                <div key={gi} style={{background:"#0e0818",border:`1px solid ${isOpen?"#c03044":"#c0304433"}`,borderRadius:12,overflow:"hidden",transition:"border-color 0.15s"}}>
-                  {/* Tap-to-expand header */}
-                  <button onClick={()=>setExpandedWrong(isOpen?null:gi)}
-                    style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"12px 14px",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:"#e2e2ff"}}>
-                        {matchedMod?<>📚 {matchedMod.module}{isAuto&&<span style={{fontSize:9,fontWeight:600,color:"#6060b0",marginLeft:6}}>✦ auto</span>}</> : (cards[0].concept||cards[0].subtopic)}
-                      </div>
-                      {/* All concept names in this group as inline chips */}
-                      <div style={{display:"flex",flexWrap:"wrap",gap:"4px 6px",marginTop:5}}>
-                        {cards.map((c,ci)=>(
-                          <span key={ci} style={{fontSize:10,background:"#1a0a28",border:"1px solid #c0304444",borderRadius:4,padding:"1px 6px",color:"#9090c0"}}>
-                            {c.concept||c.subtopic} <span style={{color:"#e05070",fontWeight:700}}>×{c.wrongCount}</span>
-                          </span>
-                        ))}
-                      </div>
+                /* Clicking the card opens & scrolls to the module in the accordion below — no duplicate content */
+                <button key={gi}
+                  onClick={()=>{if(modIdx>=0){setExpandedModule(modIdx);setTimeout(()=>document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"}),80);}}}
+                  style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:"#0e0818",border:"1px solid #c0304433",borderRadius:10,padding:"10px 13px",cursor:modIdx>=0?"pointer":"default",textAlign:"left"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#e2e2ff",marginBottom:5}}>
+                      {matchedMod
+                        ?<>📚 {matchedMod.module}{isAuto&&<span style={{fontSize:9,fontWeight:600,color:"#6060b0",marginLeft:6}}>✦ auto</span>}</>
+                        :(cards[0].concept||cards[0].subtopic)}
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,marginLeft:8,marginTop:2}}>
-                      <span style={{fontSize:10,background:"#e05070",color:"#fff",fontWeight:700,padding:"2px 7px",borderRadius:5,whiteSpace:"nowrap"}}>{totalWrong} wrong</span>
-                      <span style={{fontSize:12,color:"#6060a0"}}>{isOpen?"▲":"▼"}</span>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:"3px 5px"}}>
+                      {cards.map((c,ci)=>(
+                        <span key={ci} style={{fontSize:10,background:"#1a0a28",border:"1px solid #c0304444",borderRadius:4,padding:"1px 6px",color:"#9090c0"}}>
+                          {c.concept||c.subtopic} <span style={{color:"#e05070",fontWeight:700}}>×{c.wrongCount}</span>
+                        </span>
+                      ))}
                     </div>
-                  </button>
-
-                  {/* Expandable content */}
-                  {isOpen&&(
-                    <div style={{padding:"0 14px 14px",borderTop:"1px solid #c0304422"}}>
-                      {isAuto&&<div style={{fontSize:10,color:"#6060b0",fontStyle:"italic",marginBottom:10}}>Auto-generated from your answer history · verify with curriculum</div>}
-                      {matchedMod?(
-                        <>
-                          {matchedMod.rules.length>0&&(
-                            <div style={{marginBottom:10}}>
-                              <div style={{fontSize:10,fontWeight:800,color:"#22c55e",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>✅ Key Rules</div>
-                              {matchedMod.rules.map((r,ri)=>(
-                                <div key={ri} style={{display:"flex",gap:8,marginBottom:7}}>
-                                  <span style={{color:"#22c55e",fontSize:11,marginTop:2,flexShrink:0}}>•</span>
-                                  <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.65}}>{r}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {matchedMod.traps.length>0&&(
-                            <div style={{marginBottom:10}}>
-                              <div style={{fontSize:10,fontWeight:800,color:"#f59e0b",letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:6}}>⚠ Common Traps</div>
-                              {matchedMod.traps.map((t,ti)=>(
-                                <div key={ti} style={{display:"flex",gap:8,marginBottom:7}}>
-                                  <span style={{color:"#f59e0b",fontSize:11,marginTop:2,flexShrink:0}}>•</span>
-                                  <span style={{fontSize:12,color:"#c0c0e0",lineHeight:1.65}}>{t}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {matchedMod.mnemonic&&(
-                            <div style={{background:"#0f0a1e",borderRadius:8,padding:"8px 10px",marginBottom:10,fontSize:11,color:"#a78bfa",lineHeight:1.6,fontStyle:"italic"}}>
-                              💡 {matchedMod.mnemonic}
-                            </div>
-                          )}
-                          <button onClick={()=>{setExpandedModule(modIdx);setTimeout(()=>document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({behavior:"smooth",block:"start"}),80);}}
-                            style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:"#7c3aed22",border:"1px solid #7c3aed44",color:"#a78bfa",cursor:"pointer"}}>
-                            {isAuto?`View "${matchedMod.module}" notes below ↓`:`Open full "${matchedMod.module}" notes below ↓`}
-                          </button>
-                        </>
-                      ):(
-                        <div>
-                          {cards[0].explanation&&<div style={{fontSize:12,color:"#a0a0c0",lineHeight:1.7,marginBottom:8,whiteSpace:"pre-wrap"}}>{cards[0].explanation}</div>}
-                          <div style={{fontSize:11,color:"#5050a0",fontStyle:"italic"}}>Refresh to load auto-generated notes for this concept.</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0,marginLeft:8,marginTop:1}}>
+                    <span style={{fontSize:10,background:"#e05070",color:"#fff",fontWeight:700,padding:"2px 6px",borderRadius:4,whiteSpace:"nowrap"}}>{totalWrong}×</span>
+                    {modIdx>=0&&<span style={{fontSize:11,color:"#6060a0"}}>↓</span>}
+                  </div>
+                </button>
               );
             })}
             </div>
