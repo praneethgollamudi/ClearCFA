@@ -695,6 +695,7 @@ const QCACHE_SLOTS = 2;   // sets per topic+module+difficulty combo
 const QCACHE_MAX   = 25;  // max distinct combos to keep
 const API_LOG_KEY  = "cfa_api_log_v1";
 const PASS_TREND_KEY = "cfa_pass_trend_v1";
+const PLAN_KEY       = "cfa_week_plan_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
 
@@ -2544,7 +2545,8 @@ function CFAMock(){
   const apiLogRef=useRef([]);
   const [omMode,setOmMode]=useState(false); // true when current session was started via Office Mode
   const [omQCount,setOmQCount]=useState(()=>{try{return parseInt(localStorage.getItem("cfa_om_count")||"5");}catch{return 5;}});
-  const [weeklyPlan,setWeeklyPlan]=useState(null);
+  const [weeklyPlan,setWeeklyPlan]=useState(()=>{try{const p=localStorage.getItem(PLAN_KEY);return p?JSON.parse(p):null;}catch{return null;}});
+  const [todayStarted,setTodayStarted]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_today_started")||"{}");}catch{return {};}});
   const [weeklyPlanLoading,setWeeklyPlanLoading]=useState(false);
   const [weeklyPlanError,setWeeklyPlanError]=useState("");
   const [hoursThisWeek,setHoursThisWeek]=useState(7); // default 1hr/day
@@ -3153,6 +3155,7 @@ Reply with just "saved" when done.`}]
       const plan=await callClaude(prompt,2000,{retries:3,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"week_plan"});
       if(!plan||!plan.days) throw new Error("Plan missing 'days' field — got: "+JSON.stringify(plan).slice(0,100));
       setWeeklyPlan(plan);
+      try{localStorage.setItem(PLAN_KEY,JSON.stringify(plan));}catch{}
     }catch(e){
       const msg=e.message||"Failed to generate plan.";
       setWeeklyPlanError(msg.includes("Rate limit")||msg.includes("retries failed")
@@ -3751,7 +3754,7 @@ Reply with just "saved" when done.`}]
         "{weeklyPlan.keyMessage}"
       </div>
 
-      <button onClick={()=>{setWeeklyPlan(null);setWeeklyPlanError("");}} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Regenerate with different hours</button>
+      <button onClick={()=>{setWeeklyPlan(null);setWeeklyPlanError("");try{localStorage.removeItem(PLAN_KEY);}catch{}}} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Regenerate with different hours</button>
     </>)}
   </>);
 
@@ -3979,14 +3982,78 @@ Reply with just "saved" when done.`}]
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <div>
           <div style={{fontSize:13,fontWeight:800,color:C.text}}>🎯 Today's Focus</div>
-          <div style={{fontSize:11,color:C.muted,marginTop:2}}>AI-powered · LOS gaps · SR · leeches</div>
+          <div style={{fontSize:11,color:C.muted,marginTop:2}}>{weeklyPlan?"Plan · AI gaps · SR · leeches":"AI-powered · LOS gaps · SR · leeches"}</div>
         </div>
-        {!focusLoading&&(
-          <button onClick={()=>{trackUsage("daily_focus");generateFocus();}} style={{fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
-            {focusSuggestions?"Refresh":"Generate"}
-          </button>
-        )}
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          {weeklyPlan&&(
+            <button onClick={()=>setWeeklyPlanScreen(true)} style={{fontSize:10,fontWeight:700,padding:"4px 9px",borderRadius:7,background:C.accent+"15",border:`1px solid ${C.accent}33`,color:C.accentLight,cursor:"pointer"}}>
+              Full Plan
+            </button>
+          )}
+          {!focusLoading&&(
+            <button onClick={()=>{trackUsage("daily_focus");generateFocus();}} style={{fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+              {focusSuggestions?"Refresh":"Generate"}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Today's plan sessions from weekly plan */}
+      {(()=>{
+        if(!weeklyPlan) return null;
+        const todayName=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date().getDay()];
+        const todayPlanSessions=(weeklyPlan.days||[]).find(d=>d.day===todayName)?.sessions||[];
+        if(todayPlanSessions.length===0) return null;
+        const sKeyOf=i=>`plan_${i}_${todayName}`;
+        const startedCount=todayPlanSessions.filter((_,i)=>todayStarted[sKeyOf(i)]).length;
+        return(
+          <div style={{marginBottom:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.accentLight,letterSpacing:"0.07em",textTransform:"uppercase"}}>📅 From Your Weekly Plan</div>
+              <div style={{fontSize:11,color:startedCount===todayPlanSessions.length?C.easy:C.muted,fontWeight:startedCount===todayPlanSessions.length?700:400}}>
+                {startedCount===todayPlanSessions.length?"✓ All done!":startedCount+"/"+todayPlanSessions.length+" done"}
+              </div>
+            </div>
+            <div style={{height:4,borderRadius:2,background:C.border,marginBottom:10}}>
+              <div style={{height:"100%",borderRadius:2,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,width:`${(startedCount/todayPlanSessions.length)*100}%`,transition:"width 0.5s ease"}}/>
+            </div>
+            {todayPlanSessions.map((session,i)=>{
+              const sKey=sKeyOf(i);
+              const done=!!todayStarted[sKey];
+              const typeColor=session.type==="sr"?C.accent:session.type==="review"?C.medium:C.easy;
+              const typeColorLight=session.type==="sr"?C.accentLight:session.type==="review"?C.medium:C.easy;
+              return(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 12px",background:done?"rgba(34,197,94,0.05)":C.surfaceHigh,border:`1px solid ${done?"rgba(34,197,94,0.2)":C.border}`,borderRadius:10,marginBottom:6,transition:"all 0.2s"}}>
+                  <div style={{flex:1,marginRight:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                      {done&&<span style={{fontSize:12,color:C.easy}}>✓</span>}
+                      <span style={{fontSize:12,fontWeight:700,color:done?C.muted:C.text}}>{session.title}</span>
+                      <span style={{fontSize:9,padding:"1px 6px",borderRadius:10,background:typeColor+"22",color:typeColorLight,fontWeight:700,textTransform:"uppercase"}}>{session.type}</span>
+                    </div>
+                    <div style={{fontSize:11,color:C.muted}}>{session.module} · {session.durationMin}min · {session.count}Q · {session.difficulty}</div>
+                    {!done&&<div style={{fontSize:10,color:C.muted,fontStyle:"italic",marginTop:3,lineHeight:1.4}}>{session.why}</div>}
+                  </div>
+                  <button onClick={()=>{
+                    const newStarted={...todayStarted,[sKey]:true};
+                    setTodayStarted(newStarted);
+                    try{localStorage.setItem("cfa_today_started",JSON.stringify(newStarted));}catch{}
+                    if(session.type==="sr"){
+                      const cards=dueCards.filter(c=>c.topic===session.topic);
+                      const queue=cards.length?cards.slice(0,session.count):[...dueCards].slice(0,session.count);
+                      if(queue.length){setSrQueue(queue);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
+                    }else{
+                      generateQuestions(session.topic,session.module,session.difficulty,session.count,"guided");
+                    }
+                  }} style={{fontSize:11,fontWeight:700,padding:"7px 12px",borderRadius:8,background:done?C.surface:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:done?C.muted:"#fff",border:done?`1px solid ${C.border}`:"none",cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>
+                    {done?"Again →":"Start →"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {focusLoading&&<div style={{display:"flex",flexDirection:"column",gap:9}}>{[0,1,2].map(i=><Skeleton key={i} height={72} radius={10}/>)}<div style={{fontSize:12,color:C.muted,textAlign:"center",animation:"pulse 1.5s infinite"}}>Analysing history + LOS gaps + SR deck…</div></div>}
       {focusError&&<div style={{fontSize:13,color:C.hard,padding:"10px",background:C.errorBg,borderRadius:8}}>{focusError}</div>}
       {!focusLoading&&!focusSuggestions&&!focusError&&(
@@ -3995,42 +4062,52 @@ Reply with just "saved" when done.`}]
           <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>Claude analyses your accuracy trends, SR due cards, leech cards, and LOS coverage gaps to recommend what to drill today.</div>
         </div>
       )}
-      {focusSuggestions&&!focusLoading&&(
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {focusSuggestions.map((s,i)=>(
-            <div key={i} onClick={()=>setSelectedFocus(selectedFocus===i?null:i)}
-              style={{border:`1.5px solid ${selectedFocus===i?urgencyColor[s.urgency]:C.border}`,borderRadius:12,padding:"13px 14px",cursor:"pointer",background:selectedFocus===i?urgencyColor[s.urgency]+"12":C.surfaceHigh,transition:"all 0.15s",animation:selectedFocus===i?"fadeInScale 0.15s ease":undefined}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:C.text}}>{s.module}</div>
-                  <div style={{fontSize:11,color:C.muted,marginTop:1}}>{s.topic}</div>
-                </div>
-                <div style={{display:"flex",gap:5,flexShrink:0,marginLeft:8}}>
-                  <Badge color={urgencyColor[s.urgency]}>{s.urgency}</Badge>
-                  <Badge color={diffC[s.difficulty]}>{s.difficulty}</Badge>
-                </div>
-              </div>
-              <div style={{fontSize:12,color:C.textMid,lineHeight:1.55,marginBottom:selectedFocus===i?12:0}}>{s.reason}</div>
-              {selectedFocus===i&&(
-                <div onClick={e=>e.stopPropagation()}>
-                  {s.mode!=="sr_review"&&<div style={{display:"flex",gap:6,marginBottom:8}}>
-                    {[5,10,15].map(n=>(
-                      <button key={n} onClick={e=>{e.stopPropagation();setFocusCount(n);}}
-                        style={{flex:1,padding:"6px 0",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",border:focusCount===n?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:focusCount===n?C.accent+"22":C.surface,color:focusCount===n?C.accentLight:C.muted,transition:"all 0.15s"}}>
-                        {n} Qs
+      {focusSuggestions&&!focusLoading&&(()=>{
+        const todayName=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date().getDay()];
+        const todayPlanSessions=(weeklyPlan?.days||[]).find(d=>d.day===todayName)?.sessions||[];
+        const planTopicKeys=new Set(todayPlanSessions.map(s=>`${s.topic}|||${s.module}`));
+        const deduped=focusSuggestions.filter(s=>!planTopicKeys.has(`${s.topic}|||${s.module}`));
+        if(deduped.length===0) return null;
+        return(
+          <div>
+            {todayPlanSessions.length>0&&<div style={{fontSize:10,fontWeight:800,color:C.muted,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:8}}>Also suggested by AI</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {deduped.map((s,i)=>(
+                <div key={i} onClick={()=>setSelectedFocus(selectedFocus===i?null:i)}
+                  style={{border:`1.5px solid ${selectedFocus===i?urgencyColor[s.urgency]:C.border}`,borderRadius:12,padding:"13px 14px",cursor:"pointer",background:selectedFocus===i?urgencyColor[s.urgency]+"12":C.surfaceHigh,transition:"all 0.15s",animation:selectedFocus===i?"fadeInScale 0.15s ease":undefined}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,fontWeight:700,color:C.text}}>{s.module}</div>
+                      <div style={{fontSize:11,color:C.muted,marginTop:1}}>{s.topic}</div>
+                    </div>
+                    <div style={{display:"flex",gap:5,flexShrink:0,marginLeft:8}}>
+                      <Badge color={urgencyColor[s.urgency]}>{s.urgency}</Badge>
+                      <Badge color={diffC[s.difficulty]}>{s.difficulty}</Badge>
+                    </div>
+                  </div>
+                  <div style={{fontSize:12,color:C.textMid,lineHeight:1.55,marginBottom:selectedFocus===i?12:0}}>{s.reason}</div>
+                  {selectedFocus===i&&(
+                    <div onClick={e=>e.stopPropagation()}>
+                      {s.mode!=="sr_review"&&<div style={{display:"flex",gap:6,marginBottom:8}}>
+                        {[5,10,15].map(n=>(
+                          <button key={n} onClick={e=>{e.stopPropagation();setFocusCount(n);}}
+                            style={{flex:1,padding:"6px 0",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",border:focusCount===n?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:focusCount===n?C.accent+"22":C.surface,color:focusCount===n?C.accentLight:C.muted,transition:"all 0.15s"}}>
+                            {n} Qs
+                          </button>
+                        ))}
+                      </div>}
+                      <button onClick={e=>{e.stopPropagation();if(s.mode==="sr_review"){const cards=dueCards.filter(c=>c.topic===s.topic&&c.subtopic===s.module).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));if(cards.length){trackUsage("sr_review");setSrQueue(cards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}else{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}}else{generateQuestions(s.topic,s.module,s.difficulty,focusCount,s.mode||"guided");}}}
+                        style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`}}>
+                        {s.mode==="sr_review"?`Review ${s.count} SR Card${s.count!==1?"s":""}  →`:`Start ${focusCount} Questions →`}
                       </button>
-                    ))}
-                  </div>}
-                  <button onClick={e=>{e.stopPropagation();if(s.mode==="sr_review"){const cards=dueCards.filter(c=>c.topic===s.topic&&c.subtopic===s.module).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));if(cards.length){trackUsage("sr_review");setSrQueue(cards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}else{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}}else{generateQuestions(s.topic,s.module,s.difficulty,focusCount,s.mode||"guided");}}}
-                    style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`}}>
-                    {s.mode==="sr_review"?`Review ${s.count} SR Card${s.count!==1?"s":""}  →`:`Start ${focusCount} Questions →`}
-                  </button>
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        );
+      })()}
     </div>
 
     {/* Office Mode — primary CTA */}
