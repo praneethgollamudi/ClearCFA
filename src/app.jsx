@@ -3561,9 +3561,12 @@ Reply with just "saved" when done.`}]
   useEffect(()=>{
     if(!passProbability||!history.length)return;
     const today=new Date().toISOString().slice(0,10);
-    if(passTrendRef.current.some(p=>p.date===today))return;
     const entry={date:today,prob:passProbability.probability,acc:passProbability.currentAccuracy,cov:passProbability.coveragePct};
-    const updated=[...passTrendRef.current,entry].sort((a,b)=>a.date<b.date?-1:1).slice(-60);
+    const existing=passTrendRef.current.find(p=>p.date===today);
+    // Skip if today's point already has identical values
+    if(existing&&existing.prob===entry.prob&&existing.acc===entry.acc&&existing.cov===entry.cov)return;
+    // Replace today's point (or append if first time today)
+    const updated=[...passTrendRef.current.filter(p=>p.date!==today),entry].sort((a,b)=>a.date<b.date?-1:1).slice(-60);
     passTrendRef.current=updated;setPassTrend(updated);
     storageSet(PASS_TREND_KEY,updated);
   },[passProbability,history.length]);
