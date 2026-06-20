@@ -1130,11 +1130,37 @@ function qcAdd(cache, t, st, diff, questions) {
 function SyncCodeBox({
   cfg
 }) {
-  const [copied, setCopied] = React.useState(false);
-  const code = btoa(JSON.stringify({
-    u: cfg.url,
-    k: cfg.key
-  }));
+  const [status, setStatus] = React.useState(null); // null | "shared" | "copied"
+  const syncUrl = (() => {
+    const base = window.location.origin + window.location.pathname.replace(/\/$/, "");
+    const code = btoa(JSON.stringify({
+      u: cfg.url,
+      k: cfg.key
+    }));
+    return base + "#sync=" + code;
+  })();
+  const share = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "ClearCFA – sync setup",
+          url: syncUrl
+        });
+        setStatus("shared");
+        setTimeout(() => setStatus(null), 2500);
+      } catch (e) {
+        if (e.name !== "AbortError") fallbackCopy();
+      }
+    } else {
+      fallbackCopy();
+    }
+  };
+  const fallbackCopy = () => {
+    navigator.clipboard?.writeText(syncUrl).then(() => {
+      setStatus("copied");
+      setTimeout(() => setStatus(null), 2500);
+    });
+  };
   return /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#0a1020",
@@ -1149,132 +1175,27 @@ function SyncCodeBox({
       color: "#22d3ee",
       marginBottom: 4
     }
-  }, "📲 Set up another device"), /*#__PURE__*/React.createElement("div", {
+  }, "📲 Set up on another device"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       marginBottom: 8,
       lineHeight: 1.5
     }
-  }, "Copy this code and paste it on your other device (iPad, laptop, etc.) to instantly connect it to the same Supabase account."), /*#__PURE__*/React.createElement("div", {
+  }, "Share a one-tap setup link to your iPad, laptop, or any other device. The link works like AirDrop — tap it and the app connects automatically."), /*#__PURE__*/React.createElement("button", {
+    onClick: share,
     style: {
-      display: "flex",
-      gap: 7
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      background: C.surface,
-      borderRadius: 7,
-      padding: "7px 10px",
-      fontSize: 10,
-      color: C.muted,
-      fontFamily: "monospace",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      whiteSpace: "nowrap"
-    }
-  }, code.slice(0, 32), "…"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      navigator.clipboard?.writeText(code).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      });
-    },
-    style: {
-      padding: "7px 14px",
-      borderRadius: 7,
-      fontSize: 11,
+      width: "100%",
+      padding: "9px",
+      borderRadius: 8,
+      fontSize: 12,
       fontWeight: 700,
       background: "#22d3ee22",
       border: `1px solid #22d3ee44`,
       color: "#22d3ee",
-      cursor: "pointer",
-      flexShrink: 0
+      cursor: "pointer"
     }
-  }, copied ? "Copied ✓" : "Copy")));
-}
-function ImportSyncCode({
-  onImport
-}) {
-  const [code, setCode] = React.useState("");
-  const [err, setErr] = React.useState("");
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "#0a1020",
-      border: `1px solid #22d3ee22`,
-      borderRadius: 9,
-      padding: "10px 12px",
-      marginTop: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: "#22d3ee",
-      marginBottom: 4
-    }
-  }, "📲 Already set up on another device?"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.muted,
-      marginBottom: 8,
-      lineHeight: 1.5
-    }
-  }, "Paste the sync code from your other device to fill in your Supabase details automatically."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 7
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    value: code,
-    onChange: e => {
-      setCode(e.target.value);
-      setErr("");
-    },
-    placeholder: "Paste sync code…",
-    style: {
-      flex: 1,
-      padding: "7px 10px",
-      borderRadius: 7,
-      fontSize: 11,
-      background: C.surface,
-      border: `1px solid ${err ? C.hard : C.border}`,
-      color: C.text,
-      outline: "none"
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      try {
-        const parsed = JSON.parse(atob(code.trim()));
-        if (!parsed.u || !parsed.k) throw new Error("invalid");
-        onImport({
-          url: parsed.u,
-          key: parsed.k
-        });
-        setCode("");
-      } catch {
-        setErr("Invalid code — copy it again from your other device.");
-      }
-    },
-    style: {
-      padding: "7px 14px",
-      borderRadius: 7,
-      fontSize: 11,
-      fontWeight: 700,
-      background: "#22d3ee22",
-      border: `1px solid #22d3ee44`,
-      color: "#22d3ee",
-      cursor: "pointer",
-      flexShrink: 0
-    }
-  }, "Import")), err && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.hard,
-      marginTop: 5
-    }
-  }, err));
+  }, status === "shared" ? "Shared ✓" : status === "copied" ? "Link copied ✓" : "📤 Share setup link"));
 }
 function XPBar({
   level,
@@ -4532,6 +4453,7 @@ function CFAMock() {
   const [supabaseUrl, setSupabaseUrl] = useState(() => getSupabaseConfig()?.url || "");
   const [supabaseKey, setSupabaseKey] = useState(() => getSupabaseConfig()?.key || "");
   const [supabaseSyncing, setSupabaseSyncing] = useState(false);
+  const [syncImportCfg, setSyncImportCfg] = useState(null); // pending import from #sync= URL
   const [needsFocusRefresh, setNeedsFocusRefresh] = useState(false);
   const [examDate, setExamDate] = useState(EXAM_DATE);
   const [examDateInput, setExamDateInput] = useState("2026-08-19");
@@ -4574,6 +4496,21 @@ function CFAMock() {
   const passTrendRef = useRef([]);
   const [explainThisText, setExplainThisText] = useState(null);
   const [explainThisLoading, setExplainThisLoading] = useState(false);
+
+  // Detect #sync= URL fragment on load — triggered when user taps a shared setup link
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith("#sync=")) {
+      try {
+        const parsed = JSON.parse(atob(hash.slice(6)));
+        if (parsed.u && parsed.k) setSyncImportCfg({
+          url: parsed.u,
+          key: parsed.k
+        });
+      } catch {}
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
 
   // Auto-trigger focus refresh when flagged
   useEffect(() => {
@@ -6188,6 +6125,113 @@ Reply with just "saved" when done.`
       cursor: "pointer"
     }
   }, "Clear chat")));
+
+  // ── Sync import banner (shown on any screen when #sync= URL was detected) ──
+  if (syncImportCfg) return wrap(/*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "100vh",
+      padding: "32px 20px",
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 48,
+      marginBottom: 16
+    }
+  }, "📲"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: C.text,
+      marginBottom: 8
+    }
+  }, "Connect this device?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.muted,
+      lineHeight: 1.6,
+      marginBottom: 6
+    }
+  }, "This will link ", /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: C.text
+    }
+  }, "ClearCFA on this device"), " to your Supabase account and load all your sessions, SR deck, and progress."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      background: C.surface,
+      borderRadius: 8,
+      padding: "8px 14px",
+      marginBottom: 24,
+      border: `1px solid ${C.border}`
+    }
+  }, syncImportCfg.url), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
+      width: "100%",
+      maxWidth: 320
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: async () => {
+      const cfg = {
+        url: syncImportCfg.url,
+        key: syncImportCfg.key
+      };
+      localStorage.setItem("cfa_supabase_config", JSON.stringify(cfg));
+      setSupabaseCfg(cfg);
+      setSupabaseUrl(cfg.url);
+      setSupabaseKey(cfg.key);
+      setSyncImportCfg(null);
+      // Pull data immediately
+      try {
+        const sbData = await supabaseLoad(cfg);
+        if (sbData?.history?.length) {
+          const h = sbData.history.map(s => ({
+            ...s,
+            wrongs: []
+          }));
+          setHistory(h);
+          historyRef.current = h;
+          storageSet(STORAGE_KEY, h);
+        }
+        if (sbData?.srDeck) {
+          setSrDeck(sbData.srDeck);
+          srDeckRef.current = sbData.srDeck;
+          storageSet(SR_KEY, sbData.srDeck);
+        }
+      } catch {}
+    },
+    style: {
+      padding: "14px",
+      borderRadius: 11,
+      fontSize: 14,
+      fontWeight: 800,
+      background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
+      color: "#fff",
+      border: "none",
+      cursor: "pointer",
+      boxShadow: `0 4px 16px ${C.accent}44`
+    }
+  }, "Yes, connect this device →"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSyncImportCfg(null),
+    style: {
+      padding: "12px",
+      borderRadius: 11,
+      fontSize: 13,
+      fontWeight: 600,
+      background: "none",
+      border: `1px solid ${C.border}`,
+      color: C.muted,
+      cursor: "pointer"
+    }
+  }, "Not now"))));
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if (screen === "home") return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, settingsOpen && /*#__PURE__*/React.createElement("div", {
@@ -12300,12 +12344,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     }
   }, supabaseSyncing ? "Syncing…" : "⬆ Sync All Data to Supabase Now"), /*#__PURE__*/React.createElement(SyncCodeBox, {
     cfg: supabaseCfg
-  })), !supabaseCfg && /*#__PURE__*/React.createElement(ImportSyncCode, {
-    onImport: cfg => {
-      setSupabaseUrl(cfg.url);
-      setSupabaseKey(cfg.key);
-    }
-  })), /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 16,
       paddingTop: 16,

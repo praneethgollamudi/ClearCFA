@@ -787,43 +787,31 @@ function qcAdd(cache,t,st,diff,questions){
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
 function SyncCodeBox({ cfg }) {
-  const [copied, setCopied] = React.useState(false);
-  const code = btoa(JSON.stringify({u: cfg.url, k: cfg.key}));
+  const [status, setStatus] = React.useState(null); // null | "shared" | "copied"
+  const syncUrl = (()=>{
+    const base = window.location.origin + window.location.pathname.replace(/\/$/,"");
+    const code = btoa(JSON.stringify({u: cfg.url, k: cfg.key}));
+    return base + "#sync=" + code;
+  })();
+  const share = async () => {
+    if(navigator.share){
+      try{
+        await navigator.share({title:"ClearCFA – sync setup", url: syncUrl});
+        setStatus("shared");
+        setTimeout(()=>setStatus(null), 2500);
+      }catch(e){ if(e.name!=="AbortError") fallbackCopy(); }
+    } else { fallbackCopy(); }
+  };
+  const fallbackCopy = () => {
+    navigator.clipboard?.writeText(syncUrl).then(()=>{ setStatus("copied"); setTimeout(()=>setStatus(null),2500); });
+  };
   return (
     <div style={{background:"#0a1020",border:`1px solid #22d3ee33`,borderRadius:9,padding:"10px 12px"}}>
-      <div style={{fontSize:11,fontWeight:700,color:"#22d3ee",marginBottom:4}}>📲 Set up another device</div>
-      <div style={{fontSize:11,color:C.muted,marginBottom:8,lineHeight:1.5}}>Copy this code and paste it on your other device (iPad, laptop, etc.) to instantly connect it to the same Supabase account.</div>
-      <div style={{display:"flex",gap:7}}>
-        <div style={{flex:1,background:C.surface,borderRadius:7,padding:"7px 10px",fontSize:10,color:C.muted,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{code.slice(0,32)}…</div>
-        <button onClick={()=>{navigator.clipboard?.writeText(code).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2500);})}} style={{padding:"7px 14px",borderRadius:7,fontSize:11,fontWeight:700,background:"#22d3ee22",border:`1px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer",flexShrink:0}}>
-          {copied?"Copied ✓":"Copy"}
-        </button>
-      </div>
-    </div>
-  );
-}
-function ImportSyncCode({ onImport }) {
-  const [code, setCode] = React.useState("");
-  const [err, setErr] = React.useState("");
-  return (
-    <div style={{background:"#0a1020",border:`1px solid #22d3ee22`,borderRadius:9,padding:"10px 12px",marginTop:8}}>
-      <div style={{fontSize:11,fontWeight:700,color:"#22d3ee",marginBottom:4}}>📲 Already set up on another device?</div>
-      <div style={{fontSize:11,color:C.muted,marginBottom:8,lineHeight:1.5}}>Paste the sync code from your other device to fill in your Supabase details automatically.</div>
-      <div style={{display:"flex",gap:7}}>
-        <input value={code} onChange={e=>{setCode(e.target.value);setErr("");}} placeholder="Paste sync code…"
-          style={{flex:1,padding:"7px 10px",borderRadius:7,fontSize:11,background:C.surface,border:`1px solid ${err?C.hard:C.border}`,color:C.text,outline:"none"}}/>
-        <button onClick={()=>{
-          try{
-            const parsed=JSON.parse(atob(code.trim()));
-            if(!parsed.u||!parsed.k) throw new Error("invalid");
-            onImport({url:parsed.u,key:parsed.k});
-            setCode("");
-          }catch{setErr("Invalid code — copy it again from your other device.");}
-        }} style={{padding:"7px 14px",borderRadius:7,fontSize:11,fontWeight:700,background:"#22d3ee22",border:`1px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer",flexShrink:0}}>
-          Import
-        </button>
-      </div>
-      {err&&<div style={{fontSize:11,color:C.hard,marginTop:5}}>{err}</div>}
+      <div style={{fontSize:11,fontWeight:700,color:"#22d3ee",marginBottom:4}}>📲 Set up on another device</div>
+      <div style={{fontSize:11,color:C.muted,marginBottom:8,lineHeight:1.5}}>Share a one-tap setup link to your iPad, laptop, or any other device. The link works like AirDrop — tap it and the app connects automatically.</div>
+      <button onClick={share} style={{width:"100%",padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:"#22d3ee22",border:`1px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer"}}>
+        {status==="shared"?"Shared ✓":status==="copied"?"Link copied ✓":"📤 Share setup link"}
+      </button>
     </div>
   );
 }
@@ -2512,6 +2500,7 @@ function CFAMock(){
   const [supabaseUrl,setSupabaseUrl]=useState(()=>getSupabaseConfig()?.url||"");
   const [supabaseKey,setSupabaseKey]=useState(()=>getSupabaseConfig()?.key||"");
   const [supabaseSyncing,setSupabaseSyncing]=useState(false);
+  const [syncImportCfg,setSyncImportCfg]=useState(null); // pending import from #sync= URL
   const [needsFocusRefresh,setNeedsFocusRefresh]=useState(false);
   const [examDate,setExamDate]=useState(EXAM_DATE);
   const [examDateInput,setExamDateInput]=useState("2026-08-19");
@@ -2548,6 +2537,18 @@ function CFAMock(){
   const passTrendRef=useRef([]);
   const [explainThisText,setExplainThisText]=useState(null);
   const [explainThisLoading,setExplainThisLoading]=useState(false);
+
+  // Detect #sync= URL fragment on load — triggered when user taps a shared setup link
+  useEffect(()=>{
+    const hash=window.location.hash;
+    if(hash.startsWith("#sync=")){
+      try{
+        const parsed=JSON.parse(atob(hash.slice(6)));
+        if(parsed.u&&parsed.k) setSyncImportCfg({url:parsed.u,key:parsed.k});
+      }catch{}
+      history.replaceState(null,"",window.location.pathname+window.location.search);
+    }
+  },[]);
 
   // Auto-trigger focus refresh when flagged
   useEffect(()=>{
@@ -3476,6 +3477,38 @@ Reply with just "saved" when done.`}]
     )}
     {aiCoachMessages.length>0&&<button onClick={()=>setAiCoachMessages([])} style={{marginTop:10,width:"100%",padding:"8px",borderRadius:8,fontSize:11,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Clear chat</button>}
   </>);
+
+  // ── Sync import banner (shown on any screen when #sync= URL was detected) ──
+  if(syncImportCfg) return wrap(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:"32px 20px",textAlign:"center"}}>
+      <div style={{fontSize:48,marginBottom:16}}>📲</div>
+      <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:8}}>Connect this device?</div>
+      <div style={{fontSize:13,color:C.muted,lineHeight:1.6,marginBottom:6}}>This will link <strong style={{color:C.text}}>ClearCFA on this device</strong> to your Supabase account and load all your sessions, SR deck, and progress.</div>
+      <div style={{fontSize:11,color:C.muted,background:C.surface,borderRadius:8,padding:"8px 14px",marginBottom:24,border:`1px solid ${C.border}`}}>{syncImportCfg.url}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:320}}>
+        <button onClick={async()=>{
+          const cfg={url:syncImportCfg.url,key:syncImportCfg.key};
+          localStorage.setItem("cfa_supabase_config",JSON.stringify(cfg));
+          setSupabaseCfg(cfg);setSupabaseUrl(cfg.url);setSupabaseKey(cfg.key);
+          setSyncImportCfg(null);
+          // Pull data immediately
+          try{
+            const sbData=await supabaseLoad(cfg);
+            if(sbData?.history?.length){
+              const h=sbData.history.map(s=>({...s,wrongs:[]}));
+              setHistory(h);historyRef.current=h;storageSet(STORAGE_KEY,h);
+            }
+            if(sbData?.srDeck){setSrDeck(sbData.srDeck);srDeckRef.current=sbData.srDeck;storageSet(SR_KEY,sbData.srDeck);}
+          }catch{}
+        }} style={{padding:"14px",borderRadius:11,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}44`}}>
+          Yes, connect this device →
+        </button>
+        <button onClick={()=>setSyncImportCfg(null)} style={{padding:"12px",borderRadius:11,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+          Not now
+        </button>
+      </div>
+    </div>
+  );
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
@@ -5189,7 +5222,6 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           <SyncCodeBox cfg={supabaseCfg}/>
         </div>
       )}
-      {!supabaseCfg&&<ImportSyncCode onImport={cfg=>{setSupabaseUrl(cfg.url);setSupabaseKey(cfg.key);}}/>}
     </div>
 
     <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
