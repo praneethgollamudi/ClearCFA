@@ -2403,6 +2403,7 @@ function CFAMock(){
   const [reviewList,setReviewList]=useState([]);const [reviewIdx,setReviewIdx]=useState(0);
   const [confirmClear,setConfirmClear]=useState(false);
   const [focusSuggestions,setFocusSuggestions]=useState(null);const [focusLoading,setFocusLoading]=useState(false);const [focusError,setFocusError]=useState("");const [selectedFocus,setSelectedFocus]=useState(null);const [focusCount,setFocusCount]=useState(10);
+  const [quizConfidence,setQuizConfidence]=useState(null);
   const [focusLastGenerated,setFocusLastGenerated]=useState(null); // timestamp of last generation
   const [lastSession,setLastSession]=useState(null);
   const [srQueue,setSrQueue]=useState([]);const [srIdx,setSrIdx]=useState(0);const [srAnswer,setSrAnswer]=useState(null);
@@ -2936,10 +2937,15 @@ function CFAMock(){
         const allUntested=Object.entries(LOS).flatMap(([t,{weight,modules}])=>
           Object.keys(modules).filter(m=>!history.some(h=>h.topic===t&&h.subtopic===m)).map(m=>({topic:t,module:m,weight}))
         ).sort((a,b)=>b.weight-a.weight);
-        allUntested.slice(0,4).forEach(({topic,module:mod,weight})=>{
-          if(!candidates.find(c=>c.topic===topic&&c.module===mod))
-            candidates.push({topic,module:mod,difficulty:"Easy",reason:`Not yet attempted — ${weight}% topic weight. First exposure builds the mental map.`,urgency:weight>=11?"high":weight>=8?"medium":"low",count:10,mode:"guided",_score:400+weight*5});
-        });
+        const seenUntestedTopics=new Set(candidates.map(c=>c.topic));
+        let untestedAdded=0;
+        for(const {topic,module:mod,weight} of allUntested){
+          if(untestedAdded>=4) break;
+          if(seenUntestedTopics.has(topic)) continue;
+          seenUntestedTopics.add(topic);
+          untestedAdded++;
+          candidates.push({topic,module:mod,difficulty:"Easy",reason:`Not yet attempted — ${weight}% topic weight. First exposure builds the mental map.`,urgency:weight>=11?"high":weight>=8?"medium":"low",count:10,mode:"guided",_score:400+weight*5});
+        }
 
         // 5. Recently weak sessions
         history.slice(0,10).filter(h=>h.pct<75).forEach(h=>{
@@ -3217,7 +3223,7 @@ Reply with just "saved" when done.`}]
   const handleAnswer=(qId,opt)=>{if(answers[qId])return;setAnswers(a=>({...a,[qId]:opt}));if(mode==="guided")setShowExp(true);};
   const nextQ=()=>{
     clearInterval(speedDrillRef.current);
-    setExplainThisText(null);setExplainThisLoading(false);
+    setExplainThisText(null);setExplainThisLoading(false);setQuizConfidence(null);
     if(currentQ<questions.length-1){setCurrentQ(q=>q+1);setShowExp(false);}else endQuiz();
   };
 
@@ -3491,7 +3497,7 @@ Reply with just "saved" when done.`}]
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
         <StatCard label="Sessions" value={history.length||"–"} icon="📚"/>
         <StatCard label="Avg Score" value={overallPct?`${overallPct}%`:"–"} color={overallPct?(overallPct>=70?C.easy:C.hard):C.muted} icon="🎯"/>
-        <StatCard label="Predicted" value={predicted?`${predicted.low}–${predicted.high}%`:"–"} color={predicted?(predicted.score>=70?C.easy:C.hard):C.muted} sub={predicted?`${predicted.confidence}% conf`:null} onClick={()=>setScreen("readiness")} icon="📈"/>
+        <StatCard label="Predicted" value={predicted?`${predicted.low}–${predicted.high}%`:"–"} color={predicted?(predicted.score>=70?C.easy:C.hard):C.muted} sub={predicted?`${predicted.confidence}% conf`:"do 3+ sessions"} onClick={()=>setScreen("readiness")} icon="📈"/>
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"✓"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":"all caught up"} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
@@ -3500,7 +3506,8 @@ Reply with just "saved" when done.`}]
     {(()=>{
       const today=new Date().toISOString().slice(0,10);
       const todayQs=history.filter(h=>h.dateKey===today).reduce((s,h)=>s+h.total,0);
-      const dailyTarget=daysLeft>0?(daysLeft<=30?30:daysLeft<=60?25:20):20;
+      const baseTarget=daysLeft>0?(daysLeft<=30?30:daysLeft<=60?25:20):20;
+      const dailyTarget=history.length<5?Math.max(10,Math.round(baseTarget*(0.4+history.length*0.12))):baseTarget;
       const pct=Math.min(100,Math.round((todayQs/dailyTarget)*100));
       const done=todayQs>=dailyTarget;
       return(
@@ -3732,7 +3739,7 @@ Reply with just "saved" when done.`}]
         {key:"full_exam",label:"🎓 Full Exam",style:{background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight},action:()=>{trackUsage("full_exam");startFullExam();}},
         {key:"ethics",label:"⚖️ Ethics",style:{background:"#0a0820",border:`1px solid ${C.hard}44`,color:C.hard},action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
         {key:"dashboard",label:"📈 Dashboard",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
-        {key:"pass_pct",label:passProbability?`${passProbability.probability}% Pass`:"Pass %",style:{background:passProbability?`${passProbability.color}18`:C.surface,border:`1px solid ${passProbability?passProbability.color+"44":C.border}`,color:passProbability?passProbability.color:C.muted},action:()=>{trackUsage("pass_pct");setScreen("passProbability");}},
+        {key:"pass_pct",label:passProbability?`${passProbability.probability}% Pass`:"📊 Pass %",style:{background:passProbability?`${passProbability.color}18`:C.accent+"12",border:`1px solid ${passProbability?passProbability.color+"44":C.accent+"33"}`,color:passProbability?passProbability.color:C.accentLight},action:()=>{trackUsage("pass_pct");setScreen("passProbability");}},
         {key:"revise",label:"📚 Revise",style:{background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
         {key:"formulas",label:"🔢 Formulas",style:{background:C.reward+"15",border:`1px solid ${C.reward}44`,color:C.rewardLight},action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
         {key:"week_plan",label:"🗓 Week Plan",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}},
@@ -3768,7 +3775,7 @@ Reply with just "saved" when done.`}]
           <div>
             {storageKeys.filter(k=>k.found).length === 0 ? (
               <div style={{fontSize:12,color:C.muted}}>
-                Scanned {storageKeys.length} keys — no session data found in storage.
+                Scanned {storageKeys.length} key{storageKeys.length===1?"":"s"} — no session data found in storage.
                 Your session may have been saved in a different browser session or the data has expired.
               </div>
             ) : (
@@ -4429,7 +4436,26 @@ Reply with just "saved" when done.`}]
           {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:"#60508a"}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
         </div>
       )}
-      {mode==="exam"&&!answered&&<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"8px",animation:"pulse 2s infinite"}}>Select an answer to continue</div>}
+      {!answered&&mode!=="speed_drill"&&(
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:8,letterSpacing:"0.03em"}}>How confident are you?</div>
+          <div style={{display:"flex",gap:7}}>
+            {[{id:"sure",label:"🟢 Sure",color:"#22a05a"},{id:"think",label:"🟡 Think so",color:"#ca8a04"},{id:"guess",label:"🔴 Guessing",color:C.hard}].map(({id,label,color})=>(
+              <button key={id} onClick={()=>setQuizConfidence(c=>c===id?null:id)} style={{flex:1,padding:"8px 4px",borderRadius:9,fontSize:11,fontWeight:700,cursor:"pointer",border:`1.5px solid ${quizConfidence===id?color:C.border}`,background:quizConfidence===id?color+"22":"transparent",color:quizConfidence===id?color:C.muted,transition:"all 0.15s"}}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {answered&&quizConfidence&&(
+        <div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:8}}>
+          You rated: <span style={{color:quizConfidence==="sure"?"#22a05a":quizConfidence==="think"?"#ca8a04":C.hard,fontWeight:700}}>{quizConfidence==="sure"?"🟢 Sure":quizConfidence==="think"?"🟡 Think so":"🔴 Guessing"}</span>
+          {answered===questions[currentQ]?.answer&&quizConfidence==="guess"&&<span style={{color:"#ca8a04"}}> — lucky one, make sure you understand why.</span>}
+          {answered!==questions[currentQ]?.answer&&quizConfidence==="sure"&&<span style={{color:C.hard}}> — this is a key blind spot to review.</span>}
+        </div>
+      )}
+      {mode==="exam"&&!answered&&<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"4px",animation:"pulse 2s infinite"}}>Select an answer to continue</div>}
       {answered&&mode!=="speed_drill"&&(
         <div style={{marginBottom:8}}>
           {!explainThisText&&!explainThisLoading&&(

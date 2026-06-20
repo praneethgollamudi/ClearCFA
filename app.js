@@ -4243,6 +4243,7 @@ function CFAMock() {
   const [focusError, setFocusError] = useState("");
   const [selectedFocus, setSelectedFocus] = useState(null);
   const [focusCount, setFocusCount] = useState(10);
+  const [quizConfidence, setQuizConfidence] = useState(null);
   const [focusLastGenerated, setFocusLastGenerated] = useState(null); // timestamp of last generation
   const [lastSession, setLastSession] = useState(null);
   const [srQueue, setSrQueue] = useState([]);
@@ -5040,12 +5041,18 @@ function CFAMock() {
           module: m,
           weight
         }))).sort((a, b) => b.weight - a.weight);
-        allUntested.slice(0, 4).forEach(({
+        const seenUntestedTopics = new Set(candidates.map(c => c.topic));
+        let untestedAdded = 0;
+        for (const {
           topic,
           module: mod,
           weight
-        }) => {
-          if (!candidates.find(c => c.topic === topic && c.module === mod)) candidates.push({
+        } of allUntested) {
+          if (untestedAdded >= 4) break;
+          if (seenUntestedTopics.has(topic)) continue;
+          seenUntestedTopics.add(topic);
+          untestedAdded++;
+          candidates.push({
             topic,
             module: mod,
             difficulty: "Easy",
@@ -5055,7 +5062,7 @@ function CFAMock() {
             mode: "guided",
             _score: 400 + weight * 5
           });
-        });
+        }
 
         // 5. Recently weak sessions
         history.slice(0, 10).filter(h => h.pct < 75).forEach(h => {
@@ -5496,6 +5503,7 @@ Reply with just "saved" when done.`
     clearInterval(speedDrillRef.current);
     setExplainThisText(null);
     setExplainThisLoading(false);
+    setQuizConfidence(null);
     if (currentQ < questions.length - 1) {
       setCurrentQ(q => q + 1);
       setShowExp(false);
@@ -6259,7 +6267,7 @@ Reply with just "saved" when done.`
     label: "Predicted",
     value: predicted ? `${predicted.low}–${predicted.high}%` : "–",
     color: predicted ? predicted.score >= 70 ? C.easy : C.hard : C.muted,
-    sub: predicted ? `${predicted.confidence}% conf` : null,
+    sub: predicted ? `${predicted.confidence}% conf` : "do 3+ sessions",
     onClick: () => setScreen("readiness"),
     icon: "📈"
   }), /*#__PURE__*/React.createElement(StatCard, {
@@ -6278,7 +6286,8 @@ Reply with just "saved" when done.`
   })), (() => {
     const today = new Date().toISOString().slice(0, 10);
     const todayQs = history.filter(h => h.dateKey === today).reduce((s, h) => s + h.total, 0);
-    const dailyTarget = daysLeft > 0 ? daysLeft <= 30 ? 30 : daysLeft <= 60 ? 25 : 20 : 20;
+    const baseTarget = daysLeft > 0 ? daysLeft <= 30 ? 30 : daysLeft <= 60 ? 25 : 20 : 20;
+    const dailyTarget = history.length < 5 ? Math.max(10, Math.round(baseTarget * (0.4 + history.length * 0.12))) : baseTarget;
     const pct = Math.min(100, Math.round(todayQs / dailyTarget * 100));
     const done = todayQs >= dailyTarget;
     return /*#__PURE__*/React.createElement("div", {
@@ -7036,11 +7045,11 @@ Reply with just "saved" when done.`
       }
     }, {
       key: "pass_pct",
-      label: passProbability ? `${passProbability.probability}% Pass` : "Pass %",
+      label: passProbability ? `${passProbability.probability}% Pass` : "📊 Pass %",
       style: {
-        background: passProbability ? `${passProbability.color}18` : C.surface,
-        border: `1px solid ${passProbability ? passProbability.color + "44" : C.border}`,
-        color: passProbability ? passProbability.color : C.muted
+        background: passProbability ? `${passProbability.color}18` : C.accent + "12",
+        border: `1px solid ${passProbability ? passProbability.color + "44" : C.accent + "33"}`,
+        color: passProbability ? passProbability.color : C.accentLight
       },
       action: () => {
         trackUsage("pass_pct");
@@ -7226,7 +7235,7 @@ Reply with just "saved" when done.`
       fontSize: 12,
       color: C.muted
     }
-  }, "Scanned ", storageKeys.length, " keys — no session data found in storage. Your session may have been saved in a different browser session or the data has expired.") : /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "Scanned ", storageKeys.length, " key", storageKeys.length === 1 ? "" : "s", " — no session data found in storage. Your session may have been saved in a different browser session or the data has expired.") : /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.easy,
@@ -9623,12 +9632,80 @@ Reply with just "saved" when done.`
       style: {
         fontWeight: 700
       }
-    }, "Distractor targets: "), q.misconception_targeted)), mode === "exam" && !answered && /*#__PURE__*/React.createElement("div", {
+    }, "Distractor targets: "), q.misconception_targeted)), !answered && mode !== "speed_drill" && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        textAlign: "center",
+        marginBottom: 8,
+        letterSpacing: "0.03em"
+      }
+    }, "How confident are you?"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 7
+      }
+    }, [{
+      id: "sure",
+      label: "🟢 Sure",
+      color: "#22a05a"
+    }, {
+      id: "think",
+      label: "🟡 Think so",
+      color: "#ca8a04"
+    }, {
+      id: "guess",
+      label: "🔴 Guessing",
+      color: C.hard
+    }].map(({
+      id,
+      label,
+      color
+    }) => /*#__PURE__*/React.createElement("button", {
+      key: id,
+      onClick: () => setQuizConfidence(c => c === id ? null : id),
+      style: {
+        flex: 1,
+        padding: "8px 4px",
+        borderRadius: 9,
+        fontSize: 11,
+        fontWeight: 700,
+        cursor: "pointer",
+        border: `1.5px solid ${quizConfidence === id ? color : C.border}`,
+        background: quizConfidence === id ? color + "22" : "transparent",
+        color: quizConfidence === id ? color : C.muted,
+        transition: "all 0.15s"
+      }
+    }, label)))), answered && quizConfidence && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        textAlign: "center",
+        marginBottom: 8
+      }
+    }, "You rated: ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: quizConfidence === "sure" ? "#22a05a" : quizConfidence === "think" ? "#ca8a04" : C.hard,
+        fontWeight: 700
+      }
+    }, quizConfidence === "sure" ? "🟢 Sure" : quizConfidence === "think" ? "🟡 Think so" : "🔴 Guessing"), answered === questions[currentQ]?.answer && quizConfidence === "guess" && /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#ca8a04"
+      }
+    }, " — lucky one, make sure you understand why."), answered !== questions[currentQ]?.answer && quizConfidence === "sure" && /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.hard
+      }
+    }, " — this is a key blind spot to review.")), mode === "exam" && !answered && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
         textAlign: "center",
-        padding: "8px",
+        padding: "4px",
         animation: "pulse 2s infinite"
       }
     }, "Select an answer to continue"), answered && mode !== "speed_drill" && /*#__PURE__*/React.createElement("div", {
