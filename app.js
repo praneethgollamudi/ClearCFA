@@ -746,10 +746,10 @@ function getPredictedScore(moduleReadiness) {
   const totalWeight = withData.reduce((s, m) => s + m.weight, 0);
   const score = Math.round(withData.reduce((s, m) => s + m.accuracy * m.weight, 0) / totalWeight);
   // Confidence interval based on session variance
-  const variance = withData.reduce((s, m) => {
+  const variance = Math.round(withData.reduce((s, m) => {
     const sessions = [];
     return s + (m.sessions > 2 ? 5 : m.sessions > 1 ? 10 : 15);
-  }, 0) / withData.length;
+  }, 0) / withData.length);
   return {
     score,
     low: Math.max(0, score - variance),
@@ -6906,7 +6906,7 @@ Reply with just "saved" when done.`
     label: "Pass Prob",
     value: predicted ? `${predicted.low}–${predicted.high}%` : passProbability ? `${passProbability.probability}%` : "–",
     color: predicted ? predicted.score >= 70 ? C.easy : C.hard : passProbability ? passProbability.color : C.muted,
-    sub: predicted ? `${predicted.confidence}% conf` : passProbability ? passProbability.label : `${history.length >= 1 ? "more data needed" : "do 3+ sessions"}`,
+    sub: predicted ? `${predicted.confidence}% conf` : passProbability ? history.length < 10 && passProbability.label === "At Risk" ? "early estimate" : passProbability.label : `${history.length >= 1 ? "more data needed" : "do 3+ sessions"}`,
     onClick: () => setScreen("readiness"),
     icon: "📈"
   }), /*#__PURE__*/React.createElement(StatCard, {

@@ -505,7 +505,7 @@ function getPredictedScore(moduleReadiness){
   const totalWeight=withData.reduce((s,m)=>s+m.weight,0);
   const score=Math.round(withData.reduce((s,m)=>s+m.accuracy*m.weight,0)/totalWeight);
   // Confidence interval based on session variance
-  const variance=withData.reduce((s,m)=>{const sessions=[];return s+(m.sessions>2?5:m.sessions>1?10:15);},0)/withData.length;
+  const variance=Math.round(withData.reduce((s,m)=>{const sessions=[];return s+(m.sessions>2?5:m.sessions>1?10:15);},0)/withData.length);
   return{score,low:Math.max(0,score-variance),high:Math.min(99,score+variance),confidence:Math.min(100,Math.round((withData.length/10)*100)),modulesWithData:withData.length};
 }
 
@@ -3733,7 +3733,7 @@ Reply with just "saved" when done.`}]
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
         <StatCard label="Sessions" value={history.length||"–"} icon="📚"/>
         <StatCard label="Avg Score" value={overallPct?`${overallPct}%`:"–"} color={overallPct?(overallPct>=70?C.easy:C.hard):C.muted} icon="🎯"/>
-        <StatCard label="Pass Prob" value={predicted?`${predicted.low}–${predicted.high}%`:passProbability?`${passProbability.probability}%`:"–"} color={predicted?(predicted.score>=70?C.easy:C.hard):passProbability?(passProbability.color):C.muted} sub={predicted?`${predicted.confidence}% conf`:passProbability?passProbability.label:`${history.length>=1?"more data needed":"do 3+ sessions"}`} onClick={()=>setScreen("readiness")} icon="📈"/>
+        <StatCard label="Pass Prob" value={predicted?`${predicted.low}–${predicted.high}%`:passProbability?`${passProbability.probability}%`:"–"} color={predicted?(predicted.score>=70?C.easy:C.hard):passProbability?(passProbability.color):C.muted} sub={predicted?`${predicted.confidence}% conf`:passProbability?history.length<10&&passProbability.label==="At Risk"?"early estimate":passProbability.label:`${history.length>=1?"more data needed":"do 3+ sessions"}`} onClick={()=>setScreen("readiness")} icon="📈"/>
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"✓"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":"all caught up"} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
