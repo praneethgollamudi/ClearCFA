@@ -4503,6 +4503,28 @@ function generateLocalQuestions(topic, module, difficulty, count) {
   }
   return questions;
 }
+
+// Remove SR cards whose question was truncated by the old 600-char storage limit.
+// Truncated cards have question.length === 600 (exact splice boundary) or end without
+// sentence-ending punctuation while being suspiciously long (>= 400 chars).
+function purgeTruncatedSR(deck) {
+  if (!deck || typeof deck !== "object") return deck || {};
+  const cleaned = {
+    ...deck
+  };
+  let changed = false;
+  for (const [k, c] of Object.entries(cleaned)) {
+    const q = (c.question || "").trim();
+    const len = q.length;
+    const lastCh = q[len - 1] || "";
+    const midSentence = ![".", "?", ":", '"', "'", ")"].includes(lastCh);
+    if (len === 600 || len >= 590 && midSentence) {
+      delete cleaned[k];
+      changed = true;
+    }
+  }
+  return changed ? cleaned : deck;
+}
 function CFAMock() {
   const [screen, setScreen] = useState("home");
   const [topic, setTopic] = useState("");
@@ -4764,16 +4786,8 @@ function CFAMock() {
         }
       } catch {}
       if (bestSR) {
-        // One-time migration: remove cards with questions truncated by the old 600-char limit
-        const truncatedKeys = Object.entries(bestSR).filter(([, c]) => (c.question || "").length >= 595 && (c.question || "").length <= 600).map(([k]) => k);
-        if (truncatedKeys.length > 0) {
-          const cleaned = {
-            ...bestSR
-          };
-          truncatedKeys.forEach(k => delete cleaned[k]);
-          bestSR = cleaned;
-          storageSet(SR_KEY, cleaned);
-        }
+        bestSR = purgeTruncatedSR(bestSR);
+        storageSet(SR_KEY, bestSR);
         setSrDeck(bestSR);
         srDeckRef.current = bestSR;
       }
@@ -4812,8 +4826,10 @@ function CFAMock() {
             historyRef.current = bestHistory;
             storageSet(STORAGE_KEY, bestHistory);
             if (sbData.srDeck) {
-              setSrDeck(sbData.srDeck);
-              srDeckRef.current = sbData.srDeck;
+              const cleanedSb = purgeTruncatedSR(sbData.srDeck);
+              setSrDeck(cleanedSb);
+              srDeckRef.current = cleanedSb;
+              storageSet(SR_KEY, cleanedSb);
             }
           } else if (bestHistory.length > sbCount) {
             // Local is ahead — push to Supabase in background
@@ -9755,9 +9771,10 @@ Reply with just "saved" when done.`
         padding: "20px",
         marginBottom: 14,
         fontSize: 14,
-        lineHeight: 1.8
+        lineHeight: 1.8,
+        whiteSpace: "pre-wrap"
       }
-    }, card.question), !srAnswer ? /*#__PURE__*/React.createElement("div", {
+    }, card.question), !srAnswer ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -9796,7 +9813,35 @@ Reply with just "saved" when done.`
         background: C.dim,
         color: C.muted
       }
-    }, key), /*#__PURE__*/React.createElement("span", null, val)))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    }, key), /*#__PURE__*/React.createElement("span", null, val)))), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        const key = Object.keys(srDeck).find(k => srDeck[k].question === card.question) || null;
+        if (key) {
+          setSrDeck(prev => {
+            const n = {
+              ...prev
+            };
+            delete n[key];
+            storageSet(SR_KEY, n);
+            return n;
+          });
+        }
+        setSrAnswer(null);
+        if (srIdx < srQueue.length - 1) setSrIdx(i => i + 1);else setScreen("home");
+      },
+      style: {
+        width: "100%",
+        padding: "9px",
+        borderRadius: 9,
+        fontSize: 12,
+        fontWeight: 600,
+        background: "none",
+        border: `1px solid ${C.border}`,
+        color: C.muted,
+        cursor: "pointer",
+        marginBottom: 6
+      }
+    }, "Delete this card (broken question)")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
