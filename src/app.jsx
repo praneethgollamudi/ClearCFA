@@ -139,44 +139,62 @@ async function storageHealth(){
   try{localStorage.setItem("__hc__","1");localStorage.removeItem("__hc__");return true;}catch{return false;}
 }
 
-function getSyncId(){ try{ return localStorage.getItem("cfa_sync_id")||"default"; }catch{ return "default"; } }
+// Auth helpers — magic link via Supabase Auth
+function getStoredAuth(){ try{ return JSON.parse(localStorage.getItem("cfa_auth")||"null"); }catch{ return null; } }
+function saveAuth(auth){ try{ localStorage.setItem("cfa_auth", JSON.stringify(auth)); }catch{} }
+function clearAuth(){ try{ localStorage.removeItem("cfa_auth"); }catch{} }
 
-// Supabase sync — saves entire data blob as one row
-async function supabaseSync(cfg, history, srDeck, usageStats={}){
+async function sendMagicLink(cfg, email){
+  const redirectTo = window.location.origin + window.location.pathname.replace(/\/$/,"") + "/";
+  const res = await fetch(`${cfg.url}/auth/v1/otp`, {
+    method:"POST",
+    headers:{"apikey":cfg.key,"Content-Type":"application/json"},
+    body: JSON.stringify({email, createUser:true, options:{emailRedirectTo: redirectTo}})
+  });
+  return res.ok;
+}
+
+async function exchangeToken(cfg, accessToken){
+  const res = await fetch(`${cfg.url}/auth/v1/user`, {
+    headers:{"apikey":cfg.key,"Authorization":`Bearer ${accessToken}`}
+  });
+  if(!res.ok) return null;
+  const user = await res.json();
+  return user?.id ? {id: user.id, email: user.email, accessToken} : null;
+}
+
+// Supabase sync — saves entire data blob as one row, keyed to authenticated user
+async function supabaseSync(cfg, history, srDeck, usageStats={}, auth=null){
   if(!cfg||!cfg.url||!cfg.key) return false;
+  const userId = auth?.id || "anon";
+  const bearer = auth?.accessToken || cfg.key;
   try{
     const payload={
-      user_id: getSyncId(),
+      user_id: userId,
       data:JSON.stringify({version:3,history,srDeck,usageStats,savedAt:new Date().toISOString()}),
       updated_at:new Date().toISOString()
     };
-    // Upsert in one request — avoids GET+PATCH race and silent PATCH failures
     const res=await fetch(`${cfg.url}/rest/v1/sessions`,{
       method:"POST",
       headers:{
         "apikey":cfg.key,
-        "Authorization":`Bearer ${cfg.key}`,
+        "Authorization":`Bearer ${bearer}`,
         "Content-Type":"application/json",
         "Prefer":"resolution=merge-duplicates,return=minimal"
       },
       body:JSON.stringify(payload)
     });
-    if(!res.ok){
-      const errText=await res.text().catch(()=>"");
-      console.error("Supabase sync failed:",res.status,errText);
-      return false;
-    }
+    if(!res.ok){ const e=await res.text().catch(()=>""); console.error("Supabase sync failed:",res.status,e); return false; }
     return true;
-  }catch(e){
-    console.error("Supabase sync error:",e);
-    return false;
-  }
+  }catch(e){ console.error("Supabase sync error:",e); return false; }
 }
-async function supabaseLoad(cfg){
+async function supabaseLoad(cfg, auth=null){
   if(!cfg||!cfg.url||!cfg.key) return null;
+  const userId = auth?.id || "anon";
+  const bearer = auth?.accessToken || cfg.key;
   try{
-    const res=await fetch(`${cfg.url}/rest/v1/sessions?user_id=eq.${encodeURIComponent(getSyncId())}&order=updated_at.desc&limit=1`,{
-      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
+    const res=await fetch(`${cfg.url}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&order=updated_at.desc&limit=1`,{
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${bearer}`}
     });
     const rows=await res.json();
     if(rows&&rows.length>0&&rows[0].data) return JSON.parse(rows[0].data);
@@ -2502,9 +2520,12 @@ function CFAMock(){
   const [supabaseUrl,setSupabaseUrl]=useState(()=>getSupabaseConfig()?.url||"");
   const [supabaseKey,setSupabaseKey]=useState(()=>getSupabaseConfig()?.key||"");
   const [supabaseSyncing,setSupabaseSyncing]=useState(false);
-  const [syncId,setSyncId]=useState(()=>getSyncId());
-  const [syncIdInput,setSyncIdInput]=useState(()=>getSyncId());
-  const [syncImportCfg,setSyncImportCfg]=useState(null); // pending import from #sync= URL
+  const [authUser,setAuthUser]=useState(()=>getStoredAuth());
+  const [authEmail,setAuthEmail]=useState("");
+  const [authSent,setAuthSent]=useState(false);
+  const [authLoading,setAuthLoading]=useState(false);
+  const authUserRef=useRef(getStoredAuth());
+  const [syncImportCfg,setSyncImportCfg]=useState(null);
   const [needsFocusRefresh,setNeedsFocusRefresh]=useState(false);
   const [examDate,setExamDate]=useState(EXAM_DATE);
   const [examDateInput,setExamDateInput]=useState("2026-08-19");
@@ -2542,15 +2563,21 @@ function CFAMock(){
   const [explainThisText,setExplainThisText]=useState(null);
   const [explainThisLoading,setExplainThisLoading]=useState(false);
 
-  // Detect #sync= URL fragment on load — triggered when user taps a shared setup link
+  // Detect magic link token in URL hash on load (Supabase Auth redirect)
   useEffect(()=>{
     const hash=window.location.hash;
-    if(hash.startsWith("#sync=")){
-      try{
-        const parsed=JSON.parse(atob(hash.slice(6)));
-        if(parsed.u&&parsed.k) setSyncImportCfg({url:parsed.u,key:parsed.k});
-      }catch{}
-      history.replaceState(null,"",window.location.pathname+window.location.search);
+    if(hash.includes("access_token=")){
+      const params=new URLSearchParams(hash.startsWith("#")?hash.slice(1):hash);
+      const token=params.get("access_token");
+      if(token){
+        window.history.replaceState(null,"",window.location.pathname+window.location.search);
+        const cfg=getSupabaseConfig();
+        if(cfg){
+          exchangeToken(cfg,token).then(auth=>{
+            if(auth){ saveAuth(auth); setAuthUser(auth); authUserRef.current=auth; }
+          });
+        }
+      }
     }
   },[]);
 
@@ -2634,7 +2661,7 @@ function CFAMock(){
       const sbCfg=getSupabaseConfig();
       if(sbCfg){
         try{
-          const sbData=await supabaseLoad(sbCfg);
+          const sbData=await supabaseLoad(sbCfg,authUserRef.current);
           const sbCount=sbData&&Array.isArray(sbData.history)?sbData.history.length:0;
           if(sbData&&sbCount>bestHistory.length){
             // Supabase has more sessions — pull and cache locally
@@ -2645,7 +2672,7 @@ function CFAMock(){
             if(sbData.srDeck){setSrDeck(sbData.srDeck);srDeckRef.current=sbData.srDeck;}
           } else if(bestHistory.length>sbCount){
             // Local is ahead — push to Supabase in background
-            supabaseSync(sbCfg,bestHistory,bestSR||{},usageStatsRef.current).catch(()=>{});
+            supabaseSync(sbCfg,bestHistory,bestSR||{},usageStatsRef.current,authUserRef.current).catch(()=>{});
           }
           // Merge usageStats from Supabase (take max count per key — union of all sessions)
           if(sbData?.usageStats&&typeof sbData.usageStats==="object"){
@@ -2891,7 +2918,7 @@ function CFAMock(){
       if(ok&&apiKey) syncToDrive(newHistory.slice(0,100));
       const sbCfg=getSupabaseConfig();
       if(sbCfg){
-        const synced=await supabaseSync(sbCfg,newHistory.slice(0,300),updatedSrDeck,usageStatsRef.current);
+        const synced=await supabaseSync(sbCfg,newHistory.slice(0,300),updatedSrDeck,usageStatsRef.current,authUserRef.current);
         if(synced) setDriveStatus("synced");
         else setDriveStatus("error");
         setTimeout(()=>setDriveStatus(null),4000);
@@ -3482,6 +3509,46 @@ Reply with just "saved" when done.`}]
     {aiCoachMessages.length>0&&<button onClick={()=>setAiCoachMessages([])} style={{marginTop:10,width:"100%",padding:"8px",borderRadius:8,fontSize:11,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Clear chat</button>}
   </>);
 
+  // Keep authUserRef in sync
+  React.useEffect(()=>{ authUserRef.current=authUser; },[authUser]);
+
+  // ── Magic link login screen — shown when Supabase is configured but not authenticated ──
+  if(supabaseCfg&&!authUser) return wrap(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:"32px 24px",textAlign:"center"}}>
+      <div style={{fontSize:44,marginBottom:16}}>📚</div>
+      <div style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:6}}>ClearCFA</div>
+      <div style={{fontSize:13,color:C.muted,marginBottom:32,lineHeight:1.6}}>Sign in to sync your progress across all your devices.</div>
+      {!authSent?(
+        <div style={{width:"100%",maxWidth:340}}>
+          <input value={authEmail} onChange={e=>setAuthEmail(e.target.value.trim())}
+            onKeyDown={e=>{if(e.key==="Enter"&&authEmail.includes("@"))document.getElementById("magic-btn").click();}}
+            placeholder="your@email.com" type="email"
+            style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${authEmail.includes("@")?C.accent:C.border}`,color:C.text,outline:"none",marginBottom:10,boxSizing:"border-box"}}/>
+          <button id="magic-btn" disabled={authLoading||!authEmail.includes("@")} onClick={async()=>{
+            setAuthLoading(true);
+            const ok=await sendMagicLink(supabaseCfg,authEmail);
+            setAuthLoading(false);
+            if(ok) setAuthSent(true);
+          }} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:800,
+            background:authEmail.includes("@")?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"#1a1a2e",
+            color:authEmail.includes("@")?"#fff":C.muted,border:"none",cursor:authEmail.includes("@")?"pointer":"default",
+            boxShadow:authEmail.includes("@")?`0 4px 16px ${C.accent}44`:"none",transition:"all 0.2s"}}>
+            {authLoading?"Sending…":"Send magic link →"}
+          </button>
+          <div style={{fontSize:11,color:C.muted,marginTop:12}}>We'll email you a one-tap sign-in link. No password needed.</div>
+        </div>
+      ):(
+        <div style={{width:"100%",maxWidth:340}}>
+          <div style={{fontSize:40,marginBottom:12}}>📬</div>
+          <div style={{fontSize:15,fontWeight:700,color:C.text,marginBottom:8}}>Check your email</div>
+          <div style={{fontSize:13,color:C.muted,lineHeight:1.65,marginBottom:20}}>We sent a sign-in link to <strong style={{color:C.accentLight}}>{authEmail}</strong>. Tap it to open ClearCFA and you'll be signed in automatically.</div>
+          <button onClick={()=>{setAuthSent(false);}} style={{fontSize:12,color:C.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>Use a different email</button>
+        </div>
+      )}
+      {supabaseCfg&&<button onClick={()=>{clearAuth();setAuthUser(null);}} style={{position:"absolute",bottom:24,fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer"}}>⚙ Change Supabase settings</button>}
+    </div>
+  );
+
   // ── Sync import banner (shown on any screen when #sync= URL was detected) ──
   if(syncImportCfg) return wrap(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:"32px 20px",textAlign:"center"}}>
@@ -3536,7 +3603,7 @@ Reply with just "saved" when done.`}]
             if(!supabaseCfg)return;
             setSupabaseSyncing(true);
             setDriveStatus("syncing");
-            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current,usageStatsRef.current);
+            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current,usageStatsRef.current,authUserRef.current);
             setDriveStatus(ok?"synced":"error");
             setTimeout(()=>setDriveStatus(null),4000);
             setSupabaseSyncing(false);
@@ -5173,22 +5240,6 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
       <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}}>🗄 Supabase (Reliable Storage)</div>
       <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.6}}>Connect a free Supabase database for unlimited, permanent session storage. Your data syncs automatically after every session.</div>
-      <div style={{marginBottom:10}}>
-        <label style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:5}}>Your Sync ID <span style={{color:C.muted,fontWeight:400,textTransform:"none"}}>— any word or your email</span></label>
-        <div style={{display:"flex",gap:7}}>
-          <input value={syncIdInput} onChange={e=>setSyncIdInput(e.target.value.trim())}
-            placeholder="e.g. praneeth@gmail.com or praneeth2024"
-            style={{flex:1,padding:"10px 12px",borderRadius:9,fontSize:12,background:C.surface,border:`1.5px solid ${syncIdInput&&syncIdInput!=="default"?"#44aa8844":C.border}`,color:C.text,outline:"none"}}/>
-          <button onClick={()=>{
-            const id=syncIdInput||"default";
-            localStorage.setItem("cfa_sync_id",id);
-            setSyncId(id);
-          }} style={{padding:"10px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:syncIdInput===syncId?"#1a2a1a":"#22c55e22",border:`1px solid ${syncIdInput===syncId?"#2a3a2a":"#22c55e44"}`,color:syncIdInput===syncId?C.muted:"#22c55e",cursor:"pointer",flexShrink:0}}>
-            {syncIdInput===syncId?"Saved ✓":"Save"}
-          </button>
-        </div>
-        <div style={{fontSize:10,color:C.muted,marginTop:5}}>Use the same ID on every device — that's all you need to sync.</div>
-      </div>
       <div style={{marginBottom:8}}>
         <label style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:5}}>Project URL</label>
         <input value={supabaseUrl} onChange={e=>setSupabaseUrl(e.target.value)} placeholder="https://xxxx.supabase.co"
@@ -5225,12 +5276,15 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       {supabaseCfg&&(
         <div style={{marginBottom:12}}>
           <div style={{fontSize:11,color:"#22c55e",background:"#0a1f0a",borderRadius:8,padding:"8px 12px",marginBottom:8}}>
-            ✅ Supabase connected · ID: <strong>{syncId}</strong> · {history.length} session{history.length!==1?"s":""} · {Object.keys(srDeckRef.current).length} SR cards
+            ✅ Signed in as <strong>{authUser?.email||"unknown"}</strong> · {history.length} session{history.length!==1?"s":""} · {Object.keys(srDeckRef.current).length} SR cards
           </div>
+          <button onClick={()=>{clearAuth();setAuthUser(null);authUserRef.current=null;}} style={{width:"100%",padding:"8px",borderRadius:8,fontSize:12,fontWeight:600,background:"#200010",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer",marginBottom:8}}>
+            Sign out
+          </button>
           <button onClick={async()=>{
             if(!supabaseCfg)return;
             setSupabaseSyncing(true);
-            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current,usageStatsRef.current);
+            const ok=await supabaseSync(supabaseCfg,history,srDeckRef.current,usageStatsRef.current,authUserRef.current);
             setDriveStatus(ok?"synced":"error");
             setTimeout(()=>setDriveStatus(null),4000);
             setSupabaseSyncing(false);
