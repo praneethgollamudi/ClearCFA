@@ -218,7 +218,7 @@ function clearAuth() {
   } catch {}
 }
 async function sendMagicLink(cfg, email) {
-  const redirectTo = window.location.origin + window.location.pathname.replace(/\/$/, "") + "/";
+  const redirectTo = "https://praneethgollamudi.github.io/ClearCFA/";
   const res = await fetch(`${cfg.url}/auth/v1/otp`, {
     method: "POST",
     headers: {

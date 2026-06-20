@@ -145,7 +145,7 @@ function saveAuth(auth){ try{ localStorage.setItem("cfa_auth", JSON.stringify(au
 function clearAuth(){ try{ localStorage.removeItem("cfa_auth"); }catch{} }
 
 async function sendMagicLink(cfg, email){
-  const redirectTo = window.location.origin + window.location.pathname.replace(/\/$/,"") + "/";
+  const redirectTo = "https://praneethgollamudi.github.io/ClearCFA/";
   const res = await fetch(`${cfg.url}/auth/v1/otp`, {
     method:"POST",
     headers:{"apikey":cfg.key,"Content-Type":"application/json"},
