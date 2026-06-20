@@ -786,6 +786,47 @@ function qcAdd(cache,t,st,diff,questions){
 }
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
+function SyncCodeBox({ cfg }) {
+  const [copied, setCopied] = React.useState(false);
+  const code = btoa(JSON.stringify({u: cfg.url, k: cfg.key}));
+  return (
+    <div style={{background:"#0a1020",border:`1px solid #22d3ee33`,borderRadius:9,padding:"10px 12px"}}>
+      <div style={{fontSize:11,fontWeight:700,color:"#22d3ee",marginBottom:4}}>📲 Set up another device</div>
+      <div style={{fontSize:11,color:C.muted,marginBottom:8,lineHeight:1.5}}>Copy this code and paste it on your other device (iPad, laptop, etc.) to instantly connect it to the same Supabase account.</div>
+      <div style={{display:"flex",gap:7}}>
+        <div style={{flex:1,background:C.surface,borderRadius:7,padding:"7px 10px",fontSize:10,color:C.muted,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{code.slice(0,32)}…</div>
+        <button onClick={()=>{navigator.clipboard?.writeText(code).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2500);})}} style={{padding:"7px 14px",borderRadius:7,fontSize:11,fontWeight:700,background:"#22d3ee22",border:`1px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer",flexShrink:0}}>
+          {copied?"Copied ✓":"Copy"}
+        </button>
+      </div>
+    </div>
+  );
+}
+function ImportSyncCode({ onImport }) {
+  const [code, setCode] = React.useState("");
+  const [err, setErr] = React.useState("");
+  return (
+    <div style={{background:"#0a1020",border:`1px solid #22d3ee22`,borderRadius:9,padding:"10px 12px",marginTop:8}}>
+      <div style={{fontSize:11,fontWeight:700,color:"#22d3ee",marginBottom:4}}>📲 Already set up on another device?</div>
+      <div style={{fontSize:11,color:C.muted,marginBottom:8,lineHeight:1.5}}>Paste the sync code from your other device to fill in your Supabase details automatically.</div>
+      <div style={{display:"flex",gap:7}}>
+        <input value={code} onChange={e=>{setCode(e.target.value);setErr("");}} placeholder="Paste sync code…"
+          style={{flex:1,padding:"7px 10px",borderRadius:7,fontSize:11,background:C.surface,border:`1px solid ${err?C.hard:C.border}`,color:C.text,outline:"none"}}/>
+        <button onClick={()=>{
+          try{
+            const parsed=JSON.parse(atob(code.trim()));
+            if(!parsed.u||!parsed.k) throw new Error("invalid");
+            onImport({url:parsed.u,key:parsed.k});
+            setCode("");
+          }catch{setErr("Invalid code — copy it again from your other device.");}
+        }} style={{padding:"7px 14px",borderRadius:7,fontSize:11,fontWeight:700,background:"#22d3ee22",border:`1px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer",flexShrink:0}}>
+          Import
+        </button>
+      </div>
+      {err&&<div style={{fontSize:11,color:C.hard,marginTop:5}}>{err}</div>}
+    </div>
+  );
+}
 function XPBar({ level, progress, label, xp, nextXP }) {
   const [expanded, setExpanded] = React.useState(false);
   const thresholds = [0,500,1200,2500,5000,9000,15000,25000];
@@ -5141,11 +5182,14 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
             setTimeout(()=>setDriveStatus(null),4000);
             setSupabaseSyncing(false);
           }} style={{width:"100%",padding:"10px",borderRadius:9,fontSize:12,fontWeight:700,
-            background:"#0a1f2a",border:`1.5px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer"}}>
+            background:"#0a1f2a",border:`1.5px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer",marginBottom:8}}>
             {supabaseSyncing?"Syncing…":"⬆ Sync All Data to Supabase Now"}
           </button>
+          {/* Device transfer — copy sync code to set up another device instantly */}
+          <SyncCodeBox cfg={supabaseCfg}/>
         </div>
       )}
+      {!supabaseCfg&&<ImportSyncCode onImport={cfg=>{setSupabaseUrl(cfg.url);setSupabaseKey(cfg.key);}}/>}
     </div>
 
     <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${C.border}`}}>

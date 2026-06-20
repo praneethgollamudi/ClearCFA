@@ -1127,6 +1127,155 @@ function qcAdd(cache, t, st, diff, questions) {
 }
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
+function SyncCodeBox({
+  cfg
+}) {
+  const [copied, setCopied] = React.useState(false);
+  const code = btoa(JSON.stringify({
+    u: cfg.url,
+    k: cfg.key
+  }));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#0a1020",
+      border: `1px solid #22d3ee33`,
+      borderRadius: 9,
+      padding: "10px 12px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#22d3ee",
+      marginBottom: 4
+    }
+  }, "📲 Set up another device"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginBottom: 8,
+      lineHeight: 1.5
+    }
+  }, "Copy this code and paste it on your other device (iPad, laptop, etc.) to instantly connect it to the same Supabase account."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 7
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      background: C.surface,
+      borderRadius: 7,
+      padding: "7px 10px",
+      fontSize: 10,
+      color: C.muted,
+      fontFamily: "monospace",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap"
+    }
+  }, code.slice(0, 32), "…"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      navigator.clipboard?.writeText(code).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      });
+    },
+    style: {
+      padding: "7px 14px",
+      borderRadius: 7,
+      fontSize: 11,
+      fontWeight: 700,
+      background: "#22d3ee22",
+      border: `1px solid #22d3ee44`,
+      color: "#22d3ee",
+      cursor: "pointer",
+      flexShrink: 0
+    }
+  }, copied ? "Copied ✓" : "Copy")));
+}
+function ImportSyncCode({
+  onImport
+}) {
+  const [code, setCode] = React.useState("");
+  const [err, setErr] = React.useState("");
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#0a1020",
+      border: `1px solid #22d3ee22`,
+      borderRadius: 9,
+      padding: "10px 12px",
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#22d3ee",
+      marginBottom: 4
+    }
+  }, "📲 Already set up on another device?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginBottom: 8,
+      lineHeight: 1.5
+    }
+  }, "Paste the sync code from your other device to fill in your Supabase details automatically."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 7
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: code,
+    onChange: e => {
+      setCode(e.target.value);
+      setErr("");
+    },
+    placeholder: "Paste sync code…",
+    style: {
+      flex: 1,
+      padding: "7px 10px",
+      borderRadius: 7,
+      fontSize: 11,
+      background: C.surface,
+      border: `1px solid ${err ? C.hard : C.border}`,
+      color: C.text,
+      outline: "none"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      try {
+        const parsed = JSON.parse(atob(code.trim()));
+        if (!parsed.u || !parsed.k) throw new Error("invalid");
+        onImport({
+          url: parsed.u,
+          key: parsed.k
+        });
+        setCode("");
+      } catch {
+        setErr("Invalid code — copy it again from your other device.");
+      }
+    },
+    style: {
+      padding: "7px 14px",
+      borderRadius: 7,
+      fontSize: 11,
+      fontWeight: 700,
+      background: "#22d3ee22",
+      border: `1px solid #22d3ee44`,
+      color: "#22d3ee",
+      cursor: "pointer",
+      flexShrink: 0
+    }
+  }, "Import")), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.hard,
+      marginTop: 5
+    }
+  }, err));
+}
 function XPBar({
   level,
   progress,
@@ -12146,9 +12295,17 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       background: "#0a1f2a",
       border: `1.5px solid #22d3ee44`,
       color: "#22d3ee",
-      cursor: "pointer"
+      cursor: "pointer",
+      marginBottom: 8
     }
-  }, supabaseSyncing ? "Syncing…" : "⬆ Sync All Data to Supabase Now"))), /*#__PURE__*/React.createElement("div", {
+  }, supabaseSyncing ? "Syncing…" : "⬆ Sync All Data to Supabase Now"), /*#__PURE__*/React.createElement(SyncCodeBox, {
+    cfg: supabaseCfg
+  })), !supabaseCfg && /*#__PURE__*/React.createElement(ImportSyncCode, {
+    onImport: cfg => {
+      setSupabaseUrl(cfg.url);
+      setSupabaseKey(cfg.key);
+    }
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 16,
       paddingTop: 16,
