@@ -6657,10 +6657,45 @@ Reply with just "saved" when done.`
     }
   }, "Export JSON · import on another device"))), /*#__PURE__*/React.createElement("div", {
     style: {
+      borderTop: `1px solid ${C.border}`,
+      paddingTop: 12,
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginBottom: 8,
+      textAlign: "center"
+    }
+  }, "Signed in as ", /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: C.text
+    }
+  }, authUser?.email)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      clearAuth();
+      setAuthUser(null);
+      authUserRef.current = null;
+      setSettingsOpen(false);
+    },
+    style: {
+      width: "100%",
+      padding: "10px",
+      borderRadius: 10,
+      fontSize: 12,
+      fontWeight: 600,
+      background: "#200010",
+      border: `1px solid ${C.hard}44`,
+      color: C.hard,
+      cursor: "pointer"
+    }
+  }, "Sign out")), /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 11,
       color: C.muted,
       textAlign: "center",
-      marginTop: 6
+      marginTop: 10
     }
   }, history.length, " sessions saved locally", sessionSaved === false && /*#__PURE__*/React.createElement("span", {
     style: {
@@ -12452,7 +12487,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       padding: "8px 12px",
       marginBottom: 10
     }
-  }, "✅ Signed in as ", /*#__PURE__*/React.createElement("strong", null, authUser?.email || "unknown"), " · ", history.length, " session", history.length !== 1 ? "s" : "", " · ", Object.keys(srDeckRef.current).length, " SR cards"), /*#__PURE__*/React.createElement("button", {
+  }, "✅ ", history.length, " session", history.length !== 1 ? "s" : "", " · ", Object.keys(srDeckRef.current).length, " SR cards · syncing as ", authUser?.email), /*#__PURE__*/React.createElement("button", {
     onClick: async () => {
       setSupabaseSyncing(true);
       const ok = await supabaseSync(SB_CFG, history, srDeckRef.current, usageStatsRef.current, authUserRef.current);
@@ -12469,27 +12504,9 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       background: "#0a1f2a",
       border: `1.5px solid #22d3ee44`,
       color: "#22d3ee",
-      cursor: "pointer",
-      marginBottom: 8
-    }
-  }, supabaseSyncing ? "Syncing…" : "⬆ Sync All Data Now"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      clearAuth();
-      setAuthUser(null);
-      authUserRef.current = null;
-    },
-    style: {
-      width: "100%",
-      padding: "8px",
-      borderRadius: 8,
-      fontSize: 12,
-      fontWeight: 600,
-      background: "#200010",
-      border: `1px solid ${C.hard}44`,
-      color: C.hard,
       cursor: "pointer"
     }
-  }, "Sign out")), /*#__PURE__*/React.createElement("div", {
+  }, supabaseSyncing ? "Syncing…" : "⬆ Sync All Data Now")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 16,
       paddingTop: 16,

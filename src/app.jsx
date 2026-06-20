@@ -3646,8 +3646,18 @@ Reply with just "saved" when done.`}]
               <div style={{fontSize:11,color:C.muted,marginTop:1}}>Export JSON · import on another device</div>
             </div>
           </button>
+          {/* Account */}
+          <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12,marginTop:4}}>
+            <div style={{fontSize:11,color:C.muted,marginBottom:8,textAlign:"center"}}>
+              Signed in as <strong style={{color:C.text}}>{authUser?.email}</strong>
+            </div>
+            <button onClick={()=>{clearAuth();setAuthUser(null);authUserRef.current=null;setSettingsOpen(false);}}
+              style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:"#200010",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
+              Sign out
+            </button>
+          </div>
           {/* Data status */}
-          <div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:6}}>
+          <div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:10}}>
             {history.length} sessions saved locally
             {sessionSaved===false&&<span style={{color:C.hard}}> · ⚠ last save failed</span>}
           </div>
@@ -5259,7 +5269,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
       <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}}>☁ Cloud Sync</div>
       <div style={{fontSize:11,color:"#22c55e",background:"#0a1f0a",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
-        ✅ Signed in as <strong>{authUser?.email||"unknown"}</strong> · {history.length} session{history.length!==1?"s":""} · {Object.keys(srDeckRef.current).length} SR cards
+        ✅ {history.length} session{history.length!==1?"s":""} · {Object.keys(srDeckRef.current).length} SR cards · syncing as {authUser?.email}
       </div>
       <button onClick={async()=>{
         setSupabaseSyncing(true);
@@ -5268,11 +5278,8 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         setTimeout(()=>setDriveStatus(null),4000);
         setSupabaseSyncing(false);
       }} style={{width:"100%",padding:"10px",borderRadius:9,fontSize:12,fontWeight:700,
-        background:"#0a1f2a",border:`1.5px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer",marginBottom:8}}>
+        background:"#0a1f2a",border:`1.5px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer"}}>
         {supabaseSyncing?"Syncing…":"⬆ Sync All Data Now"}
-      </button>
-      <button onClick={()=>{clearAuth();setAuthUser(null);authUserRef.current=null;}} style={{width:"100%",padding:"8px",borderRadius:8,fontSize:12,fontWeight:600,background:"#200010",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
-        Sign out
       </button>
     </div>
 
