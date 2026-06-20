@@ -7478,9 +7478,9 @@ Reply with just "saved" when done.`
     icon: "📈"
   }), /*#__PURE__*/React.createElement(StatCard, {
     label: "SR Due",
-    value: dueCards.length > 0 ? dueCards.length : "✓",
+    value: dueCards.length > 0 ? dueCards.length : "0",
     color: dueCards.length > 0 ? C.accent : C.easy,
-    sub: dueCards.length > 0 ? "review today" : "all caught up",
+    sub: dueCards.length > 0 ? "review today" : `${Object.keys(srDeck).length > 0 ? `${Object.keys(srDeck).length} total · none due` : "no cards yet"}`,
     icon: "📋",
     onClick: dueCards.length > 0 ? () => {
       trackUsage("sr_review");
