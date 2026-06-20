@@ -9922,7 +9922,46 @@ Reply with just "saved" when done.`
   })))))));
   // ══ QUIZ ══════════════════════════════════════════════════════════════════
   if (screen === "quiz") {
-    if (!questions[currentQ]) return null;
+    if (!questions[currentQ]) return wrap(/*#__PURE__*/React.createElement("div", {
+      style: {
+        minHeight: "60vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 16,
+        textAlign: "center",
+        padding: "40px 20px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 32
+      }
+    }, "⚠️"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 16,
+        fontWeight: 700,
+        color: C.text
+      }
+    }, "Questions didn't load"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.muted,
+        maxWidth: 280
+      }
+    }, "This can happen if the app is offline or the topic has no local questions yet. Try again from the home screen."), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setScreen("home"),
+      style: {
+        padding: "12px 28px",
+        borderRadius: 10,
+        fontSize: 14,
+        fontWeight: 700,
+        background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
+        color: "#fff",
+        border: "none",
+        cursor: "pointer"
+      }
+    }, "← Back to Home")));
     const q = questions[currentQ];
     const answered = answers[q.id];
     const isLast = currentQ === questions.length - 1;
