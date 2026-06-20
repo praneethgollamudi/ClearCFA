@@ -222,6 +222,45 @@ async function deriveUserId(email, password) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
+async function supabaseCheckAccount(cfg, userId) {
+  try {
+    const res = await fetch(`${cfg.url}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&limit=1`, {
+      headers: {
+        "apikey": cfg.key,
+        "Authorization": `Bearer ${cfg.key}`
+      }
+    });
+    const rows = await res.json();
+    return Array.isArray(rows) && rows.length > 0;
+  } catch {
+    return false;
+  }
+}
+async function supabaseCreateAccount(cfg, userId, email) {
+  try {
+    const res = await fetch(`${cfg.url}/rest/v1/sessions`, {
+      method: "POST",
+      headers: {
+        "apikey": cfg.key,
+        "Authorization": `Bearer ${cfg.key}`,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates,return=minimal"
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        data: JSON.stringify({
+          type: "account",
+          email,
+          created_at: new Date().toISOString()
+        }),
+        updated_at: new Date().toISOString()
+      })
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 // Supabase sync — saves entire data blob as one row, keyed to authenticated user
 async function supabaseSync(cfg, history, srDeck, usageStats = {}, auth = null) {
@@ -4479,6 +4518,8 @@ function CFAMock() {
   const [authUser, setAuthUser] = useState(() => getStoredAuth());
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [authConfirm, setAuthConfirm] = useState("");
+  const [authMode, setAuthMode] = useState("signin"); // "signin" | "signup"
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const authUserRef = useRef(getStoredAuth());
@@ -6142,7 +6183,40 @@ Reply with just "saved" when done.`
 
   // ── Login screen ──
   if (!authUser) {
-    const canSubmit = authEmail.includes("@") && authPassword.length >= 6;
+    const isSignup = authMode === "signup";
+    const canSubmit = authEmail.includes("@") && authPassword.length >= 6 && (!isSignup || authPassword === authConfirm);
+    const handleAuth = async () => {
+      setAuthError("");
+      setAuthLoading(true);
+      try {
+        const id = await deriveUserId(authEmail, authPassword);
+        if (isSignup) {
+          const created = await supabaseCreateAccount(SB_CFG, id, authEmail.toLowerCase().trim());
+          if (!created) {
+            setAuthError("Could not create account — check your connection.");
+            setAuthLoading(false);
+            return;
+          }
+        } else {
+          const exists = await supabaseCheckAccount(SB_CFG, id);
+          if (!exists) {
+            setAuthError("No account found. Check your email and password, or create a new account.");
+            setAuthLoading(false);
+            return;
+          }
+        }
+        const auth = {
+          id,
+          email: authEmail.toLowerCase().trim()
+        };
+        saveAuth(auth);
+        setAuthUser(auth);
+        authUserRef.current = auth;
+      } catch {
+        setAuthError("Something went wrong. Please try again.");
+      }
+      setAuthLoading(false);
+    };
     return wrap(/*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -6172,7 +6246,7 @@ Reply with just "saved" when done.`
         marginBottom: 28,
         lineHeight: 1.6
       }
-    }, "Sign in to sync your progress across all your devices."), /*#__PURE__*/React.createElement("div", {
+    }, isSignup ? "Create an account to sync your progress across devices." : "Sign in to continue your CFA prep."), /*#__PURE__*/React.createElement("div", {
       style: {
         width: "100%",
         maxWidth: 340
@@ -6199,11 +6273,11 @@ Reply with just "saved" when done.`
       value: authPassword,
       onChange: e => setAuthPassword(e.target.value),
       onKeyDown: e => {
-        if (e.key === "Enter" && canSubmit) document.getElementById("signin-btn").click();
+        if (e.key === "Enter" && !isSignup && canSubmit) handleAuth();
       },
       placeholder: "Password (min 6 characters)",
       type: "password",
-      autoComplete: "current-password",
+      autoComplete: isSignup ? "new-password" : "current-password",
       style: {
         width: "100%",
         padding: "13px 16px",
@@ -6216,26 +6290,30 @@ Reply with just "saved" when done.`
         marginBottom: 10,
         boxSizing: "border-box"
       }
-    }), /*#__PURE__*/React.createElement("button", {
-      id: "signin-btn",
-      disabled: authLoading || !canSubmit,
-      onClick: async () => {
-        setAuthError("");
-        setAuthLoading(true);
-        try {
-          const id = await deriveUserId(authEmail, authPassword);
-          const auth = {
-            id,
-            email: authEmail.toLowerCase().trim()
-          };
-          saveAuth(auth);
-          setAuthUser(auth);
-          authUserRef.current = auth;
-        } catch (e) {
-          setAuthError("Something went wrong. Please try again.");
-        }
-        setAuthLoading(false);
+    }), isSignup && /*#__PURE__*/React.createElement("input", {
+      value: authConfirm,
+      onChange: e => setAuthConfirm(e.target.value),
+      onKeyDown: e => {
+        if (e.key === "Enter" && canSubmit) handleAuth();
       },
+      placeholder: "Confirm password",
+      type: "password",
+      autoComplete: "new-password",
+      style: {
+        width: "100%",
+        padding: "13px 16px",
+        borderRadius: 11,
+        fontSize: 14,
+        background: C.surface,
+        border: `1.5px solid ${authConfirm && authConfirm === authPassword ? "#22c55e" : authConfirm ? C.hard : C.border}`,
+        color: C.text,
+        outline: "none",
+        marginBottom: 10,
+        boxSizing: "border-box"
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      disabled: authLoading || !canSubmit,
+      onClick: handleAuth,
       style: {
         width: "100%",
         padding: "13px",
@@ -6249,7 +6327,7 @@ Reply with just "saved" when done.`
         boxShadow: canSubmit ? `0 4px 16px ${C.accent}44` : "none",
         transition: "all 0.2s"
       }
-    }, authLoading ? "Signing in…" : "Sign in →"), authError && /*#__PURE__*/React.createElement("div", {
+    }, authLoading ? isSignup ? "Creating…" : "Signing in…" : isSignup ? "Create account →" : "Sign in →"), authError && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.hard,
@@ -6259,14 +6337,23 @@ Reply with just "saved" when done.`
         borderRadius: 8,
         border: `1px solid ${C.hard}44`
       }
-    }, authError), /*#__PURE__*/React.createElement("div", {
+    }, authError), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setAuthMode(isSignup ? "signin" : "signup");
+        setAuthError("");
+        setAuthPassword("");
+        setAuthConfirm("");
+      },
       style: {
-        fontSize: 11,
-        color: C.muted,
-        marginTop: 14,
-        lineHeight: 1.6
+        fontSize: 12,
+        color: C.accent,
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        marginTop: 16,
+        textDecoration: "underline"
       }
-    }, "Use the same email and password on any device to access your data."))));
+    }, isSignup ? "Already have an account? Sign in" : "New here? Create an account"))));
   }
 
   // ══ HOME ══════════════════════════════════════════════════════════════════

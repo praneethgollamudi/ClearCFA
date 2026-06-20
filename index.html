@@ -9,6 +9,8 @@
     *{box-sizing:border-box;margin:0;padding:0;}
     body{background:#0a0a14;min-height:100vh;font-family:system-ui,-apple-system,sans-serif;}
     #root{max-width:430px;margin:0 auto;}
+    @media(min-width:600px){#root{max-width:580px;}}
+    @media(min-width:820px){#root{max-width:720px;}}
     @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
     @keyframes glow{0%,100%{box-shadow:0 0 8px #7c3aed33}50%{box-shadow:0 0 20px #7c3aed66}}
@@ -21,7 +23,7 @@
   <div id="toast-root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="app.js?v=1783000000"></script>
+  <script src="app.js?v=1783100000"></script>
   
 </body>
 </html>

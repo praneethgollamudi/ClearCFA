@@ -150,6 +150,27 @@ async function deriveUserId(email, password){
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
+async function supabaseCheckAccount(cfg, userId){
+  try{
+    const res=await fetch(`${cfg.url}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&limit=1`,{
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
+    });
+    const rows=await res.json();
+    return Array.isArray(rows)&&rows.length>0;
+  }catch{return false;}
+}
+
+async function supabaseCreateAccount(cfg, userId, email){
+  try{
+    const res=await fetch(`${cfg.url}/rest/v1/sessions`,{
+      method:"POST",
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates,return=minimal"},
+      body:JSON.stringify({user_id:userId,data:JSON.stringify({type:"account",email,created_at:new Date().toISOString()}),updated_at:new Date().toISOString()})
+    });
+    return res.ok;
+  }catch{return false;}
+}
+
 // Supabase sync — saves entire data blob as one row, keyed to authenticated user
 async function supabaseSync(cfg, history, srDeck, usageStats={}, auth=null){
   if(!cfg||!cfg.url||!cfg.key) return false;
@@ -2507,6 +2528,8 @@ function CFAMock(){
   const [authUser,setAuthUser]=useState(()=>getStoredAuth());
   const [authEmail,setAuthEmail]=useState("");
   const [authPassword,setAuthPassword]=useState("");
+  const [authConfirm,setAuthConfirm]=useState("");
+  const [authMode,setAuthMode]=useState("signin"); // "signin" | "signup"
   const [authLoading,setAuthLoading]=useState(false);
   const [authError,setAuthError]=useState("");
   const authUserRef=useRef(getStoredAuth());
@@ -3476,41 +3499,58 @@ Reply with just "saved" when done.`}]
 
   // ── Login screen ──
   if(!authUser){
-    const canSubmit=authEmail.includes("@")&&authPassword.length>=6;
+    const isSignup=authMode==="signup";
+    const canSubmit=authEmail.includes("@")&&authPassword.length>=6&&(!isSignup||authPassword===authConfirm);
+    const handleAuth=async()=>{
+      setAuthError("");
+      setAuthLoading(true);
+      try{
+        const id=await deriveUserId(authEmail,authPassword);
+        if(isSignup){
+          const created=await supabaseCreateAccount(SB_CFG,id,authEmail.toLowerCase().trim());
+          if(!created){setAuthError("Could not create account — check your connection.");setAuthLoading(false);return;}
+        } else {
+          const exists=await supabaseCheckAccount(SB_CFG,id);
+          if(!exists){setAuthError("No account found. Check your email and password, or create a new account.");setAuthLoading(false);return;}
+        }
+        const auth={id, email:authEmail.toLowerCase().trim()};
+        saveAuth(auth);
+        setAuthUser(auth);
+        authUserRef.current=auth;
+      }catch{
+        setAuthError("Something went wrong. Please try again.");
+      }
+      setAuthLoading(false);
+    };
     return wrap(
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:"32px 24px",textAlign:"center"}}>
         <div style={{fontSize:44,marginBottom:16}}>📚</div>
         <div style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:6}}>ClearCFA</div>
-        <div style={{fontSize:13,color:C.muted,marginBottom:28,lineHeight:1.6}}>Sign in to sync your progress across all your devices.</div>
+        <div style={{fontSize:13,color:C.muted,marginBottom:28,lineHeight:1.6}}>{isSignup?"Create an account to sync your progress across devices.":"Sign in to continue your CFA prep."}</div>
         <div style={{width:"100%",maxWidth:340}}>
           <input value={authEmail} onChange={e=>setAuthEmail(e.target.value.trim())}
             placeholder="your@email.com" type="email" autoComplete="email"
             style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${authEmail.includes("@")?C.accent:C.border}`,color:C.text,outline:"none",marginBottom:10,boxSizing:"border-box"}}/>
           <input value={authPassword} onChange={e=>setAuthPassword(e.target.value)}
-            onKeyDown={e=>{if(e.key==="Enter"&&canSubmit)document.getElementById("signin-btn").click();}}
-            placeholder="Password (min 6 characters)" type="password" autoComplete="current-password"
+            onKeyDown={e=>{if(e.key==="Enter"&&!isSignup&&canSubmit)handleAuth();}}
+            placeholder="Password (min 6 characters)" type="password" autoComplete={isSignup?"new-password":"current-password"}
             style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${authPassword.length>=6?C.accent:C.border}`,color:C.text,outline:"none",marginBottom:10,boxSizing:"border-box"}}/>
-          <button id="signin-btn" disabled={authLoading||!canSubmit} onClick={async()=>{
-            setAuthError("");
-            setAuthLoading(true);
-            try{
-              const id=await deriveUserId(authEmail,authPassword);
-              const auth={id, email:authEmail.toLowerCase().trim()};
-              saveAuth(auth);
-              setAuthUser(auth);
-              authUserRef.current=auth;
-            }catch(e){
-              setAuthError("Something went wrong. Please try again.");
-            }
-            setAuthLoading(false);
-          }} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:800,
-            background:canSubmit?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"#1a1a2e",
-            color:canSubmit?"#fff":C.muted,border:"none",cursor:canSubmit?"pointer":"default",
-            boxShadow:canSubmit?`0 4px 16px ${C.accent}44`:"none",transition:"all 0.2s"}}>
-            {authLoading?"Signing in…":"Sign in →"}
+          {isSignup&&<input value={authConfirm} onChange={e=>setAuthConfirm(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter"&&canSubmit)handleAuth();}}
+            placeholder="Confirm password" type="password" autoComplete="new-password"
+            style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${authConfirm&&authConfirm===authPassword?"#22c55e":authConfirm?C.hard:C.border}`,color:C.text,outline:"none",marginBottom:10,boxSizing:"border-box"}}/>}
+          <button disabled={authLoading||!canSubmit} onClick={handleAuth}
+            style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:800,
+              background:canSubmit?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"#1a1a2e",
+              color:canSubmit?"#fff":C.muted,border:"none",cursor:canSubmit?"pointer":"default",
+              boxShadow:canSubmit?`0 4px 16px ${C.accent}44`:"none",transition:"all 0.2s"}}>
+            {authLoading?(isSignup?"Creating…":"Signing in…"):(isSignup?"Create account →":"Sign in →")}
           </button>
           {authError&&<div style={{fontSize:12,color:C.hard,marginTop:10,padding:"8px 12px",background:"#200010",borderRadius:8,border:`1px solid ${C.hard}44`}}>{authError}</div>}
-          <div style={{fontSize:11,color:C.muted,marginTop:14,lineHeight:1.6}}>Use the same email and password on any device to access your data.</div>
+          <button onClick={()=>{setAuthMode(isSignup?"signin":"signup");setAuthError("");setAuthPassword("");setAuthConfirm("");}}
+            style={{fontSize:12,color:C.accent,background:"none",border:"none",cursor:"pointer",marginTop:16,textDecoration:"underline"}}>
+            {isSignup?"Already have an account? Sign in":"New here? Create an account"}
+          </button>
         </div>
       </div>
     );
