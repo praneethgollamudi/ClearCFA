@@ -3905,7 +3905,7 @@ Reply with just "saved" when done.`}]
         if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
         else{setError("No wrong answers in SR deck yet — complete a session first.");setTimeout(()=>setError(""),3000);}
       }} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${srWrongCount>0?C.hard+"44":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
-        🔁 Wrongs{srWrongCount>0&&<span style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
+        🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
       </button>
       <button onClick={()=>{trackUsage("ai_coach");setAiCoachScreen(true);}} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,background:"#0a1a20",border:`1px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer"}}>🤖 Coach</button>
     </div>
@@ -3970,42 +3970,13 @@ Reply with just "saved" when done.`}]
     })()}
     {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease"}}>{error}</div>}
 
-    {/* Storage diagnostic — shown when history is empty */}
+    {/* Empty state — shown when no sessions yet */}
     {historyLoaded && history.length === 0 && (
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"13px 16px",marginTop:10}}>
-        <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:8}}>No sessions found · Storage scan</div>
-        {storageKeys === null ? (
-          <div style={{fontSize:12,color:C.muted,animation:"pulse 1.5s infinite"}}>Scanning storage…</div>
-        ) : (
-          <div>
-            {storageKeys.filter(k=>k.found).length === 0 ? (
-              <div style={{fontSize:12,color:C.muted}}>
-                Scanned {storageKeys.length} key{storageKeys.length===1?"":"s"} — no session data found in storage.
-                Your session may have been saved in a different browser session or the data has expired.
-              </div>
-            ) : (
-              <div>
-                <div style={{fontSize:11,color:C.easy,marginBottom:8}}>Found data in {storageKeys.filter(k=>k.found).length} key(s):</div>
-                {storageKeys.filter(k=>k.found).map(k=>(
-                  <div key={k.key} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                    <span style={{fontSize:11,color:C.textMid,fontFamily:"monospace"}}>{k.key} ({k.count} sessions)</span>
-                    <button onClick={async ()=>{
-                      const val = await storageGet(k.key);
-                      if(Array.isArray(val)&&val.length>0){
-                        setHistory(val);
-                        await storageSet(STORAGE_KEY,val);
-                        setStorageKeys(null);
-                      }
-                    }} style={{fontSize:10,padding:"4px 10px",borderRadius:6,background:C.easy+"22",border:`1px solid ${C.easy}44`,color:C.easyLight,cursor:"pointer",flexShrink:0,marginLeft:8}}>
-                      Restore →
-                    </button>
-                  </div>
-                ))}
-                <div style={{fontSize:10,color:C.muted,marginTop:8}}>Keys scanned: {storageKeys.map(k=>k.key).join(", ")}</div>
-              </div>
-            )}
-          </div>
-        )}
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"20px 16px",marginTop:10,textAlign:"center"}}>
+        <div style={{fontSize:28,marginBottom:8}}>🎯</div>
+        <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:6}}>Ready to start?</div>
+        <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:14}}>Tap <strong style={{color:C.text}}>Today's Focus</strong> above to begin your first session. Your progress will appear here.</div>
+        <div style={{fontSize:11,color:C.muted,opacity:0.6}}>Signed in · data syncs automatically</div>
       </div>
     )}
 
@@ -4661,6 +4632,20 @@ Reply with just "saved" when done.`}]
         </div>
       )}
       {mode==="exam"&&!answered&&<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"4px",animation:"pulse 2s infinite"}}>Select an answer to continue</div>}
+      {!answered&&mode!=="speed_drill"&&(
+        <div style={{marginTop:16,padding:"12px 14px",background:C.surface,borderRadius:10,border:`1px solid ${C.border}`}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:5}}>Study tip</div>
+          <div style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>{[
+            "Read every option before selecting. Eliminate obvious wrong answers first.",
+            "On CFA exams, if two answers look similar, one is usually the trap.",
+            "Pay attention to qualifiers like 'always', 'never', 'most likely' — they change the answer.",
+            "Ethics questions: apply the Standards literally, not common sense.",
+            "When unsure, think about what the CFA Institute wants candidates to value.",
+            "For calculation questions, check units first. Wrong units = wrong answer.",
+            "Vignette questions: the answer is always in the text, not your memory.",
+          ][currentQ%7]}</div>
+        </div>
+      )}
       {answered&&mode!=="speed_drill"&&(
         <div style={{marginBottom:8}}>
           {!explainThisText&&!explainThisLoading&&(
@@ -4958,7 +4943,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
 
       {/* Tab nav */}
       <div style={{display:"flex",gap:6,marginBottom:16}}>
-        {[["sessions","Sessions"],["patterns","Errors"],["quality","Quality"],["api","API Cost"]].map(([tab,label])=>(
+        {[["sessions","Sessions"],["patterns","Errors"],["quality","Quality"]].map(([tab,label])=>(
           <button key={tab} onClick={()=>setDashTab(tab)} style={{flex:1,padding:"8px",borderRadius:8,fontSize:12,fontWeight:600,border:dashTab===tab?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:dashTab===tab?C.accent+"18":C.surface,color:dashTab===tab?C.accentLight:C.muted,cursor:"pointer"}}>{label}</button>
         ))}
       </div>
@@ -4970,6 +4955,13 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
             <button key={t} onClick={()=>setHistoryFilter(t)} style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600,border:historyFilter===t?`1.5px solid ${C.accent}`:`1px solid ${C.border}`,background:historyFilter===t?C.accent+"20":C.surface,color:historyFilter===t?C.accentLight:C.muted,cursor:"pointer"}}>{t==="All"?"All Topics":t.split(" ")[0]}</button>
           ))}
         </div>
+        {filteredHistory.length===0?(
+          <div style={{textAlign:"center",padding:"32px 16px",color:C.muted}}>
+            <div style={{fontSize:32,marginBottom:10}}>📊</div>
+            <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}}>No sessions yet</div>
+            <div style={{fontSize:12,lineHeight:1.6}}>Complete your first session from the home screen to see your stats here.</div>
+          </div>
+        ):(
         <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
           {filteredHistory.slice(0,15).map(s=>{
             const sq=getSessionQuality(s);
@@ -4982,6 +4974,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
             </div>);
           })}
         </div>
+        )}
       </>}
 
       {dashTab==="patterns"&&<>
@@ -5109,9 +5102,13 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         </>);
       })()}
 
-      {dashTab!=="api"&&(!confirmClear?<button onClick={()=>setConfirmClear(true)} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:"none",border:`1px solid #2a1018`,color:"#5a2a3a",cursor:"pointer"}}>Clear All History & SR Deck</button>:(
-        <div style={{display:"flex",gap:9}}><button onClick={()=>setConfirmClear(false)} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Cancel</button><button onClick={()=>{setHistory([]);setSrDeck({});setQdb({});setConfirmClear(false);setScreen("home");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:"#400010",border:`1px solid ${C.hard}`,color:C.hard,cursor:"pointer"}}>Clear All</button></div>
-      ))}
+      {!confirmClear
+        ?<button onClick={()=>setConfirmClear(true)} style={{marginTop:8,background:"none",border:"none",color:"#5a2a3a",cursor:"pointer",fontSize:11,textDecoration:"underline",display:"block",width:"100%",textAlign:"center"}}>Reset all data…</button>
+        :<div style={{background:"#200010",border:`1px solid ${C.hard}44`,borderRadius:10,padding:"14px",marginTop:8}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.hard,marginBottom:10,textAlign:"center"}}>Delete all sessions and SR deck?</div>
+          <div style={{display:"flex",gap:9}}><button onClick={()=>setConfirmClear(false)} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Cancel</button><button onClick={()=>{setHistory([]);setSrDeck({});setQdb({});setConfirmClear(false);setScreen("home");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:"#400010",border:`1px solid ${C.hard}`,color:C.hard,cursor:"pointer"}}>Delete Everything</button></div>
+        </div>
+      }
     </>);
   }
 
@@ -5167,7 +5164,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     if(!w)return wrap(<div style={{textAlign:"center",paddingTop:60}}><div style={{fontSize:36,marginBottom:12}}>🎯</div><div style={{fontSize:16,fontWeight:700,marginBottom:8}}>All caught up!</div><button onClick={()=>setScreen("home")} style={{padding:"12px 28px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Home</button></div>);
     return wrap(<>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <div><h2 style={{margin:0,fontSize:20,fontWeight:800}}>Review Wrongs</h2><div style={{fontSize:12,color:C.muted,marginTop:3}}>{reviewIdx+1} of {reviewList.length}</div></div>
+        <div><h2 style={{margin:0,fontSize:20,fontWeight:800}}>Review Mistakes</h2><div style={{fontSize:12,color:C.muted,marginTop:3}}>{reviewIdx+1} of {reviewList.length}</div></div>
         <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
       </div>
       <div style={{height:3,background:C.border,borderRadius:2,marginBottom:14}}><div style={{height:"100%",width:`${((reviewIdx+1)/reviewList.length)*100}%`,background:C.hard,borderRadius:2,transition:"width 0.3s"}}/></div>

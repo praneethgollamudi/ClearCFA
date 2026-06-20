@@ -7465,7 +7465,7 @@ Reply with just "saved" when done.`
       cursor: "pointer",
       position: "relative"
     }
-  }, "🔁 Wrongs", srWrongCount > 0 && /*#__PURE__*/React.createElement("span", {
+  }, "🔁 Mistakes", srWrongCount > 0 && /*#__PURE__*/React.createElement("span", {
     style: {
       position: "absolute",
       top: -5,
@@ -7787,75 +7787,41 @@ Reply with just "saved" when done.`
     style: {
       background: C.surface,
       border: `1px solid ${C.border}`,
-      borderRadius: 10,
-      padding: "13px 16px",
-      marginTop: 10
+      borderRadius: 12,
+      padding: "20px 16px",
+      marginTop: 10,
+      textAlign: "center"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 12,
+      fontSize: 28,
+      marginBottom: 8
+    }
+  }, "🎯"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
       fontWeight: 700,
-      color: C.muted,
-      marginBottom: 8
-    }
-  }, "No sessions found · Storage scan"), storageKeys === null ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: C.muted,
-      animation: "pulse 1.5s infinite"
-    }
-  }, "Scanning storage…") : /*#__PURE__*/React.createElement("div", null, storageKeys.filter(k => k.found).length === 0 ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: C.muted
-    }
-  }, "Scanned ", storageKeys.length, " key", storageKeys.length === 1 ? "" : "s", " — no session data found in storage. Your session may have been saved in a different browser session or the data has expired.") : /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.easy,
-      marginBottom: 8
-    }
-  }, "Found data in ", storageKeys.filter(k => k.found).length, " key(s):"), storageKeys.filter(k => k.found).map(k => /*#__PURE__*/React.createElement("div", {
-    key: k.key,
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
+      color: C.text,
       marginBottom: 6
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, "Ready to start?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.muted,
+      lineHeight: 1.6,
+      marginBottom: 14
+    }
+  }, "Tap ", /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: C.text
+    }
+  }, "Today's Focus"), " above to begin your first session. Your progress will appear here."), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: C.textMid,
-      fontFamily: "monospace"
-    }
-  }, k.key, " (", k.count, " sessions)"), /*#__PURE__*/React.createElement("button", {
-    onClick: async () => {
-      const val = await storageGet(k.key);
-      if (Array.isArray(val) && val.length > 0) {
-        setHistory(val);
-        await storageSet(STORAGE_KEY, val);
-        setStorageKeys(null);
-      }
-    },
-    style: {
-      fontSize: 10,
-      padding: "4px 10px",
-      borderRadius: 6,
-      background: C.easy + "22",
-      border: `1px solid ${C.easy}44`,
-      color: C.easyLight,
-      cursor: "pointer",
-      flexShrink: 0,
-      marginLeft: 8
-    }
-  }, "Restore →"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
       color: C.muted,
-      marginTop: 8
+      opacity: 0.6
     }
-  }, "Keys scanned: ", storageKeys.map(k => k.key).join(", "))))), fsaVignetteOpen && /*#__PURE__*/React.createElement("div", {
+  }, "Signed in · data syncs automatically")), fsaVignetteOpen && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
       inset: 0,
@@ -10282,7 +10248,30 @@ Reply with just "saved" when done.`
         padding: "4px",
         animation: "pulse 2s infinite"
       }
-    }, "Select an answer to continue"), answered && mode !== "speed_drill" && /*#__PURE__*/React.createElement("div", {
+    }, "Select an answer to continue"), !answered && mode !== "speed_drill" && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 16,
+        padding: "12px 14px",
+        background: C.surface,
+        borderRadius: 10,
+        border: `1px solid ${C.border}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        fontWeight: 700,
+        color: C.muted,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        marginBottom: 5
+      }
+    }, "Study tip"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.textMid,
+        lineHeight: 1.6
+      }
+    }, ["Read every option before selecting. Eliminate obvious wrong answers first.", "On CFA exams, if two answers look similar, one is usually the trap.", "Pay attention to qualifiers like 'always', 'never', 'most likely' — they change the answer.", "Ethics questions: apply the Standards literally, not common sense.", "When unsure, think about what the CFA Institute wants candidates to value.", "For calculation questions, check units first. Wrong units = wrong answer.", "Vignette questions: the answer is always in the text, not your memory."][currentQ % 7])), answered && mode !== "speed_drill" && /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 8
       }
@@ -11319,7 +11308,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         gap: 6,
         marginBottom: 16
       }
-    }, [["sessions", "Sessions"], ["patterns", "Errors"], ["quality", "Quality"], ["api", "API Cost"]].map(([tab, label]) => /*#__PURE__*/React.createElement("button", {
+    }, [["sessions", "Sessions"], ["patterns", "Errors"], ["quality", "Quality"]].map(([tab, label]) => /*#__PURE__*/React.createElement("button", {
       key: tab,
       onClick: () => setDashTab(tab),
       style: {
@@ -11353,7 +11342,30 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         color: historyFilter === t ? C.accentLight : C.muted,
         cursor: "pointer"
       }
-    }, t === "All" ? "All Topics" : t.split(" ")[0]))), /*#__PURE__*/React.createElement("div", {
+    }, t === "All" ? "All Topics" : t.split(" ")[0]))), filteredHistory.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        padding: "32px 16px",
+        color: C.muted
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 32,
+        marginBottom: 10
+      }
+    }, "📊"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: C.text,
+        marginBottom: 6
+      }
+    }, "No sessions yet"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        lineHeight: 1.6
+      }
+    }, "Complete your first session from the home screen to see your stats here.")) : /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",
@@ -11834,20 +11846,37 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           marginBottom: 12
         }
       }, "Clear API Log")));
-    })(), dashTab !== "api" && (!confirmClear ? /*#__PURE__*/React.createElement("button", {
+    })(), !confirmClear ? /*#__PURE__*/React.createElement("button", {
       onClick: () => setConfirmClear(true),
       style: {
-        width: "100%",
-        padding: "10px",
-        borderRadius: 10,
-        fontSize: 12,
-        fontWeight: 600,
+        marginTop: 8,
         background: "none",
-        border: `1px solid #2a1018`,
+        border: "none",
         color: "#5a2a3a",
-        cursor: "pointer"
+        cursor: "pointer",
+        fontSize: 11,
+        textDecoration: "underline",
+        display: "block",
+        width: "100%",
+        textAlign: "center"
       }
-    }, "Clear All History & SR Deck") : /*#__PURE__*/React.createElement("div", {
+    }, "Reset all data…") : /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#200010",
+        border: `1px solid ${C.hard}44`,
+        borderRadius: 10,
+        padding: "14px",
+        marginTop: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: C.hard,
+        marginBottom: 10,
+        textAlign: "center"
+      }
+    }, "Delete all sessions and SR deck?"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 9
@@ -11884,7 +11913,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         color: C.hard,
         cursor: "pointer"
       }
-    }, "Clear All")))));
+    }, "Delete Everything")))));
   }
   if (screen === "losCoverage") return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -12069,7 +12098,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         fontSize: 20,
         fontWeight: 800
       }
-    }, "Review Wrongs"), /*#__PURE__*/React.createElement("div", {
+    }, "Review Mistakes"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
