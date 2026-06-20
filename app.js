@@ -219,21 +219,37 @@ function clearAuth() {
 }
 async function sendMagicLink(cfg, email) {
   const redirectTo = "https://praneethgollamudi.github.io/ClearCFA/";
-  const res = await fetch(`${cfg.url}/auth/v1/otp`, {
-    method: "POST",
-    headers: {
-      "apikey": cfg.key,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      email,
-      createUser: true,
-      options: {
-        emailRedirectTo: redirectTo
-      }
-    })
-  });
-  return res.ok;
+  try {
+    const res = await fetch(`${cfg.url}/auth/v1/otp`, {
+      method: "POST",
+      headers: {
+        "apikey": cfg.key,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        createUser: true,
+        options: {
+          emailRedirectTo: redirectTo
+        }
+      })
+    });
+    if (res.ok) return {
+      ok: true
+    };
+    const body = await res.json().catch(() => ({
+      message: res.statusText
+    }));
+    return {
+      ok: false,
+      error: body?.message || body?.error || `Request failed (${res.status})`
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e?.message || "Network error — check your connection"
+    };
+  }
 }
 async function exchangeToken(cfg, accessToken) {
   const res = await fetch(`${cfg.url}/auth/v1/user`, {
@@ -4508,6 +4524,7 @@ function CFAMock() {
   const [authEmail, setAuthEmail] = useState("");
   const [authSent, setAuthSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const authUserRef = useRef(getStoredAuth());
   const [needsFocusRefresh, setNeedsFocusRefresh] = useState(false);
   const [examDate, setExamDate] = useState(EXAM_DATE);
@@ -6245,10 +6262,11 @@ Reply with just "saved" when done.`
     id: "magic-btn",
     disabled: authLoading || !authEmail.includes("@"),
     onClick: async () => {
+      setAuthError("");
       setAuthLoading(true);
-      const ok = await sendMagicLink(SB_CFG, authEmail);
+      const result = await sendMagicLink(SB_CFG, authEmail);
       setAuthLoading(false);
-      if (ok) setAuthSent(true);
+      if (result.ok) setAuthSent(true);else setAuthError(result.error || "Something went wrong. Please try again.");
     },
     style: {
       width: "100%",
@@ -6263,7 +6281,17 @@ Reply with just "saved" when done.`
       boxShadow: authEmail.includes("@") ? `0 4px 16px ${C.accent}44` : "none",
       transition: "all 0.2s"
     }
-  }, authLoading ? "Sending…" : "Send magic link →"), /*#__PURE__*/React.createElement("div", {
+  }, authLoading ? "Sending…" : "Send magic link →"), authError && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.hard,
+      marginTop: 10,
+      padding: "8px 12px",
+      background: "#200010",
+      borderRadius: 8,
+      border: `1px solid ${C.hard}44`
+    }
+  }, authError), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
