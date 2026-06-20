@@ -10974,56 +10974,68 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       cursor: "pointer",
       fontSize: 13
     }
-  }, "← Home")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: predicted ? predicted.score >= 70 ? "#041a0e" : "#1a0407" : C.surface,
-      border: `1px solid ${predicted ? predicted.score >= 70 ? "#22a05a44" : C.hard + "44" : C.border}`,
-      borderRadius: 13,
-      padding: "18px 20px",
-      marginBottom: 16,
-      display: "flex",
-      alignItems: "center",
-      gap: 18
-    }
-  }, /*#__PURE__*/React.createElement(ScoreRing, {
-    pct: predicted?.score || 0,
-    size: 84
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 700,
-      marginBottom: 4
-    }
-  }, predicted ? predicted.score >= 70 ? "On track to pass ✓" : "Below passing threshold" : "Need more sessions to predict"), predicted && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: predicted.score >= 70 ? C.easy : C.hard,
-      fontWeight: 600,
-      marginBottom: 4
-    }
-  }, "Range: ", predicted.low, "–", predicted.high, "% ", /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: C.muted,
-      fontWeight: 400
-    }
-  }, "(", predicted.confidence, "% confidence)")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: C.muted,
-      lineHeight: 1.5
-    }
-  }, predicted ? `${predicted.modulesWithData}/10 topics with reliable data. Weighted by CFA official exam weights.` : "Complete ≥10 questions across 3+ topics to unlock."), predicted && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.muted,
-      marginTop: 5
-    }
-  }, daysLeft, " days · ", history.length, " sessions · ", totalQsAttempted, " Qs"))), /*#__PURE__*/React.createElement("div", {
+  }, "← Home")), (() => {
+    const displayScore = predicted?.score ?? passProbability?.probability ?? 0;
+    const isPassing = displayScore >= 70;
+    const bg = displayScore > 0 ? isPassing ? "#041a0e" : "#1a0407" : C.surface;
+    const borderCol = displayScore > 0 ? isPassing ? "#22a05a44" : C.hard + "44" : C.border;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: bg,
+        border: `1px solid ${borderCol}`,
+        borderRadius: 13,
+        padding: "18px 20px",
+        marginBottom: 16,
+        display: "flex",
+        alignItems: "center",
+        gap: 18
+      }
+    }, /*#__PURE__*/React.createElement(ScoreRing, {
+      pct: displayScore,
+      size: 84
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 14,
+        fontWeight: 700,
+        marginBottom: 4
+      }
+    }, predicted ? isPassing ? "On track to pass ✓" : "Below passing threshold" : passProbability ? passProbability.label === "On Track" ? "✓ On Track to Pass" : passProbability.label === "Marginal" ? "⚡ Marginal — push harder" : history.length < 10 ? "🌱 Early days — keep going" : "⚠ At Risk — act now" : "Need more sessions to predict"), predicted && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: isPassing ? C.easy : C.hard,
+        fontWeight: 600,
+        marginBottom: 4
+      }
+    }, "Range: ", predicted.low, "–", predicted.high, "% ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        fontWeight: 400
+      }
+    }, "(", predicted.confidence, "% confidence)")), !predicted && passProbability && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
+        marginBottom: 4
+      }
+    }, "Based on overall accuracy (", passProbability.currentAccuracy, "%) and ", passProbability.coveragePct, "% curriculum coverage. Spread sessions across more topics for a per-module estimate."), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
+        lineHeight: 1.5
+      }
+    }, predicted ? `${predicted.modulesWithData}/10 topics with reliable data. Weighted by CFA official exam weights.` : passProbability ? "" : "Complete ≥10 questions across 3+ topics to unlock a weighted per-module estimate."), predicted && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginTop: 5
+      }
+    }, daysLeft, " days · ", history.length, " sessions · ", totalQsAttempted, " Qs")));
+  })(), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.surface,
       border: `1px solid ${C.border}`,
