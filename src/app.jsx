@@ -2532,6 +2532,7 @@ function CFAMock(){
   const [authMode,setAuthMode]=useState("signin"); // "signin" | "signup"
   const [authLoading,setAuthLoading]=useState(false);
   const [authError,setAuthError]=useState("");
+  const [showOnboarding,setShowOnboarding]=useState(false);
   const authUserRef=useRef(getStoredAuth());
   const [needsFocusRefresh,setNeedsFocusRefresh]=useState(false);
   const [examDate,setExamDate]=useState(EXAM_DATE);
@@ -3514,9 +3515,28 @@ Reply with just "saved" when done.`}]
           if(!exists){setAuthError("No account found. Check your email and password, or create a new account.");setAuthLoading(false);return;}
         }
         const auth={id, email:authEmail.toLowerCase().trim()};
+        // If switching to a different account, clear local data first
+        const prev=getStoredAuth();
+        if(!prev||prev.id!==id){
+          await storageSet(STORAGE_KEY,[]);
+          await storageSet(SR_KEY,{});
+          await storageSet(USAGE_KEY,{});
+          setHistory([]); historyRef.current=[];
+          setSrDeck({}); srDeckRef.current={};
+          setUsageStats({}); usageStatsRef.current={};
+          // Load this user's data from Supabase
+          const sbData=await supabaseLoad(SB_CFG,auth);
+          if(sbData?.history?.length){
+            const h=sbData.history.map(s=>({...s,wrongs:[]}));
+            setHistory(h); historyRef.current=h; storageSet(STORAGE_KEY,h);
+          }
+          if(sbData?.srDeck){setSrDeck(sbData.srDeck); srDeckRef.current=sbData.srDeck; storageSet(SR_KEY,sbData.srDeck);}
+          if(sbData?.usageStats){setUsageStats(sbData.usageStats); usageStatsRef.current=sbData.usageStats;}
+        }
         saveAuth(auth);
         setAuthUser(auth);
         authUserRef.current=auth;
+        if(isSignup) setShowOnboarding(true);
       }catch{
         setAuthError("Something went wrong. Please try again.");
       }
@@ -3556,6 +3576,32 @@ Reply with just "saved" when done.`}]
     );
   }
 
+
+  // ── Onboarding screen (shown once after sign-up) ──
+  if(showOnboarding) return wrap(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:"32px 24px",textAlign:"center"}}>
+      <div style={{fontSize:48,marginBottom:16}}>🎯</div>
+      <div style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:8}}>Welcome to ClearCFA</div>
+      <div style={{fontSize:13,color:C.muted,marginBottom:32,lineHeight:1.7,maxWidth:300}}>Let's set your CFA Level 1 exam date so we can build your personalised study plan.</div>
+      <div style={{width:"100%",maxWidth:340}}>
+        <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:8,textAlign:"left"}}>Your exam date</label>
+        <input type="date" value={examDateInput} onChange={e=>setExamDateInput(e.target.value)}
+          style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${C.accent}`,color:C.text,outline:"none",marginBottom:20,boxSizing:"border-box"}}/>
+        <button onClick={async()=>{
+          const d=new Date(examDateInput);
+          if(!isNaN(d.getTime())){setExamDate(d);await storageSet("cfa_exam_date",examDateInput);}
+          setShowOnboarding(false);
+        }} style={{width:"100%",padding:"14px",borderRadius:11,fontSize:15,fontWeight:800,
+          background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",
+          boxShadow:`0 4px 16px ${C.accent}44`}}>
+          Start studying →
+        </button>
+        <button onClick={()=>setShowOnboarding(false)} style={{fontSize:12,color:C.muted,background:"none",border:"none",cursor:"pointer",marginTop:14,textDecoration:"underline"}}>
+          Skip for now
+        </button>
+      </div>
+    </div>
+  );
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
