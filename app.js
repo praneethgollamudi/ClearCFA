@@ -810,8 +810,9 @@ function getPassProbability(history, moduleReadiness, daysLeft) {
   history.forEach(s => {
     const ageDays = (now - s.id) / 86400000;
     const w = ageDays <= 7 ? 3 : ageDays <= 14 ? 2 : 1;
-    wCorrect += s.score * w;
-    wTotal += s.total * w;
+    const sScore = s.score ?? s.correct ?? Math.round((s.pct || 0) / 100 * (s.total || 0));
+    wCorrect += sScore * w;
+    wTotal += (s.total ?? 0) * w;
   });
   const currentAccuracy = wTotal > 0 ? wCorrect / wTotal * 100 : 0;
 
@@ -1061,7 +1062,8 @@ const urgencyColor = {
 
 // XP system - makes every session feel rewarding
 function calcXP(session) {
-  const base = session.score * 10;
+  const numCorrect = session.score ?? session.correct ?? Math.round((session.pct || 0) / 100 * (session.total || 0));
+  const base = numCorrect * 10;
   const diffBonus = {
     Easy: 1,
     Medium: 1.5,
