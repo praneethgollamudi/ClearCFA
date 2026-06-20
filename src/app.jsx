@@ -1473,7 +1473,7 @@ async function askClaudeText(apiKey, prompt, maxTokens=400){
 }
 
 // ─── REVISION SCREEN COMPONENTS ──────────────────────────────────────────────
-function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey=""}){
+function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="", srDeck={}, focusConcept=null}){
   const [selTopic, setSelTopic] = useState(initialTopic || Object.keys(POWER_NOTES)[0]);
   const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
   const [expandedModule, setExpandedModule] = useState(null);
@@ -1535,6 +1535,33 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
           );
         })}
       </div>
+
+      {/* ── WRONG ANSWERS FOR THIS TOPIC ── */}
+      {tab==="notes" && (()=>{
+        const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,5);
+        if(!wrongCards.length) return null;
+        return(
+          <div style={{background:"#120818",border:`1px solid #c0304433`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#e05070",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Concepts you've missed in {selTopic}</div>
+            {wrongCards.map((card,i)=>(
+              <div key={i} style={{borderLeft:`2px solid #c0304466`,paddingLeft:10,marginBottom:i<wrongCards.length-1?10:0}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#e2e2ff"}}>{card.concept||card.subtopic}</div>
+                {card.los_tested&&<div style={{fontSize:10,color:"#6060a0",marginTop:1}}>LOS: {card.los_tested}</div>}
+                {card.explanation&&<div style={{fontSize:11,color:"#8080b0",marginTop:3,lineHeight:1.5}}>{card.explanation.slice(0,130)}{card.explanation.length>130?"…":""}</div>}
+                <div style={{fontSize:10,color:"#e05070",marginTop:3,fontWeight:600}}>Wrong {card.wrongCount}×</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
+      {/* ── FOCUS CONCEPT FROM SESSION ── */}
+      {tab==="notes" && focusConcept && (
+        <div style={{background:`${C.accent}15`,border:`1px solid ${C.accent}44`,borderRadius:10,padding:"10px 14px",marginBottom:12}}>
+          <div style={{fontSize:11,color:C.accentLight,fontWeight:700,marginBottom:4}}>📍 From your session</div>
+          <div style={{fontSize:13,color:C.text,fontWeight:600}}>{focusConcept}</div>
+        </div>
+      )}
 
       {/* ── POWER NOTES TAB ── */}
       {tab==="notes" && topicData && (
@@ -2513,6 +2540,7 @@ function CFAMock(){
   const [showMoreActions,setShowMoreActions]=useState(false);
   const [usageStats,setUsageStats]=useState({});
   const usageStatsRef=useRef({});
+  const [dismissedNudges,setDismissedNudges]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_dismissed_nudges")||"{}");}catch{return {};}});
   const apiLogRef=useRef([]);
   const [omMode,setOmMode]=useState(false); // true when current session was started via Office Mode
   const [omQCount,setOmQCount]=useState(()=>{try{return parseInt(localStorage.getItem("cfa_om_count")||"5");}catch{return 5;}});
@@ -2541,6 +2569,7 @@ function CFAMock(){
   const [examDateInput,setExamDateInput]=useState("2026-08-19");
   const [revisionTopic,setRevisionTopic]=useState(null);
   const [revisionTab,setRevisionTab]=useState("notes");
+  const [revisionConcept,setRevisionConcept]=useState(null);
   const [walkthroughTopic, setWalkthroughTopic] = useState(Object.keys(LOS)[0]);
   const [walkthroughModule, setWalkthroughModule] = useState("");
   const [walkthroughText, setWalkthroughText] = useState(null);
@@ -2566,6 +2595,7 @@ function CFAMock(){
   const [luckyDipSpinning,setLuckyDipSpinning]=useState(false);
   const [luckyDipLabel,setLuckyDipLabel]=useState("");
   const [personalBests,setPersonalBests]=useState(()=>{try{return JSON.parse(localStorage.getItem(BESTS_KEY)||"{}");}catch{return {};}});
+  const [levelUpInfo,setLevelUpInfo]=useState(null);
   const [speedQTime,setSpeedQTime]=useState(100);
   const speedDrillRef=useRef(null);
   const [passTrend,setPassTrend]=useState([]);
@@ -2878,7 +2908,8 @@ function CFAMock(){
     const oldLevel=getLevel(oldXP).level;
     const newLevel=getLevel(newXP).level;
     if(newLevel>oldLevel){
-      showToast("⭐",`Level Up! You're now ${getLevel(newXP).label}`,"Keep the momentum going!",true);
+      setLevelUpInfo({level:newLevel,label:getLevel(newXP).label});
+      fireConfetti();
     } else if(pct===100){
       showToast("🎯","Perfect Session!",`100% on ${t} — flawless.`,true);
     } else if(newHistory.length===1){
@@ -3634,6 +3665,19 @@ Reply with just "saved" when done.`}]
     </div>
   );
 
+  // ══ LEVEL UP OVERLAY ═════════════════════════════════════════════════════════
+  if(levelUpInfo) return(
+    <div style={{position:"fixed",inset:0,zIndex:9000,background:"rgba(6,6,16,0.98)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}
+      onClick={()=>setLevelUpInfo(null)}>
+      <div style={{fontSize:80,marginBottom:12,animation:"pulse 1.2s ease infinite"}}>⭐</div>
+      <div style={{fontSize:11,fontWeight:700,color:"#7c3aed",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:10}}>Level Up</div>
+      <div style={{fontSize:32,fontWeight:800,color:"#e2e2ff",marginBottom:8,lineHeight:1.2}}>{levelUpInfo.label}</div>
+      <div style={{fontSize:13,color:"#7070a0",marginBottom:40,lineHeight:1.65,maxWidth:270}}>You've earned your next rank.<br/>Consistency is what separates CFA passers.</div>
+      <button onClick={()=>setLevelUpInfo(null)} style={{padding:"14px 32px",borderRadius:12,fontSize:15,fontWeight:700,background:"linear-gradient(135deg,#7c3aed,#818cf8)",color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 6px 24px #7c3aed55"}}>See My Results →</button>
+      <div style={{fontSize:11,color:"#40406060",marginTop:20}}>tap anywhere to continue</div>
+    </div>
+  );
+
   // ══ WEEKLY PLAN SCREEN ══════════════════════════════════════════════════════
   if(weeklyPlanScreen) return wrap(<>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
@@ -3808,12 +3852,38 @@ Reply with just "saved" when done.`}]
     {/* Stats strip */}
     {!historyLoaded?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>{[0,1,2,3].map(i=><Skeleton key={i} height={68} radius={11}/>)}</div>:(
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
-        <StatCard label="Sessions" value={history.length||"–"} icon="📚"/>
-        <StatCard label="Avg Score" value={overallPct?`${overallPct}%`:"–"} color={overallPct?(overallPct>=70?C.easy:C.hard):C.muted} icon="🎯"/>
+        <StatCard label="Sessions" value={history.length||"–"} icon="📚" onClick={history.length>0?()=>{trackUsage("dashboard");setScreen("dashboard");}:undefined}/>
+        <StatCard label="Avg Score" value={overallPct?`${overallPct}%`:"–"} color={overallPct?(overallPct>=70?C.easy:C.hard):C.muted} icon="🎯" onClick={overallPct?()=>{trackUsage("dashboard");setScreen("dashboard");}:undefined}/>
         <StatCard label="Pass Prob" value={predicted?`${predicted.low}–${predicted.high}%`:passProbability?`${passProbability.probability}%`:"–"} color={predicted?(predicted.score>=70?C.easy:C.hard):passProbability?(passProbability.color):C.muted} sub={predicted?`${predicted.confidence}% conf`:passProbability?history.length<10&&passProbability.label==="At Risk"?"early estimate":passProbability.label:`${history.length>=1?"more data needed":"do 3+ sessions"}`} onClick={()=>setScreen("readiness")} icon="📈"/>
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"✓"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":"all caught up"} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
+
+    {/* Feature discovery nudge */}
+    {(()=>{
+      const nudges=[
+        {id:"dashboard",cond:history.length>=3&&!usageStats.dashboard,icon:"📈",text:"See your full performance breakdown — by topic, difficulty and quality.",cta:"Dashboard",go:()=>{trackUsage("dashboard");setScreen("dashboard");}},
+        {id:"los_coverage",cond:history.length>=5&&!usageStats.los_coverage,icon:"🗺",text:"Check which LOS topics you've covered and where the gaps are.",cta:"LOS Map",go:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
+        {id:"formulas",cond:srWrongCount>=3&&!usageStats.formulas,icon:"📐",text:"You have wrong answers — drill the formulas that are tripping you up.",cta:"Formula Drill",go:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
+        {id:"week_plan",cond:history.length>=10&&!usageStats.week_plan,icon:"🗓",text:"Build a personalised weekly study plan around your schedule.",cta:"Week Plan",go:()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}},
+        {id:"calc_trainer",cond:history.length>=7&&!usageStats.calc_trainer,icon:"🔢",text:"Practice TVM and fixed income calculations with your BA II Plus.",cta:"Calc Trainer",go:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
+      ];
+      const nudge=nudges.find(n=>n.cond&&!dismissedNudges[n.id]);
+      if(!nudge)return null;
+      const dismiss=()=>{const u={...dismissedNudges,[nudge.id]:true};setDismissedNudges(u);try{localStorage.setItem("cfa_dismissed_nudges",JSON.stringify(u));}catch{}};
+      return(
+        <div style={{background:`${C.accent}10`,border:`1px solid ${C.accent}30`,borderRadius:10,padding:"11px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:11,color:C.accentLight,fontWeight:700,marginBottom:3}}>{nudge.icon} Did you know?</div>
+            <div style={{fontSize:12,color:C.textMid,lineHeight:1.45}}>{nudge.text}</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0,alignItems:"flex-end"}}>
+            <button onClick={nudge.go} style={{fontSize:11,fontWeight:700,padding:"5px 10px",borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>{nudge.cta} →</button>
+            <button onClick={dismiss} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:0}}>dismiss</button>
+          </div>
+        </div>
+      );
+    })()}
 
     {/* Daily target tracker */}
     {(()=>{
@@ -4047,7 +4117,7 @@ Reply with just "saved" when done.`}]
     {/* More actions — sorted by usage frequency, collapsed by default */}
     {(()=>{
       const moreItems=[
-        {key:"mix",label:"🎲 Mix",style:{background:C.surfaceHigh,border:`1px solid ${C.medium}44`,color:C.medium},action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
+        {key:"mix",label:"🎯 Weak Spots",style:{background:C.accent+"12",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
         {key:"vignette",label:"📖 Vignette",style:{background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight},action:()=>{trackUsage("vignette");setVignetteMode(true);setScreen("setup");}},
         {key:"full_exam",label:"🎓 Full Exam",style:{background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight},action:()=>{trackUsage("full_exam");startFullExam();}},
         {key:"ethics",label:"⚖️ Ethics",style:{background:"#0a0820",border:`1px solid ${C.hard}44`,color:C.hard},action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
@@ -4799,7 +4869,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
                 <div style={{fontSize:12,color:"#6a6a8a",marginTop:8,lineHeight:1.65,borderTop:`1px solid ${C.border}`,paddingTop:8}}>{q.explanation}</div>
                 {q.los_tested&&<div style={{fontSize:11,color:"#5050a0",marginTop:6}}><span style={{fontWeight:700}}>LOS: </span>{q.los_tested}</div>}
                 {q.misconception_targeted&&<div style={{fontSize:11,color:"#60508a",marginTop:4}}><span style={{fontWeight:700}}>Error pattern: </span>{q.misconception_targeted}</div>}
-                <button onClick={()=>{setRevisionTopic(q._topic||topic);setRevisionTab("notes");setScreen("revision");}}
+                <button onClick={()=>{setRevisionTopic(q._topic||topic);setRevisionTab("notes");setRevisionConcept(q.concept||q.los_tested||null);setScreen("revision");}}
                   style={{marginTop:10,fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:7,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                   📚 Review in Power Notes →
                 </button>
@@ -5543,7 +5613,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
   })());
 
   // ══ REVISION SCREEN ══════════════════════════════════════════════════════════
-  if(screen==="revision") return <RevisionScreen onBack={()=>setScreen("home")} initialTopic={revisionTopic} initialTab={revisionTab} apiKey={apiKey}/>;
+  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} apiKey={apiKey} srDeck={srDeck} focusConcept={revisionConcept}/>;
 
   return null;
 }

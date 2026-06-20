@@ -2119,7 +2119,9 @@ function RevisionScreen({
   onBack,
   initialTopic = null,
   initialTab = "notes",
-  apiKey = ""
+  apiKey = "",
+  srDeck = {},
+  focusConcept = null
 }) {
   const [selTopic, setSelTopic] = useState(initialTopic || Object.keys(POWER_NOTES)[0]);
   const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
@@ -2233,7 +2235,82 @@ function RevisionScreen({
         fontWeight: 400
       }
     }, w, "%"));
-  })), tab === "notes" && topicData && /*#__PURE__*/React.createElement("div", {
+  })), tab === "notes" && (() => {
+    const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 5);
+    if (!wrongCards.length) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#120818",
+        border: `1px solid #c0304433`,
+        borderRadius: 12,
+        padding: "12px 14px",
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: "#e05070",
+        marginBottom: 10,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em"
+      }
+    }, "⚠ Concepts you've missed in ", selTopic), wrongCards.map((card, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        borderLeft: `2px solid #c0304466`,
+        paddingLeft: 10,
+        marginBottom: i < wrongCards.length - 1 ? 10 : 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        color: "#e2e2ff"
+      }
+    }, card.concept || card.subtopic), card.los_tested && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#6060a0",
+        marginTop: 1
+      }
+    }, "LOS: ", card.los_tested), card.explanation && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: "#8080b0",
+        marginTop: 3,
+        lineHeight: 1.5
+      }
+    }, card.explanation.slice(0, 130), card.explanation.length > 130 ? "…" : ""), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#e05070",
+        marginTop: 3,
+        fontWeight: 600
+      }
+    }, "Wrong ", card.wrongCount, "×"))));
+  })(), tab === "notes" && focusConcept && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: `${C.accent}15`,
+      border: `1px solid ${C.accent}44`,
+      borderRadius: 10,
+      padding: "10px 14px",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.accentLight,
+      fontWeight: 700,
+      marginBottom: 4
+    }
+  }, "📍 From your session"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.text,
+      fontWeight: 600
+    }
+  }, focusConcept)), tab === "notes" && topicData && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
@@ -4495,6 +4572,13 @@ function CFAMock() {
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [usageStats, setUsageStats] = useState({});
   const usageStatsRef = useRef({});
+  const [dismissedNudges, setDismissedNudges] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("cfa_dismissed_nudges") || "{}");
+    } catch {
+      return {};
+    }
+  });
   const apiLogRef = useRef([]);
   const [omMode, setOmMode] = useState(false); // true when current session was started via Office Mode
   const [omQCount, setOmQCount] = useState(() => {
@@ -4532,6 +4616,7 @@ function CFAMock() {
   const [examDateInput, setExamDateInput] = useState("2026-08-19");
   const [revisionTopic, setRevisionTopic] = useState(null);
   const [revisionTab, setRevisionTab] = useState("notes");
+  const [revisionConcept, setRevisionConcept] = useState(null);
   const [walkthroughTopic, setWalkthroughTopic] = useState(Object.keys(LOS)[0]);
   const [walkthroughModule, setWalkthroughModule] = useState("");
   const [walkthroughText, setWalkthroughText] = useState(null);
@@ -4563,6 +4648,7 @@ function CFAMock() {
       return {};
     }
   });
+  const [levelUpInfo, setLevelUpInfo] = useState(null);
   const [speedQTime, setSpeedQTime] = useState(100);
   const speedDrillRef = useRef(null);
   const [passTrend, setPassTrend] = useState([]);
@@ -5008,7 +5094,11 @@ function CFAMock() {
     const oldLevel = getLevel(oldXP).level;
     const newLevel = getLevel(newXP).level;
     if (newLevel > oldLevel) {
-      showToast("⭐", `Level Up! You're now ${getLevel(newXP).label}`, "Keep the momentum going!", true);
+      setLevelUpInfo({
+        level: newLevel,
+        label: getLevel(newXP).label
+      });
+      fireConfetti();
     } else if (pct === 100) {
       showToast("🎯", "Perfect Session!", `100% on ${t} — flawless.`, true);
     } else if (newHistory.length === 1) {
@@ -6553,6 +6643,73 @@ Reply with just "saved" when done.`
     }
   }, "Skip for now"))));
 
+  // ══ LEVEL UP OVERLAY ═════════════════════════════════════════════════════════
+  if (levelUpInfo) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      zIndex: 9000,
+      background: "rgba(6,6,16,0.98)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+      textAlign: "center"
+    },
+    onClick: () => setLevelUpInfo(null)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 80,
+      marginBottom: 12,
+      animation: "pulse 1.2s ease infinite"
+    }
+  }, "⭐"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#7c3aed",
+      letterSpacing: "0.14em",
+      textTransform: "uppercase",
+      marginBottom: 10
+    }
+  }, "Level Up"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 32,
+      fontWeight: 800,
+      color: "#e2e2ff",
+      marginBottom: 8,
+      lineHeight: 1.2
+    }
+  }, levelUpInfo.label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#7070a0",
+      marginBottom: 40,
+      lineHeight: 1.65,
+      maxWidth: 270
+    }
+  }, "You've earned your next rank.", /*#__PURE__*/React.createElement("br", null), "Consistency is what separates CFA passers."), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setLevelUpInfo(null),
+    style: {
+      padding: "14px 32px",
+      borderRadius: 12,
+      fontSize: 15,
+      fontWeight: 700,
+      background: "linear-gradient(135deg,#7c3aed,#818cf8)",
+      color: "#fff",
+      border: "none",
+      cursor: "pointer",
+      boxShadow: "0 6px 24px #7c3aed55"
+    }
+  }, "See My Results →"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#40406060",
+      marginTop: 20
+    }
+  }, "tap anywhere to continue"));
+
   // ══ WEEKLY PLAN SCREEN ══════════════════════════════════════════════════════
   if (weeklyPlanScreen) return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7162,12 +7319,20 @@ Reply with just "saved" when done.`
   }, /*#__PURE__*/React.createElement(StatCard, {
     label: "Sessions",
     value: history.length || "–",
-    icon: "📚"
+    icon: "📚",
+    onClick: history.length > 0 ? () => {
+      trackUsage("dashboard");
+      setScreen("dashboard");
+    } : undefined
   }), /*#__PURE__*/React.createElement(StatCard, {
     label: "Avg Score",
     value: overallPct ? `${overallPct}%` : "–",
     color: overallPct ? overallPct >= 70 ? C.easy : C.hard : C.muted,
-    icon: "🎯"
+    icon: "🎯",
+    onClick: overallPct ? () => {
+      trackUsage("dashboard");
+      setScreen("dashboard");
+    } : undefined
   }), /*#__PURE__*/React.createElement(StatCard, {
     label: "Pass Prob",
     value: predicted ? `${predicted.low}–${predicted.high}%` : passProbability ? `${passProbability.probability}%` : "–",
@@ -7189,6 +7354,142 @@ Reply with just "saved" when done.`
       setScreen("srReview");
     } : undefined
   })), (() => {
+    const nudges = [{
+      id: "dashboard",
+      cond: history.length >= 3 && !usageStats.dashboard,
+      icon: "📈",
+      text: "See your full performance breakdown — by topic, difficulty and quality.",
+      cta: "Dashboard",
+      go: () => {
+        trackUsage("dashboard");
+        setScreen("dashboard");
+      }
+    }, {
+      id: "los_coverage",
+      cond: history.length >= 5 && !usageStats.los_coverage,
+      icon: "🗺",
+      text: "Check which LOS topics you've covered and where the gaps are.",
+      cta: "LOS Map",
+      go: () => {
+        trackUsage("los_coverage");
+        setScreen("losCoverage");
+      }
+    }, {
+      id: "formulas",
+      cond: srWrongCount >= 3 && !usageStats.formulas,
+      icon: "📐",
+      text: "You have wrong answers — drill the formulas that are tripping you up.",
+      cta: "Formula Drill",
+      go: () => {
+        trackUsage("formulas");
+        setFormulaDrillMode(true);
+        setFormulaDrillIdx(0);
+        setFormulaFlipped(false);
+        setRevisionTopic(null);
+        setRevisionTab("formulas");
+        setScreen("revision");
+      }
+    }, {
+      id: "week_plan",
+      cond: history.length >= 10 && !usageStats.week_plan,
+      icon: "🗓",
+      text: "Build a personalised weekly study plan around your schedule.",
+      cta: "Week Plan",
+      go: () => {
+        trackUsage("week_plan");
+        setWeeklyPlanScreen(true);
+      }
+    }, {
+      id: "calc_trainer",
+      cond: history.length >= 7 && !usageStats.calc_trainer,
+      icon: "🔢",
+      text: "Practice TVM and fixed income calculations with your BA II Plus.",
+      cta: "Calc Trainer",
+      go: () => {
+        trackUsage("calc_trainer");
+        setCalcProblem(null);
+        setCalcSteps([]);
+        setCalcInputs({});
+        setCalcChecked({});
+        setCalcError("");
+        setScreen("calcTrainer");
+      }
+    }];
+    const nudge = nudges.find(n => n.cond && !dismissedNudges[n.id]);
+    if (!nudge) return null;
+    const dismiss = () => {
+      const u = {
+        ...dismissedNudges,
+        [nudge.id]: true
+      };
+      setDismissedNudges(u);
+      try {
+        localStorage.setItem("cfa_dismissed_nudges", JSON.stringify(u));
+      } catch {}
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: `${C.accent}10`,
+        border: `1px solid ${C.accent}30`,
+        borderRadius: 10,
+        padding: "11px 14px",
+        marginBottom: 12,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.accentLight,
+        fontWeight: 700,
+        marginBottom: 3
+      }
+    }, nudge.icon, " Did you know?"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.textMid,
+        lineHeight: 1.45
+      }
+    }, nudge.text)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 5,
+        flexShrink: 0,
+        alignItems: "flex-end"
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: nudge.go,
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: "5px 10px",
+        borderRadius: 7,
+        background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
+        color: "#fff",
+        border: "none",
+        cursor: "pointer",
+        whiteSpace: "nowrap"
+      }
+    }, nudge.cta, " →"), /*#__PURE__*/React.createElement("button", {
+      onClick: dismiss,
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: 0
+      }
+    }, "dismiss")));
+  })(), (() => {
     const today = new Date().toISOString().slice(0, 10);
     const todayQs = history.filter(h => h.dateKey === today).reduce((s, h) => s + (h.total || 0), 0);
     const baseTarget = daysLeft > 0 ? daysLeft <= 30 ? 30 : daysLeft <= 60 ? 25 : 20 : 20;
@@ -7889,11 +8190,11 @@ Reply with just "saved" when done.`
   }, luckyDipSpinning ? `🎲 ${luckyDipLabel}` : "🎲 Lucky Dip — Surprise me!"), (() => {
     const moreItems = [{
       key: "mix",
-      label: "🎲 Mix",
+      label: "🎯 Weak Spots",
       style: {
-        background: C.surfaceHigh,
-        border: `1px solid ${C.medium}44`,
-        color: C.medium
+        background: C.accent + "12",
+        border: `1px solid ${C.accent}44`,
+        color: C.accentLight
       },
       action: () => {
         trackUsage("mix");
@@ -10762,6 +11063,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       onClick: () => {
         setRevisionTopic(q._topic || topic);
         setRevisionTab("notes");
+        setRevisionConcept(q.concept || q.los_tested || null);
         setScreen("revision");
       },
       style: {
@@ -13441,10 +13743,15 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
 
   // ══ REVISION SCREEN ══════════════════════════════════════════════════════════
   if (screen === "revision") return /*#__PURE__*/React.createElement(RevisionScreen, {
-    onBack: () => setScreen("home"),
+    onBack: () => {
+      setScreen("home");
+      setRevisionConcept(null);
+    },
     initialTopic: revisionTopic,
     initialTab: revisionTab,
-    apiKey: apiKey
+    apiKey: apiKey,
+    srDeck: srDeck,
+    focusConcept: revisionConcept
   });
   return null;
 }
