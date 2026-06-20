@@ -4764,6 +4764,16 @@ function CFAMock() {
         }
       } catch {}
       if (bestSR) {
+        // One-time migration: remove cards with questions truncated by the old 600-char limit
+        const truncatedKeys = Object.entries(bestSR).filter(([, c]) => (c.question || "").length >= 595 && (c.question || "").length <= 600).map(([k]) => k);
+        if (truncatedKeys.length > 0) {
+          const cleaned = {
+            ...bestSR
+          };
+          truncatedKeys.forEach(k => delete cleaned[k]);
+          bestSR = cleaned;
+          storageSet(SR_KEY, cleaned);
+        }
         setSrDeck(bestSR);
         srDeckRef.current = bestSR;
       }
