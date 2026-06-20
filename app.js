@@ -8684,7 +8684,7 @@ Reply with just "saved" when done.`
       },
       action: () => {
         trackUsage("pass_pct");
-        setScreen("passProbability");
+        setScreen("readiness");
       }
     }, {
       key: "revise",
@@ -9410,446 +9410,6 @@ Reply with just "saved" when done.`
       cursor: "pointer"
     }
   }, "Re-check storage"))));
-
-  // ══ PASS PROBABILITY SCREEN ════════════════════════════════════════════════
-  if (screen === "passProbability") return wrap(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 20
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-    style: {
-      margin: 0,
-      fontSize: 22,
-      fontWeight: 800
-    }
-  }, "Pass Probability"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: C.muted,
-      marginTop: 3
-    }
-  }, "Updated after every session")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setScreen("home"),
-    style: {
-      background: "none",
-      border: "none",
-      color: C.muted,
-      cursor: "pointer",
-      fontSize: 13
-    }
-  }, "← Home")), !passProbability ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: 14,
-      padding: "28px",
-      textAlign: "center"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 40,
-      marginBottom: 12
-    }
-  }, "📊"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 700,
-      marginBottom: 8
-    }
-  }, "Not enough data yet"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: C.muted,
-      lineHeight: 1.6,
-      marginBottom: 20
-    }
-  }, "Complete at least 3 sessions across different topics to unlock your pass probability estimate."), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setScreen("setup"),
-    style: {
-      padding: "12px 24px",
-      borderRadius: 10,
-      fontSize: 14,
-      fontWeight: 700,
-      background: `linear-gradient(135deg,${C.accent},${C.accentLight})`,
-      color: "#fff",
-      border: "none",
-      cursor: "pointer"
-    }
-  }, "Start a Session →")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: `linear-gradient(135deg,${passProbability.color}18,${passProbability.color}08)`,
-      border: `1px solid ${passProbability.color}44`,
-      borderRadius: 16,
-      padding: "28px 24px",
-      textAlign: "center",
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 64,
-      fontWeight: 900,
-      color: passProbability.color,
-      lineHeight: 1,
-      marginBottom: 8
-    }
-  }, passProbability.probability, "%"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 18,
-      fontWeight: 700,
-      color: passProbability.color,
-      marginBottom: 6
-    }
-  }, passProbability.label === "On Track" ? "✓ On Track to Pass" : passProbability.label === "Marginal" ? "⚡ Marginal — push harder" : history.length < 10 ? "🌱 Early days — keep going" : "⚠ At Risk — act now"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: C.textMid,
-      lineHeight: 1.6,
-      maxWidth: 360,
-      margin: "0 auto"
-    }
-  }, history.length < 10 && passProbability.label === "At Risk" ? "Your estimate is based on limited data — it'll sharpen after 10+ sessions. Focus on building the habit first." : passProbability.advice)), passTrend.length >= 2 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: 12,
-      padding: "14px 16px",
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: C.muted,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      marginBottom: 10
-    }
-  }, "Pass probability trend"), /*#__PURE__*/React.createElement("svg", {
-    width: "100%",
-    height: "90",
-    style: {
-      overflow: "visible"
-    },
-    viewBox: `0 0 360 90`,
-    preserveAspectRatio: "none"
-  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
-    id: "trendGrad",
-    x1: "0",
-    y1: "0",
-    x2: "0",
-    y2: "1"
-  }, /*#__PURE__*/React.createElement("stop", {
-    offset: "0%",
-    stopColor: passProbability.color,
-    stopOpacity: "0.3"
-  }), /*#__PURE__*/React.createElement("stop", {
-    offset: "100%",
-    stopColor: passProbability.color,
-    stopOpacity: "0.02"
-  }))), (() => {
-    const n = passTrend.length;
-    const pts = passTrend.map((p, i) => {
-      const x = n === 1 ? 180 : Math.round(i / (n - 1) * 340 + 10);
-      const y = Math.round(80 - p.prob / 100 * 70);
-      return {
-        x,
-        y,
-        p
-      };
-    });
-    const polyPts = pts.map(p => `${p.x},${p.y}`).join(" ");
-    const areaPath = `M${pts[0].x},80 ` + pts.map(p => `L${p.x},${p.y}`).join(" ") + ` L${pts[pts.length - 1].x},80 Z`;
-    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
-      d: areaPath,
-      fill: "url(#trendGrad)"
-    }), /*#__PURE__*/React.createElement("polyline", {
-      points: polyPts,
-      fill: "none",
-      stroke: passProbability.color,
-      strokeWidth: "2",
-      strokeLinejoin: "round"
-    }), pts.map((pt, i) => /*#__PURE__*/React.createElement("g", {
-      key: i
-    }, /*#__PURE__*/React.createElement("circle", {
-      cx: pt.x,
-      cy: pt.y,
-      r: "4",
-      fill: pt.p.prob >= 70 ? C.easy : pt.p.prob >= 55 ? C.medium : C.hard,
-      stroke: C.bg,
-      strokeWidth: "1.5"
-    }), i === pts.length - 1 && /*#__PURE__*/React.createElement("text", {
-      x: pt.x,
-      y: pt.y - 8,
-      textAnchor: "middle",
-      fill: passProbability.color,
-      fontSize: "10",
-      fontWeight: "700"
-    }, pt.p.prob, "%"))), /*#__PURE__*/React.createElement("line", {
-      x1: "10",
-      y1: Math.round(80 - 70 * 0.7),
-      x2: "350",
-      y2: Math.round(80 - 70 * 0.7),
-      stroke: C.easy,
-      strokeWidth: "0.5",
-      strokeDasharray: "4 4",
-      opacity: "0.4"
-    }), /*#__PURE__*/React.createElement("text", {
-      x: "355",
-      y: Math.round(80 - 70 * 0.7) + 4,
-      fill: C.easy,
-      fontSize: "8",
-      opacity: "0.6"
-    }, "70%"));
-  })()), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginTop: 4
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      color: C.muted
-    }
-  }, passTrend[0]?.date), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      color: C.muted
-    }
-  }, "today"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: 12,
-      padding: "16px",
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: C.muted,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      marginBottom: 14
-    }
-  }, "What's driving this number"), [{
-    label: "Current accuracy (recency-weighted)",
-    value: `${passProbability.currentAccuracy}%`,
-    color: passProbability.currentAccuracy >= 70 ? C.easy : passProbability.currentAccuracy >= 60 ? C.medium : C.hard,
-    pct: passProbability.currentAccuracy
-  }, {
-    label: "Curriculum coverage (% of exam weight tested)",
-    value: `${passProbability.coveragePct}%`,
-    color: passProbability.coveragePct >= 60 ? C.easy : passProbability.coveragePct >= 40 ? C.medium : C.hard,
-    pct: passProbability.coveragePct
-  }, {
-    label: "Score trajectory (recent vs older sessions)",
-    value: passProbability.trajectory > 0 ? `+${passProbability.trajectory}% ↑` : passProbability.trajectory < 0 ? `${passProbability.trajectory}% ↓` : "Flat →",
-    color: passProbability.trajectory > 0 ? C.easy : passProbability.trajectory < 0 ? C.hard : C.muted,
-    pct: Math.min(100, 50 + passProbability.trajectory * 2)
-  }].map((f, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: 5
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      color: C.muted
-    }
-  }, f.label), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      fontWeight: 800,
-      color: f.color
-    }
-  }, f.value)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 5,
-      background: C.dim,
-      borderRadius: 3
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: "100%",
-      width: `${Math.max(2, Math.min(100, f.pct))}%`,
-      background: f.color,
-      borderRadius: 3,
-      transition: "width 0.6s ease"
-    }
-  }))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: 12,
-      padding: "16px",
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: C.muted,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      marginBottom: 12
-    }
-  }, "To move the needle this week"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 10
-    }
-  }, (() => {
-    const untested = moduleReadiness.filter(m => m.sessions === 0 && m.weight >= 9).slice(0, 3);
-    const weak = moduleReadiness.filter(m => m.accuracy !== null && m.accuracy < 65 && m.weight >= 8).slice(0, 2);
-    const items = [...untested, ...weak];
-    if (items.length > 0) return /*#__PURE__*/React.createElement(React.Fragment, null, untested.map(m => /*#__PURE__*/React.createElement("div", {
-      key: m.topic,
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "10px 12px",
-        background: C.dim,
-        borderRadius: 9
-      }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 600,
-        color: C.text
-      }
-    }, m.topic), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted
-      }
-    }, "Untested · ", m.weight, "% of exam")), /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setScreen("home");
-        setTimeout(() => generateQuestionsRef.current && generateQuestionsRef.current(m.topic, m.modules[0], "Easy", 5, "guided"), 100);
-      },
-      style: {
-        fontSize: 11,
-        fontWeight: 700,
-        padding: "5px 11px",
-        borderRadius: 7,
-        background: C.accent + "22",
-        border: `1px solid ${C.accent}44`,
-        color: C.accentLight,
-        cursor: "pointer"
-      }
-    }, "5 Qs →"))), weak.map(m => /*#__PURE__*/React.createElement("div", {
-      key: m.topic,
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "10px 12px",
-        background: C.dim,
-        borderRadius: 9
-      }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 600,
-        color: C.text
-      }
-    }, m.topic), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.hard
-      }
-    }, m.accuracy, "% accuracy · needs work")), /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setScreen("home");
-        setTimeout(() => generateQuestionsRef.current && generateQuestionsRef.current(m.topic, m.untouchedModules[0] || m.modules[0], "Medium", 5, "guided"), 100);
-      },
-      style: {
-        fontSize: 11,
-        fontWeight: 700,
-        padding: "5px 11px",
-        borderRadius: 7,
-        background: C.hard + "22",
-        border: `1px solid ${C.hard}44`,
-        color: C.hard,
-        cursor: "pointer"
-      }
-    }, "Drill →"))));
-    // Fallback: all high-weight topics started + no accuracy gaps → show stalest 3 by last session date
-    const stalest = moduleReadiness.filter(m => m.weight >= 8).sort((a, b) => {
-      if (!a.lastDate && !b.lastDate) return b.weight - a.weight;
-      if (!a.lastDate) return -1;
-      if (!b.lastDate) return 1;
-      return a.lastDate < b.lastDate ? -1 : 1;
-    }).slice(0, 3);
-    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: C.easy,
-        marginBottom: 8,
-        padding: "8px 12px",
-        background: C.easy + "11",
-        borderRadius: 8
-      }
-    }, "✅ Strong coverage — keep these sharp"), stalest.map(m => /*#__PURE__*/React.createElement("div", {
-      key: m.topic,
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "10px 12px",
-        background: C.dim,
-        borderRadius: 9
-      }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        fontWeight: 600,
-        color: C.text
-      }
-    }, m.topic), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted
-      }
-    }, m.accuracy != null ? `${m.accuracy}% accuracy · ` : "", "last drilled ", m.lastDate || "a while ago")), /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setScreen("home");
-        setTimeout(() => generateQuestionsRef.current && generateQuestionsRef.current(m.topic, m.modules[0], "Medium", 5, "guided"), 100);
-      },
-      style: {
-        fontSize: 11,
-        fontWeight: 700,
-        padding: "5px 11px",
-        borderRadius: 7,
-        background: C.accent + "22",
-        border: `1px solid ${C.accent}44`,
-        color: C.accentLight,
-        cursor: "pointer"
-      }
-    }, "Revise →"))));
-  })())), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.dim,
-      borderRadius: 10,
-      padding: "12px 14px",
-      fontSize: 11,
-      color: C.muted,
-      lineHeight: 1.6
-    }
-  }, "⚠ This is a directional estimate, not a guarantee. It's based on your performance on AI-generated questions, not validated CFA Institute content. Use it to guide where to focus, not as a definitive prediction."))));
 
   // ══ SR REVIEW ═════════════════════════════════════════════════════════════
   if (screen === "srReview") {
@@ -11722,13 +11282,13 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       fontSize: 22,
       fontWeight: 800
     }
-  }, "Module Readiness"), /*#__PURE__*/React.createElement("div", {
+  }, "Pass Probability"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.muted,
       marginTop: 3
     }
-  }, "Accuracy · LOS Coverage · Recency · Trend")), /*#__PURE__*/React.createElement("button", {
+  }, "Updated after every session")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setScreen("home"),
     style: {
       background: "none",
@@ -11785,20 +11345,345 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         color: C.muted,
         marginBottom: 4
       }
-    }, "Based on overall accuracy (", passProbability.currentAccuracy, "%) and ", passProbability.coveragePct, "% curriculum coverage. Spread sessions across more topics for a per-module estimate."), /*#__PURE__*/React.createElement("div", {
+    }, history.length < 10 && passProbability.label === "At Risk" ? "Early estimate — sharpen after 10+ sessions." : passProbability.advice), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12,
         color: C.muted,
         lineHeight: 1.5
       }
-    }, predicted ? `${predicted.modulesWithData}/10 topics with reliable data. Weighted by CFA official exam weights.` : passProbability ? "" : "Complete ≥10 questions across 3+ topics to unlock a weighted per-module estimate."), predicted && /*#__PURE__*/React.createElement("div", {
+    }, predicted ? `${predicted.modulesWithData}/10 topics with reliable data. Weighted by CFA official exam weights.` : passProbability ? "" : "Complete ≥10 questions across 3+ topics to unlock a weighted estimate."), predicted && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginTop: 5
       }
     }, daysLeft, " days · ", history.length, " sessions · ", totalQsAttempted, " Qs")));
-  })(), /*#__PURE__*/React.createElement("div", {
+  })(), passTrend.length >= 2 && passProbability && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: "14px 16px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: C.muted,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 10
+    }
+  }, "Pass probability trend"), /*#__PURE__*/React.createElement("svg", {
+    width: "100%",
+    height: "90",
+    style: {
+      overflow: "visible"
+    },
+    viewBox: "0 0 360 90",
+    preserveAspectRatio: "none"
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "trendGrad2",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React.createElement("stop", {
+    offset: "0%",
+    stopColor: passProbability.color,
+    stopOpacity: "0.3"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "100%",
+    stopColor: passProbability.color,
+    stopOpacity: "0.02"
+  }))), (() => {
+    const n = passTrend.length;
+    const pts = passTrend.map((p, i) => ({
+      x: n === 1 ? 180 : Math.round(i / (n - 1) * 340 + 10),
+      y: Math.round(80 - p.prob / 100 * 70),
+      p
+    }));
+    const polyPts = pts.map(p => `${p.x},${p.y}`).join(" ");
+    const areaPath = `M${pts[0].x},80 ` + pts.map(p => `L${p.x},${p.y}`).join(" ") + ` L${pts[pts.length - 1].x},80 Z`;
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: areaPath,
+      fill: "url(#trendGrad2)"
+    }), /*#__PURE__*/React.createElement("polyline", {
+      points: polyPts,
+      fill: "none",
+      stroke: passProbability.color,
+      strokeWidth: "2",
+      strokeLinejoin: "round"
+    }), pts.map((pt, i) => /*#__PURE__*/React.createElement("g", {
+      key: i
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: pt.x,
+      cy: pt.y,
+      r: "4",
+      fill: pt.p.prob >= 70 ? C.easy : pt.p.prob >= 55 ? C.medium : C.hard,
+      stroke: C.bg,
+      strokeWidth: "1.5"
+    }), i === pts.length - 1 && /*#__PURE__*/React.createElement("text", {
+      x: pt.x,
+      y: pt.y - 8,
+      textAnchor: "middle",
+      fill: passProbability.color,
+      fontSize: "10",
+      fontWeight: "700"
+    }, pt.p.prob, "%"))), /*#__PURE__*/React.createElement("line", {
+      x1: "10",
+      y1: Math.round(80 - 70 * 0.7),
+      x2: "350",
+      y2: Math.round(80 - 70 * 0.7),
+      stroke: C.easy,
+      strokeWidth: "0.5",
+      strokeDasharray: "4 4",
+      opacity: "0.4"
+    }), /*#__PURE__*/React.createElement("text", {
+      x: "355",
+      y: Math.round(80 - 70 * 0.7) + 4,
+      fill: C.easy,
+      fontSize: "8",
+      opacity: "0.6"
+    }, "70%"));
+  })()), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: C.muted
+    }
+  }, passTrend[0]?.date), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: C.muted
+    }
+  }, "today"))), passProbability && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: "16px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: C.muted,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 14
+    }
+  }, "What's driving this number"), [{
+    label: "Current accuracy (recency-weighted)",
+    value: `${passProbability.currentAccuracy}%`,
+    color: passProbability.currentAccuracy >= 70 ? C.easy : passProbability.currentAccuracy >= 60 ? C.medium : C.hard,
+    pct: passProbability.currentAccuracy
+  }, {
+    label: "Curriculum coverage (% of exam weight tested)",
+    value: `${passProbability.coveragePct}%`,
+    color: passProbability.coveragePct >= 60 ? C.easy : passProbability.coveragePct >= 40 ? C.medium : C.hard,
+    pct: passProbability.coveragePct
+  }, {
+    label: "Score trajectory (recent vs older sessions)",
+    value: passProbability.trajectory > 0 ? `+${passProbability.trajectory}% ↑` : passProbability.trajectory < 0 ? `${passProbability.trajectory}% ↓` : "Flat →",
+    color: passProbability.trajectory > 0 ? C.easy : passProbability.trajectory < 0 ? C.hard : C.muted,
+    pct: Math.min(100, 50 + passProbability.trajectory * 2)
+  }].map((f, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: C.muted
+    }
+  }, f.label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      fontWeight: 800,
+      color: f.color
+    }
+  }, f.value)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 5,
+      background: C.dim,
+      borderRadius: 3
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: `${Math.max(2, Math.min(100, f.pct))}%`,
+      background: f.color,
+      borderRadius: 3,
+      transition: "width 0.6s ease"
+    }
+  }))))), passProbability && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: "16px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: C.muted,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 12
+    }
+  }, "To move the needle this week"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, (() => {
+    const untested = moduleReadiness.filter(m => m.sessions === 0 && m.weight >= 9).slice(0, 3);
+    const weak = moduleReadiness.filter(m => m.accuracy !== null && m.accuracy < 65 && m.weight >= 8).slice(0, 2);
+    const items = [...untested, ...weak];
+    if (items.length > 0) return /*#__PURE__*/React.createElement(React.Fragment, null, untested.map(m => /*#__PURE__*/React.createElement("div", {
+      key: m.topic,
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "10px 12px",
+        background: C.dim,
+        borderRadius: 9
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: C.text
+      }
+    }, m.topic), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, "Untested · ", m.weight, "% of exam")), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setScreen("home");
+        setTimeout(() => generateQuestionsRef.current && generateQuestionsRef.current(m.topic, m.modules[0], "Easy", 5, "guided"), 100);
+      },
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: "5px 11px",
+        borderRadius: 7,
+        background: C.accent + "22",
+        border: `1px solid ${C.accent}44`,
+        color: C.accentLight,
+        cursor: "pointer"
+      }
+    }, "5 Qs →"))), weak.map(m => /*#__PURE__*/React.createElement("div", {
+      key: m.topic,
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "10px 12px",
+        background: C.dim,
+        borderRadius: 9
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: C.text
+      }
+    }, m.topic), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.hard
+      }
+    }, m.accuracy, "% accuracy · needs work")), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setScreen("home");
+        setTimeout(() => generateQuestionsRef.current && generateQuestionsRef.current(m.topic, m.untouchedModules[0] || m.modules[0], "Medium", 5, "guided"), 100);
+      },
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: "5px 11px",
+        borderRadius: 7,
+        background: C.hard + "22",
+        border: `1px solid ${C.hard}44`,
+        color: C.hard,
+        cursor: "pointer"
+      }
+    }, "Drill →"))));
+    const stalest = moduleReadiness.filter(m => m.weight >= 8).sort((a, b) => {
+      if (!a.lastDate && !b.lastDate) return b.weight - a.weight;
+      if (!a.lastDate) return -1;
+      if (!b.lastDate) return 1;
+      return a.lastDate < b.lastDate ? -1 : 1;
+    }).slice(0, 3);
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.easy,
+        marginBottom: 8,
+        padding: "8px 12px",
+        background: C.easy + "11",
+        borderRadius: 8
+      }
+    }, "✅ Strong coverage — keep these sharp"), stalest.map(m => /*#__PURE__*/React.createElement("div", {
+      key: m.topic,
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "10px 12px",
+        background: C.dim,
+        borderRadius: 9
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: C.text
+      }
+    }, m.topic), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted
+      }
+    }, m.accuracy != null ? `${m.accuracy}% · ` : "", "last drilled ", m.lastDate || "a while ago")), /*#__PURE__*/React.createElement("button", {
+      onClick: () => {
+        setScreen("home");
+        setTimeout(() => generateQuestionsRef.current && generateQuestionsRef.current(m.topic, m.modules[0], "Medium", 5, "guided"), 100);
+      },
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        padding: "5px 11px",
+        borderRadius: 7,
+        background: C.accent + "22",
+        border: `1px solid ${C.accent}44`,
+        color: C.accentLight,
+        cursor: "pointer"
+      }
+    }, "Revise →"))));
+  })())), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.surface,
       border: `1px solid ${C.border}`,
@@ -12074,7 +11959,16 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         cursor: "pointer"
       }
     }, notStarted ? `Start ${m.topic} →` : "Drill Weakest Module →"));
-  }))), 620);
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.dim,
+      borderRadius: 10,
+      padding: "12px 14px",
+      fontSize: 11,
+      color: C.muted,
+      lineHeight: 1.6
+    }
+  }, "⚠ Directional estimate only — based on AI-generated questions, not validated CFA Institute content. Use it to guide focus, not as a definitive prediction.")), 620);
 
   // ══ DASHBOARD ══════════════════════════════════════════════════════════════
   if (screen === "dashboard") {
