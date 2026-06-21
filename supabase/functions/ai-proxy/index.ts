@@ -7,13 +7,22 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CHAT_SYSTEM = [
-  "You are a CFA Level 1 exam preparation tutor.",
-  "You may ONLY discuss CFA Level 1 curriculum topics: Ethics & Professional Standards, Quantitative Methods, Economics, Financial Statement Analysis, Corporate Finance, Equity Investments, Fixed Income, Derivatives, Alternative Investments, Portfolio Management.",
-  "If asked about ANYTHING outside CFA Level 1, respond only with: \"I'm here to help with CFA Level 1 exam topics only.\"",
-  "Never invent specific CFA rules, thresholds, or figures — if uncertain say 'verify this in the official CFA curriculum.'",
-  "Be concise: 3 short paragraphs maximum. Use numeric examples where they clarify. Plain text only, no markdown.",
-].join(" ");
+function buildChatSystem(level: string): string {
+  const lvl = ["1","2","3"].includes(level) ? level : "1";
+  const topics: Record<string, string> = {
+    "1": "Ethics & Professional Standards, Quantitative Methods, Economics, Financial Statement Analysis, Corporate Finance, Equity Investments, Fixed Income, Derivatives, Alternative Investments, Portfolio Management",
+    "2": "Ethics & Professional Standards, Quantitative Methods, Economics, Financial Statement Analysis, Corporate Finance, Equity Investments, Fixed Income, Derivatives, Alternative Investments, Portfolio Management",
+    "3": "Ethics & Professional Standards, Behavioural Finance, Capital Market Expectations, Asset Allocation, Fixed Income Portfolio Management, Equity Portfolio Management, Derivatives & Currency Management, Alternative Investments, Risk Management, Portfolio Construction & Trading",
+  };
+  const refusal = `I'm here to help with CFA Level ${lvl} exam topics only.`;
+  return [
+    `You are a CFA Level ${lvl} exam preparation tutor.`,
+    `You may ONLY discuss CFA Level ${lvl} curriculum topics: ${topics[lvl]}.`,
+    `If asked about ANYTHING outside CFA Level ${lvl}, respond only with: "${refusal}"`,
+    "Never invent specific CFA rules, thresholds, or figures — if uncertain say 'verify this in the official CFA curriculum.'",
+    "Be concise: 3 short paragraphs maximum. Use numeric examples where they clarify. Plain text only, no markdown.",
+  ].join(" ");
+}
 
 const MAX_CHAT_TOKENS = 450;
 const MAX_CHAT_HISTORY = 10;
@@ -38,7 +47,7 @@ Deno.serve(async (req: Request) => {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return jsonResponse({ error: 'Invalid JSON' }, 400); }
 
-  const { userId, requestType, messages, prompt, maxTokens, model } = body as Record<string, unknown>;
+  const { userId, requestType, messages, prompt, maxTokens, model, level } = body as Record<string, unknown>;
 
   // Require a valid userId (64-char hex from SHA-256)
   if (!userId || typeof userId !== 'string' || userId.length < 32) {
@@ -79,7 +88,7 @@ Deno.serve(async (req: Request) => {
         model: 'claude-haiku-4-5-20251001',
         max_tokens: MAX_CHAT_TOKENS,
         temperature: 0.2,
-        system: CHAT_SYSTEM,
+        system: buildChatSystem(typeof level === 'string' ? level : '1'),
         messages: trimmed,
       }),
     });

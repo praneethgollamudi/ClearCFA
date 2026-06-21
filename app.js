@@ -989,6 +989,8 @@ const API_LOG_KEY = "cfa_api_log_v1";
 const PASS_TREND_KEY = "cfa_pass_trend_v1";
 const PLAN_KEY = "cfa_week_plan_v1";
 const DYNAMIC_PN_KEY = "cfa_dynamic_pn_v1";
+const DYNAMIC_FORMULAS_KEY = "cfa_dynamic_formulas_v1";
+const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING = {
   "claude-sonnet-4-6": {
     in: 3.00,
@@ -2306,7 +2308,7 @@ const POWER_NOTES = {
     }]
   }
 };
-async function callAIChat(userId, messages, maxTokens = 450) {
+async function callAIChat(userId, messages, maxTokens = 450, level = "1") {
   if (!userId) return null;
   try {
     const trimmed = messages.slice(-10).map(m => ({
@@ -2323,7 +2325,8 @@ async function callAIChat(userId, messages, maxTokens = 450) {
         requestType: "chat",
         userId,
         messages: trimmed,
-        maxTokens: Math.min(maxTokens, 450)
+        maxTokens: Math.min(maxTokens, 450),
+        level
       })
     });
     if (!res.ok) return null;
@@ -2336,20 +2339,77 @@ async function callAIChat(userId, messages, maxTokens = 450) {
 }
 
 // ─── REVISION SCREEN COMPONENTS ──────────────────────────────────────────────
-function generatePNModule(card) {
-  const moduleName = (card.subtopic || card.concept || "").trim() || "General Concept";
-  const explanation = card.explanation || "";
-  const sents = explanation.split(/(?<=[.;!?])\s+/).map(s => s.trim()).filter(s => s.length > 12);
-  const rules = sents.slice(0, 6);
-  if (card.los_tested && rules.length < 6) rules.push(`LOS: ${card.los_tested}`);
-  const traps = sents.filter(s => /however|but\s|not\s|unlike|careful|trap|confusion|mistake|distinguish|differ/i.test(s)).slice(0, 3);
-  if (!traps.length && explanation) traps.push(`Don't confuse: review the distinction carefully for ${moduleName}.`);
+function parsePNAIResponse(text, moduleName) {
+  const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+  const rules = [],
+    traps = [];
+  let mnemonic = "",
+    section = "";
+  for (const line of lines) {
+    if (/^RULES?:?\s*$/i.test(line)) {
+      section = "rules";
+      continue;
+    }
+    if (/^TRAPS?:?\s*$/i.test(line)) {
+      section = "traps";
+      continue;
+    }
+    if (/^MNEMONIC:?\s*$/i.test(line)) {
+      section = "mnemonic";
+      continue;
+    }
+    if (section === "rules" && /^[•\-\*]/.test(line)) rules.push(line.replace(/^[•\-\*]\s*/, ""));else if (section === "traps" && /^[•\-\*]/.test(line)) traps.push(line.replace(/^[•\-\*]\s*/, ""));else if (section === "mnemonic") mnemonic = (mnemonic ? mnemonic + " " : "") + line;
+  }
   return {
     module: moduleName,
-    rules: rules.length ? rules : [explanation.slice(0, 300)].filter(Boolean),
-    traps,
-    mnemonic: "",
-    _auto: true
+    rules: rules.length ? rules : ["Review the official CFA curriculum for this concept."],
+    traps: traps.length ? traps : ["Verify distinctions carefully."],
+    mnemonic: mnemonic.trim(),
+    _auto: true,
+    _aiGen: true
+  };
+}
+function parseFormulaAIResponse(text, conceptName) {
+  const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+  let name = conceptName,
+    f = "",
+    variables = "",
+    when = "",
+    example = "",
+    section = "";
+  for (const line of lines) {
+    if (/^NAME:\s*/i.test(line)) {
+      name = line.replace(/^NAME:\s*/i, "").trim();
+      continue;
+    }
+    if (/^FORMULA:\s*/i.test(line)) {
+      f = line.replace(/^FORMULA:\s*/i, "").trim();
+      section = "";
+      continue;
+    }
+    if (/^VARIABLES?:\s*$/i.test(line)) {
+      section = "variables";
+      continue;
+    }
+    if (/^WHEN:\s*/i.test(line)) {
+      when = line.replace(/^WHEN:\s*/i, "").trim();
+      section = "when";
+      continue;
+    }
+    if (/^EXAMPLE:\s*/i.test(line)) {
+      example = line.replace(/^EXAMPLE:\s*/i, "").trim();
+      section = "example";
+      continue;
+    }
+    if (section === "variables") variables = (variables ? variables + "\n" : "") + line;else if (section === "when") when = (when ? when + " " : "") + line;else if (section === "example") example = (example ? example + " " : "") + line;
+  }
+  return {
+    name,
+    f: f || "See curriculum",
+    variables,
+    when,
+    example,
+    _aiGen: true
   };
 }
 function RevisionScreen({
@@ -2358,7 +2418,8 @@ function RevisionScreen({
   initialTab = "notes",
   userId = "",
   srDeck = {},
-  focusConcept = null
+  focusConcept = null,
+  cfaLevel = "1"
 }) {
   const [selTopic, setSelTopic] = useState(initialTopic || Object.keys(POWER_NOTES)[0]);
   const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
@@ -2380,14 +2441,25 @@ function RevisionScreen({
       return {};
     }
   });
+  const [dynamicFormulas, setDynamicFormulas] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(DYNAMIC_FORMULAS_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const [pnGenerating, setPnGenerating] = useState({});
+  const [formulaGenerating, setFormulaGenerating] = useState({});
 
-  // Merge static POWER_NOTES with any auto-generated dynamic modules
+  // Merge static POWER_NOTES with any AI-generated dynamic modules
   const staticTopics = POWER_NOTES[selTopic]?.topics || [];
   const dynamicTopics = dynamicPN[selTopic] || [];
   const topicData = {
     topics: [...staticTopics, ...dynamicTopics]
   };
-  const formulaData = FORMULAS[selTopic] || [];
+  const staticFormulas = FORMULAS[selTopic] || [];
+  const dynamicFormulaData = dynamicFormulas[selTopic] || [];
+  const formulaData = [...staticFormulas, ...dynamicFormulaData];
   const allFormulas = Object.values(FORMULAS).flat();
   const drillData = formulaData.length > 0 ? formulaData : allFormulas;
   const drillTotal = drillData.length;
@@ -2443,40 +2515,68 @@ function RevisionScreen({
     } : null);
     setAiLoading(false);
   };
-
-  // Auto-generate Power Notes modules for missed concepts with no existing match
-  useEffect(() => {
-    if (tab !== "notes") return;
-    const allTopics = topicData.topics;
-    const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).slice(0, 8);
-    const unmatched = wrongCards.filter(card => {
-      const sub = (card.subtopic || "").toLowerCase();
-      const con = (card.concept || "").split(" ")[0].toLowerCase();
-      const idx = allTopics.findIndex(m => m.module && (m.module.toLowerCase().includes(sub) || sub.includes(m.module.toLowerCase())));
-      if (idx >= 0) return false;
-      const idx2 = allTopics.findIndex(m => m.module && con && m.module.toLowerCase().includes(con));
-      return idx2 < 0;
-    });
-    if (!unmatched.length) return;
+  const generatePNForConcept = async card => {
+    const name = (card.subtopic || card.concept || "").trim();
+    if (!name || !userId) return;
+    const key = name.toLowerCase();
+    if (pnGenerating[key]) return;
+    setPnGenerating(s => ({
+      ...s,
+      [key]: true
+    }));
+    const prompt = `CFA Level ${cfaLevel} curriculum exam prep. Write concise study notes for: "${name}" (Topic: ${selTopic})\nContext from a wrong answer: "${(card.explanation || "").slice(0, 400)}"\n${card.los_tested ? `LOS: ${card.los_tested}` : ""}\n\nRespond in EXACTLY this format:\nRULES\n• [exam-ready rule 1]\n• [rule 2]\n• [rule 3]\n\nTRAPS\n• [common mistake 1]\n• [common mistake 2]\n\nMNEMONIC\n[one memorable phrase]`;
+    const reply = await callAIChat(userId, [{
+      role: "user",
+      content: prompt
+    }], 450, cfaLevel);
+    setPnGenerating(s => ({
+      ...s,
+      [key]: false
+    }));
+    if (!reply) return;
+    const mod = parsePNAIResponse(reply, name);
     const existing = dynamicPN[selTopic] || [];
-    const toAdd = [];
-    for (const card of unmatched) {
-      const name = (card.subtopic || card.concept || "").trim();
-      if (!name) continue;
-      if ([...existing, ...toAdd].some(m => m.module.toLowerCase() === name.toLowerCase())) continue;
-      toAdd.push(generatePNModule(card));
-    }
-    if (!toAdd.length) return;
+    if (existing.some(m => m.module.toLowerCase() === key)) return;
     const updated = {
       ...dynamicPN,
-      [selTopic]: [...existing, ...toAdd]
+      [selTopic]: [...existing, mod]
     };
     setDynamicPN(updated);
     try {
       localStorage.setItem(DYNAMIC_PN_KEY, JSON.stringify(updated));
     } catch {}
-  }, [selTopic, tab, srDeck]); // eslint-disable-line react-hooks/exhaustive-deps
-
+  };
+  const generateFormulaForConcept = async card => {
+    const name = (card.subtopic || card.concept || "").trim();
+    if (!name || !userId) return;
+    const key = name.toLowerCase();
+    if (formulaGenerating[key]) return;
+    setFormulaGenerating(s => ({
+      ...s,
+      [key]: true
+    }));
+    const prompt = `CFA Level ${cfaLevel} exam prep. A student got this concept wrong and needs the formula.\nConcept: "${name}" (Topic: ${selTopic})\nContext: "${(card.explanation || "").slice(0, 300)}"\n\nRespond in EXACTLY this format:\nNAME: [formula name]\nFORMULA: [formula expression using standard notation]\nVARIABLES:\n[each variable on its own line: variable = what it means]\nWHEN: [one sentence: when to use on the exam]\nEXAMPLE: [one sentence worked example with numbers]`;
+    const reply = await callAIChat(userId, [{
+      role: "user",
+      content: prompt
+    }], 400, cfaLevel);
+    setFormulaGenerating(s => ({
+      ...s,
+      [key]: false
+    }));
+    if (!reply) return;
+    const formula = parseFormulaAIResponse(reply, name);
+    const existing = dynamicFormulas[selTopic] || [];
+    if (existing.some(f => f.name.toLowerCase() === key)) return;
+    const updated = {
+      ...dynamicFormulas,
+      [selTopic]: [...existing, formula]
+    };
+    setDynamicFormulas(updated);
+    try {
+      localStorage.setItem(DYNAMIC_FORMULAS_KEY, JSON.stringify(updated));
+    } catch {}
+  };
   return /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "system-ui,sans-serif",
@@ -2626,16 +2726,105 @@ function RevisionScreen({
       } = group;
       const isAuto = matchedMod?._auto;
       const totalWrong = cards.reduce((s, c) => s + (c.wrongCount || 0), 0);
-      return /*#__PURE__*/ /* Clicking the card opens & scrolls to the module in the accordion below — no duplicate content */React.createElement("button", {
+      const conceptName = (cards[0].subtopic || cards[0].concept || "").trim();
+      const genKey = conceptName.toLowerCase();
+      const isGenerating = pnGenerating[genKey];
+      const alreadyGenerated = modIdx < 0 && (dynamicPN[selTopic] || []).some(m => m.module.toLowerCase() === genKey);
+      if (modIdx < 0) {
+        // Unmatched concept — show AI notes generator card
+        return /*#__PURE__*/React.createElement("div", {
+          key: gi,
+          style: {
+            width: "100%",
+            background: "#0e0818",
+            border: "1px solid #c0304433",
+            borderRadius: 10,
+            padding: "10px 13px"
+          }
+        }, /*#__PURE__*/React.createElement("div", {
+          style: {
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 6
+          }
+        }, /*#__PURE__*/React.createElement("div", {
+          style: {
+            flex: 1,
+            minWidth: 0
+          }
+        }, /*#__PURE__*/React.createElement("div", {
+          style: {
+            fontSize: 12,
+            fontWeight: 700,
+            color: "#e2e2ff",
+            marginBottom: 4
+          }
+        }, conceptName || "Unknown concept"), /*#__PURE__*/React.createElement("div", {
+          style: {
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "3px 5px"
+          }
+        }, cards.map((c, ci) => /*#__PURE__*/React.createElement("span", {
+          key: ci,
+          style: {
+            fontSize: 10,
+            background: "#1a0a28",
+            border: "1px solid #c0304444",
+            borderRadius: 4,
+            padding: "1px 6px",
+            color: "#9090c0"
+          }
+        }, c.concept || c.subtopic, " ", /*#__PURE__*/React.createElement("span", {
+          style: {
+            color: "#e05070",
+            fontWeight: 700
+          }
+        }, "×", c.wrongCount))))), /*#__PURE__*/React.createElement("span", {
+          style: {
+            fontSize: 10,
+            background: "#e05070",
+            color: "#fff",
+            fontWeight: 700,
+            padding: "2px 6px",
+            borderRadius: 4,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            marginLeft: 8
+          }
+        }, totalWrong, "×")), alreadyGenerated ? /*#__PURE__*/React.createElement("div", {
+          style: {
+            fontSize: 11,
+            color: "#6060b0",
+            fontStyle: "italic"
+          }
+        }, "✦ AI notes generated — see below") : /*#__PURE__*/React.createElement("button", {
+          onClick: () => generatePNForConcept(cards[0]),
+          disabled: isGenerating || !userId,
+          style: {
+            marginTop: 4,
+            padding: "6px 12px",
+            borderRadius: 7,
+            fontSize: 11,
+            fontWeight: 700,
+            border: `1px solid ${C.accent}55`,
+            background: `${C.accent}18`,
+            color: isGenerating ? "#6060b0" : C.accentLight,
+            cursor: isGenerating || !userId ? "default" : "pointer",
+            width: "100%",
+            textAlign: "center"
+          }
+        }, isGenerating ? "⏳ Generating AI notes…" : "✨ Generate AI Study Notes", !userId && " (sign in required)"));
+      }
+      return /*#__PURE__*/ /* Clicking the card opens & scrolls to the module in the accordion below */React.createElement("button", {
         key: gi,
         onClick: () => {
-          if (modIdx >= 0) {
-            setExpandedModule(modIdx);
-            setTimeout(() => document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({
-              behavior: "smooth",
-              block: "start"
-            }), 80);
-          }
+          setExpandedModule(modIdx);
+          setTimeout(() => document.getElementById(`pn-mod-${modIdx}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          }), 80);
         },
         style: {
           width: "100%",
@@ -2646,7 +2835,7 @@ function RevisionScreen({
           border: "1px solid #c0304433",
           borderRadius: 10,
           padding: "10px 13px",
-          cursor: modIdx >= 0 ? "pointer" : "default",
+          cursor: "pointer",
           textAlign: "left"
         }
       }, /*#__PURE__*/React.createElement("div", {
@@ -2661,14 +2850,14 @@ function RevisionScreen({
           color: "#e2e2ff",
           marginBottom: 5
         }
-      }, matchedMod ? /*#__PURE__*/React.createElement(React.Fragment, null, "📚 ", matchedMod.module, isAuto && /*#__PURE__*/React.createElement("span", {
+      }, /*#__PURE__*/React.createElement(React.Fragment, null, "📚 ", matchedMod.module, isAuto && /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 9,
           fontWeight: 600,
           color: "#6060b0",
           marginLeft: 6
         }
-      }, "✦ auto")) : cards[0].concept || cards[0].subtopic), /*#__PURE__*/React.createElement("div", {
+      }, "✦ AI"))), /*#__PURE__*/React.createElement("div", {
         style: {
           display: "flex",
           flexWrap: "wrap",
@@ -2708,7 +2897,7 @@ function RevisionScreen({
           borderRadius: 4,
           whiteSpace: "nowrap"
         }
-      }, totalWrong, "×"), modIdx >= 0 && /*#__PURE__*/React.createElement("span", {
+      }, totalWrong, "×"), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
           color: "#6060a0"
@@ -2773,21 +2962,21 @@ function RevisionScreen({
         fontWeight: 700,
         color: C.text
       }
-    }, mod.module, mod._auto && /*#__PURE__*/React.createElement("span", {
+    }, mod.module, mod._aiGen && /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 9,
         fontWeight: 600,
-        color: "#6060b0",
+        color: "#7c5cbf",
         marginLeft: 6,
         verticalAlign: "middle"
       }
-    }, "✦ auto")), /*#__PURE__*/React.createElement("div", {
+    }, "✦ AI")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.muted,
         marginTop: 2
       }
-    }, mod.rules.length, " rules · ", mod.traps.length, " traps", mod.mnemonic ? " · 1 mnemonic" : "", mod._auto ? " · from your mistakes" : "")), /*#__PURE__*/React.createElement("span", {
+    }, mod.rules.length, " rules · ", mod.traps.length, " traps", mod.mnemonic ? " · 1 mnemonic" : "", mod._aiGen ? " · AI-generated from your mistakes" : "")), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
         color: C.accentLight,
@@ -2840,7 +3029,7 @@ function RevisionScreen({
         flex: 1
       }
     }, r), /*#__PURE__*/React.createElement("button", {
-      onClick: () => openAI(`Rule: ${r}`, `CFA Level 1 exam prep. I'm studying this rule: "${r}"\n\nExplain it in 2-3 sentences with a concrete numeric example, then name one common exam trap related to it. Be direct.`),
+      onClick: () => openAI(`Rule: ${r}`, `CFA Level ${cfaLevel} exam prep. I'm studying this rule: "${r}"\n\nExplain it in 2-3 sentences with a concrete numeric example, then name one common exam trap related to it. Be direct.`),
       style: {
         fontSize: 10,
         background: "none",
@@ -2893,7 +3082,7 @@ function RevisionScreen({
         flex: 1
       }
     }, t), /*#__PURE__*/React.createElement("button", {
-      onClick: () => openAI(`Trap: ${t}`, `CFA Level 1 exam prep. Explain why this is a common trap on the exam: "${t}"\n\nGive a concrete example of how a student gets it wrong versus the correct answer. Be brief and direct.`),
+      onClick: () => openAI(`Trap: ${t}`, `CFA Level ${cfaLevel} exam prep. Explain why this is a common trap on the exam: "${t}"\n\nGive a concrete example of how a student gets it wrong versus the correct answer. Be brief and direct.`),
       style: {
         fontSize: 10,
         background: "none",
@@ -2930,7 +3119,7 @@ function RevisionScreen({
         fontStyle: "italic"
       }
     }, mod.mnemonic)), /*#__PURE__*/React.createElement("button", {
-      onClick: () => openAI(mod.module, `CFA Level 1 exam prep. I'm studying the "${mod.module}" module. Give me the 3 most important things to know for the exam about this topic, with a worked example for the trickiest one. Be concise.`),
+      onClick: () => openAI(mod.module, `CFA Level ${cfaLevel} exam prep. I'm studying the "${mod.module}" module. Give me the 3 most important things to know for the exam about this topic, with a worked example for the trickiest one. Be concise.`),
       style: {
         marginTop: 14,
         width: "100%",
@@ -3056,7 +3245,90 @@ function RevisionScreen({
         }
       }, "↓"));
     })));
-  })(), formulaData.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  })(), (() => {
+    const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 8);
+    if (!wrongCards.length) return null;
+    const gaps = wrongCards.filter(card => {
+      const words = ((card.concept || "") + " " + (card.subtopic || "")).toLowerCase().split(/[\s\-\/\(\)]+/).filter(w => w.length > 3);
+      const matched = formulaData.some(f => {
+        const fn = f.name.toLowerCase();
+        return words.some(w => fn.includes(w) || w.includes(fn.split(" ")[0]));
+      });
+      if (matched) return false;
+      const key = (card.subtopic || card.concept || "").trim().toLowerCase();
+      return key && !dynamicFormulas[selTopic]?.some(f => f.name.toLowerCase() === key);
+    });
+    if (!gaps.length) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: "#a060e0",
+        marginBottom: 8,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em"
+      }
+    }, "✨ Formula Gaps from your mistakes"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 6
+      }
+    }, gaps.map((card, gi) => {
+      const name = (card.subtopic || card.concept || "").trim();
+      const genKey = name.toLowerCase();
+      const isGen = formulaGenerating[genKey];
+      return /*#__PURE__*/React.createElement("div", {
+        key: gi,
+        style: {
+          background: "#0a0818",
+          border: "1px solid #8040c033",
+          borderRadius: 9,
+          padding: "9px 12px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          minWidth: 0
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#c0a0e0"
+        }
+      }, name), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: "#6060a0",
+          marginTop: 2
+        }
+      }, "No formula found — AI can generate one")), /*#__PURE__*/React.createElement("button", {
+        onClick: () => generateFormulaForConcept(card),
+        disabled: isGen || !userId,
+        style: {
+          padding: "6px 11px",
+          borderRadius: 7,
+          fontSize: 11,
+          fontWeight: 700,
+          border: "1px solid #8040c055",
+          background: "#8040c018",
+          color: isGen ? "#6060b0" : "#c090f0",
+          cursor: isGen || !userId ? "default" : "pointer",
+          flexShrink: 0,
+          whiteSpace: "nowrap"
+        }
+      }, isGen ? "⏳ Generating…" : "✨ Generate"));
+    })));
+  })(), formulaData.length === 0 && !dynamicFormulas[selTopic]?.length ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "40px 0",
@@ -3083,12 +3355,18 @@ function RevisionScreen({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
-      color: C.muted,
+      color: f._aiGen ? "#a060e0" : C.muted,
       minWidth: 110,
       flexShrink: 0,
       lineHeight: 1.4
     }
-  }, f.name), /*#__PURE__*/React.createElement("div", {
+  }, f.name, f._aiGen && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 9,
+      color: "#7c5cbf",
+      marginLeft: 4
+    }
+  }, "✦ AI")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.accentLight,
@@ -3097,7 +3375,7 @@ function RevisionScreen({
       flex: 1
     }
   }, f.f), /*#__PURE__*/React.createElement("button", {
-    onClick: () => openAI(`Formula: ${f.name}`, `CFA Level 1 exam prep. Formula: ${f.name} = ${f.f}\n\nExplain what each variable means, walk me through a numeric example, and tell me how this formula typically appears on the exam. Be concise.`),
+    onClick: () => openAI(`Formula: ${f.name}`, `CFA Level ${cfaLevel} exam prep. Formula: ${f.name} = ${f.f}\n\nExplain what each variable means, walk me through a numeric example, and tell me how this formula typically appears on the exam. Be concise.`),
     style: {
       fontSize: 11,
       background: "none",
@@ -5307,6 +5585,13 @@ function CFAMock() {
   const [loadingETA, setLoadingETA] = useState(null);
   const loadingStartRef = useRef(null);
   const [apiKey, setApiKey] = useState("BACKEND"); // placeholder — AI routed through proxy
+  const [cfaLevel, setCfaLevel] = useState(() => {
+    try {
+      return localStorage.getItem(CFA_LEVEL_KEY) || "1";
+    } catch {
+      return "1";
+    }
+  });
   const [driveStatus, setDriveStatus] = useState(null); // null | "syncing" | "synced" | "error"
   const [supabaseSyncing, setSupabaseSyncing] = useState(false);
   const [authUser, setAuthUser] = useState(() => getStoredAuth());
@@ -7883,6 +8168,54 @@ function CFAMock() {
   }, "Settings"), /*#__PURE__*/React.createElement("div", {
     style: {
       width: "100%",
+      padding: "13px 14px",
+      borderRadius: 12,
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      marginBottom: 9
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: C.text,
+      marginBottom: 8
+    }
+  }, "🎓 CFA Level"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, ["1", "2", "3"].map(l => /*#__PURE__*/React.createElement("button", {
+    key: l,
+    onClick: () => {
+      setCfaLevel(l);
+      try {
+        localStorage.setItem(CFA_LEVEL_KEY, l);
+      } catch {}
+    },
+    style: {
+      flex: 1,
+      padding: "8px",
+      borderRadius: 9,
+      fontSize: 13,
+      fontWeight: 800,
+      border: "none",
+      cursor: "pointer",
+      background: cfaLevel === l ? `linear-gradient(135deg,${C.accent},${C.accentLight})` : C.surfaceHigh,
+      color: cfaLevel === l ? "#fff" : C.muted,
+      transition: "all 0.15s"
+    }
+  }, "L", l))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.muted,
+      marginTop: 6,
+      textAlign: "center"
+    }
+  }, "Affects AI tutor, question generation, and study notes")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
       display: "flex",
       alignItems: "center",
       gap: 12,
@@ -8092,7 +8425,13 @@ function CFAMock() {
       color: C.muted,
       marginTop: 1
     }
-  }, "Complete CFA L1 Prep")))), /*#__PURE__*/React.createElement("div", {
+  }, "CFA Level ", cfaLevel, " Prep · ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.accent,
+      cursor: "pointer"
+    },
+    onClick: () => setSettingsOpen(true)
+  }, "change"))))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "flex-start",
@@ -14416,7 +14755,8 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     initialTab: revisionTab,
     userId: authUser?.userId || "",
     srDeck: srDeck,
-    focusConcept: revisionConcept
+    focusConcept: revisionConcept,
+    cfaLevel: cfaLevel
   });
   return null;
 }
