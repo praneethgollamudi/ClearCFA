@@ -2332,6 +2332,31 @@ async function askClaudeText(apiKey, prompt, maxTokens = 400) {
     return null;
   }
 }
+async function askClaudeMT(apiKey, messages, maxTokens = 700) {
+  if (!apiKey) return null;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+        "x-api-key": apiKey
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: maxTokens,
+        system: "You are a concise CFA Level 1 tutor. Give exam-focused answers with concrete numeric examples where helpful. Never repeat the question back or add unnecessary preamble. Use plain text, not markdown.",
+        messages
+      })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.content?.map(i => i.text || "").join("").trim() || null;
+  } catch {
+    return null;
+  }
+}
 
 // ─── REVISION SCREEN COMPONENTS ──────────────────────────────────────────────
 function generatePNModule(card) {
@@ -2366,9 +2391,10 @@ function RevisionScreen({
   const [flipped, setFlipped] = useState(false);
   const [drillResult, setDrillResult] = useState({}); // {idx: "got it"|"again"}
   const [drillDone, setDrillDone] = useState(false);
-  const [explainCache, setExplainCache] = useState({});
-  const [explainLoading, setExplainLoading] = useState(null);
-  const [explainOpen, setExplainOpen] = useState(null);
+  const [aiPanel, setAiPanel] = useState(null); // {context, messages:[{role,content}]}
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiMsgsRef = useRef([]);
   const [expandedWrong, setExpandedWrong] = useState(null);
   const [dynamicPN, setDynamicPN] = useState(() => {
     try {
@@ -2390,6 +2416,56 @@ function RevisionScreen({
   const drillTotal = drillData.length;
   const drillCard = drillData[drillIdx] || null;
   const drillProgress = Object.keys(drillResult).length;
+  const openAI = async (context, firstPrompt) => {
+    const userMsg = {
+      role: "user",
+      content: firstPrompt
+    };
+    aiMsgsRef.current = [userMsg];
+    setAiPanel({
+      context,
+      messages: [userMsg]
+    });
+    setAiInput("");
+    setAiLoading(true);
+    const reply = await askClaudeMT(apiKey, [userMsg]);
+    const withReply = [...aiMsgsRef.current, {
+      role: "assistant",
+      content: reply || "No response — check your API key in Settings."
+    }];
+    aiMsgsRef.current = withReply;
+    setAiPanel(p => p ? {
+      ...p,
+      messages: withReply
+    } : null);
+    setAiLoading(false);
+  };
+  const sendAI = async () => {
+    if (!aiInput.trim() || aiLoading) return;
+    const userMsg = {
+      role: "user",
+      content: aiInput.trim()
+    };
+    const msgs = [...aiMsgsRef.current, userMsg];
+    aiMsgsRef.current = msgs;
+    setAiPanel(p => p ? {
+      ...p,
+      messages: msgs
+    } : null);
+    setAiInput("");
+    setAiLoading(true);
+    const reply = await askClaudeMT(apiKey, msgs);
+    const withReply = [...msgs, {
+      role: "assistant",
+      content: reply || "No response — check your API key in Settings."
+    }];
+    aiMsgsRef.current = withReply;
+    setAiPanel(p => p ? {
+      ...p,
+      messages: withReply
+    } : null);
+    setAiLoading(false);
+  };
 
   // Auto-generate Power Notes modules for missed concepts with no existing match
   useEffect(() => {
@@ -2768,36 +2844,12 @@ function RevisionScreen({
     }, mod.rules.map((r, i) => /*#__PURE__*/React.createElement("div", {
       key: i,
       style: {
-        marginBottom: 2
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      onClick: async () => {
-        if (explainOpen === r) {
-          setExplainOpen(null);
-          return;
-        }
-        setExplainOpen(r);
-        if (!explainCache[r] && !explainLoading) {
-          setExplainLoading(r);
-          const result = await askClaudeText(apiKey, `CFA Level 1 exam prep. Explain this rule in 3-4 sentences for a student, include one concrete worked example (with numbers if relevant), and name one common exam trap:\n\n"${r}"\n\nBe direct and specific. No fluff.`, 400);
-          setExplainCache(c => ({
-            ...c,
-            [r]: result || "Could not load explanation."
-          }));
-          setExplainLoading(null);
-        }
-      },
-      style: {
         display: "flex",
         gap: 8,
         alignItems: "flex-start",
         fontSize: 12,
         color: C.textMid,
-        lineHeight: 1.6,
-        cursor: "pointer",
-        padding: "3px 0",
-        borderRadius: 6,
-        transition: "background 0.1s"
+        lineHeight: 1.6
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
@@ -2810,36 +2862,20 @@ function RevisionScreen({
       style: {
         flex: 1
       }
-    }, r), /*#__PURE__*/React.createElement("span", {
+    }, r), /*#__PURE__*/React.createElement("button", {
+      onClick: () => openAI(`Rule: ${r}`, `CFA Level 1 exam prep. I'm studying this rule: "${r}"\n\nExplain it in 2-3 sentences with a concrete numeric example, then name one common exam trap related to it. Be direct.`),
       style: {
         fontSize: 10,
-        color: C.accent,
+        background: "none",
+        border: `1px solid ${C.accent}44`,
+        borderRadius: 5,
+        color: C.accentLight,
+        cursor: "pointer",
+        padding: "2px 6px",
         flexShrink: 0,
-        marginTop: 2
+        marginTop: 1
       }
-    }, explainOpen === r ? "▲" : "💡")), explainOpen === r && /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: "#0a1020",
-        border: `1px solid ${C.accent}33`,
-        borderRadius: 8,
-        padding: "10px 12px",
-        marginTop: 4,
-        marginLeft: 16,
-        animation: "fadeIn 0.15s ease"
-      }
-    }, explainLoading === r ? /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted,
-        animation: "pulse 1.5s infinite"
-      }
-    }, "Loading explanation…") : /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12,
-        color: "#c0c8e8",
-        lineHeight: 1.7
-      }
-    }, explainCache[r])))))), /*#__PURE__*/React.createElement("div", {
+    }, "💬"))))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: mod.mnemonic ? 14 : 0
       }
@@ -2875,7 +2911,24 @@ function RevisionScreen({
         fontWeight: 700,
         marginTop: 1
       }
-    }, "!"), /*#__PURE__*/React.createElement("span", null, t))))), mod.mnemonic && /*#__PURE__*/React.createElement("div", {
+    }, "!"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        flex: 1
+      }
+    }, t), /*#__PURE__*/React.createElement("button", {
+      onClick: () => openAI(`Trap: ${t}`, `CFA Level 1 exam prep. Explain why this is a common trap on the exam: "${t}"\n\nGive a concrete example of how a student gets it wrong versus the correct answer. Be brief and direct.`),
+      style: {
+        fontSize: 10,
+        background: "none",
+        border: `1px solid ${C.hard}44`,
+        borderRadius: 5,
+        color: C.hard,
+        cursor: "pointer",
+        padding: "2px 6px",
+        flexShrink: 0,
+        marginTop: 1
+      }
+    }, "💬"))))), mod.mnemonic && /*#__PURE__*/React.createElement("div", {
       style: {
         background: "#0a0820",
         border: `1px solid ${C.accent}33`,
@@ -2899,7 +2952,21 @@ function RevisionScreen({
         lineHeight: 1.6,
         fontStyle: "italic"
       }
-    }, mod.mnemonic))));
+    }, mod.mnemonic)), /*#__PURE__*/React.createElement("button", {
+      onClick: () => openAI(mod.module, `CFA Level 1 exam prep. I'm studying the "${mod.module}" module. Give me the 3 most important things to know for the exam about this topic, with a worked example for the trickiest one. Be concise.`),
+      style: {
+        marginTop: 14,
+        width: "100%",
+        padding: "9px",
+        borderRadius: 9,
+        fontSize: 12,
+        fontWeight: 700,
+        background: `${C.accent}18`,
+        border: `1px solid ${C.accent}44`,
+        color: C.accentLight,
+        cursor: "pointer"
+      }
+    }, "💬 Ask AI about ", mod.module)));
   })), tab === "formulas" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -3031,19 +3098,17 @@ function RevisionScreen({
     id: `formula-${i}`,
     style: {
       display: "flex",
-      gap: 12,
-      alignItems: "flex-start",
+      gap: 10,
+      alignItems: "center",
       padding: "11px 16px",
-      borderBottom: i < formulaData.length - 1 ? `1px solid ${C.border}` : "none",
-      transition: "background 0.3s"
+      borderBottom: i < formulaData.length - 1 ? `1px solid ${C.border}` : "none"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
-      minWidth: 120,
+      minWidth: 110,
       flexShrink: 0,
-      paddingTop: 2,
       lineHeight: 1.4
     }
   }, f.name), /*#__PURE__*/React.createElement("div", {
@@ -3054,7 +3119,19 @@ function RevisionScreen({
       lineHeight: 1.6,
       flex: 1
     }
-  }, f.f)))), /*#__PURE__*/React.createElement("div", {
+  }, f.f), /*#__PURE__*/React.createElement("button", {
+    onClick: () => openAI(`Formula: ${f.name}`, `CFA Level 1 exam prep. Formula: ${f.name} = ${f.f}\n\nExplain what each variable means, walk me through a numeric example, and tell me how this formula typically appears on the exam. Be concise.`),
+    style: {
+      fontSize: 11,
+      background: "none",
+      border: `1px solid ${C.accent}44`,
+      borderRadius: 5,
+      color: C.accentLight,
+      cursor: "pointer",
+      padding: "3px 7px",
+      flexShrink: 0
+    }
+  }, "💬")))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10,
       fontSize: 11,
@@ -3274,7 +3351,167 @@ function RevisionScreen({
       border: "none",
       cursor: "pointer"
     }
-  }, "Drill again →"))));
+  }, "Drill again →"))), aiPanel && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    onClick: () => setAiPanel(null),
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.55)",
+      zIndex: 900
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 901,
+      background: "#0d0d20",
+      borderRadius: "18px 18px 0 0",
+      border: `1px solid ${C.accent}55`,
+      borderBottom: "none",
+      display: "flex",
+      flexDirection: "column",
+      maxHeight: "72vh"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      padding: "14px 16px 10px",
+      borderBottom: `1px solid ${C.accent}22`,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.accentLight,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 3
+    }
+  }, "💬 Ask AI"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.muted,
+      lineHeight: 1.4,
+      wordBreak: "break-word"
+    }
+  }, aiPanel.context)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAiPanel(null),
+    style: {
+      background: "none",
+      border: "none",
+      color: C.muted,
+      cursor: "pointer",
+      fontSize: 18,
+      lineHeight: 1,
+      marginLeft: 10,
+      flexShrink: 0,
+      padding: "2px 6px"
+    }
+  }, "✕")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: "auto",
+      padding: "12px 14px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, aiPanel.messages.map((m, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: "flex",
+      justifyContent: m.role === "user" ? "flex-end" : "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: "85%",
+      padding: "10px 13px",
+      borderRadius: m.role === "user" ? "13px 13px 3px 13px" : "13px 13px 13px 3px",
+      background: m.role === "user" ? `${C.accent}33` : "#1a1a2e",
+      border: `1px solid ${m.role === "user" ? C.accent + "44" : C.border}`,
+      fontSize: 12,
+      color: m.role === "user" ? C.accentLight : C.textMid,
+      lineHeight: 1.7,
+      whiteSpace: "pre-wrap"
+    }
+  }, m.content))), aiLoading && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "10px 14px",
+      borderRadius: "13px 13px 13px 3px",
+      background: "#1a1a2e",
+      border: `1px solid ${C.border}`,
+      fontSize: 12,
+      color: C.muted,
+      animation: "pulse 1.2s infinite"
+    }
+  }, "Thinking…")), !apiKey && aiPanel.messages.length === 1 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "10px 14px",
+      borderRadius: 10,
+      background: "#1a0a0e",
+      border: "1px solid #c0304444",
+      fontSize: 12,
+      color: "#e05070",
+      lineHeight: 1.6
+    }
+  }, "No API key set — go to Settings (⚙) to add your Anthropic key.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      padding: "10px 12px 14px",
+      borderTop: `1px solid ${C.accent}22`,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: aiInput,
+    onChange: e => setAiInput(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendAI();
+      }
+    },
+    placeholder: "Ask a follow-up question…",
+    style: {
+      flex: 1,
+      padding: "10px 13px",
+      borderRadius: 10,
+      background: "#0a0a1a",
+      border: `1px solid ${C.accent}33`,
+      color: C.text,
+      fontSize: 13,
+      outline: "none"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: sendAI,
+    disabled: aiLoading || !aiInput.trim(),
+    style: {
+      padding: "10px 16px",
+      borderRadius: 10,
+      fontSize: 13,
+      fontWeight: 700,
+      background: aiLoading || !aiInput.trim() ? C.dim : `linear-gradient(135deg,${C.accent},${C.accentLight})`,
+      color: aiLoading || !aiInput.trim() ? C.muted : "#fff",
+      border: "none",
+      cursor: aiLoading || !aiInput.trim() ? "not-allowed" : "pointer",
+      flexShrink: 0
+    }
+  }, "→")))));
 }
 
 // ─── LOCAL QUESTION GENERATOR ────────────────────────────────────────────────
