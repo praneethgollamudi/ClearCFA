@@ -5053,6 +5053,8 @@ function CFAMock(){
   const activeLOS=useMemo(()=>getActiveLOS(cfaLevel),[cfaLevel]);
   const activeTopicMap=useMemo(()=>getActiveTopicMap(cfaLevel),[cfaLevel]);
   const activeMisconceptions=useMemo(()=>getActiveMisconceptions(cfaLevel),[cfaLevel]);
+  // Filter history to only sessions for the active level (old sessions without level tag = L1)
+  const levelHistory=useMemo(()=>history.filter(h=>(!h.level&&cfaLevel==="1")||h.level===cfaLevel),[history,cfaLevel]);
   const [driveStatus,setDriveStatus]=useState(null); // null | "syncing" | "synced" | "error"
   const [supabaseSyncing,setSupabaseSyncing]=useState(false);
   const [authUser,setAuthUser]=useState(()=>getStoredAuth());
@@ -5411,6 +5413,7 @@ function CFAMock(){
       dateKey:new Date().toISOString().slice(0,10),
       wrongCount:qs.filter(q=>ans[q.id]!==q.answer).length,
       wrongs:[],
+      level:cfaLevel,
       confidenceData:computeCalibration(qs,ans,confidenceLogRef.current),
       ...(omMode&&{isOfficeMode:true}),
     };
@@ -5592,7 +5595,7 @@ function CFAMock(){
         }
 
         // 5. Recently weak sessions
-        history.slice(0,10).filter(h=>h.pct<75).forEach(h=>{
+        levelHistory.slice(0,10).filter(h=>h.pct<75).forEach(h=>{
           if(!candidates.find(c=>c.topic===h.topic&&c.module===h.subtopic))
             candidates.push({topic:h.topic,module:h.subtopic,difficulty:h.pct<55?"Easy":"Medium",reason:`Last session scored ${h.pct}% here — a follow-up session cements weak spots.`,urgency:"low",count:5,mode:"guided",_score:200});
         });
@@ -5887,20 +5890,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
   };
 
   // ── DERIVED DATA ──
-  const moduleReadiness=useMemo(()=>getModuleReadiness(history,activeLOS),[history,activeLOS]);
+  const moduleReadiness=useMemo(()=>getModuleReadiness(levelHistory,activeLOS),[levelHistory,activeLOS]);
   const predicted=useMemo(()=>getPredictedScore(moduleReadiness),[moduleReadiness]);
   const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));const streak=getStreak(history);
-  const overallPct=history.length?Math.round(history.reduce((s,h)=>s+(h.pct||0),0)/history.length):null;
+  const overallPct=levelHistory.length?Math.round(levelHistory.reduce((s,h)=>s+(h.pct||0),0)/levelHistory.length):null;
   const dueCards=useMemo(()=>getDueCards(srDeck),[srDeck]);
   const leeches=useMemo(()=>getLeeches(srDeck),[srDeck]);
   const forgettingCurve=useMemo(()=>getForgettingCurve(srDeck),[srDeck]);
-  const activity=useMemo(()=>getLast30DaysActivity(history),[history]);
-  const totalQsAttempted=history.reduce((s,h)=>s+(h.total||0),0);
-  const wrongPatterns=useMemo(()=>getWrongAnswerPatterns(history),[history]);
+  const activity=useMemo(()=>getLast30DaysActivity(levelHistory),[levelHistory]);
+  const totalQsAttempted=levelHistory.reduce((s,h)=>s+(h.total||0),0);
+  const wrongPatterns=useMemo(()=>getWrongAnswerPatterns(levelHistory),[levelHistory]);
   const sessionScore=questions.filter(q=>answers[q.id]===q.answer).length;
   const sessionPct=questions.length?Math.round((sessionScore/questions.length)*100):0;
   const lastSessionQuality=useMemo(()=>lastSession?getSessionQuality(lastSession):null,[lastSession]);
-  const passProbability=useMemo(()=>getPassProbability(history,moduleReadiness,daysLeft),[history,moduleReadiness,daysLeft]);
+  const passProbability=useMemo(()=>getPassProbability(levelHistory,moduleReadiness,daysLeft),[levelHistory,moduleReadiness,daysLeft]);
   useEffect(()=>{
     if(!passProbability||!history.length)return;
     const today=new Date().toISOString().slice(0,10);
@@ -5912,17 +5915,17 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const updated=[...passTrendRef.current.filter(p=>p.date!==today),entry].sort((a,b)=>a.date<b.date?-1:1).slice(-60);
     passTrendRef.current=updated;setPassTrend(updated);
     storageSet(PASS_TREND_KEY,updated);
-  },[passProbability,history.length]);
-  const studyPace=useMemo(()=>getStudyPace(history,daysLeft),[history,daysLeft]);
+  },[passProbability,levelHistory.length]);
+  const studyPace=useMemo(()=>getStudyPace(levelHistory,daysLeft),[levelHistory,daysLeft]);
   const totalXP=useMemo(()=>getTotalXP(history),[history]);
   const levelInfo=useMemo(()=>getLevel(totalXP),[totalXP]);
-  const totalWrongs=useMemo(()=>history.flatMap(h=>Array.isArray(h.wrongs)?h.wrongs:[]).filter(w=>w&&w.question).length,[history]);
+  const totalWrongs=useMemo(()=>levelHistory.flatMap(h=>Array.isArray(h.wrongs)?h.wrongs:[]).filter(w=>w&&w.question).length,[levelHistory]);
   const srWrongCount=useMemo(()=>Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).length,[srDeck]);
-  const sessionFatigue=useMemo(()=>getSessionFatigue(history),[history]);
+  const sessionFatigue=useMemo(()=>getSessionFatigue(levelHistory),[levelHistory]);
 
   // Adaptive difficulty for Office Mode — derived from last 5 OM sessions
   const adaptiveOmDifficulty=useMemo(()=>{
-    const omSessions=history.filter(h=>h.isOfficeMode).slice(0,5);
+    const omSessions=levelHistory.filter(h=>h.isOfficeMode).slice(0,5);
     if(!omSessions.length) return "Medium";
     const avg=omSessions.reduce((s,h)=>s+(h.pct||0),0)/omSessions.length;
     return avg>=80?"Hard":avg>=60?"Medium":"Easy";
@@ -6512,7 +6515,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* Daily target tracker */}
     {(()=>{
       const today=new Date().toISOString().slice(0,10);
-      const todayQs=history.filter(h=>h.dateKey===today).reduce((s,h)=>s+(h.total||0),0);
+      const todayQs=levelHistory.filter(h=>h.dateKey===today).reduce((s,h)=>s+(h.total||0),0);
       const baseTarget=daysLeft>0?(daysLeft<=30?30:daysLeft<=60?25:20):20;
       const dailyTarget=history.length<5?Math.max(10,Math.round(baseTarget*(0.4+history.length*0.12))):baseTarget;
       const pct=Math.min(100,Math.round((todayQs/dailyTarget)*100));
