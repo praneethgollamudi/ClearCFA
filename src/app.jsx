@@ -2775,31 +2775,62 @@ const SM2_INTERVALS= [1,3,7,16,35,70];
 // 5. Green for correct answers (operant conditioning)
 // 6. Card-based layout with clear hierarchy (reduces cognitive load)
 // 7. Streak + XP gamification (variable reward schedule)
-const C = {
-  bg:          "#06060f",   // deep navy - focus mode
-  surface:     "#0e0e1c",   // card surface
-  surfaceHigh: "#14142a",   // elevated surface
-  border:      "#1c1c35",   // subtle border
-  borderHigh:  "#2a2a50",   // highlighted border
-  accent:      "#6366f1",   // indigo - primary
-  accentLight: "#818cf8",   // indigo light
-  accentGlow:  "#6366f133", // indigo glow
-  reward:      "#f59e0b",   // amber - streak/XP (warm reward colour)
-  rewardLight: "#fcd34d",   // amber light
-  easy:        "#10b981",   // emerald - correct/pass
-  easyLight:   "#34d399",   // emerald light
-  medium:      "#f59e0b",   // amber
-  hard:        "#ef4444",   // red
-  text:        "#e8e6ff",   // slightly purple-tinted white (matches palette)
-  textMid:     "#a8a5cc",   // mid text
-  muted:       "#52506e",   // muted
-  dim:         "#1e1c38",   // dimmed bg for badges etc
-  success:     "#059669",   // dark green bg
-  successBg:   "#022c22",   // success card bg
-  errorBg:     "#1c0505",   // error card bg
+const DARK_PALETTE = {
+  bg:          "#06060f",
+  surface:     "#0e0e1c",
+  surfaceHigh: "#14142a",
+  border:      "#1c1c35",
+  borderHigh:  "#2a2a50",
+  accent:      "#6366f1",
+  accentLight: "#818cf8",
+  accentGlow:  "#6366f133",
+  reward:      "#f59e0b",
+  rewardLight: "#fcd34d",
+  easy:        "#10b981",
+  easyLight:   "#34d399",
+  medium:      "#f59e0b",
+  hard:        "#ef4444",
+  text:        "#e8e6ff",
+  textMid:     "#a8a5cc",
+  muted:       "#52506e",
+  dim:         "#1e1c38",
+  success:     "#059669",
+  successBg:   "#022c22",
+  errorBg:     "#1c0505",
 };
-const diffC = { Easy:C.easy, Medium:C.medium, Hard:C.hard };
-const urgencyColor = { high:C.hard, medium:C.medium, low:C.easy };
+const LIGHT_PALETTE = {
+  bg:          "#f4f4fb",
+  surface:     "#ffffff",
+  surfaceHigh: "#eeeef8",
+  border:      "#ddddf0",
+  borderHigh:  "#c8c8e0",
+  accent:      "#4f46e5",
+  accentLight: "#6366f1",
+  accentGlow:  "#4f46e522",
+  reward:      "#d97706",
+  rewardLight: "#f59e0b",
+  easy:        "#059669",
+  easyLight:   "#10b981",
+  medium:      "#d97706",
+  hard:        "#dc2626",
+  text:        "#1a1828",
+  textMid:     "#4a4870",
+  muted:       "#8b89a8",
+  dim:         "#e8e8f4",
+  success:     "#047857",
+  successBg:   "#f0fdf4",
+  errorBg:     "#fff1f2",
+};
+const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}})();
+const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
+const diffC={Easy:C.easy,Medium:C.medium,Hard:C.hard};
+const urgencyColor={high:C.hard,medium:C.medium,low:C.easy};
+function _applyTheme(t){
+  Object.assign(C,t==='light'?LIGHT_PALETTE:DARK_PALETTE);
+  diffC.Easy=C.easy;diffC.Medium=C.medium;diffC.Hard=C.hard;
+  urgencyColor.high=C.hard;urgencyColor.medium=C.medium;urgencyColor.low=C.easy;
+  try{document.body.style.background=C.bg;document.documentElement.style.setProperty('--app-bg',C.bg);}catch{}
+}
 
 // XP system - makes every session feel rewarding
 function calcXP(session) {
@@ -5163,6 +5194,8 @@ function CFAMock(){
   const [loadingETA,setLoadingETA]=useState(null);
   const loadingStartRef=useRef(null);
   const [apiKey,setApiKey]=useState("BACKEND"); // placeholder — AI routed through proxy
+  const [theme,setTheme]=useState(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}});
+  const toggleTheme=()=>{const t=theme==='dark'?'light':'dark';_applyTheme(t);try{localStorage.setItem('cfa_theme',t);}catch{};setTheme(t);};
   const [cfaLevel,setCfaLevel]=useState(()=>{try{return localStorage.getItem(CFA_LEVEL_KEY)||"1";}catch{return "1";}});
   const activeLOS=useMemo(()=>getActiveLOS(cfaLevel),[cfaLevel]);
   const activeTopicMap=useMemo(()=>getActiveTopicMap(cfaLevel),[cfaLevel]);
@@ -5218,6 +5251,9 @@ function CFAMock(){
   const passTrendRef=useRef([]);
   const [explainThisText,setExplainThisText]=useState(null);
   const [explainThisLoading,setExplainThisLoading]=useState(false);
+
+  // Sync body background when theme changes
+  useEffect(()=>{try{document.body.style.background=C.bg;}catch{}},[theme]);
 
   // Auto-trigger focus refresh when flagged
   useEffect(()=>{
@@ -6515,6 +6551,17 @@ Return ONLY a JSON array — no prose, no markdown fences:
               {cfaLevel==="3"&&<span style={{color:C.accentLight}}>Portfolio management focus auto-enabled · L3 curriculum (12 topics, 25 modules) · IPS & asset allocation focus</span>}
             </div>
           </div>
+          {/* Theme Toggle */}
+          <div style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,marginBottom:9}}>
+            <span style={{fontSize:18}}>{theme==='dark'?'🌙':'☀️'}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>Appearance</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>{theme==='dark'?'Dark mode active':'Light mode active'}</div>
+            </div>
+            <button onClick={toggleTheme} style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:700,border:`1.5px solid ${C.accent}`,background:C.accent+"18",color:C.accentLight,cursor:"pointer"}}>
+              {theme==='dark'?'☀️ Light':'🌙 Dark'}
+            </button>
+          </div>
           {/* AI Status */}
           <div style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.easy+"15",border:`1px solid ${C.easy+"44"}`,color:C.text,marginBottom:9}}>
             <span style={{fontSize:18}}>🤖</span>
@@ -6532,7 +6579,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             setDriveStatus(ok?"synced":"error");
             setTimeout(()=>setDriveStatus(null),4000);
             setSupabaseSyncing(false);
-          }} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:"#080f18",border:`1px solid #22d3ee33`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+          }} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surfaceHigh,border:`1px solid #22d3ee33`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
             <span style={{fontSize:18}}>☁</span>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700}}>Cloud Sync</div>
