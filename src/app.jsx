@@ -3339,6 +3339,7 @@ function CFAMock(){
   const sessionCommittedRef=useRef(false);
   const weeklyPlanAutoRef=useRef(false);
   const confidenceLogRef=useRef({});
+  const pendingPlanKeyRef=useRef(null);
   useEffect(()=>{
     if(screen!=="results"){
       sessionCommittedRef.current=false;
@@ -3350,6 +3351,13 @@ function CFAMock(){
     const qs=questionsRef.current;
     if(!qs||qs.length===0) return;
     sessionCommittedRef.current=true;
+
+    // Mark weekly plan session done now that the quiz actually completed
+    if(pendingPlanKeyRef.current){
+      const planKey=pendingPlanKeyRef.current;
+      pendingPlanKeyRef.current=null;
+      setTodayStarted(prev=>{const n={...prev,[planKey]:true};try{localStorage.setItem("cfa_today_started",JSON.stringify(n));}catch{}return n;});
+    }
 
     // Read everything from refs — guaranteed current values
     const ans=answersRef.current;
@@ -4688,14 +4696,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     {!done&&<div style={{fontSize:10,color:C.muted,fontStyle:"italic",marginTop:3,lineHeight:1.4}}>{session.why}</div>}
                   </div>
                   <button onClick={()=>{
-                    const newStarted={...todayStarted,[sKey]:true};
-                    setTodayStarted(newStarted);
-                    try{localStorage.setItem("cfa_today_started",JSON.stringify(newStarted));}catch{}
                     if(session.type==="sr"){
+                      // SR is local — mark done immediately
+                      setTodayStarted(prev=>{const n={...prev,[sKey]:true};try{localStorage.setItem("cfa_today_started",JSON.stringify(n));}catch{}return n;});
                       const cards=dueCards.filter(c=>c.topic===session.topic);
                       const queue=cards.length?cards.slice(0,session.count):[...dueCards].slice(0,session.count);
                       if(queue.length){setSrQueue(queue);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
                     }else{
+                      // Mark done only after quiz completes successfully
+                      pendingPlanKeyRef.current=sKey;
                       generateQuestions(session.topic,session.module,session.difficulty,session.count,"guided");
                     }
                   }} style={{fontSize:11,fontWeight:700,padding:"7px 12px",borderRadius:8,background:done?C.surface:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:done?C.muted:"#fff",border:done?`1px solid ${C.border}`:"none",cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>
