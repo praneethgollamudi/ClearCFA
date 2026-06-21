@@ -3619,7 +3619,7 @@ async function callAIChat(userId, messages, maxTokens=450, level="1"){
     const trimmed=messages.slice(-10).map(m=>({role:m.role==="user"?"user":"assistant",content:String(m.content||"").slice(0,800)}));
     const res=await fetch(AI_PROXY_URL,{
       method:"POST",
-      headers:{"content-type":"application/json","apikey":SUPABASE_KEY},
+      headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},
       body:JSON.stringify({requestType:"chat",userId,messages:trimmed,maxTokens:Math.min(maxTokens,450),level})
     });
     if(!res.ok) return null;
@@ -5485,7 +5485,7 @@ function CFAMock(){
       try{
         const modelName=model;
         const userId=typeof authUser!=="undefined"&&authUser?.id?authUser.id:"";
-        const res=await fetch(AI_PROXY_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY},signal:controller.signal,body:JSON.stringify({requestType:"generate",userId,prompt,maxTokens,model:modelName})});
+        const res=await fetch(AI_PROXY_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},signal:controller.signal,body:JSON.stringify({requestType:"generate",userId,prompt,maxTokens,model:modelName})});
         clearTimeout(timeout);
         // Rate limit: 429 or 529 — retry
         if(res.status===429||res.status===529){
