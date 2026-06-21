@@ -114,6 +114,7 @@ const BACKUP_KEY = "cfa_backup_v7";
 const SUPABASE_URL = "https://uucxyuqxqjpbxecemdvf.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1Y3h5dXF4cWpwYnhlY2VtZHZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDY3MDcsImV4cCI6MjA5NzM4MjcwN30.5JkNrudEoiKSE85gaDA2jfgVb6ZEgSUBpjoRVbVAlv4";
 const SB_CFG = {url: SUPABASE_URL, key: SUPABASE_KEY};
+const AI_PROXY_URL = `${SUPABASE_URL}/functions/v1/ai-proxy`;
 
 // localStorage-based storage (primary — works in real browsers with no size limits)
 async function storageGet(key){
@@ -1611,34 +1612,18 @@ const POWER_NOTES = {
 };
 
 
-async function askClaudeText(apiKey, prompt, maxTokens=400){
-  if(!apiKey) return null;
+async function callAIChat(userId, messages, maxTokens=450){
+  if(!userId) return null;
   try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
+    const trimmed=messages.slice(-10).map(m=>({role:m.role==="user"?"user":"assistant",content:String(m.content||"").slice(0,800)}));
+    const res=await fetch(AI_PROXY_URL,{
       method:"POST",
-      headers:{"content-type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true","x-api-key":apiKey},
-      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+      headers:{"content-type":"application/json","apikey":SUPABASE_KEY},
+      body:JSON.stringify({requestType:"chat",userId,messages:trimmed,maxTokens:Math.min(maxTokens,450)})
     });
     if(!res.ok) return null;
     const data=await res.json();
-    return data.content?.map(i=>i.text||"").join("").trim()||null;
-  }catch{return null;}
-}
-
-async function askClaudeMT(apiKey, messages, maxTokens=700){
-  if(!apiKey) return null;
-  try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{"content-type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true","x-api-key":apiKey},
-      body:JSON.stringify({
-        model:"claude-haiku-4-5-20251001",max_tokens:maxTokens,
-        system:"You are a concise CFA Level 1 tutor. Give exam-focused answers with concrete numeric examples where helpful. Never repeat the question back or add unnecessary preamble. Use plain text, not markdown.",
-        messages
-      })
-    });
-    if(!res.ok) return null;
-    const data=await res.json();
+    if(data.error) return null;
     return data.content?.map(i=>i.text||"").join("").trim()||null;
   }catch{return null;}
 }
@@ -1655,7 +1640,7 @@ function generatePNModule(card){
   return{module:moduleName,rules:rules.length?rules:[explanation.slice(0,300)].filter(Boolean),traps,mnemonic:"",_auto:true};
 }
 
-function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="", srDeck={}, focusConcept=null}){
+function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null}){
   const [selTopic, setSelTopic] = useState(initialTopic || Object.keys(POWER_NOTES)[0]);
   const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
   const [expandedModule, setExpandedModule] = useState(null);
@@ -1689,7 +1674,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
     setAiPanel({context, messages:[userMsg]});
     setAiInput("");
     setAiLoading(true);
-    const reply = await askClaudeMT(apiKey, [userMsg]);
+    const reply = await callAIChat(userId, [userMsg]);
     const withReply = [...aiMsgsRef.current, {role:"assistant", content:reply||"No response — check your API key in Settings."}];
     aiMsgsRef.current = withReply;
     setAiPanel(p=>p?{...p, messages:withReply}:null);
@@ -1704,7 +1689,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
     setAiPanel(p=>p?{...p, messages:msgs}:null);
     setAiInput("");
     setAiLoading(true);
-    const reply = await askClaudeMT(apiKey, msgs);
+    const reply = await callAIChat(userId, msgs);
     const withReply = [...msgs, {role:"assistant", content:reply||"No response — check your API key in Settings."}];
     aiMsgsRef.current = withReply;
     setAiPanel(p=>p?{...p, messages:withReply}:null);
@@ -2089,9 +2074,9 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", apiKey="
                   </div>
                 </div>
               )}
-              {!apiKey&&aiPanel.messages.length===1&&(
+              {!userId&&aiPanel.messages.length===1&&(
                 <div style={{padding:"10px 14px",borderRadius:10,background:"#1a0a0e",border:"1px solid #c0304444",fontSize:12,color:"#e05070",lineHeight:1.6}}>
-                  No API key set — go to Settings (⚙) to add your Anthropic key.
+                  Sign in to enable AI-powered explanations.
                 </div>
               )}
             </div>
@@ -2938,7 +2923,7 @@ function CFAMock(){
   const [loadingProgress,setLoadingProgress]=useState(0);
   const [loadingETA,setLoadingETA]=useState(null);
   const loadingStartRef=useRef(null);
-  const [apiKey,setApiKey]=useState("");const [apiKeyInput,setApiKeyInput]=useState("");const [showApiKey,setShowApiKey]=useState(false);const [apiKeyScreen,setApiKeyScreen]=useState(false);
+  const [apiKey,setApiKey]=useState("BACKEND"); // placeholder — AI routed through proxy
   const [driveStatus,setDriveStatus]=useState(null); // null | "syncing" | "synced" | "error"
   const [supabaseSyncing,setSupabaseSyncing]=useState(false);
   const [authUser,setAuthUser]=useState(()=>getStoredAuth());
@@ -2988,10 +2973,6 @@ function CFAMock(){
   const passTrendRef=useRef([]);
   const [explainThisText,setExplainThisText]=useState(null);
   const [explainThisLoading,setExplainThisLoading]=useState(false);
-  const [reviewAiPanel,setReviewAiPanel]=useState(null);
-  const [reviewAiInput,setReviewAiInput]=useState("");
-  const [reviewAiLoading,setReviewAiLoading]=useState(false);
-  const reviewAiMsgsRef=useRef([]);
 
   // Auto-trigger focus refresh when flagged
   useEffect(()=>{
@@ -3113,7 +3094,7 @@ function CFAMock(){
       }
 
       // STEP 4: Load settings
-      try{const k=await storageGet("cfa_api_key");if(k&&typeof k==="string"&&k.startsWith("sk-")){setApiKey(k);setApiKeyInput(k);}}catch{}
+      // API key no longer stored client-side — AI routed through backend proxy
       try{const d=await storageGet("cfa_exam_date");if(d&&typeof d==="string"){setExamDate(new Date(d));setExamDateInput(d);}}catch{}
       try{const qc=await storageGet(QCACHE_KEY);if(qc&&typeof qc==="object")qCacheRef.current=qc;}catch{}
       setQdbLoaded(true);
@@ -3333,7 +3314,7 @@ function CFAMock(){
     (async()=>{
       const ok=await storageSet(STORAGE_KEY,newHistory.slice(0,300));
       setSessionSaved(ok);
-      if(ok&&apiKey) syncToDrive(newHistory.slice(0,100));
+      // Cloud sync via Supabase handles backup
       const synced=await supabaseSync(SB_CFG,newHistory.slice(0,300),updatedSrDeck,usageStatsRef.current,authUserRef.current);
       if(synced) setDriveStatus("synced");
       else setDriveStatus("error");
@@ -3354,10 +3335,9 @@ function CFAMock(){
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),90000);
       try{
-        const activeKey=apiKey||"";        const modelName=model;
-        const headers={"content-type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"};
-        if(activeKey) headers["x-api-key"]=activeKey;
-        const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers,signal:controller.signal,body:JSON.stringify({model:modelName,max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})});
+        const modelName=model;
+        const userId=typeof authUser!=="undefined"&&authUser?.userId?authUser.userId:"";
+        const res=await fetch(AI_PROXY_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY},signal:controller.signal,body:JSON.stringify({requestType:"generate",userId,prompt,maxTokens,model:modelName})});
         clearTimeout(timeout);
         // Rate limit: 429 or 529 — retry
         if(res.status===429||res.status===529){
@@ -3488,44 +3468,6 @@ function CFAMock(){
       setFocusLoading(false);
     },400);
   };
-  const syncToDrive=async(historyData)=>{
-    if(!apiKey) return; // Drive sync requires API key
-    setDriveStatus("syncing");
-    try{
-      const payload={
-        version:3,
-        exportedAt:new Date().toISOString(),
-        sessions:historyData.length,
-        history:historyData.map(s=>({
-          id:s.id,topic:s.topic,subtopic:s.subtopic,difficulty:s.difficulty,
-          mode:s.mode,score:s.score,total:s.total,pct:s.pct,
-          timeTaken:s.timeTaken,date:s.date,dateKey:s.dateKey,
-          wrongCount:s.wrongCount||0
-        }))
-      };
-      const content64=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
-      // Use Anthropic API with Drive MCP to write the file
-      const res=await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"content-type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true","x-api-key":apiKey},
-        body:JSON.stringify({
-          model:"claude-haiku-4-5-20251001",
-          max_tokens:500,
-          mcp_servers:[{"type":"url","url":"https://drivemcp.googleapis.com/mcp/v1","name":"gdrive"}],
-          messages:[{role:"user",content:`Save this JSON as a file named "cfa_mock_backup.json" in my Google Drive root folder. If the file already exists, overwrite it. File content (base64): ${content64}
-
-Reply with just "saved" when done.`}]
-        })
-      });
-      const data=await res.json();
-      const text=(data.content||[]).map(c=>c.text||"").join("");
-      setDriveStatus(text.toLowerCase().includes("saved")||text.toLowerCase().includes("success")?"synced":"error");
-      setTimeout(()=>setDriveStatus(null),4000);
-    }catch(e){
-      setDriveStatus("error");
-      setTimeout(()=>setDriveStatus(null),4000);
-    }
-  };
 
   const generateWeeklyPlan=async()=>{
     setWeeklyPlanLoading(true);setWeeklyPlanError("");
@@ -3563,7 +3505,7 @@ Reply with just "saved" when done.`}]
     setLoadingMsg("Building financial statements...");
     const progressInterval=setInterval(()=>{setLoadingProgress(p=>Math.min(85,p+3));},300);
     try{
-      if(!apiKey){setError("FSA Statement Vignette requires an API key.");setLoading(false);clearInterval(progressInterval);generatingRef.current=false;return;}
+      if(!authUser?.userId){setError("FSA Vignette requires a ClearCFA account. Please sign in.");setLoading(false);clearInterval(progressInterval);generatingRef.current=false;return;}
       const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),2500,{retries:2,retryDelay:6000,model:"claude-sonnet-4-6",feature:"fsa_vignette"});
       clearInterval(progressInterval);
       if(!raw||!raw.questions)throw new Error("Invalid FSA vignette format");
@@ -3593,9 +3535,9 @@ Reply with just "saved" when done.`}]
     setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
     loadingStartRef.current=Date.now();
 
-    // ── No API key: use local templates as fallback ──
-    // When an API key IS set, always use the API for exam-quality questions.
-    if(!isVignette && !apiKey){
+    // ── No auth: use local templates as fallback ──
+    // When signed in, always use the API for exam-quality questions.
+    if(!isVignette && !authUser?.userId){
       try{
         const localRaw=generateLocalQuestions(t,st,diff,cnt*3);
         const seen=new Set();
@@ -3624,9 +3566,9 @@ Reply with just "saved" when done.`}]
       }
     }
 
-    // ── API path (always used when key is set; fallback error when not) ──
-    if(!apiKey){
-      setError(isVignette?"Vignette mode requires an API key. Add yours via the 🔑 button.":"Add your Anthropic API key (🔑 on the home screen) to generate exam-quality questions.");
+    // ── API path — always used when signed in ──
+    if(!authUser?.userId){
+      setError(isVignette?"Vignette mode requires a ClearCFA account. Please sign in.":"Sign in to generate AI-powered exam questions.");
       setLoading(false);setLoadingProgress(0);generatingRef.current=false;
       return;
     }
@@ -3723,7 +3665,7 @@ Reply with just "saved" when done.`}]
           const localQs=generateLocalQuestions(t,mod,"Medium",perModule);
           if(localQs.length>=perModule){
             allQs=[...allQs,...localQs.map(q=>({...q,_topic:t,_subtopic:mod}))];
-          } else if(apiKey){
+          } else if(authUser?.userId){
             try{
               const qs=await callClaude(buildQuestionPrompt(t,mod,"Medium",perModule),perModule*500,{retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001",feature:"full_exam"});
               allQs=[...allQs,...(Array.isArray(qs)?expandQuestionKeys(qs):[]).map((q,j)=>({...q,id:`${i}_${j}_${mod.slice(0,5)}`,_topic:t,_subtopic:mod}))];
@@ -3731,7 +3673,7 @@ Reply with just "saved" when done.`}]
           }
         }
       }
-      if(allQs.length<30)throw new Error("Too few questions generated. Add an API key for full exam support.");
+      if(allQs.length<30)throw new Error("Too few questions generated — sign in for full exam support.");
       const shuffled=allQs.sort(()=>Math.random()-0.5);
       // Split into AM (session 1) and PM (session 2) of 90 questions each
       const amQs=shuffled.slice(0,Math.min(90,shuffled.length));
@@ -3795,14 +3737,19 @@ Reply with just "saved" when done.`}]
     return avg>=80?"Hard":avg>=60?"Medium":"Easy";
   },[history]);
 
+  const [reviewAiPanel,setReviewAiPanel]=useState(null);
+  const [reviewAiInput,setReviewAiInput]=useState("");
+  const [reviewAiLoading,setReviewAiLoading]=useState(false);
+  const reviewAiMsgsRef=useRef([]);
+
   const openReviewAI=async(context,firstPrompt)=>{
     const userMsg={role:"user",content:firstPrompt};
     reviewAiMsgsRef.current=[userMsg];
     setReviewAiPanel({context,messages:[userMsg]});
     setReviewAiInput("");
     setReviewAiLoading(true);
-    const reply=await askClaudeMT(apiKey,[userMsg]);
-    const withReply=[...reviewAiMsgsRef.current,{role:"assistant",content:reply||"No response — check your API key in Settings."}];
+    const reply=await callAIChat(authUser?.userId||"",[userMsg]);
+    const withReply=[...reviewAiMsgsRef.current,{role:"assistant",content:reply||"No response — sign in and try again."}];
     reviewAiMsgsRef.current=withReply;
     setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
     setReviewAiLoading(false);
@@ -3815,8 +3762,8 @@ Reply with just "saved" when done.`}]
     setReviewAiPanel(p=>p?{...p,messages:msgs}:null);
     setReviewAiInput("");
     setReviewAiLoading(true);
-    const reply=await askClaudeMT(apiKey,msgs);
-    const withReply=[...msgs,{role:"assistant",content:reply||"No response — check your API key in Settings."}];
+    const reply=await callAIChat(authUser?.userId||"",msgs);
+    const withReply=[...msgs,{role:"assistant",content:reply||"No response — sign in and try again."}];
     reviewAiMsgsRef.current=withReply;
     setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
     setReviewAiLoading(false);
@@ -3845,8 +3792,8 @@ Reply with just "saved" when done.`}]
               <div style={{padding:"10px 14px",borderRadius:"13px 13px 13px 3px",background:"#1a1a2e",border:`1px solid ${C.border}`,fontSize:12,color:C.muted,animation:"pulse 1.2s infinite"}}>Thinking…</div>
             </div>
           )}
-          {!apiKey&&reviewAiPanel.messages.length===1&&(
-            <div style={{padding:"10px 14px",borderRadius:10,background:"#1a0a0e",border:"1px solid #c0304444",fontSize:12,color:"#e05070",lineHeight:1.6}}>No API key set — go to Settings (⚙) to add your Anthropic key.</div>
+          {!authUser?.userId&&reviewAiPanel.messages.length===1&&(
+            <div style={{padding:"10px 14px",borderRadius:10,background:"#1a0a0e",border:"1px solid #c0304444",fontSize:12,color:"#e05070",lineHeight:1.6}}>Sign in to enable AI-powered explanations.</div>
           )}
         </div>
         <div style={{display:"flex",gap:8,padding:"10px 12px 14px",borderTop:`1px solid ${C.accent}22`,flexShrink:0}}>
@@ -3942,7 +3889,7 @@ Reply with just "saved" when done.`}]
           "What's my biggest risk with 62 days left?"
         ].map(prompt=>(
           <button key={prompt} onClick={async()=>{
-            if(!apiKey){setAiCoachMessages(m=>[...m,{role:"user",text:prompt},{role:"assistant",text:"Add an API key first (🔑 on home screen) to use AI Coach."}]);return;}
+            if(!authUser?.userId){setAiCoachMessages(m=>[...m,{role:"user",text:prompt},{role:"assistant",text:"Sign in to use AI Coach."}]);return;}
             const userMsg={role:"user",text:prompt};
             setAiCoachMessages(m=>[...m,userMsg]);
             setAiCoachLoading(true);
@@ -3984,7 +3931,7 @@ Reply with just "saved" when done.`}]
         <input value={aiCoachInput} onChange={e=>setAiCoachInput(e.target.value)}
           onKeyDown={async e=>{if(e.key==="Enter"&&aiCoachInput.trim()&&!aiCoachLoading){
             const q=aiCoachInput.trim();setAiCoachInput("");
-            if(!apiKey){setAiCoachMessages(m=>[...m,{role:"user",text:q},{role:"assistant",text:"Add an API key first."}]);return;}
+            if(!authUser?.userId){setAiCoachMessages(m=>[...m,{role:"user",text:q},{role:"assistant",text:"Sign in to use AI Coach."}]);return;}
             setAiCoachMessages(m=>[...m,{role:"user",text:q}]);setAiCoachLoading(true);
             try{
               const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3).map(m=>`${m.topic}: ${m.accuracy}%`).join(", ");
@@ -4228,15 +4175,15 @@ Reply with just "saved" when done.`}]
         <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:"18px 18px 0 0",padding:"20px 16px 32px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
           <div style={{width:36,height:4,borderRadius:2,background:C.border,margin:"0 auto 18px"}}/>
           <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:16}}>Settings</div>
-          {/* API Key */}
-          <button onClick={()=>{setSettingsOpen(false);setScreen("apiKey");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:apiKey?C.easy+"15":C.surface,border:`1px solid ${apiKey?C.easy+"44":C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
-            <span style={{fontSize:18}}>🔑</span>
+          {/* AI Status */}
+          <div style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.easy+"15",border:`1px solid ${C.easy+"44"}`,color:C.text,marginBottom:9}}>
+            <span style={{fontSize:18}}>🤖</span>
             <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700}}>API Key</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:1}}>{apiKey?"Claude AI connected":"Not configured — questions use templates"}</div>
+              <div style={{fontSize:13,fontWeight:700}}>AI Features</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>Powered by ClearCFA backend — no key needed</div>
             </div>
-            {apiKey&&<span style={{fontSize:11,color:C.easy,fontWeight:700}}>✓</span>}
-          </button>
+            <span style={{fontSize:11,color:C.easy,fontWeight:700}}>✓</span>
+          </div>
           {/* Supabase */}
           <button onClick={async()=>{
             setSupabaseSyncing(true);
@@ -4766,18 +4713,6 @@ Reply with just "saved" when done.`}]
 
     {/* Export */}
     {/* Drive sync status */}
-    {apiKey&&(
-      <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
-        <div style={{fontSize:13,fontWeight:700,marginBottom:6}}>☁ Google Drive Auto-Sync</div>
-        <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.5}}>Since your API key is set, every session is automatically saved to <strong style={{color:C.accentLight}}>cfa_mock_backup.json</strong> in your Google Drive root folder.</div>
-        <button onClick={async()=>{
-          setDriveStatus("syncing");
-          await syncToDrive(history);
-        }} style={{width:"100%",padding:"10px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
-          {driveStatus==="syncing"?"Syncing…":"☁ Sync to Drive Now"}
-        </button>
-      </div>
-    )}
 
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:16}}>
       <div style={{fontSize:13,fontWeight:700,marginBottom:4}}>Export your data</div>
@@ -5169,7 +5104,7 @@ Reply with just "saved" when done.`}]
         <div style={{marginBottom:8}}>
           {!explainThisText&&!explainThisLoading&&(
             <button onClick={async()=>{
-              if(!apiKey){setExplainThisText("Add an API key (⚙ on home) to use Explain This.");return;}
+              if(!authUser?.userId){setExplainThisText("Sign in to use Explain This.");return;}
               setExplainThisLoading(true);
               try{
                 const result=await callClaude(`You are a CFA L1 tutor. A student just answered this question:\n\nQuestion: ${q.question}\nCorrect answer: ${q.options[q.answer]} (${q.answer})\nConcept: ${q.concept||q.los_tested||""}\n\nIn 2-3 plain sentences, explain the core concept being tested and why the correct answer is right. Be direct, no preamble.`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"explain_this"});
@@ -5242,7 +5177,7 @@ Reply with just "saved" when done.`}]
       {wrongs.length>0&&<div style={{background:"#0a0a1f",border:`1px solid ${C.accent}33`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:C.muted}}>📋 {wrongs.length} wrong answer{wrongs.length!==1?"s":""} added to SR deck with LOS tags + misconception flags.</div>}
 
       {/* AI Session Debrief */}
-      {apiKey&&wrongs.length>0&&(
+      {authUser?.userId&&wrongs.length>0&&(
         <div style={{background:"#080818",border:`1px solid #22d3ee33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
             <div style={{fontSize:12,fontWeight:700,color:"#22d3ee"}}>🤖 AI Debrief</div>
@@ -5826,120 +5761,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
     </>);
   }
   // ══ API KEY SCREEN ══════════════════════════════════════════════════════════
-  if(screen==="apiKey") return wrap(<>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-      <h2 style={{margin:0,fontSize:20,fontWeight:800}}>API Key</h2>
-      <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Back</button>
-    </div>
-
-    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:16}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.accentLight,marginBottom:8}}>Why do I need this?</div>
-      <div style={{fontSize:12,color:C.muted,lineHeight:1.7}}>
-        Question generation uses the Claude API. The claude.ai interface has a shared rate limit across chat and artifacts — when it's exceeded you see the "rate limit" error.
-        Adding your own API key gives you a <span style={{color:C.accentLight,fontWeight:600}}>separate quota</span> that's never affected by chat usage.
-      </div>
-    </div>
-
-    <div style={{background:"#080814",border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:16,fontSize:12,color:C.muted,lineHeight:1.7}}>
-      <div style={{fontWeight:700,color:C.textMid,marginBottom:6}}>How to get a free key:</div>
-      1. Go to <span style={{color:C.accentLight,fontWeight:600}}>console.anthropic.com</span><br/>
-      2. Sign up / log in → API Keys → Create Key<br/>
-      3. Copy the key (starts with <span style={{fontFamily:"monospace",color:C.accentLight}}>sk-ant-</span>)<br/>
-      4. Paste it below and tap Save
-    </div>
-
-    {apiKey&&(
-      <div style={{background:C.easy+"12",border:`1px solid ${C.easy}44`,borderRadius:10,padding:"11px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-        <span style={{fontSize:16}}>✅</span>
-        <div>
-          <div style={{fontSize:12,fontWeight:700,color:C.easy}}>API key active</div>
-          <div style={{fontSize:11,color:C.muted,marginTop:2}}>Ends in …{apiKey.slice(-6)} · Questions use your own quota</div>
-        </div>
-      </div>
-    )}
-
-    <div style={{marginBottom:12}}>
-      <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:8}}>Your API Key</label>
-      <div style={{position:"relative"}}>
-        <input
-          type={showApiKey?"text":"password"}
-          value={apiKeyInput}
-          onChange={e=>setApiKeyInput(e.target.value)}
-          placeholder="sk-ant-api03-..."
-          style={{width:"100%",padding:"12px 44px 12px 14px",borderRadius:10,fontSize:13,background:C.surface,border:`1.5px solid ${apiKeyInput.startsWith("sk-")?C.accent:C.border}`,color:C.text,outline:"none",fontFamily:"monospace",boxSizing:"border-box"}}
-        />
-        <button onClick={()=>setShowApiKey(v=>!v)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,padding:0}}>
-          {showApiKey?"🙈":"👁️"}
-        </button>
-      </div>
-      {apiKeyInput&&!apiKeyInput.startsWith("sk-")&&(
-        <div style={{fontSize:11,color:C.hard,marginTop:6}}>Key should start with sk-ant- or sk-</div>
-      )}
-    </div>
-
-    <div style={{display:"flex",gap:10,marginBottom:16}}>
-      <button
-        onClick={async()=>{
-          const k=apiKeyInput.trim();
-          if(!k){setApiKey("");setApiKeyInput("");await storageSet("cfa_api_key","");setScreen("home");return;}
-          if(!k.startsWith("sk-")){return;}
-          setApiKey(k);
-          await storageSet("cfa_api_key",k);
-          setScreen("home");
-        }}
-        disabled={apiKeyInput&&!apiKeyInput.startsWith("sk-")}
-        style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:apiKeyInput.startsWith("sk-")?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.dim,color:apiKeyInput.startsWith("sk-")?"#fff":C.muted,border:"none",cursor:apiKeyInput.startsWith("sk-")?"pointer":"not-allowed"}}
-      >
-        Save Key
-      </button>
-      {apiKey&&(
-        <button onClick={async()=>{setApiKey("");setApiKeyInput("");await storageSet("cfa_api_key","");}} style={{flex:1,padding:"13px",borderRadius:10,fontSize:13,fontWeight:600,background:"#200010",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
-          Remove
-        </button>
-      )}
-    </div>
-
-    <div style={{fontSize:11,color:C.muted,lineHeight:1.6,textAlign:"center"}}>
-      Your key is stored only in this browser's local storage — never sent anywhere except directly to the Anthropic API.
-    </div>
-
-    <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
-      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}}>☁ Cloud Sync</div>
-      <div style={{fontSize:11,color:"#22c55e",background:"#0a1f0a",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
-        ✅ {history.length} session{history.length!==1?"s":""} · {Object.keys(srDeckRef.current).length} SR cards · syncing as {authUser?.email}
-      </div>
-      <button onClick={async()=>{
-        setSupabaseSyncing(true);
-        const ok=await supabaseSync(SB_CFG,history,srDeckRef.current,usageStatsRef.current,authUserRef.current);
-        setDriveStatus(ok?"synced":"error");
-        setTimeout(()=>setDriveStatus(null),4000);
-        setSupabaseSyncing(false);
-      }} style={{width:"100%",padding:"10px",borderRadius:9,fontSize:12,fontWeight:700,
-        background:"#0a1f2a",border:`1.5px solid #22d3ee44`,color:"#22d3ee",cursor:"pointer"}}>
-        {supabaseSyncing?"Syncing…":"⬆ Sync All Data Now"}
-      </button>
-    </div>
-
-    <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
-      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:10}}>📅 Exam Date</div>
-      <div style={{fontSize:11,color:C.muted,marginBottom:10}}>Current: {examDate.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})} ({daysLeft} days away)</div>
-      <input
-        type="date"
-        value={examDateInput}
-        onChange={e=>setExamDateInput(e.target.value)}
-        style={{width:"100%",padding:"10px 14px",borderRadius:10,fontSize:13,background:C.surface,border:`1.5px solid ${C.border}`,color:C.text,outline:"none",boxSizing:"border-box",marginBottom:10}}
-      />
-      <button onClick={async()=>{
-        const d=new Date(examDateInput);
-        if(isNaN(d.getTime()))return;
-        setExamDate(d);
-        await storageSet("cfa_exam_date",examDateInput);
-        setScreen("home");
-      }} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
-        Save Exam Date
-      </button>
-    </div>
-  </>);
+  if(screen==="apiKey"){setScreen("home");return null;}
 
   // ══ STUDY PLAN SCREEN ════════════════════════════════════════════════════════
   if(screen==="studyPlan") return wrap((()=>{
@@ -5985,7 +5807,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
   if(screen==="calcTrainer") return wrap((()=>{
     const calcTopics=["Quantitative Methods","Fixed Income","Derivatives","Portfolio Management","Equity","Corporate Issuers"];
     const generateCalcProblem=async()=>{
-      if(!apiKey){setCalcError("API key required for Calc Trainer.");return;}
+      if(!authUser?.userId){setCalcError("Sign in to use Calc Trainer.");return;}
       setCalcLoading(true);setCalcError("");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});
       try{
         const result=await callClaude(`Generate a CFA Level 1 multi-step calculation problem for: ${calcTopic} (${calcDifficulty}).\n\nReturn JSON:\n{\n  "problem": "Full problem statement with all given data",\n  "steps": [\n    {"step_num": 1, "instruction": "Calculate X first", "answer": "exact numerical answer", "formula": "formula used", "explanation": "why this step"},\n    {"step_num": 2, "instruction": "...", "answer": "...", "formula": "...", "explanation": "..."}\n  ],\n  "final_answer": "final answer with units",\n  "concept": "what is being tested",\n  "los_tested": "relevant CFA LOS"\n}\n\nMake it 3-5 steps. Use realistic CFA exam numbers. Output ONLY valid JSON.`,1200,{retries:2,retryDelay:5000,model:"claude-haiku-4-5-20251001",feature:"calc_trainer"});
@@ -6105,7 +5927,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       {walkthroughError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:12}}>{walkthroughError}</div>}
       {!walkthroughText&&!walkthroughLoading&&(
         <button onClick={async()=>{
-          if(!apiKey){setWalkthroughError("API key required for Concept Walkthrough.");return;}
+          if(!authUser?.userId){setWalkthroughError("Sign in to use Concept Walkthrough.");return;}
           setWalkthroughLoading(true);setWalkthroughError("");setWalkthroughText(null);
           try{
             const result=await callClaude(`You are a CFA Level 1 tutor. Create a concise concept walkthrough for: ${walkthroughTopic} → ${activeWtMod}\n\nStructure your response as:\n**Core Concept** (2 sentences explaining the big idea)\n**Key Rules** (3-4 bullet points of what you MUST know for the exam)\n**Worked Example** (one numerical or scenario-based example with the solution)\n**Exam Traps** (2 bullet points of common mistakes)\n\nBe specific to CFA L1 2026 curriculum. No padding.`,800,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"walkthrough"});
@@ -6132,7 +5954,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
   })());
 
   // ══ REVISION SCREEN ══════════════════════════════════════════════════════════
-  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} apiKey={apiKey} srDeck={srDeck} focusConcept={revisionConcept}/>;
+  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.userId||""} srDeck={srDeck} focusConcept={revisionConcept}/>;
 
   return null;
 }
