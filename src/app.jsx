@@ -2685,7 +2685,8 @@ function getStudyPace(history, daysLeft) {
   const qPerDay7 = last7.length ? Math.round(last7.reduce((s,h)=>s+(h.total||0),0) / 7) : 0;
 
   // Burnout detection: last session was >3 days ago AND had 7+ sessions before
-  const daysSinceLastSession = history.length ? Math.floor((Date.now() - history[0].id) / 86400000) : 999;
+  const lastDateKey = history.length ? history.reduce((max,h)=>(!max||((h.dateKey||'')>max))?h.dateKey||max:max,'') : null;
+  const daysSinceLastSession = lastDateKey ? Math.max(0,Math.floor((Date.now()-new Date(lastDateKey).getTime())/86400000)) : 999;
   const burnoutRisk = daysSinceLastSession >= 3 && history.length >= 7;
 
   return { sessionsPerWeek7, sessionsPerWeek30, qPerDay7, daysSinceLastSession, burnoutRisk };
@@ -3725,7 +3726,13 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const activePowerNotes=getActivePowerNotes(cfaLevel);
   const activeFormulas=getActiveFormulas(cfaLevel);
   const activeLOSR=getActiveLOS(cfaLevel);
-  const [selTopic, setSelTopic] = useState(initialTopic || Object.keys(POWER_NOTES)[0]);
+  const [selTopic, setSelTopic] = useState(()=>{
+    const base=initialTopic||Object.keys(POWER_NOTES)[0];
+    if(initialTab==="formulas"&&(getActiveFormulas(cfaLevel)[base]||[]).length===0){
+      return Object.keys(getActiveFormulas(cfaLevel)).find(t=>(getActiveFormulas(cfaLevel)[t]||[]).length>0)||base;
+    }
+    return base;
+  });
   const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
   const [expandedModule, setExpandedModule] = useState(null);
   const [drillMode, setDrillMode] = useState(false);
@@ -3744,6 +3751,14 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const [formulaGenerating, setFormulaGenerating] = useState({});
   const [formulaGenError, setFormulaGenError] = useState({});
   const [expandedFormula, setExpandedFormula] = useState(null);
+
+  // Auto-select first formula-bearing topic when switching to formulas tab
+  useEffect(()=>{
+    if(tab==="formulas"&&(activeFormulas[selTopic]||[]).length===0){
+      const first=Object.keys(activeFormulas).find(t=>(activeFormulas[t]||[]).length>0);
+      if(first) setSelTopic(first);
+    }
+  },[tab]);
 
   // Merge static POWER_NOTES with any AI-generated dynamic modules
   const staticTopics = activePowerNotes[selTopic]?.topics || [];
@@ -5092,7 +5107,7 @@ function CFAMock(){
   const generatingRef=useRef(false); // debounce double-tap
   const [weeklyPlanScreen,setWeeklyPlanScreen]=useState(false);
   const [settingsOpen,setSettingsOpen]=useState(false);
-  const [showMoreActions,setShowMoreActions]=useState(false);
+  const [showMoreActions,setShowMoreActions]=useState(true);
   const [usageStats,setUsageStats]=useState({});
   const usageStatsRef=useRef({});
   const [dismissedNudges,setDismissedNudges]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_dismissed_nudges")||"{}");}catch{return {};}});
@@ -6353,7 +6368,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <h2 style={{margin:0,fontSize:22,fontWeight:800}}>Weekly Study Plan</h2>
         <div style={{fontSize:12,color:C.muted,marginTop:3}}>Built around your schedule · AI-generated</div>
       </div>
-      <button onClick={()=>setWeeklyPlanScreen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Back</button>
+      <button onClick={()=>setWeeklyPlanScreen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
     </div>
 
     {/* Hours input */}
@@ -6477,6 +6492,23 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </div>
             <span style={{fontSize:11,color:driveStatus==="synced"?C.easy:driveStatus==="error"?C.hard:"#22d3ee",fontWeight:700}}>{driveStatus==="synced"?"✓":driveStatus==="error"?"✗":"↑"}</span>
           </button>
+          {/* Office Mode Q count */}
+          <div style={{width:"100%",padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,marginBottom:9}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <div style={{fontSize:13,fontWeight:700}}>⚡ Office Mode Questions</div>
+              <div style={{fontSize:11,color:C.muted}}>{omQCount} Qs · ~{omQCount*1.5|0} min</div>
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              {[3,5,10].map(n=>(
+                <button key={n} onClick={()=>{setOmQCount(n);try{localStorage.setItem("cfa_om_count",String(n));}catch{}}}
+                  style={{flex:1,padding:"7px",borderRadius:8,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
+                    background:omQCount===n?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.surfaceHigh,
+                    color:omQCount===n?"#fff":C.muted,transition:"all 0.15s"}}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
           {/* Backup */}
           <button onClick={()=>{setSettingsOpen(false);setScreen("backup");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
             <span style={{fontSize:18}}>💾</span>
@@ -7039,7 +7071,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <h2 style={{margin:0,fontSize:22,fontWeight:800}}>💾 Backup & Restore</h2>
         <div style={{fontSize:12,color:C.muted,marginTop:3}}>Export your data before clearing browser storage</div>
       </div>
-      <button onClick={()=>{setScreen("home");setImportText("");setImportError("");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Back</button>
+      <button onClick={()=>{setScreen("home");setImportText("");setImportError("");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
     </div>
 
     {/* Export */}
@@ -7133,7 +7165,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <Badge color={C.muted}>{card.concept||card.subtopic}</Badge>
         <Badge color={C.accent}>{card.topic}</Badge>
         {isLeech&&<Badge color={C.hard}>Leech · {card.wrongCount}x wrong</Badge>}
-        <Badge color={C.muted}>EF: {(card.ef||2.5).toFixed(1)}</Badge>
+        <Badge color={(card.ef||2.5)>=2.5?C.easy:(card.ef||2.5)>=2.1?C.medium:C.hard}>{(card.ef||2.5)>=2.5?"Easy recall":(card.ef||2.5)>=2.1?"Med recall":"Hard recall"}</Badge>
       </div>
       {card.question&&(card.question.length<150)&&!card.question.trim().endsWith("?")?<div style={{fontSize:10,color:C.muted,marginBottom:4,fontStyle:"italic"}}>⚠ Older card — question context may be incomplete. Full context on next attempt.</div>:null}
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"20px",marginBottom:14,fontSize:14,lineHeight:1.8,whiteSpace:"pre-wrap"}}>{card.question}</div>
@@ -7146,14 +7178,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </button>
           ))}
         </div>
-        <button onClick={()=>{
-          const key=Object.keys(srDeck).find(k=>srDeck[k].question===card.question)||null;
-          if(key){setSrDeck(prev=>{const n={...prev};delete n[key];storageSet(SR_KEY,n);return n;});}
-          setSrAnswer(null);
-          if(srIdx<srQueue.length-1)setSrIdx(i=>i+1);else setScreen("home");
-        }} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",marginBottom:6}}>
-          Delete this card (broken question)
-        </button>
+        <div style={{textAlign:"center",marginTop:8}}>
+          <button onClick={()=>{
+            const key=Object.keys(srDeck).find(k=>srDeck[k].question===card.question)||null;
+            if(key){setSrDeck(prev=>{const n={...prev};delete n[key];storageSet(SR_KEY,n);return n;});}
+            setSrAnswer(null);
+            if(srIdx<srQueue.length-1)setSrIdx(i=>i+1);else setScreen("home");
+          }} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:11,textDecoration:"underline",opacity:0.5}}>
+            Remove card
+          </button>
+        </div>
         </>
       ):(
         <>
@@ -7222,7 +7256,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   );
 
   if(screen==="setup") return wrap(<>
-    <button onClick={()=>{setScreen("home");setVignetteMode(false);}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,marginBottom:18,padding:0}}>← Back</button>
+    <button onClick={()=>{setScreen("home");setVignetteMode(false);}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,marginBottom:18,padding:0}}>← Home</button>
     {vignetteMode?(
       <>
         <h2 style={{fontSize:22,fontWeight:800,marginBottom:4,marginTop:0}}>📖 Vignette Mode</h2>
@@ -7781,7 +7815,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           const topicSessions=history.filter(h=>h.topic===topic);
           return(
             <div key={topic} style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{fontSize:10,color:C.muted,width:120,flexShrink:0,textAlign:"right"}}>{topic.slice(0,16)}</div>
+              <div style={{fontSize:9,color:C.muted,width:90,flexShrink:0,textAlign:"right",lineHeight:1.2}}>{topic.split(" ").slice(0,2).join(" ")}</div>
               <div style={{display:"flex",gap:2,flexWrap:"wrap"}}>
                 {Object.entries(modules).map(([mod,stmts])=>{
                   const modSessions=topicSessions.filter(h=>h.subtopic===mod);
