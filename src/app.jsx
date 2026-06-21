@@ -2199,9 +2199,10 @@ function sm2Update(card,correct){
   let{interval=0,repetitions=0,ef=2.5}=card;
   if(correct){repetitions+=1;interval=SM2_INTERVALS[Math.min(repetitions-1,SM2_INTERVALS.length-1)];ef=Math.max(1.3,ef+0.1);}
   else{repetitions=0;interval=1;ef=Math.max(1.3,ef-0.2);}
-  return{...card,interval,repetitions,ef,nextReview:new Date(Date.now()+interval*86400000).toISOString().slice(0,10)};
+  return{...card,interval,repetitions,ef,nextReview:localDateKey(new Date(Date.now()+interval*86400000))};
 }
-function getDueCards(srDeck){const today=new Date().toISOString().slice(0,10);return Object.values(srDeck).filter(c=>c.nextReview<=today);}
+function localDateKey(date){const d=date||new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function getDueCards(srDeck){const today=localDateKey();return Object.values(srDeck).filter(c=>c.nextReview<=today);}
 function getLeeches(srDeck){return Object.values(srDeck).filter(c=>(c.wrongCount||0)>=4);}
 function getForgettingCurve(srDeck){
   const today=new Date();
@@ -2587,7 +2588,7 @@ function getPredictedScore(moduleReadiness){
 function getStreak(history){
   if(!history.length)return 0;
   const days=[...new Set(history.map(h=>h.dateKey))].sort().reverse();
-  const today=new Date().toISOString().slice(0,10),yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const today=localDateKey(),yesterday=localDateKey(new Date(Date.now()-86400000));
   if(days[0]!==today&&days[0]!==yesterday)return 0;
   let streak=1;
   for(let i=1;i<days.length;i++){if((new Date(days[i-1])-new Date(days[i]))/86400000===1)streak++;else break;}
@@ -2596,7 +2597,7 @@ function getStreak(history){
 
 function getLast30DaysActivity(history){
   const counts={};
-  for(let i=0;i<30;i++){const d=new Date(Date.now()-i*86400000).toISOString().slice(0,10);counts[d]=0;}
+  for(let i=0;i<30;i++){const d=localDateKey(new Date(Date.now()-i*86400000));counts[d]=0;}
   history.forEach(h=>{if(counts[h.dateKey]!==undefined)counts[h.dateKey]++;});
   return counts;
 }
@@ -2618,7 +2619,7 @@ function fmtStudyTime(secs){
 function getDailyStudyTime(history){
   const byDay={};
   history.forEach(s=>{
-    const day=s.dateKey||new Date(s.id).toISOString().slice(0,10);
+    const day=s.dateKey||localDateKey(new Date(s.id));
     byDay[day]=(byDay[day]||0)+getEffectiveTimeSecs(s);
   });
   return byDay;
@@ -2627,7 +2628,7 @@ function getWeeklyStudyDays(history){
   const byDay=getDailyStudyTime(history);
   return Array.from({length:7},(_,i)=>{
     const d=new Date(Date.now()-(6-i)*86400000);
-    const key=d.toISOString().slice(0,10);
+    const key=localDateKey(d);
     const label=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
     return{key,label,secs:byDay[key]||0,isToday:i===6};
   });
@@ -2921,10 +2922,10 @@ async function checkProFromServer(cfg,userId,email){
 function getDailyAIUsage(){
   try{
     const d=JSON.parse(localStorage.getItem('cfa_daily_ai')||'null');
-    const today=new Date().toISOString().slice(0,10);
+    const today=localDateKey();
     if(!d||d.date!==today)return{date:today,count:0};
     return d;
-  }catch{return{date:new Date().toISOString().slice(0,10),count:0};}
+  }catch{return{date:localDateKey(),count:0};}
 }
 function bumpDailyAI(n=1){
   const d=getDailyAIUsage();d.count=Math.min(d.count+n,FREE_DAILY_AI_LIMIT*10);
@@ -2986,7 +2987,7 @@ function fireConfetti(duration=2400){
 // ─── QUESTION CACHE HELPERS ───────────────────────────────────────────────────
 function qcKey(t,st,diff){return`${t}|||${st}|||${diff}`;}
 function qcGet(cache,t,st,diff,cnt){
-  const today=new Date().toISOString().slice(0,10);
+  const today=localDateKey();
   const slots=(cache[qcKey(t,st,diff)]||[]);
   const avail=slots.filter(s=>s.qs&&s.qs.length>=Math.min(cnt,5)&&s.usedOn!==today);
   if(!avail.length)return null;
@@ -2994,7 +2995,7 @@ function qcGet(cache,t,st,diff,cnt){
   return avail[0];
 }
 function qcMarkUsed(cache,t,st,diff,ts){
-  const k=qcKey(t,st,diff);const today=new Date().toISOString().slice(0,10);
+  const k=qcKey(t,st,diff);const today=localDateKey();
   return{...cache,[k]:(cache[k]||[]).map(s=>s.ts===ts?{...s,usedOn:today}:s)};
 }
 function qcAdd(cache,t,st,diff,questions){
@@ -5898,7 +5899,7 @@ function CFAMock(){
       // Load cached focus suggestions (only use if from today)
       try {
         const cached = await storageGet("cfa_focus_cache");
-        if (cached && cached.date === new Date().toISOString().slice(0,10) && cached.suggestions) {
+        if (cached && cached.date === localDateKey() && cached.suggestions) {
           setFocusSuggestions(cached.suggestions);
         }
       } catch {}
@@ -5906,7 +5907,7 @@ function CFAMock(){
     recoverData().then(()=>{
       // Auto-refresh focus if no cache or cache is from a previous day
       setTimeout(()=>{
-        const today=new Date().toISOString().slice(0,10);
+        const today=localDateKey();
         storageGet("cfa_focus_cache").then(cached=>{
           if(!cached||cached.date!==today) {
             // will call generateFocus after state settles — use a flag
@@ -6059,7 +6060,7 @@ function CFAMock(){
       if(isFlagged&&correct){
         card.interval=1;card.repetitions=0;
         card.ef=Math.max(1.3,existing.ef-0.1);
-        card.nextReview=new Date(Date.now()+86400000).toISOString().slice(0,10);
+        card.nextReview=localDateKey(new Date(Date.now()+86400000));
       }
       updatedSrDeck={...updatedSrDeck,[key]:card};
     });
@@ -6074,7 +6075,7 @@ function CFAMock(){
       score,total:qs.length,pct,timeTaken:elapsed,
       avgSecsPerQ:qs.length>0?Math.round(elapsed/qs.length):0,
       date:new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"}),
-      dateKey:new Date().toISOString().slice(0,10),
+      dateKey:localDateKey(),
       wrongCount:qs.filter(q=>ans[q.id]!==q.answer).length,
       wrongs:[],
       level:cfaLevel,
@@ -6275,7 +6276,7 @@ function CFAMock(){
         setFocusSuggestions(suggestions);
         if(history.length===0) setSelectedFocus(0);
         setFocusLastGenerated(Date.now());
-        storageSet("cfa_focus_cache",{suggestions,date:new Date().toISOString().slice(0,10)});
+        storageSet("cfa_focus_cache",{suggestions,date:localDateKey()});
       }catch(e){setFocusError(`Error computing focus: ${e.message}`);}
       setFocusLoading(false);
     },400);
@@ -6596,7 +6597,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const passProbability=useMemo(()=>getPassProbability(levelHistory,moduleReadiness,daysLeft),[levelHistory,moduleReadiness,daysLeft]);
   useEffect(()=>{
     if(!passProbability||!history.length)return;
-    const today=new Date().toISOString().slice(0,10);
+    const today=localDateKey();
     const entry={date:today,prob:passProbability.probability,acc:passProbability.currentAccuracy,cov:passProbability.coveragePct};
     const existing=passTrendRef.current.find(p=>p.date===today);
     // Skip if today's point already has identical values
@@ -7633,7 +7634,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     {/* Daily target tracker */}
     {(()=>{
-      const today=new Date().toISOString().slice(0,10);
+      const today=localDateKey();
       const todayQs=levelHistory.filter(h=>h.dateKey===today).reduce((s,h)=>s+(h.total||0),0);
       const baseTarget=daysLeft>0?(daysLeft<=30?30:daysLeft<=60?25:20):20;
       const dailyTarget=history.length<5?Math.max(10,Math.round(baseTarget*(0.4+history.length*0.12))):baseTarget;
@@ -7908,7 +7909,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* Office Mode — primary CTA */}
     {(()=>{
       const omSessions=history.filter(h=>h.isOfficeMode);
-      const omStreak=(()=>{let s=0,d=new Date();for(let i=0;i<30;i++){const k=new Date(d-i*86400000).toISOString().slice(0,10);if(omSessions.some(h=>h.dateKey===k))s++;else if(i>0)break;}return s;})();
+      const omStreak=(()=>{let s=0,d=new Date();for(let i=0;i<30;i++){const k=localDateKey(new Date(d-i*86400000));if(omSessions.some(h=>h.dateKey===k))s++;else if(i>0)break;}return s;})();
       const diffColor=adaptiveOmDifficulty==="Hard"?C.hard:adaptiveOmDifficulty==="Easy"?C.easy:C.medium;
       return(
         <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
@@ -9196,10 +9197,10 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
 
       {dashTab==="api"&&(()=>{
         const log=apiLogRef.current;
-        const today=new Date().toISOString().slice(0,10);
-        const weekAgo=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
-        const todayLog=log.filter(e=>new Date(e.ts).toISOString().slice(0,10)===today);
-        const weekLog=log.filter(e=>new Date(e.ts).toISOString().slice(0,10)>=weekAgo);
+        const today=localDateKey();
+        const weekAgo=localDateKey(new Date(Date.now()-7*86400000));
+        const todayLog=log.filter(e=>localDateKey(new Date(e.ts))===today);
+        const weekLog=log.filter(e=>localDateKey(new Date(e.ts))>=weekAgo);
         const todayCost=todayLog.reduce((s,e)=>s+(e.$||0),0);
         const weekCost=weekLog.reduce((s,e)=>s+(e.$||0),0);
         const totalCost=log.reduce((s,e)=>s+(e.$||0),0);
