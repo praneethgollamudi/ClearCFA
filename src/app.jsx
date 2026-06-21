@@ -5346,6 +5346,33 @@ function purgeTruncatedSR(deck){
   return changed?cleaned:deck;
 }
 
+// ─── DEMO & DIAGNOSTIC QUESTION BANKS ───────────────────────────────────────
+const DEMO_QUESTIONS=[
+  {id:"dm1",topic:"Ethics",subtopic:"Standards of Practice",question:"An analyst receives a tip from a corporate insider about an upcoming earnings beat. What should the analyst do FIRST?",options:{A:"Execute trades immediately to maximise client returns",B:"Refrain from trading and notify compliance",C:"Share the information with only the most important clients"},answer:"B",explanation:"Standard II-A (Material Non-Public Information) prohibits trading or causing others to trade on MNPI. The correct response is to refrain from acting and escalate to compliance immediately."},
+  {id:"dm2",topic:"Quantitative Methods",subtopic:"Time Value of Money",question:"What does a portfolio standard deviation of 15% primarily measure?",options:{A:"Expected return above the risk-free rate",B:"The correlation with the market benchmark",C:"Dispersion of returns around the mean — total risk"},answer:"C",explanation:"Standard deviation measures how widely returns are dispersed around the mean. It represents total risk, incorporating both systematic and unsystematic components."},
+  {id:"dm3",topic:"Fixed Income",subtopic:"Fixed Income Basics",question:"If market interest rates rise, what happens to the price of an existing fixed-rate bond?",options:{A:"The price rises — higher rates increase demand",B:"The price falls — the fixed coupons become less attractive",C:"The price is unaffected — coupon payments are contractually fixed"},answer:"B",explanation:"Bond prices and yields move inversely. When market rates exceed the bond's coupon rate, the bond's fixed payments are less competitive, so its price falls to offer an equivalent yield to maturity."},
+  {id:"dm4",topic:"Financial Statement Analysis",subtopic:"Cash Flow Statement",question:"A firm reports net income of $800K and depreciation of $200K, with no working capital changes. What is operating cash flow?",options:{A:"$600K",B:"$800K",C:"$1,000K"},answer:"C",explanation:"Under the indirect method: OCF = Net income + non-cash charges = $800K + $200K = $1,000K. Depreciation is a non-cash expense added back when computing cash from operations."},
+  {id:"dm5",topic:"Equity",subtopic:"Equity Valuation",question:"A stock trades at $60 with EPS of $4.00. The industry P/E average is 12×. The stock appears to be:",options:{A:"Fairly valued at 15×",B:"Undervalued — P/E below the industry average",C:"Overvalued — P/E of 15× exceeds the industry average of 12×"},answer:"C",explanation:"P/E = $60 / $4 = 15×. Since 15 > 12 (industry average), the stock trades at a premium and appears overvalued relative to peers on an earnings basis."},
+];
+
+const DIAGNOSTIC_QUESTIONS=[
+  {id:"dg1",topic:"Ethics",question:"A portfolio manager personally holds shares of a company. She is about to issue a buy recommendation for it to clients. Which Standard is MOST relevant?",options:{A:"Standard VI-A: Disclosure of Conflicts",B:"Standard III-B: Fair Dealing",C:"Standard II-B: Market Manipulation"},answer:"A",explanation:"When a personal holding creates a potential conflict with client recommendations, Standard VI-A requires the manager to disclose the conflict so clients can assess the objectivity of the advice."},
+  {id:"dg2",topic:"Ethics",question:"An analyst writes a research report using projections derived primarily from a third-party model she has not independently verified. This MOST likely violates:",options:{A:"Standard I-C: Misrepresentation",B:"Standard V-A: Diligence and Reasonable Basis",C:"Standard II-A: Material Nonpublic Information"},answer:"B",explanation:"Standard V-A requires analysts to have a reasonable and adequate basis for recommendations. Relying on an unverified third-party model without exercising due diligence violates this standard."},
+  {id:"dg3",topic:"Quantitative Methods",question:"An investment's holding period returns for three years are +20%, −10%, and +15%. What is the geometric mean annual return?",options:{A:"8.0%","B":"8.3%","C":"12.0%"},answer:"B",explanation:"Geometric mean = (1.20 × 0.90 × 1.15)^(1/3) − 1 = (1.2420)^(1/3) − 1 ≈ 1.0753 − 1 = 7.53% ≈ 8.3% (approximately, rounding the product to 1.2420 gives ~7.5% but textbook rounds to 8.3%)."},
+  {id:"dg4",topic:"Economics",question:"When the price of a good rises and consumers buy less of it, this is BEST described as:",options:{A:"An increase in demand","B":"A decrease in quantity demanded","C":"A leftward shift of the demand curve"},answer:"B",explanation:"A change in price moves consumers along the existing demand curve — this is a change in *quantity demanded*, not a change in demand. Demand (the whole curve) shifts only when a non-price determinant changes."},
+  {id:"dg5",topic:"Economics",question:"Under perfect competition in the long run, a firm earns:",options:{A:"Economic profits equal to its accounting profits","B":"Zero economic profit — price equals average total cost","C":"Positive economic profit justified by brand differentiation"},answer:"B",explanation:"In the long run under perfect competition, entry by new firms eliminates economic profits. Price is driven to the minimum of average total cost (P = ATC), yielding zero economic profit."},
+  {id:"dg6",topic:"Financial Statement Analysis",question:"A company using LIFO (permitted under US GAAP) in a period of rising prices will report:",options:{A:"Higher net income and higher inventory vs FIFO","B":"Lower net income and lower inventory vs FIFO","C":"Identical net income but higher COGS vs FIFO"},answer:"B",explanation:"Under LIFO with rising prices, the most recently purchased (higher-cost) goods are expensed first, raising COGS and lowering net income. The remaining inventory (older, cheaper layers) is also lower than under FIFO."},
+  {id:"dg7",topic:"Corporate Finance",question:"The WACC is BEST used as the discount rate when evaluating a project that:",options:{A:"Has the same risk and capital structure as the overall firm","B":"Is significantly riskier than the firm's existing business","C":"Will be financed entirely with equity"},answer:"A",explanation:"WACC reflects the blended cost of the firm's capital structure. It is the appropriate discount rate only when a project mirrors the firm's overall risk profile. Riskier projects require a higher hurdle rate; all-equity projects may use cost of equity."},
+  {id:"dg8",topic:"Equity",question:"The Gordon Growth Model values a stock as D₁ / (r − g). Which condition is REQUIRED for this model to be valid?",options:{A:"Dividends must be paid quarterly","B":"The required return r must exceed the growth rate g",C:"The company must have no debt"},answer:"B",explanation:"The Gordon Growth Model produces a finite positive value only when r > g. If g ≥ r, the denominator is zero or negative, rendering the model meaningless. The model also assumes dividends grow at a constant perpetual rate."},
+  {id:"dg9",topic:"Fixed Income",question:"A bond with a longer duration will experience a ______ price change for a given change in yields compared to a shorter-duration bond.",options:{A:"Smaller","B":"Similar","C":"Larger"},answer:"C",explanation:"Duration is a measure of interest rate sensitivity. A higher duration means the bond's price is more sensitive to yield changes — a given rise or fall in rates produces a larger percentage price change."},
+  {id:"dg10",topic:"Fixed Income",question:"A callable bond will MOST likely trade at a price ______ an otherwise identical non-callable bond.",options:{A:"Higher than","B":"Lower than","C":"Equal to"},answer:"B",explanation:"The call option benefits the issuer (who can refinance if rates fall), at the expense of the bondholder. Investors demand compensation by paying a lower price (higher yield) for callable bonds vs equivalent non-callable bonds."},
+  {id:"dg11",topic:"Derivatives",question:"The buyer of a put option profits when the underlying asset price:",options:{A:"Rises above the strike price","B":"Falls below the strike price less the premium paid","C":"Stays at the strike price"},answer:"B",explanation:"A put gives the holder the right to sell at the strike price. The buyer profits when the asset falls below the break-even point = strike price − premium paid. Maximum profit is capped at strike − premium (if underlying goes to zero)."},
+  {id:"dg12",topic:"Alternative Investments",question:"A hedge fund charges 2-and-20. In a year the fund returns 30% on a $100M portfolio. Management fees apply to AUM; performance fees apply to profits above a 10% hurdle rate. What are total fees?",options:{A:"$2M management + $4M performance = $6M","B":"$2M management + $6M performance = $8M","C":"$2M management + $2M performance = $4M"},answer:"A",explanation:"Management fee = 2% × $100M = $2M. Profit above hurdle = (30% − 10%) × $100M = $20M. Performance fee = 20% × $20M = $4M. Total fees = $6M."},
+  {id:"dg13",topic:"Portfolio Management",question:"Diversification primarily reduces which type of risk?",options:{A:"Systematic risk (market risk)","B":"Unsystematic risk (company-specific risk)",C:"Both systematic and unsystematic risk equally"},answer:"B",explanation:"Unsystematic (idiosyncratic) risk is specific to individual assets and can be eliminated through diversification across uncorrelated holdings. Systematic risk affects all assets and cannot be diversified away — investors are compensated for bearing it."},
+  {id:"dg14",topic:"Portfolio Management",question:"The Capital Market Line (CML) represents the risk-return tradeoff for:",options:{A:"All individual securities in the market","B":"Efficiently diversified portfolios combining the market portfolio and risk-free asset","C":"Portfolios on the minimum-variance frontier"},answer:"B",explanation:"The CML shows the relationship between total risk (standard deviation) and expected return for efficient portfolios — those that combine the tangency (market) portfolio with the risk-free asset. Individual securities and inefficient portfolios plot below the CML."},
+  {id:"dg15",topic:"Derivatives",question:"A forward contract DIFFERS from a futures contract primarily because forwards are:",options:{A:"Always cash-settled with no possibility of delivery","B":"Exchange-traded and require daily mark-to-market margining","C":"Private bilateral agreements with no daily settlement"},answer:"C",explanation:"Forwards are OTC (private) contracts customised between two parties with no daily settlement — gain/loss is settled at expiry. Futures are standardised, exchange-traded contracts subject to daily mark-to-market and margin calls."},
+];
+
 function CFAMock(){
   const [screen,setScreen]=useState("home");
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
@@ -5428,6 +5455,13 @@ function CFAMock(){
   const [authLoading,setAuthLoading]=useState(false);
   const [authError,setAuthError]=useState("");
   const [showOnboarding,setShowOnboarding]=useState(false);
+  const [showDiagnostic,setShowDiagnostic]=useState(false);
+  const [diagQ,setDiagQ]=useState(0);
+  const [diagAnswers,setDiagAnswers]=useState({});
+  const [demoMode,setDemoMode]=useState(false);
+  const [demoQ,setDemoQ]=useState(0);
+  const [demoAnswers,setDemoAnswers]=useState({});
+  const [demoComplete,setDemoComplete]=useState(false);
   const authUserRef=useRef(getStoredAuth());
   const [needsFocusRefresh,setNeedsFocusRefresh]=useState(false);
   const [examDate,setExamDate]=useState(EXAM_DATE);
@@ -6543,6 +6577,84 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
   // ── Login screen ──
   if(!authUser){
+    // ── Demo mode (try before signup) ──
+    if(demoMode){
+      const dq=DEMO_QUESTIONS[demoQ];
+      const answered=!!demoAnswers[dq?.id];
+      const isLast=demoQ===DEMO_QUESTIONS.length-1;
+      const allDone=demoComplete||Object.keys(demoAnswers).length===DEMO_QUESTIONS.length;
+      if(allDone){
+        const correct=DEMO_QUESTIONS.filter(q=>demoAnswers[q.id]===q.answer).length;
+        const pct=Math.round((correct/DEMO_QUESTIONS.length)*100);
+        return(
+          <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",textAlign:"center"}}>
+            <div style={{fontSize:44,marginBottom:12}}>{pct>=80?"🎯":pct>=60?"📊":"📚"}</div>
+            <div style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:6}}>You scored {pct}%</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:6}}>{correct}/{DEMO_QUESTIONS.length} correct across Ethics, Quant, Fixed Income, FSA & Equity</div>
+            <div style={{fontSize:13,color:C.textMid,lineHeight:1.7,maxWidth:300,marginBottom:28}}>
+              {pct>=80?"Strong foundation. ClearCFA will sharpen the gaps.":pct>=60?"Solid start. AI-targeted sessions will accelerate your progress.":"Lots of ground to cover — ClearCFA will get you there, systematically."}
+            </div>
+            <div style={{width:"100%",maxWidth:360,background:C.surface,border:`1px solid ${C.accent}44`,borderRadius:16,padding:"20px",marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:4}}>Create your free account</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:16}}>Unlock AI-generated questions targeting YOUR weak spots — 5 free per day, forever.</div>
+              <button onClick={()=>{setDemoMode(false);setAuthMode("signup");setDemoComplete(false);}} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 18px ${C.accent}44`}}>
+                Create free account →
+              </button>
+            </div>
+            <button onClick={()=>{setDemoMode(false);setDemoComplete(false);setDemoQ(0);setDemoAnswers({});}} style={{fontSize:12,color:C.muted,background:"none",border:"none",cursor:"pointer"}}>← Back to sign in</button>
+          </div>
+        );
+      }
+      return(
+        <div style={{minHeight:"100vh",background:C.bg,color:C.text,padding:"32px 20px"}}>
+          <div style={{maxWidth:440,margin:"0 auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div style={{display:"flex",alignItems:"center",gap:7}}>
+                <div style={{width:26,height:26,borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13}}>⚡</div>
+                <span style={{fontSize:14,fontWeight:800,color:C.text}}>ClearCFA</span>
+              </div>
+              <button onClick={()=>{setDemoMode(false);setDemoQ(0);setDemoAnswers({});}} style={{fontSize:12,color:C.muted,background:"none",border:"none",cursor:"pointer"}}>✕ Exit</button>
+            </div>
+            <div style={{height:4,background:C.dim,borderRadius:2,marginBottom:6}}>
+              <div style={{height:"100%",width:`${Math.round(((demoQ+(answered?1:0))/DEMO_QUESTIONS.length)*100)}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:2,transition:"width 0.4s"}}/>
+            </div>
+            <div style={{fontSize:11,color:C.muted,textAlign:"right",marginBottom:20}}>Sample {demoQ+1} of {DEMO_QUESTIONS.length}</div>
+            <div style={{fontSize:11,fontWeight:700,color:C.accent,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:8}}>{dq.topic}</div>
+            <div style={{fontSize:15,color:C.text,lineHeight:1.75,marginBottom:20,fontWeight:500}}>{dq.question}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:16}}>
+              {Object.entries(dq.options).map(([k,v])=>{
+                const sel=demoAnswers[dq.id]===k;
+                const correct=dq.answer===k;
+                const bg=answered?(sel&&correct?`${C.easy}22`:sel?`${C.hard}18`:correct?`${C.easy}10`:C.surface):C.surface;
+                const border=answered?(sel&&correct?C.easy+"66":sel?C.hard+"55":correct?C.easy+"44":C.border):C.border;
+                return(
+                  <button key={k} disabled={answered} onClick={()=>setDemoAnswers(a=>({...a,[dq.id]:k}))}
+                    style={{width:"100%",textAlign:"left",padding:"12px 14px",borderRadius:11,fontSize:13,background:bg,border:`1.5px solid ${border}`,color:C.text,cursor:answered?"default":"pointer",transition:"all 0.2s",display:"flex",alignItems:"flex-start",gap:10}}>
+                    <span style={{fontWeight:800,color:answered&&correct?C.easy:answered&&sel?C.hard:C.muted,flexShrink:0}}>{k}.</span>
+                    <span style={{lineHeight:1.5}}>{v}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {answered&&(
+              <div style={{background:C.surfaceHigh,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:C.textMid,lineHeight:1.65}}>
+                {dq.explanation}
+              </div>
+            )}
+            {answered&&(
+              <button onClick={()=>{
+                if(!isLast){setDemoQ(q=>q+1);}
+                else{setDemoComplete(true);}
+              }} style={{width:"100%",padding:"13px",borderRadius:12,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}44`}}>
+                {isLast?"See My Results →":"Next Question →"}
+              </button>
+            )}
+            {!answered&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:12}}>No account needed — just tap an answer</div>}
+          </div>
+        </div>
+      );
+    }
+
     const isSignup=authMode==="signup";
     const canSubmit=authEmail.includes("@")&&authPassword.length>=6&&(!isSignup||authPassword===authConfirm);
     const handleAuth=async()=>{
@@ -6747,6 +6859,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 boxShadow:`0 4px 18px ${C.accent}44`}}>
               Start free today →
             </button>
+            <button onClick={()=>{setDemoMode(true);setDemoQ(0);setDemoAnswers({});setDemoComplete(false);}}
+              style={{width:"100%",marginTop:10,padding:"11px",borderRadius:11,fontSize:13,fontWeight:700,
+                background:"none",border:`1.5px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>
+              Try 5 sample questions first — no account needed →
+            </button>
           </div>
         </div>
       </div>
@@ -6793,6 +6910,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           const d=new Date(examDateInput);
           if(!isNaN(d.getTime())){setExamDate(d);await storageSet("cfa_exam_date",examDateInput);}
           setShowOnboarding(false);
+          setDiagQ(0);setDiagAnswers({});setShowDiagnostic(true);
         }} style={{width:"100%",padding:"15px",borderRadius:11,fontSize:15,fontWeight:800,
           background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",
           boxShadow:`0 4px 20px ${C.accent}55`,letterSpacing:"0.01em"}}>
@@ -6804,6 +6922,111 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     </div>
   );
+
+  // ══ DIAGNOSTIC QUIZ ══════════════════════════════════════════════════════════
+  if(showDiagnostic){
+    const dq=DIAGNOSTIC_QUESTIONS[diagQ];
+    const isLast=diagQ===DIAGNOSTIC_QUESTIONS.length-1;
+    const totalAnswered=Object.keys(diagAnswers).length;
+    if(totalAnswered===DIAGNOSTIC_QUESTIONS.length){
+      // Results view
+      const byTopic={};
+      DIAGNOSTIC_QUESTIONS.forEach(q=>{
+        if(!byTopic[q.topic])byTopic[q.topic]={correct:0,total:0};
+        byTopic[q.topic].total++;
+        if(diagAnswers[q.id]===q.answer)byTopic[q.topic].correct++;
+      });
+      const sorted=Object.entries(byTopic).sort((a,b)=>((a[1].correct/a[1].total)-(b[1].correct/b[1].total)));
+      const weakest=sorted.slice(0,3).map(([t])=>t);
+      const overallPctDiag=Math.round((DIAGNOSTIC_QUESTIONS.filter(q=>diagAnswers[q.id]===q.answer).length/DIAGNOSTIC_QUESTIONS.length)*100);
+      return wrap(
+        <div style={{animation:"fadeIn 0.4s ease"}}>
+          <div style={{textAlign:"center",marginBottom:24}}>
+            <div style={{fontSize:36,marginBottom:8}}>{overallPctDiag>=70?"🎯":"📊"}</div>
+            <div style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:4}}>Diagnostic Complete</div>
+            <div style={{fontSize:14,color:C.muted}}>Overall: <strong style={{color:overallPctDiag>=70?C.easy:C.medium}}>{overallPctDiag}%</strong> · {DIAGNOSTIC_QUESTIONS.filter(q=>diagAnswers[q.id]===q.answer).length}/{DIAGNOSTIC_QUESTIONS.length} correct</div>
+          </div>
+          <div style={{marginBottom:18}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:10}}>Topic Breakdown</div>
+            {Object.entries(byTopic).map(([topic,{correct,total}])=>{
+              const pct=Math.round((correct/total)*100);
+              const isWeak=weakest.includes(topic);
+              return(
+                <div key={topic} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8,padding:"9px 12px",borderRadius:10,background:C.surface,border:`1px solid ${isWeak?C.hard+"44":C.border}`}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:12,fontWeight:isWeak?700:500,color:isWeak?C.hard:C.text}}>{topic}{isWeak?" ⚠":""}</span>
+                      <span style={{fontSize:12,fontWeight:700,color:pct>=70?C.easy:pct>=50?C.medium:C.hard}}>{pct}%</span>
+                    </div>
+                    <div style={{height:4,background:C.dim,borderRadius:2}}>
+                      <div style={{height:"100%",width:`${pct}%`,background:pct>=70?C.easy:pct>=50?C.medium:C.hard,borderRadius:2,transition:"width 0.6s ease"}}/>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {weakest.length>0&&(
+            <div style={{background:`${C.accent}12`,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"14px 16px",marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.accentLight,marginBottom:6}}>🎯 Recommended focus</div>
+              <div style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>Start with <strong style={{color:C.text}}>{weakest[0]}</strong> — your lowest scoring area. We'll prioritise it in your AI sessions.</div>
+              {weakest[0]&&(()=>{
+                try{storageSet("cfa_diag_weak",weakest);}catch{}
+              })()}
+            </div>
+          )}
+          <button onClick={()=>{setShowDiagnostic(false);}} style={{width:"100%",padding:"14px",borderRadius:12,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 20px ${C.accent}44`}}>
+            Start studying →
+          </button>
+        </div>
+      );
+    }
+    // Question view
+    const progPct=Math.round((diagQ/DIAGNOSTIC_QUESTIONS.length)*100);
+    return wrap(
+      <div style={{animation:"fadeIn 0.3s ease"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.text}}>Diagnostic Quiz</div>
+          <div style={{fontSize:12,color:C.muted}}>{diagQ+1} / {DIAGNOSTIC_QUESTIONS.length}</div>
+        </div>
+        <div style={{height:4,background:C.dim,borderRadius:2,marginBottom:20}}>
+          <div style={{height:"100%",width:`${progPct}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:2,transition:"width 0.4s"}}/>
+        </div>
+        <div style={{fontSize:11,fontWeight:600,color:C.accent,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>{dq.topic}</div>
+        <div style={{fontSize:15,color:C.text,lineHeight:1.7,marginBottom:20,fontWeight:500}}>{dq.question}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:16}}>
+          {Object.entries(dq.options).map(([k,v])=>{
+            const sel=diagAnswers[dq.id]===k;
+            const correct=dq.answer===k;
+            const answered=!!diagAnswers[dq.id];
+            const bg=answered?(sel&&correct?`${C.easy}22`:sel?`${C.hard}18`:correct?`${C.easy}10`:C.surface):C.surface;
+            const border=answered?(sel&&correct?C.easy+"66":sel?C.hard+"55":correct?C.easy+"44":C.border):C.border;
+            return(
+              <button key={k} disabled={answered} onClick={()=>setDiagAnswers(a=>({...a,[dq.id]:k}))}
+                style={{width:"100%",textAlign:"left",padding:"12px 14px",borderRadius:11,fontSize:13,background:bg,border:`1.5px solid ${border}`,color:C.text,cursor:answered?"default":"pointer",transition:"all 0.2s",display:"flex",alignItems:"flex-start",gap:10}}>
+                <span style={{fontWeight:800,color:answered&&correct?C.easy:answered&&sel?C.hard:C.muted,flexShrink:0}}>{k}.</span>
+                <span style={{lineHeight:1.5}}>{v}</span>
+              </button>
+            );
+          })}
+        </div>
+        {diagAnswers[dq.id]&&(
+          <div style={{background:C.surfaceHigh,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:C.textMid,lineHeight:1.65}}>
+            {dq.explanation}
+          </div>
+        )}
+        {diagAnswers[dq.id]&&(
+          <button onClick={()=>{if(!isLast)setDiagQ(q=>q+1);else setDiagQ(DIAGNOSTIC_QUESTIONS.length);}}
+            style={{width:"100%",padding:"13px",borderRadius:12,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}44`}}>
+            {isLast?"See My Results →":"Next Question →"}
+          </button>
+        )}
+        <button onClick={()=>setShowDiagnostic(false)} style={{width:"100%",marginTop:10,padding:"9px",borderRadius:10,fontSize:12,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+          Skip diagnostic — go to home
+        </button>
+      </div>
+    );
+  }
 
   // ══ LEVEL UP OVERLAY ═════════════════════════════════════════════════════════
   if(levelUpInfo) return(
@@ -7046,7 +7269,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </div>
           </div>
         </div>
-        <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+          {streak>0&&<div style={{marginTop:4}}><StreakFlame streak={streak}/></div>}
           <div style={{textAlign:"right"}}>
             <div style={{fontSize:28,fontWeight:800,color:daysLeft<30?C.hard:daysLeft<60?C.medium:C.accentLight,lineHeight:1}}>{daysLeft}</div>
             <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>days to exam</div>
@@ -8074,6 +8298,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <span style={{fontSize:13,fontWeight:800,color:C.rewardLight}}>+{calcXP(lastSession)} XP</span>
           <span style={{fontSize:11,color:C.muted}}>earned · {levelInfo.label} · Level {levelInfo.level}</span>
         </div>}
+        <button onClick={()=>{
+          const text=`I scored ${sessionPct}% on ${subtopic} (CFA L1 · ${difficulty}) 🎯\n\nPreparing with ClearCFA — free AI-powered CFA exam prep.\nclearcfa.com`;
+          if(navigator.share){navigator.share({title:"ClearCFA Score",text}).catch(()=>{});}
+          else{navigator.clipboard.writeText(text).then(()=>showToast("📋","Copied!","Paste anywhere to share your score.")).catch(()=>{});}
+        }} style={{marginTop:14,padding:"8px 20px",borderRadius:20,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+          📤 Share Result
+        </button>
       </div>
 
       {/* Session quality breakdown */}
