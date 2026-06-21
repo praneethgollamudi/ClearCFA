@@ -5667,7 +5667,7 @@ function CFAMock(){
   const [backupScreen,setBackupScreen]=useState(false); // backup/restore modal
   const [importText,setImportText]=useState(""); // for paste-restore
   const [importError,setImportError]=useState("");
-  const [sessionSaved,setSessionSaved]=useState(false); // confirm session was saved
+  const [sessionSaved,setSessionSaved]=useState(null); // null=not attempted, true=ok, false=failed
   const generatingRef=useRef(false); // debounce double-tap
   const [weeklyPlanScreen,setWeeklyPlanScreen]=useState(false);
   const [settingsOpen,setSettingsOpen]=useState(false);
