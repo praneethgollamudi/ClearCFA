@@ -6358,7 +6358,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:24}}>
             <div style={{width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:`0 4px 12px ${C.accent}55`}}>⚡</div>
             <span style={{fontSize:17,fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}>ClearCFA</span>
-            <span style={{fontSize:10,fontWeight:700,color:C.accentLight,background:C.accent+"20",border:`1px solid ${C.accent}44`,borderRadius:20,padding:"2px 8px",marginLeft:2}}>FREE</span>
+            <span style={{fontSize:10,fontWeight:700,color:C.accentLight,background:C.accent+"20",border:`1px solid ${C.accent}44`,borderRadius:20,padding:"2px 8px",marginLeft:2}}>Free to start</span>
           </div>
           <div style={{fontSize:30,fontWeight:900,color:C.text,lineHeight:1.15,marginBottom:10,letterSpacing:"-0.6px",maxWidth:320,margin:"0 auto 10px"}}>
             Pass CFA Level 1.<br/>
@@ -6369,7 +6369,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {/* Stats strip */}
           <div style={{display:"flex",justifyContent:"center",gap:0,background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 0",maxWidth:340,margin:"0 auto"}}>
-            {[["3,200+","Questions","🎯"],["L1 / L2 / L3","All Levels","📚"],["Free","Forever","✓"]].map(([val,label,ico],i,arr)=>(
+            {[["3,200+","Questions","🎯"],["L1 / L2 / L3","All Levels","📚"],["Free tier","5 Qs/day","⚡"]].map(([val,label,ico],i,arr)=>(
               <div key={label} style={{flex:1,textAlign:"center",borderRight:i<arr.length-1?`1px solid ${C.border}`:"none",padding:"0 8px"}}>
                 <div style={{fontSize:15,fontWeight:800,color:C.text}}>{ico} {val}</div>
                 <div style={{fontSize:10,color:C.muted,marginTop:2}}>{label}</div>
@@ -6392,7 +6392,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 </button>
               ))}
             </div>
-            {isSignup&&<div style={{fontSize:12,color:C.accentLight,textAlign:"center",marginBottom:14,fontWeight:600}}>🎉 Free forever — no credit card needed</div>}
+            {isSignup&&<div style={{fontSize:12,color:C.accentLight,textAlign:"center",marginBottom:14,fontWeight:600}}>🎉 Free to start — no credit card needed</div>}
             <input value={authEmail} onChange={e=>setAuthEmail(e.target.value.trim())}
               placeholder="your@email.com" type="email" autoComplete="email" style={inputStyle(authEmail.includes("@"))}/>
             <input value={authPassword} onChange={e=>setAuthPassword(e.target.value)}
@@ -6456,12 +6456,51 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
 
+        {/* ── Pricing ── */}
+        <div style={{padding:"28px 20px 0",maxWidth:420,margin:"0 auto"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.12em",textTransform:"uppercase",textAlign:"center",marginBottom:18}}>Simple pricing</div>
+          <div style={{display:"flex",gap:12}}>
+            {/* Free tier */}
+            <div style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 14px"}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Free</div>
+              <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>$0</div>
+              <div style={{fontSize:10,color:C.muted,marginBottom:14}}>always</div>
+              {[["5 AI Qs/day",true],["Spaced repetition",true],["Pass probability",true],["CFA Level 1 only",true],["AI Coach",false],["L2 + L3",false],["Unlimited Qs",false]].map(([f,incl])=>(
+                <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:incl?C.textMid:C.muted,marginBottom:5,opacity:incl?1:0.5}}>
+                  <span style={{color:incl?C.easy:C.muted,fontWeight:700,flexShrink:0,fontSize:10}}>{incl?"✓":"✗"}</span>{f}
+                </div>
+              ))}
+              <button onClick={()=>{setAuthMode("signup");setAuthError("");setAuthPassword("");setAuthConfirm("");window.scrollTo({top:0,behavior:"smooth"});}}
+                style={{width:"100%",marginTop:14,padding:"10px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+                Start free →
+              </button>
+            </div>
+            {/* Pro tier */}
+            <div style={{flex:1,background:`linear-gradient(160deg,${C.accent}14,${C.accent}06)`,border:`1.5px solid ${C.accent}55`,borderRadius:14,padding:"16px 14px",position:"relative"}}>
+              <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 10px",borderRadius:20,letterSpacing:"0.06em",whiteSpace:"nowrap"}}>MOST POPULAR</div>
+              <div style={{fontSize:11,fontWeight:700,color:C.accentLight,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Pro</div>
+              <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>$19<span style={{fontSize:13,fontWeight:600,color:C.muted}}>/mo</span></div>
+              <div style={{fontSize:10,color:C.muted,marginBottom:14}}>or $99/year · save 56%</div>
+              {[["Unlimited AI questions",true],["CFA L1 + L2 + L3",true],["AI Coach (unlimited)",true],["Weekly study plans",true],["Advanced analytics",true],["Spaced repetition",true],["Priority support",true]].map(([f])=>(
+                <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:C.textMid,marginBottom:5}}>
+                  <span style={{color:C.easy,fontWeight:700,flexShrink:0,fontSize:10}}>✓</span>{f}
+                </div>
+              ))}
+              <button onClick={()=>{setAuthMode("signup");setAuthError("");setAuthPassword("");setAuthConfirm("");window.scrollTo({top:0,behavior:"smooth"});}}
+                style={{width:"100%",marginTop:14,padding:"10px",borderRadius:9,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,border:"none",color:"#fff",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
+                Get Pro →
+              </button>
+            </div>
+          </div>
+          <div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:12}}>Start on the free tier. Upgrade when you're ready.</div>
+        </div>
+
         {/* ── Trust strip ── */}
-        <div style={{padding:"24px 20px 40px",maxWidth:420,margin:"0 auto"}}>
+        <div style={{padding:"24px 20px 48px",maxWidth:420,margin:"0 auto"}}>
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 20px"}}>
             <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12,textAlign:"center"}}>Built for the 2026 exam</div>
             <div style={{display:"flex",flexDirection:"column",gap:7}}>
-              {["2026 CFA Institute curriculum","Official LOS-anchored questions","CFA Level 1, 2 & 3 support","Spaced repetition memory engine","Real-time pass probability","No subscription — free forever"].map(t=>(
+              {["2026 CFA Institute curriculum","Official LOS-anchored questions","CFA Level 1, 2 & 3 support","Spaced repetition memory engine","Real-time pass probability","No credit card to start"].map(t=>(
                 <div key={t} style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:C.textMid}}>
                   <span style={{color:C.easy,fontWeight:700,flexShrink:0}}>✓</span>{t}
                 </div>
@@ -6471,7 +6510,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               style={{width:"100%",marginTop:16,padding:"13px",borderRadius:11,fontSize:14,fontWeight:800,
                 background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",
                 boxShadow:`0 4px 18px ${C.accent}44`}}>
-              Get started free →
+              Start free today →
             </button>
           </div>
         </div>
