@@ -1732,27 +1732,100 @@ const FORMULAS = {
     name: "TWR",
     f: "TWR = (1+r₁)(1+r₂)…(1+rₙ) − 1"
   }, {
+    name: "MWR (IRR)",
+    f: "Solve: PV(inflows) = PV(outflows)"
+  }, {
     name: "Variance",
     f: "σ² = Σ(xᵢ − μ)² / N"
+  }, {
+    name: "Sample Variance",
+    f: "s² = Σ(xᵢ − x̄)² / (n−1)"
   }, {
     name: "Covariance",
     f: "Cov(A,B) = ρ × σ_A × σ_B"
   }, {
-    name: "Portfolio σ",
+    name: "Correlation",
+    f: "ρ = Cov(A,B) / (σ_A × σ_B)"
+  }, {
+    name: "Portfolio σ (2 asset)",
     f: "σ_p = √(w²_Aσ²_A + w²_Bσ²_B + 2w_Aw_BρABσ_Aσ_B)"
   }, {
-    name: "Safety-first",
+    name: "t-statistic",
+    f: "t = (x̄ − μ₀) / (s / √n)"
+  }, {
+    name: "Confidence interval",
+    f: "x̄ ± z_{α/2} × (σ / √n)"
+  }, {
+    name: "Regression slope",
+    f: "b = Cov(X,Y) / Var(X)"
+  }, {
+    name: "R² (coefficient of det.)",
+    f: "R² = 1 − SSE/SST"
+  }, {
+    name: "F-stat (regression)",
+    f: "F = MSR / MSE = (R²/k) / ((1−R²)/(n−k−1))"
+  }, {
+    name: "Chi-square (variance test)",
+    f: "χ² = (n−1)s² / σ₀²"
+  }, {
+    name: "Safety-first ratio",
     f: "SFR = (E(R) − R_min) / σ"
   }, {
     name: "Bayes",
     f: "P(A|B) = P(B|A)·P(A) / P(B)"
+  }, {
+    name: "Combination",
+    f: "ⁿCᵣ = n! / (r!(n−r)!)"
+  }, {
+    name: "Permutation",
+    f: "ⁿPᵣ = n! / (n−r)!"
+  }],
+  "Economics": [{
+    name: "GDP (expenditure)",
+    f: "GDP = C + I + G + (X − M)"
+  }, {
+    name: "GDP (income)",
+    f: "GDP = Wages + Rent + Interest + Profit"
+  }, {
+    name: "Quantity of money",
+    f: "MV = PY  (M=money, V=velocity, P=price, Y=real GDP)"
+  }, {
+    name: "Fisher equation",
+    f: "(1 + r_nominal) = (1 + r_real)(1 + inflation)  ≈  r_nominal ≈ r_real + π"
+  }, {
+    name: "Fiscal multiplier",
+    f: "Multiplier = 1 / (1 − MPC)"
+  }, {
+    name: "Tax multiplier",
+    f: "Tax multiplier = −MPC / (1 − MPC)"
+  }, {
+    name: "Absolute PPP",
+    f: "S = P_domestic / P_foreign"
+  }, {
+    name: "Relative PPP",
+    f: "%ΔS ≈ π_domestic − π_foreign"
+  }, {
+    name: "Covered interest parity",
+    f: "F/S = (1 + r_d) / (1 + r_f)"
+  }, {
+    name: "Uncovered interest parity",
+    f: "E(%ΔS) = r_domestic − r_foreign"
+  }, {
+    name: "Real exchange rate",
+    f: "q = S × (P_foreign / P_domestic)"
+  }, {
+    name: "Current account balance",
+    f: "CA = X − M + Net income + Net transfers"
+  }, {
+    name: "Elasticity of demand",
+    f: "E_d = %ΔQ_d / %ΔP"
   }],
   "Financial Statement Analysis": [{
-    name: "ROE (DuPont)",
+    name: "ROE (DuPont 3-factor)",
     f: "ROE = Net Margin × Asset Turnover × Equity Multiplier"
   }, {
-    name: "ROE (3-factor)",
-    f: "ROE = (NI/Sales) × (Sales/Assets) × (Assets/Equity)"
+    name: "ROE (DuPont 5-factor)",
+    f: "ROE = (NI/EBT) × (EBT/EBIT) × (EBIT/Rev) × (Rev/Assets) × (Assets/Equity)"
   }, {
     name: "Current Ratio",
     f: "Current Assets / Current Liabilities"
@@ -1760,29 +1833,133 @@ const FORMULAS = {
     name: "Quick Ratio",
     f: "(Cash + ST Investments + AR) / CL"
   }, {
-    name: "DSO",
-    f: "365 / (Revenue / AR)"
+    name: "Cash Ratio",
+    f: "(Cash + ST Investments) / CL"
   }, {
-    name: "DIO",
-    f: "365 / (COGS / Inventory)"
+    name: "DSO (days sales outstanding)",
+    f: "AR / (Revenue / 365)"
   }, {
-    name: "DPO",
-    f: "365 / (COGS / AP)"
+    name: "DIO (days inventory outstanding)",
+    f: "Inventory / (COGS / 365)"
   }, {
-    name: "CCC",
-    f: "DSO + DIO − DPO"
+    name: "DPO (days payable outstanding)",
+    f: "AP / (COGS / 365)"
+  }, {
+    name: "CCC (cash conversion cycle)",
+    f: "CCC = DSO + DIO − DPO"
   }, {
     name: "Basic EPS",
-    f: "(NI − Pref Div) / Wtd Avg Shares"
+    f: "(NI − Preferred Dividends) / Wtd Avg Shares"
   }, {
     name: "Diluted EPS",
-    f: "(NI − Pref Div + Convertible Int) / (Wtd Avg + Dilutive Shares)"
+    f: "(NI − Pref Div + Convertible Interest(1−t)) / (Wtd Avg + Dilutive Shares)"
   }, {
     name: "Debt-to-Equity",
     f: "Total Debt / Total Equity"
   }, {
+    name: "Debt-to-Assets",
+    f: "Total Debt / Total Assets"
+  }, {
     name: "Interest Coverage",
     f: "EBIT / Interest Expense"
+  }, {
+    name: "FCFF",
+    f: "FCFF = NI + NCC + Int(1−t) − FCInv − WCInv"
+  }, {
+    name: "FCFE",
+    f: "FCFE = FCFF − Int(1−t) + Net Borrowing  OR  NI + NCC − FCInv − WCInv + Net Borrowing"
+  }, {
+    name: "CFO (indirect)",
+    f: "CFO = NI + D&A − ΔAR − ΔInventory + ΔAP ± other working capital"
+  }, {
+    name: "LIFO reserve",
+    f: "LIFO Reserve = FIFO Inventory − LIFO Inventory"
+  }, {
+    name: "LIFO to FIFO (COGS adj.)",
+    f: "FIFO COGS = LIFO COGS − ΔLIFO Reserve"
+  }, {
+    name: "Tax expense",
+    f: "Income Tax Expense = EBT × Effective Tax Rate"
+  }],
+  "Corporate Issuers": [{
+    name: "WACC",
+    f: "WACC = w_d×r_d(1−t) + w_p×r_p + w_e×r_e"
+  }, {
+    name: "NPV",
+    f: "NPV = Σ CF_t/(1+r)ᵗ − Initial Cost"
+  }, {
+    name: "Profitability Index",
+    f: "PI = PV(future CFs) / Initial Cost  (accept if PI > 1)"
+  }, {
+    name: "IRR",
+    f: "Set NPV = 0 → solve for r"
+  }, {
+    name: "Payback Period",
+    f: "Years until cumulative CF = Initial Investment"
+  }, {
+    name: "Discounted Payback",
+    f: "Years until cumulative PV(CF) = Initial Investment"
+  }, {
+    name: "Cost of equity (CAPM)",
+    f: "r_e = R_f + β[E(R_m) − R_f]"
+  }, {
+    name: "Cost of equity (DDM)",
+    f: "r_e = D₁/P₀ + g"
+  }, {
+    name: "Cost of debt",
+    f: "r_d(after-tax) = YTM × (1 − Tax Rate)"
+  }, {
+    name: "DOL (degree of operating lev.)",
+    f: "DOL = % ΔOP Income / % ΔRevenue  =  (Rev − VarCosts) / EBIT"
+  }, {
+    name: "DFL (degree of financial lev.)",
+    f: "DFL = % ΔEPS / % ΔOP Income  =  EBIT / (EBIT − Interest)"
+  }, {
+    name: "DTL (total leverage)",
+    f: "DTL = DOL × DFL"
+  }, {
+    name: "Breakeven (units)",
+    f: "Q_BE = Fixed Costs / (Price − Variable Cost per unit)"
+  }, {
+    name: "M-M (with taxes)",
+    f: "V_L = V_U + T×D"
+  }],
+  "Equity": [{
+    name: "Gordon Growth Model (DDM)",
+    f: "V₀ = D₁ / (r − g)"
+  }, {
+    name: "Two-stage DDM",
+    f: "V₀ = Σ Dₜ/(1+r)ᵗ  +  P_n/(1+r)ⁿ  where P_n = D_{n+1}/(r−g)"
+  }, {
+    name: "FCFE",
+    f: "FCFE = NI − (1−DR)(FCInv − Dep) − (1−DR)ΔWC"
+  }, {
+    name: "P/E (justified leading)",
+    f: "P/E = Payout Ratio / (r − g)"
+  }, {
+    name: "P/B (justified)",
+    f: "P/B = (ROE − g) / (r − g)"
+  }, {
+    name: "EV/EBITDA",
+    f: "EV = Mkt Cap + Debt − Cash;  EV/EBITDA compares across capital structures"
+  }, {
+    name: "Enterprise Value",
+    f: "EV = Mkt Cap + Total Debt + Pref − Cash & Equivalents"
+  }, {
+    name: "CAPM",
+    f: "E(R_i) = R_f + β_i[E(R_m) − R_f]"
+  }, {
+    name: "Beta",
+    f: "β = Cov(R_i, R_m) / Var(R_m)  =  ρ_{i,m} × σ_i / σ_m"
+  }, {
+    name: "Sharpe Ratio",
+    f: "S = (R_p − R_f) / σ_p"
+  }, {
+    name: "Treynor Ratio",
+    f: "T = (R_p − R_f) / β_p"
+  }, {
+    name: "Jensen's Alpha",
+    f: "α = R_p − [R_f + β_p(R_m − R_f)]"
   }],
   "Fixed Income": [{
     name: "Bond Price",
@@ -1791,57 +1968,38 @@ const FORMULAS = {
     name: "Current Yield",
     f: "CY = Annual Coupon / Price"
   }, {
+    name: "YTM (semi-annual)",
+    f: "Solve: P = Σ (C/2)/(1+y/2)ᵗ + FV/(1+y/2)²ⁿ"
+  }, {
+    name: "Spot/Forward relationship",
+    f: "(1+S₂)² = (1+S₁)(1+₁f₁)"
+  }, {
     name: "Macaulay Duration",
-    f: "D = Σ[t × PV(CFₜ)] / Price"
+    f: "D_Mac = Σ[t × PV(CF_t)] / Price"
   }, {
     name: "Modified Duration",
-    f: "MD = Macaulay D / (1 + y/m)"
+    f: "MD = D_Mac / (1 + y/m)"
   }, {
-    name: "Price Change (Duration)",
+    name: "Price change (Duration)",
     f: "ΔP/P ≈ −MD × Δy"
   }, {
-    name: "Full Price w/ Convexity",
+    name: "Price change (Duration+Convexity)",
     f: "ΔP/P ≈ −MD·Δy + ½·Convexity·(Δy)²"
   }, {
-    name: "PVBP",
+    name: "PVBP / DV01",
     f: "PVBP = MD × Price × 0.0001"
+  }, {
+    name: "Convexity (approx.)",
+    f: "Convexity ≈ (P₊ + P₋ − 2P₀) / (P₀ × (Δy)²)"
+  }, {
+    name: "Portfolio Duration",
+    f: "D_p = Σ wᵢ × D_i"
   }, {
     name: "Yield Spread",
     f: "Spread = YTM_bond − YTM_benchmark"
   }, {
-    name: "Forward Rate",
-    f: "(1+S₂)² = (1+S₁)(1+₁f₁)"
-  }],
-  "Equity": [{
-    name: "Gordon Growth (DDM)",
-    f: "V = D₁ / (r − g)"
-  }, {
-    name: "Two-stage DDM",
-    f: "V = PV(Divs stage 1) + PV(Terminal Value)"
-  }, {
-    name: "FCFE",
-    f: "FCFE = NI + Dep − CapEx − ΔNWC + Net Borrowing"
-  }, {
-    name: "P/E (leading)",
-    f: "P/E = Div payout / (r − g)"
-  }, {
-    name: "EV",
-    f: "EV = Mkt Cap + Debt − Cash"
-  }, {
-    name: "CAPM",
-    f: "E(R) = Rf + β(E(Rm) − Rf)"
-  }, {
-    name: "Beta",
-    f: "β = Cov(R_i, R_m) / Var(R_m)"
-  }, {
-    name: "Sharpe",
-    f: "S = (Rp − Rf) / σ_p"
-  }, {
-    name: "Treynor",
-    f: "T = (Rp − Rf) / β"
-  }, {
-    name: "Jensen's α",
-    f: "α = Rp − [Rf + β(Rm − Rf)]"
+    name: "OAS",
+    f: "OAS = Z-spread − Option Value (in bps)"
   }],
   "Derivatives": [{
     name: "Call Payoff (long)",
@@ -1851,54 +2009,93 @@ const FORMULAS = {
     f: "max(X − S_T, 0)"
   }, {
     name: "Put-Call Parity",
-    f: "C + PV(X) = P + S"
+    f: "C + PV(X) = P + S₀  (European, no dividends)"
   }, {
-    name: "Forward Price",
-    f: "F = S₀ × (1 + r)ᵀ"
+    name: "Put-Call Parity (dividends)",
+    f: "C + PV(X) + PV(D) = P + S₀"
   }, {
-    name: "FRA Settlement",
-    f: "(L − FRA_rate) × D/360 × NP / (1 + L × D/360)"
+    name: "Forward Price (no income)",
+    f: "F₀ = S₀ × (1 + r)ᵀ"
   }, {
-    name: "Swap (fixed rate)",
-    f: "Fixed rate where PV(fixed) = PV(floating)"
+    name: "Forward Price (with income)",
+    f: "F₀ = (S₀ − PV(income)) × (1 + r)ᵀ"
+  }, {
+    name: "Forward Price (continuous)",
+    f: "F₀ = S₀ × e^(r−δ)T"
+  }, {
+    name: "FRA settlement",
+    f: "(L − FRA_rate) × (D/360) × NP / [1 + L×(D/360)]"
+  }, {
+    name: "Swap fixed rate",
+    f: "SFR: set PV(fixed leg) = PV(floating leg)"
+  }, {
+    name: "Binomial option (1-period)",
+    f: "C = [p·C_u + (1−p)·C_d] / (1+r);  p = (1+r−d)/(u−d)"
+  }, {
+    name: "Delta (option)",
+    f: "Δ = (C_u − C_d) / (S_u − S_d)"
   }],
-  "Corporate Issuers": [{
-    name: "WACC",
-    f: "WACC = w_d×r_d(1−t) + w_e×r_e"
+  "Portfolio Management": [{
+    name: "Expected Return (portfolio)",
+    f: "E(R_p) = Σ wᵢ × E(Rᵢ)"
   }, {
-    name: "NPV",
-    f: "NPV = Σ CF_t/(1+r)ᵗ − Initial Cost"
+    name: "Portfolio Variance (2 asset)",
+    f: "σ²_p = w²_Aσ²_A + w²_Bσ²_B + 2w_Aw_BρABσ_Aσ_B"
   }, {
-    name: "IRR",
-    f: "NPV = 0 → solve for r"
+    name: "CML (Capital Market Line)",
+    f: "E(R_p) = R_f + σ_p × [E(R_m) − R_f] / σ_m"
   }, {
-    name: "Operating Leverage",
-    f: "DOL = % ΔOP Income / % ΔRevenue"
+    name: "SML (CAPM)",
+    f: "E(R_i) = R_f + β_i[E(R_m) − R_f]"
   }, {
-    name: "Financial Leverage",
-    f: "DFL = % ΔEPS / % ΔOP Income"
+    name: "Beta",
+    f: "β_i = Cov(R_i, R_m) / σ²_m  =  ρ_{i,m} × σ_i / σ_m"
   }, {
-    name: "D/E Modigliani-Miller",
-    f: "V_L = V_U + T×D (with taxes)"
+    name: "Sharpe Ratio",
+    f: "S = (R_p − R_f) / σ_p"
+  }, {
+    name: "Treynor Ratio",
+    f: "T = (R_p − R_f) / β_p"
+  }, {
+    name: "Jensen's Alpha",
+    f: "α = R_p − [R_f + β_p(R_m − R_f)]"
+  }, {
+    name: "Information Ratio",
+    f: "IR = (R_p − R_b) / Tracking Error"
+  }, {
+    name: "Tracking Error",
+    f: "TE = σ(R_p − R_b)"
+  }, {
+    name: "M² (Modigliani)",
+    f: "M² = R_f + Sharpe_p × σ_m"
+  }, {
+    name: "Roy's Safety-First",
+    f: "SFR = (E(R_p) − R_L) / σ_p  (maximize to minimize shortfall risk)"
   }],
   "Alternatives": [{
     name: "NAV per share",
     f: "NAV = (Assets − Liabilities) / Shares Outstanding"
   }, {
-    name: "PE Return",
-    f: "IRR: solve PV(invested) = PV(exit proceeds)"
+    name: "PE / VC IRR",
+    f: "Solve: PV(invested capital) = PV(exit proceeds)"
   }, {
-    name: "Mgmt Fee (PE)",
-    f: "Typically 2% × Committed Capital"
+    name: "Management Fee (PE)",
+    f: "Typically 2% × Committed Capital (in investment period)"
   }, {
     name: "Carried Interest",
     f: "Typically 20% × Profits above hurdle rate"
   }, {
-    name: "Cap Rate (RE)",
+    name: "MOIC (multiple on invested capital)",
+    f: "MOIC = Total Value Realized / Total Capital Invested"
+  }, {
+    name: "Cap Rate (Real Estate)",
     f: "Cap Rate = NOI / Property Value"
   }, {
-    name: "Gross Return",
-    f: "R_gross = (NAV_end + Distributions) / NAV_beg − 1"
+    name: "Gross vs Net Return (RE)",
+    f: "Net Return = Gross Return − Fees − Expenses"
+  }, {
+    name: "Commodity futures return",
+    f: "Total Return = Spot Return + Roll Return + Collateral Return"
   }]
 };
 function FormulaSheet({
@@ -2734,7 +2931,88 @@ function RevisionScreen({
       color: drillMode && m === "drill" || !drillMode && m === "ref" ? "#000" : C.muted,
       transition: "all 0.15s"
     }
-  }, label))), !drillMode && /*#__PURE__*/React.createElement(React.Fragment, null, formulaData.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, label))), !drillMode && /*#__PURE__*/React.createElement(React.Fragment, null, (() => {
+    const wrongCards = Object.values(srDeck).filter(c => c.topic === selTopic && (c.wrongCount || 0) > 0).sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0));
+    if (!wrongCards.length || !formulaData.length) return null;
+    // Match each wrong card to formula entries by keyword overlap
+    const matchedIdxs = new Set();
+    for (const card of wrongCards) {
+      const words = ((card.concept || "") + " " + (card.subtopic || "")).toLowerCase().split(/[\s\-\/\(\)]+/).filter(w => w.length > 3);
+      formulaData.forEach((f, fi) => {
+        const fname = f.name.toLowerCase();
+        if (words.some(w => fname.includes(w) || w.includes(fname.split(" ")[0]))) {
+          matchedIdxs.add(fi);
+        }
+      });
+    }
+    if (!matchedIdxs.size) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: "#e05070",
+        marginBottom: 8,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em"
+      }
+    }, "⚠ Formulas from your mistakes"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#0e0818",
+        border: "1px solid #c0304433",
+        borderRadius: 10,
+        overflow: "hidden"
+      }
+    }, [...matchedIdxs].map((fi, i, arr) => {
+      const f = formulaData[fi];
+      return /*#__PURE__*/React.createElement("button", {
+        key: fi,
+        onClick: () => document.getElementById(`formula-${fi}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        }),
+        style: {
+          width: "100%",
+          display: "flex",
+          gap: 12,
+          alignItems: "flex-start",
+          padding: "10px 14px",
+          background: "none",
+          border: "none",
+          borderBottom: i < arr.length - 1 ? "1px solid #c0304422" : "none",
+          cursor: "pointer",
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11,
+          color: "#a05070",
+          minWidth: 110,
+          flexShrink: 0,
+          paddingTop: 2,
+          lineHeight: 1.4
+        }
+      }, f.name), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: "#d090a0",
+          fontFamily: "monospace",
+          lineHeight: 1.6,
+          flex: 1
+        }
+      }, f.f), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 10,
+          color: "#6060a0",
+          flexShrink: 0,
+          marginTop: 2
+        }
+      }, "↓"));
+    })));
+  })(), formulaData.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
       padding: "40px 0",
@@ -2750,12 +3028,14 @@ function RevisionScreen({
     }
   }, formulaData.map((f, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
+    id: `formula-${i}`,
     style: {
       display: "flex",
       gap: 12,
       alignItems: "flex-start",
       padding: "11px 16px",
-      borderBottom: i < formulaData.length - 1 ? `1px solid ${C.border}` : "none"
+      borderBottom: i < formulaData.length - 1 ? `1px solid ${C.border}` : "none",
+      transition: "background 0.3s"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
