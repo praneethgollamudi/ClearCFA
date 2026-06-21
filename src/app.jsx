@@ -2601,6 +2601,38 @@ function getLast30DaysActivity(history){
   return counts;
 }
 
+// Effective study time — caps per-question time at 90s to strip idle periods
+function getEffectiveTimeSecs(session){
+  const total=session.total||0;
+  const taken=session.timeTaken||0;
+  if(!total)return Math.min(taken,300);
+  return Math.min(taken,total*90);
+}
+function fmtStudyTime(secs){
+  const m=Math.round(secs/60);
+  if(m<1)return"<1 min";
+  if(m<60)return`${m} min`;
+  const h=Math.floor(m/60);const r=m%60;
+  return r>0?`${h}h ${r}m`:`${h}h`;
+}
+function getDailyStudyTime(history){
+  const byDay={};
+  history.forEach(s=>{
+    const day=s.dateKey||new Date(s.id).toISOString().slice(0,10);
+    byDay[day]=(byDay[day]||0)+getEffectiveTimeSecs(s);
+  });
+  return byDay;
+}
+function getWeeklyStudyDays(history){
+  const byDay=getDailyStudyTime(history);
+  return Array.from({length:7},(_,i)=>{
+    const d=new Date(Date.now()-(6-i)*86400000);
+    const key=d.toISOString().slice(0,10);
+    const label=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
+    return{key,label,secs:byDay[key]||0,isToday:i===6};
+  });
+}
+
 function getTopicTrends(history){
   const out={};
   Object.keys(LOS).forEach(t=>{
@@ -6325,6 +6357,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const moduleReadiness=useMemo(()=>getModuleReadiness(levelHistory,activeLOS),[levelHistory,activeLOS]);
   const predicted=useMemo(()=>getPredictedScore(moduleReadiness),[moduleReadiness]);
   const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));const streak=getStreak(history);
+  const weeklyStudyDays=useMemo(()=>getWeeklyStudyDays(levelHistory),[levelHistory]);
+  const todayStudySecs=weeklyStudyDays[6]?.secs||0;
+  const weekStudySecs=weeklyStudyDays.reduce((s,d)=>s+d.secs,0);
   const overallPct=levelHistory.length?Math.round(levelHistory.reduce((s,h)=>s+(h.pct||0),0)/levelHistory.length):null;
   const dueCards=useMemo(()=>getDueCards(srDeck),[srDeck]);
   const leeches=useMemo(()=>getLeeches(srDeck),[srDeck]);
@@ -7311,6 +7346,26 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     {/* XP Level bar */}
     {history.length>0&&<div style={{marginBottom:14}}><XPBar level={levelInfo.level} progress={levelInfo.progress} label={levelInfo.label} xp={levelInfo.xp} nextXP={levelInfo.nextXP}/></div>}
+
+    {/* Study time strip */}
+    {todayStudySecs>0&&(
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"9px 14px",marginBottom:12,cursor:"pointer"}} onClick={()=>setScreen("dashboard")}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:16}}>📖</span>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:C.text}}>{fmtStudyTime(todayStudySecs)} studied today</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:1}}>This week: {fmtStudyTime(weekStudySecs)}</div>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"flex-end",gap:3,height:24}}>
+          {weeklyStudyDays.map(d=>{
+            const maxS=Math.max(...weeklyStudyDays.map(x=>x.secs),1);
+            const h=d.secs>0?Math.max(4,Math.round((d.secs/maxS)*24)):2;
+            return<div key={d.key} style={{width:6,height:h,borderRadius:2,background:d.isToday?C.accent:d.secs>0?C.accent+"66":C.dim,alignSelf:"flex-end"}}/>;
+          })}
+        </div>
+      </div>
+    )}
 
     {/* Stats strip */}
     {!historyLoaded?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>{[0,1,2,3].map(i=><Skeleton key={i} height={68} radius={11}/>)}</div>:(
@@ -8299,7 +8354,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <span style={{fontSize:11,color:C.muted}}>earned · {levelInfo.label} · Level {levelInfo.level}</span>
         </div>}
         <button onClick={()=>{
-          const text=`I scored ${sessionPct}% on ${subtopic} (CFA L1 · ${difficulty}) 🎯\n\nPreparing with ClearCFA — free AI-powered CFA exam prep.\nclearcfa.com`;
+          const text=`I scored ${sessionPct}% on ${subtopic} (CFA L1 · ${difficulty}) 🎯${todayStudySecs>0?`\n📖 ${fmtStudyTime(todayStudySecs)} studied today`:""}\n\nPreparing with ClearCFA — free AI-powered CFA exam prep.\nclearcfa.com`;
           if(navigator.share){navigator.share({title:"ClearCFA Score",text}).catch(()=>{});}
           else{navigator.clipboard.writeText(text).then(()=>showToast("📋","Copied!","Paste anywhere to share your score.")).catch(()=>{});}
         }} style={{marginTop:14,padding:"8px 20px",borderRadius:20,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
@@ -8707,7 +8762,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         <StatCard label="Sessions" value={history.length}/>
         <StatCard label="Avg Score" value={`${overallPct||0}%`} color={overallPct>=70?C.easy:C.hard}/>
         <StatCard label="Avg Quality" value={avgQuality?`${avgQuality}`:"-"} color={avgQuality>=70?C.easy:avgQuality>=50?C.medium:C.hard}/>
-        <StatCard label="Questions" value={totalQs} color={C.accentLight}/>
+        <StatCard label="Total Time" value={fmtStudyTime(history.reduce((s,h)=>s+getEffectiveTimeSecs(h),0))} color={C.accentLight}/>
       </div>
 
       {/* SR stats */}
@@ -8722,10 +8777,68 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
 
       {/* Tab nav */}
       <div style={{display:"flex",gap:6,marginBottom:16}}>
-        {[["sessions","Sessions"],["patterns","Errors"],["quality","Quality"]].map(([tab,label])=>(
+        {[["sessions","Sessions"],["time","Time"],["patterns","Errors"],["quality","Quality"]].map(([tab,label])=>(
           <button key={tab} onClick={()=>setDashTab(tab)} style={{flex:1,padding:"8px",borderRadius:8,fontSize:12,fontWeight:600,border:dashTab===tab?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:dashTab===tab?C.accent+"18":C.surface,color:dashTab===tab?C.accentLight:C.muted,cursor:"pointer"}}>{label}</button>
         ))}
       </div>
+
+      {dashTab==="time"&&(()=>{
+        const days=getWeeklyStudyDays(levelHistory);
+        const last30=getDailyStudyTime(levelHistory);
+        const totalEffSecs=levelHistory.reduce((s,h)=>s+getEffectiveTimeSecs(h),0);
+        const avgPerSessionSecs=levelHistory.length?Math.round(totalEffSecs/levelHistory.length):0;
+        const todaySecs=days[6]?.secs||0;
+        const weekSecs=days.reduce((s,d)=>s+d.secs,0);
+        const maxDay=Math.max(...days.map(d=>d.secs),1);
+        const best30=Object.entries(last30).reduce((best,[d,s])=>s>best.secs?{date:d,secs:s}:best,{date:"",secs:0});
+        return(
+          <div>
+            {/* Key stats */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:16}}>
+              {[
+                ["Today",fmtStudyTime(todaySecs),todaySecs>=1800?C.easy:todaySecs>0?C.medium:C.muted],
+                ["This week",fmtStudyTime(weekSecs),C.accentLight],
+                ["All time",fmtStudyTime(totalEffSecs),C.text],
+                ["Avg / session",fmtStudyTime(avgPerSessionSecs),C.textMid],
+              ].map(([l,v,col])=>(
+                <div key={l} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"13px 16px"}}>
+                  <div style={{fontSize:20,fontWeight:800,color:col}}>{v}</div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:3}}>{l}</div>
+                </div>
+              ))}
+            </div>
+            {/* Weekly bar chart */}
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:14}}>Last 7 days</div>
+              <div style={{display:"flex",alignItems:"flex-end",gap:6,height:80}}>
+                {days.map(d=>{
+                  const h=d.secs>0?Math.max(6,Math.round((d.secs/maxDay)*72)):3;
+                  return(
+                    <div key={d.key} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                      <div style={{fontSize:9,color:C.muted,fontWeight:600}}>{d.secs>0?fmtStudyTime(d.secs):""}</div>
+                      <div style={{width:"100%",height:h,borderRadius:4,background:d.isToday?`linear-gradient(to top,${C.accent},${C.accentLight})`:d.secs>0?C.accent+"55":C.dim,transition:"height 0.4s ease"}}/>
+                      <div style={{fontSize:10,color:d.isToday?C.accentLight:C.muted,fontWeight:d.isToday?700:400}}>{d.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Best day */}
+            {best30.secs>0&&(
+              <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"13px 16px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text}}>Best study day (last 30)</div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:2}}>{best30.date}</div>
+                </div>
+                <div style={{fontSize:20,fontWeight:800,color:C.easy}}>{fmtStudyTime(best30.secs)}</div>
+              </div>
+            )}
+            <div style={{fontSize:11,color:C.muted,textAlign:"center",lineHeight:1.6,padding:"4px 0 8px"}}>
+              Effective time only — idle periods {'>'} 90s/question are excluded.
+            </div>
+          </div>
+        );
+      })()}
 
       {dashTab==="sessions"&&<>
         {/* Topic filter */}
