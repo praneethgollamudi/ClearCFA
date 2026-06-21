@@ -2846,16 +2846,44 @@ function _applyTheme(t){
 
 // ── Freemium tier ─────────────────────────────────────────────────────────────
 const FREE_DAILY_AI_LIMIT=5;
-const PRO_STORAGE_KEY='cfa_pro_status';
 const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
+// Pro status is validated server-side against the subscriptions table.
+// getCachedProStatus / setCachedProStatus cache the server response for 4 hours.
+function getCachedProStatus(userId){
+  try{
+    const c=JSON.parse(localStorage.getItem('cfa_pro_cache')||'null');
+    if(!c||c.userId!==userId)return null;
+    if((Date.now()-new Date(c.at).getTime())>4*3600*1000)return null;
+    return c.isPro===true;
+  }catch{return null;}
+}
+function setCachedProStatus(userId,isPro){
+  try{localStorage.setItem('cfa_pro_cache',JSON.stringify({userId,isPro,at:new Date().toISOString()}));}catch{}
+}
+// Sync fallback — checks owner email + cache (used for initial useState)
 function getProStatus(){
   try{
-    const p=JSON.parse(localStorage.getItem(PRO_STORAGE_KEY)||'null');
-    if(p?.active===true)return true;
     const auth=JSON.parse(localStorage.getItem('cfa_auth')||'null');
     if(auth?.email&&OWNER_EMAILS.includes(auth.email.toLowerCase()))return true;
+    if(auth?.id){const c=getCachedProStatus(auth.id);if(c===true)return true;}
   }catch{}
   return false;
+}
+// Async server check — verifies against Supabase subscriptions table
+async function checkProFromServer(cfg,userId,email){
+  if(email&&OWNER_EMAILS.includes(email.toLowerCase()))return true;
+  const cached=getCachedProStatus(userId);
+  if(cached!==null)return cached;
+  try{
+    const res=await fetch(`${cfg.url}/rest/v1/subscriptions?user_id=eq.${encodeURIComponent(userId)}&active=eq.true&select=user_id&limit=1`,{
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
+    });
+    if(!res.ok){setCachedProStatus(userId,false);return false;}
+    const rows=await res.json();
+    const isPro=Array.isArray(rows)&&rows.length>0;
+    setCachedProStatus(userId,isPro);
+    return isPro;
+  }catch{return false;}
 }
 function getDailyAIUsage(){
   try{
@@ -5443,7 +5471,13 @@ function CFAMock(){
   // Sync body background when theme changes
   useEffect(()=>{try{document.body.style.background=C.bg;}catch{}},[theme]);
   // Re-evaluate Pro status when auth changes (owner email always gets Pro)
-  useEffect(()=>{setProStatus(getProStatus());},[authUser]);
+  useEffect(()=>{
+    if(authUser?.id){
+      checkProFromServer(SB_CFG,authUser.id,authUser.email).then(isPro=>setProStatus(isPro));
+    }else{
+      setProStatus(false);
+    }
+  },[authUser]);
 
   // Auto-trigger focus refresh when flagged
   useEffect(()=>{

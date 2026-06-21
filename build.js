@@ -1,11 +1,25 @@
 #!/usr/bin/env node
-const babel = require('/tmp/node_modules/@babel/core');
+let babel;
+try {
+  babel = require('@babel/core');
+} catch {
+  // Fallback for environments where babel is installed globally in /tmp
+  babel = require('/tmp/node_modules/@babel/core');
+}
+
 const fs = require('fs');
 
 const src = fs.readFileSync('src/app.jsx', 'utf8');
 try {
+  let presetPath;
+  try {
+    presetPath = require.resolve('@babel/preset-react');
+  } catch {
+    presetPath = '/tmp/node_modules/@babel/preset-react';
+  }
+
   const result = babel.transformSync(src, {
-    presets: [['/tmp/node_modules/@babel/preset-react', { runtime: 'classic' }]],
+    presets: [[presetPath, { runtime: 'classic' }]],
     filename: 'app.jsx'
   });
   fs.writeFileSync('app.js', result.code);
