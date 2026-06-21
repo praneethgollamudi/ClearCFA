@@ -461,6 +461,25 @@ function getWrongAnswerPatterns(history){
   return Object.values(patterns).filter(p=>p.count>=2).sort((a,b)=>b.count-a.count).slice(0,5);
 }
 
+function computeCalibration(qs,ans,confidenceLog){
+  const log=[];
+  qs.forEach(q=>{const conf=confidenceLog[q.id];if(!conf)return;log.push({conf,correct:ans[q.id]===q.answer,concept:q.concept||""});});
+  return log;
+}
+
+function getSessionFatigue(history){
+  const byLength=history.filter(h=>h.total>=5);
+  if(byLength.length<5)return null;
+  const short=byLength.filter(h=>h.total<=10);
+  const long=byLength.filter(h=>h.total>10);
+  if(short.length<2||long.length<2)return null;
+  const shortAvg=Math.round(short.reduce((s,h)=>s+(h.pct||0),0)/short.length);
+  const longAvg=Math.round(long.reduce((s,h)=>s+(h.pct||0),0)/long.length);
+  const drop=shortAvg-longAvg;
+  if(drop<10)return null;
+  return{shortAvg,longAvg,drop,optimalCount:10};
+}
+
 function getSessionQuality(session){
   if(!session)return null;
   const accuracyScore=session.pct;
@@ -2994,6 +3013,8 @@ function CFAMock(){
   const [confirmClear,setConfirmClear]=useState(false);
   const [focusSuggestions,setFocusSuggestions]=useState(null);const [focusLoading,setFocusLoading]=useState(false);const [focusError,setFocusError]=useState("");const [selectedFocus,setSelectedFocus]=useState(null);const [focusCount,setFocusCount]=useState(10);
   const [quizConfidence,setQuizConfidence]=useState(null);
+  const [confidenceLog,setConfidenceLog]=useState({});
+  const [warmupEnabled,setWarmupEnabled]=useState(false);
   const [focusLastGenerated,setFocusLastGenerated]=useState(null); // timestamp of last generation
   const [lastSession,setLastSession]=useState(null);
   const [srQueue,setSrQueue]=useState([]);const [srIdx,setSrIdx]=useState(0);const [srAnswer,setSrAnswer]=useState(null);
@@ -3279,6 +3300,7 @@ function CFAMock(){
   useEffect(()=>{subtopicRef.current=subtopic;},[subtopic]);
   useEffect(()=>{difficultyRef.current=difficulty;},[difficulty]);
   useEffect(()=>{modeRef.current=mode;},[mode]);
+  useEffect(()=>{confidenceLogRef.current=confidenceLog;},[confidenceLog]);
 
   useEffect(()=>{
     if(screen==="quiz"){
@@ -3315,10 +3337,12 @@ function CFAMock(){
 
   const sessionCommittedRef=useRef(false);
   const weeklyPlanAutoRef=useRef(false);
+  const confidenceLogRef=useRef({});
   useEffect(()=>{
     if(screen!=="results"){
       sessionCommittedRef.current=false;
       setAiDebrief(null);
+      setConfidenceLog({});
       return;
     }
     if(sessionCommittedRef.current) return; // already committed for this session
@@ -3372,6 +3396,7 @@ function CFAMock(){
       dateKey:new Date().toISOString().slice(0,10),
       wrongCount:qs.filter(q=>ans[q.id]!==q.answer).length,
       wrongs:[],
+      confidenceData:computeCalibration(qs,ans,confidenceLogRef.current),
       ...(omMode&&{isOfficeMode:true}),
     };
 
@@ -3612,6 +3637,40 @@ function CFAMock(){
     }
   },[history.length,weeklyPlan,authUser?.userId,weeklyPlanLoading]); // eslint-disable-line
 
+  const generateInterleavedSession=async(diff,cnt)=>{
+    if(generatingRef.current)return; generatingRef.current=true;
+    setLoading(true);setError("");setLoadingProgress(0);setLoadingMsg("Building interleaved session…");
+    try{
+      if(!authUser?.userId){setError("Interleaved mode requires a ClearCFA account — please sign in.");setLoading(false);generatingRef.current=false;return;}
+      const weak=moduleReadiness.filter(m=>m.sessions>0&&m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy);
+      const untested=moduleReadiness.filter(m=>m.sessions===0).slice(0,3);
+      const pool=[...weak.slice(0,3),...(weak.length<3?untested:[])].slice(0,3);
+      if(pool.length<2){setError("Complete at least 2 sessions across different topics to unlock Interleaved mode.");setLoading(false);generatingRef.current=false;return;}
+      const topicsDesc=pool.map((m,i)=>`${i+1}. ${m.topic} — focus on: ${m.untouchedModules[0]||m.modulesCovered[0]||m.modules[0]} (accuracy: ${m.accuracy!==null?m.accuracy+'%':'untested'})`).join("\n");
+      const prompt=`You are a CFA Level ${cfaLevel} exam tutor creating an interleaved practice session that mixes multiple topics in one session to strengthen retention.
+
+The student's weakest topics (prioritise these):
+${topicsDesc}
+
+Generate exactly ${cnt} multiple-choice questions. Distribute them roughly evenly across the ${pool.length} topics. Interleave the order — do NOT group all questions from one topic together. Mix them: topic1, topic2, topic3, topic1, topic2…
+
+Each question: different concept, LOS-anchored, with a plausible distractor targeting a real misconception.
+
+Return ONLY a JSON array — no prose, no markdown fences:
+[{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic name from list above>","_subtopic":"<module name>"}]`;
+      const qs=await callClaude(prompt,Math.min(cnt*300+500,4000),{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"interleaved"});
+      if(!Array.isArray(qs)||qs.length===0)throw new Error("Invalid interleaved response — no questions returned");
+      const tagged=qs.map((q,i)=>({...q,id:q.id||`il_${Date.now()}_${i}`}));
+      setLoadingProgress(100);await new Promise(r=>setTimeout(r,200));
+      const mainTopic=pool[0]?.topic||"Mixed";
+      setTopic(mainTopic);setSubtopic(`Interleaved (${pool.map(m=>m.topic.split(" ")[0]).join("·")})`);setDifficulty(diff);
+      setMode("guided");setVignetteMode(false);
+      setQuestions(tagged);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);
+      setScreen("quiz");
+    }catch(e){setError("Interleaved session failed: "+e.message);}
+    setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+  };
+
   const generateFSAVignette=async(subtopic,difficulty)=>{
     if(generatingRef.current)return; generatingRef.current=true;
     setLoading(true);setError("");setLoadingProgress(0);
@@ -3805,7 +3864,10 @@ function CFAMock(){
   const handleAnswer=(qId,opt)=>{if(answers[qId])return;setAnswers(a=>({...a,[qId]:opt}));if(mode==="guided")setShowExp(true);};
   const nextQ=()=>{
     clearInterval(speedDrillRef.current);
-    setExplainThisText(null);setExplainThisLoading(false);setQuizConfidence(null);
+    setExplainThisText(null);setExplainThisLoading(false);
+    const qId=questions[currentQ]?.id;
+    if(qId&&quizConfidence)setConfidenceLog(c=>({...c,[qId]:quizConfidence}));
+    setQuizConfidence(null);
     if(currentQ<questions.length-1){setCurrentQ(q=>q+1);setShowExp(false);}else endQuiz();
   };
 
@@ -3841,6 +3903,7 @@ function CFAMock(){
   const levelInfo=useMemo(()=>getLevel(totalXP),[totalXP]);
   const totalWrongs=useMemo(()=>history.flatMap(h=>Array.isArray(h.wrongs)?h.wrongs:[]).filter(w=>w&&w.question).length,[history]);
   const srWrongCount=useMemo(()=>Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).length,[srDeck]);
+  const sessionFatigue=useMemo(()=>getSessionFatigue(history),[history]);
 
   // Adaptive difficulty for Office Mode — derived from last 5 OM sessions
   const adaptiveOmDifficulty=useMemo(()=>{
@@ -4516,6 +4579,57 @@ function CFAMock(){
       </div>
     )}
 
+    {/* Exam countdown phase banner */}
+    {history.length>=3&&daysLeft>14&&(()=>{
+      let phase,icon,msg,color;
+      if(daysLeft>60){phase="Foundation";icon="🌱";msg="Build breadth — hit every topic at least once. Speed doesn't matter yet.";color=C.easy;}
+      else if(daysLeft>30){phase="Depth";icon="🎯";msg="Deepen weak topics. Anything below 65% accuracy needs 3+ more sessions.";color=C.medium;}
+      else{phase="Final Push";icon="🔥";msg="High-weight focus: Ethics·FSA·Equity·Fixed Income = 50% of exam.";color=C.hard;}
+      return(
+        <div style={{background:`${color}0c`,border:`1px solid ${color}30`,borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color,marginBottom:2}}>{icon} Phase: {phase} · {daysLeft} days left</div>
+            <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>{msg}</div>
+          </div>
+        </div>
+      );
+    })()}
+
+    {/* Session fatigue insight */}
+    {sessionFatigue&&(
+      <div style={{background:`${C.medium}0c`,border:`1px solid ${C.medium}30`,borderRadius:10,padding:"10px 14px",marginBottom:10}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.medium,marginBottom:2}}>⏳ Optimal session length: ~{sessionFatigue.optimalCount} questions</div>
+        <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>Short sessions average {sessionFatigue.shortAvg}% but longer ones drop to {sessionFatigue.longAvg}% (−{sessionFatigue.drop}pp). Two 10-question sessions beat one 20-question session.</div>
+      </div>
+    )}
+
+    {/* Weak spot drill */}
+    {(()=>{
+      const worst=Object.values(srDeck).filter(c=>(c.wrongCount||0)>=2).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,4);
+      if(worst.length===0)return null;
+      const mainTopic=worst[0].topic;
+      const mainModule=worst[0].subtopic||TOPIC_MAP[mainTopic]?.subtopics[0];
+      return(
+        <div style={{background:`linear-gradient(135deg,${C.hard}12,${C.hard}06)`,border:`1px solid ${C.hard}33`,borderRadius:12,padding:"12px 16px",marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:C.hard}}>⚡ Weak Spot Drill</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Your most-missed concepts need drilling</div>
+            </div>
+            <button onClick={()=>{if(mainTopic&&mainModule)generateQuestions(mainTopic,mainModule,"Medium",10,"guided");}} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:C.hard+"25",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer",flexShrink:0}}>Drill 10 →</button>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            {worst.slice(0,3).map((c,i)=>(
+              <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:11,color:C.textMid,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.concept||c.subtopic}</span>
+                <span style={{fontSize:10,fontWeight:700,color:C.hard,flexShrink:0,marginLeft:8}}>×{c.wrongCount} wrong</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    })()}
+
     {/* Daily Focus */}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",marginBottom:12}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
@@ -4745,6 +4859,8 @@ function CFAMock(){
         {key:"sr_review",label:`📋 SR${dueCards.length>0?" ("+dueCards.length+")":""}`,style:{background:dueCards.length>0?C.accent+"15":C.surface,border:`1px solid ${dueCards.length>0?C.accent+"44":C.border}`,color:dueCards.length>0?C.accentLight:C.muted},action:()=>{trackUsage("sr_review");if(dueCards.length>0){setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}}},
         {key:"calc_trainer",label:"🔢 Calc Trainer",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
         {key:"los_coverage",label:"🗺 LOS Map",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
+        {key:"mastery_grid",label:"🎯 Mastery Grid",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
+        {key:"interleaved",label:"🔀 Interleaved",style:{background:C.accent+"12",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
       ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
       return(<>
         <button onClick={()=>{trackUsage("more_toggle");setShowMoreActions(v=>!v);}} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:11,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",marginBottom:showMoreActions?8:0,fontSize:12,fontWeight:600}}>
@@ -5083,7 +5199,7 @@ function CFAMock(){
     <div style={{marginBottom:18}}>
       <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:10}}>Mode</label>
       <div style={{display:"flex",gap:9}}>
-        {[["guided","🧭 Guided","Explanation + LOS tag after each answer"],["exam","⚡ Exam Sim","No hints — results only at end"],["speed_drill","⏱ Speed Drill","100s/question — auto-advance on timeout"]].map(([val,label,desc])=>(
+        {[["guided","🧭 Guided","Explanation + LOS tag after each answer"],["exam","⚡ Exam Sim","No hints — results only at end"],["speed_drill","⏱ Speed Drill","100s/question — auto-advance on timeout"],["interleaved","🔀 Interleaved","Mix your 3 weakest topics — beats blocked practice for retention"]].map(([val,label,desc])=>(
           <button key={val} onClick={()=>setMode(val)} style={{flex:1,padding:"12px",borderRadius:10,textAlign:"left",cursor:"pointer",border:mode===val?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:mode===val?C.accent+"18":C.surface,color:mode===val?C.accentLight:C.muted}}>
             <div style={{fontSize:13,fontWeight:700}}>{label}</div><div style={{fontSize:11,marginTop:3,opacity:0.65}}>{desc}</div>
           </button>
@@ -5091,6 +5207,21 @@ function CFAMock(){
       </div>
     </div>
 
+    {mode==="interleaved"&&(
+      <div style={{background:`${C.accent}0d`,border:`1px solid ${C.accent}33`,borderRadius:10,padding:"12px 14px",marginBottom:18}}>
+        <div style={{fontSize:12,fontWeight:700,color:C.accentLight,marginBottom:4}}>🔀 Interleaved Mode</div>
+        <div style={{fontSize:11,color:C.muted,lineHeight:1.55}}>Picks your 3 weakest topics automatically and mixes questions from all three in one session. Research shows interleaved practice beats blocked (single-topic) practice for long-term retention. Topic and module selectors are ignored in this mode.</div>
+      </div>
+    )}
+    {mode!=="interleaved"&&(
+      <div style={{marginBottom:18}}>
+        <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:8}}>Warm-Up</label>
+        <button onClick={()=>setWarmupEnabled(w=>!w)} style={{width:"100%",padding:"10px 14px",borderRadius:10,textAlign:"left",cursor:"pointer",border:warmupEnabled?`1.5px solid ${C.easy}`:`1.5px solid ${C.border}`,background:warmupEnabled?C.easy+"10":C.surface,color:warmupEnabled?C.easy:C.muted}}>
+          <div style={{fontSize:13,fontWeight:700}}>🌅 {warmupEnabled?"Warm-up on":"Start with warm-up"}</div>
+          <div style={{fontSize:11,marginTop:2,opacity:0.7}}>{warmupEnabled?"3 easy questions from your strongest topic prepended":"Off — jump straight into the session"}</div>
+        </button>
+      </div>
+    )}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:26}}>
       <div>
         <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:10}}>Difficulty</label>
@@ -5124,8 +5255,11 @@ function CFAMock(){
     </div>
 
     {error&&<div style={{background:"#180808",border:`1px solid #5a1a1a`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:14}}>{error}</div>}
-    <button onClick={()=>generateQuestions(topic,subtopic,difficulty,count,mode,vignetteMode)} disabled={!topic||!subtopic||loading} style={{width:"100%",padding:"15px",borderRadius:12,fontSize:15,fontWeight:700,background:topic&&subtopic&&!loading?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.dim,color:topic&&subtopic&&!loading?"#fff":C.muted,border:"none",cursor:topic&&subtopic&&!loading?"pointer":"not-allowed",boxShadow:topic&&subtopic&&!loading?`0 4px 20px ${C.accent}44`:"none"}}>
-      {loading?loadingMsg:vignetteMode?`Generate ${Math.ceil(count/3)} Vignettes (${count} questions) →`:`Generate ${count} LOS-Anchored Questions →`}
+    <button onClick={()=>{
+      if(mode==="interleaved"){generateInterleavedSession(difficulty,count);return;}
+      generateQuestions(topic,subtopic,difficulty,warmupEnabled?count+3:count,mode,vignetteMode);
+    }} disabled={mode!=="interleaved"&&(!topic||!subtopic)||loading} style={{width:"100%",padding:"15px",borderRadius:12,fontSize:15,fontWeight:700,background:(mode==="interleaved"||topic&&subtopic)&&!loading?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.dim,color:(mode==="interleaved"||topic&&subtopic)&&!loading?"#fff":C.muted,border:"none",cursor:(mode==="interleaved"||topic&&subtopic)&&!loading?"pointer":"not-allowed",boxShadow:(mode==="interleaved"||topic&&subtopic)&&!loading?`0 4px 20px ${C.accent}44`:"none"}}>
+      {loading?loadingMsg:mode==="interleaved"?`Generate ${count} Interleaved Questions (3 topics) →`:vignetteMode?`Generate ${Math.ceil(count/3)} Vignettes (${count} questions) →`:`Generate ${warmupEnabled?count+3:count} Questions${warmupEnabled?" (incl. 3 warm-up)":""} →`}
     </button>
     {loading&&<div style={{marginTop:20,display:"flex",flexDirection:"column",gap:10}}>{[1,2,3].map(i=><div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:16}}><Skeleton height={13} style={{marginBottom:10}}/><Skeleton height={10} width="70%" style={{marginBottom:8}}/>{[1,2,3].map(j=><Skeleton key={j} height={9} width={`${58+j*9}%`} style={{marginBottom:6}}/>)}</div>)}</div>}
   </>);
@@ -5629,6 +5763,50 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
   </>,620);
 
   // ══ DASHBOARD ══════════════════════════════════════════════════════════════
+  // ══ MASTERY GRID ══════════════════════════════════════════════════════════
+  if(screen==="masteryGrid"){
+    const topicKeys=Object.keys(LOS);
+    return wrap(<>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+        <div><h2 style={{margin:0,fontSize:20,fontWeight:800}}>Concept Mastery</h2><div style={{fontSize:12,color:C.muted,marginTop:2}}>Each pill = one module. Tap to drill.</div></div>
+        <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
+      </div>
+      <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+        {[["≥70%",C.easy],["50–69%",C.medium],["<50%",C.hard],["Untested",C.muted]].map(([label,col])=>(
+          <div key={label} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:col}}><div style={{width:10,height:10,borderRadius:2,background:col,opacity:0.7}}/>{label}</div>
+        ))}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {topicKeys.map(topic=>{
+          const mods=Object.keys(LOS[topic]?.modules||{});
+          const topicSessions=history.filter(h=>h.topic===topic);
+          const topicAvg=topicSessions.length?Math.round(topicSessions.reduce((s,h)=>s+(h.pct||0),0)/topicSessions.length):null;
+          return(
+            <div key={topic} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px"}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:7,display:"flex",justifyContent:"space-between"}}>
+                <span>{topic} <span style={{fontWeight:400}}>({TOPIC_MAP[topic]?.weight||0}%)</span></span>
+                {topicAvg!==null&&<span style={{color:topicAvg>=70?C.easy:topicAvg>=50?C.medium:C.hard,fontWeight:700}}>{topicAvg}% avg</span>}
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {mods.map(mod=>{
+                  const modSessions=topicSessions.filter(h=>h.subtopic===mod);
+                  const avgPct=modSessions.length?Math.round(modSessions.reduce((s,h)=>s+(h.pct||0),0)/modSessions.length):null;
+                  const col=avgPct===null?C.muted:avgPct>=70?C.easy:avgPct>=50?C.medium:C.hard;
+                  const bg=avgPct===null?C.dim:avgPct>=70?C.easy+"22":avgPct>=50?C.medium+"22":C.hard+"22";
+                  return(
+                    <button key={mod} onClick={()=>{setTopic(topic);setSubtopic(mod);setScreen("setup");}} style={{padding:"5px 9px",borderRadius:7,fontSize:10,fontWeight:600,border:`1px solid ${col}44`,background:bg,color:col,cursor:"pointer",maxWidth:130,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={`${mod}${avgPct!==null?" — "+avgPct+"%":""}`}>
+                      {mod.split(" ").slice(0,3).join(" ")}{avgPct!==null?` ${avgPct}%`:""}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>);
+  }
+
   if(screen==="dashboard"){
     const totalQs=history.reduce((s,h)=>s+(h.total||0),0);
     const subMap={};history.forEach(s=>{const k=`${s.topic}|||${s.subtopic}`;if(!subMap[k])subMap[k]={topic:s.topic,subtopic:s.subtopic,correct:0,total:0,sessions:0};subMap[k].correct+=(s.score||0);subMap[k].total+=(s.total||0);subMap[k].sessions+=1;});
@@ -5711,6 +5889,37 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
             ))}
           </div>
         )}
+        {/* Misconception clusters from SR deck */}
+        {(()=>{
+          const clusters={};
+          Object.values(srDeck).forEach(card=>{
+            const tag=(card.misconception_targeted||"").trim();
+            if(!tag||tag.length<4)return;
+            if(!clusters[tag])clusters[tag]={tag,count:0,topics:[],concepts:[]};
+            clusters[tag].count++;
+            if(!clusters[tag].topics.includes(card.topic))clusters[tag].topics.push(card.topic);
+            if(card.concept&&!clusters[tag].concepts.includes(card.concept))clusters[tag].concepts.push(card.concept);
+          });
+          const sorted=Object.values(clusters).sort((a,b)=>b.count-a.count).slice(0,6);
+          if(sorted.length===0)return null;
+          return(
+            <div style={{marginTop:16}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>Error Pattern Clusters</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:10}}>Systematic error types across your SR deck — fix the pattern, not just the question.</div>
+              <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                {sorted.map((c,i)=>(
+                  <div key={i} style={{background:C.surface,border:`1px solid ${C.hard}22`,borderRadius:10,padding:"11px 13px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                      <div style={{fontSize:12,fontWeight:700,flex:1,lineHeight:1.4,color:C.text}}>{c.tag}</div>
+                      <Badge color={C.hard}>{c.count} card{c.count!==1?"s":""}</Badge>
+                    </div>
+                    <div style={{fontSize:11,color:C.muted}}>{c.topics.slice(0,2).join(" · ")}{c.concepts.length>0?` — ${c.concepts.slice(0,2).join(", ")}`:""}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </>}
 
       {dashTab==="quality"&&<>
@@ -5728,6 +5937,37 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
             </div>);
           })}
         </div>
+        {/* Confidence calibration */}
+        {(()=>{
+          const allConf=history.flatMap(s=>s.confidenceData||[]);
+          if(allConf.length<5)return null;
+          const byConf={sure:{correct:0,total:0},think:{correct:0,total:0},guess:{correct:0,total:0}};
+          allConf.forEach(({conf,correct})=>{if(byConf[conf]){byConf[conf].total++;if(correct)byConf[conf].correct++;}});
+          const pct=c=>byConf[c].total?Math.round(byConf[c].correct/byConf[c].total*100):null;
+          return(
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"13px 15px",marginTop:4}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>Confidence Calibration</div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:10}}>How accurate you are when you feel Sure vs Guessing. Perfectly calibrated = three distinct bands.</div>
+              {[["sure","🟢 Sure",75],["think","🟡 Think so",55],["guess","🔴 Guessing",33]].map(([id,label,expected])=>{
+                const p=pct(id);if(p===null)return null;
+                const gap=p-expected;
+                return(
+                  <div key={id} style={{marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                      <span style={{fontSize:12,color:C.textMid}}>{label}</span>
+                      <span style={{fontSize:12,fontWeight:700,color:p>=expected+10?C.easy:p<expected-10?C.hard:C.medium}}>{p}% <span style={{fontSize:10,color:gap>5?C.easy:gap<-5?C.hard:C.muted}}>({gap>0?"+":""}{gap}pp vs expected)</span></span>
+                    </div>
+                    <div style={{height:5,background:C.dim,borderRadius:3}}><div style={{height:"100%",width:`${p}%`,background:p>=70?C.easy:p>=50?C.medium:C.hard,borderRadius:3}}/></div>
+                    <div style={{fontSize:10,color:C.muted,marginTop:2}}>{byConf[id].total} questions rated</div>
+                  </div>
+                );
+              })}
+              {pct("sure")!==null&&pct("guess")!==null&&pct("sure")<pct("guess")+12&&(
+                <div style={{fontSize:11,color:C.hard,background:C.hard+"10",borderRadius:7,padding:"6px 10px",marginTop:4}}>⚠ Your "Sure" and "Guessing" accuracy are close — you have blind spots where you feel confident but aren't.</div>
+              )}
+            </div>
+          );
+        })()}
       </>}
 
       {dashTab==="api"&&(()=>{
