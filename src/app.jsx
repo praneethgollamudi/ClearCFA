@@ -256,7 +256,7 @@ function addToQDB(questions,qdb){
 }
 
 // ─── PROMPTS ─────────────────────────────────────────────────────────────────
-function buildQuestionPrompt(topic,module,difficulty,count){
+function buildQuestionPrompt(topic,module,difficulty,count,level="1"){
   const losStatements=LOS[topic]?.modules[module]||[];
   const misconceptions=(MISCONCEPTIONS[topic]||[]).slice(0,3).join("; ");
   const verbsForDiff=LOS_VERB_DIFFICULTY[difficulty];
@@ -264,19 +264,25 @@ function buildQuestionPrompt(topic,module,difficulty,count){
   const allLOS=(priorityLOS.length>=count?priorityLOS:losStatements).slice(0,count+2);
   const losText=allLOS.map((l,i)=>`${i+1}. ${l}`).join("\n");
 
-  return `CFA L1 question generator. Topic: ${topic} | Module: ${module} | Difficulty: ${difficulty} | Generate: ${count} questions.
+  const levelGuidance=level==="2"
+    ?`CFA Level 2 format: EVERY question must open with a 2–3 sentence mini-vignette/scenario (company, analyst, or portfolio context). Test deep analytical application, not recall. Complexity: ${difficulty==="Easy"?"apply a concept to the given scenario":difficulty==="Medium"?"multi-step calculation or integrated judgment":"evaluate competing interpretations or reconcile conflicting data"}.`
+    :level==="3"
+    ?`CFA Level 3 format: Frame every question around a PORTFOLIO MANAGEMENT decision — client objectives, IPS constraints, asset allocation, or risk management. Questions should require the candidate to recommend or justify, not just recall. Complexity: ${difficulty==="Easy"?"straightforward client-context application":difficulty==="Medium"?"trade-off analysis with supporting rationale":"multi-constraint portfolio construction or behavioural bias evaluation"}.`
+    :`Difficulty: ${difficulty==="Easy"?"recall/definition":difficulty==="Medium"?"apply formula to scenario with numbers":"multi-step analysis or nuanced judgment"}`;
+
+  return `CFA L${level} question generator. Topic: ${topic} | Module: ${module} | Difficulty: ${difficulty} | Generate: ${count} questions.
 
 LOS (test these):
 ${losText}
 
 Misconceptions to use in wrong options: ${misconceptions}
 
-Difficulty: ${difficulty==="Easy"?"recall/definition":difficulty==="Medium"?"apply formula to scenario with numbers":"multi-step analysis or nuanced judgment"}
+${levelGuidance}
 
 Return ONLY a JSON array, no markdown:
 [{"id":1,"question":"...","options":{"A":"...","B":"...","C":"..."},"answer":"A","explanation":"...","concept":"3-5 word tag","los_tested":"LOS text","misconception_targeted":"error exploited"}]
 
-Rules: 3 options only (A,B,C). Each wrong option exploits a misconception. Spread questions across different LOS. Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers.`;
+Rules: 3 options only (A,B,C). Each wrong option exploits a misconception. Spread questions across different LOS.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
 }
 
 // Expand compact JSON keys returned by optimised prompt
@@ -3129,6 +3135,8 @@ function CFAMock(){
   useEffect(()=>{historyRef.current=history;},[history]);
   // Keep authUserRef in sync (must be unconditional — cannot be after any early return)
   useEffect(()=>{ authUserRef.current=authUser; },[authUser]);
+  // L2/L3 use item-set/vignette format — auto-enable vignette mode
+  useEffect(()=>{if(cfaLevel!=="1")setVignetteMode(true);else setVignetteMode(false);},[cfaLevel]);
 
   useEffect(()=>{
     const s=document.createElement("style");
@@ -3820,7 +3828,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         parsed=flattenVignettes(rawVig,t,st);
       } else {
         const tightMax={3:1600,5:2500,10:4500,15:6000,20:7000}[cnt]||(cnt*500);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt),tightMax,{retries:3,retryDelay:8000,model:useModel,feature:`questions:${diff}`});
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel),tightMax,{retries:3,retryDelay:8000,model:useModel,feature:`questions:${diff}`});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
@@ -3866,7 +3874,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             allQs=[...allQs,...localQs.map(q=>({...q,_topic:t,_subtopic:mod}))];
           } else if(authUser?.id){
             try{
-              const qs=await callClaude(buildQuestionPrompt(t,mod,"Medium",perModule),perModule*500,{retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001",feature:"full_exam"});
+              const qs=await callClaude(buildQuestionPrompt(t,mod,"Medium",perModule,cfaLevel),perModule*500,{retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001",feature:"full_exam"});
               allQs=[...allQs,...(Array.isArray(qs)?expandQuestionKeys(qs):[]).map((q,j)=>({...q,id:`${i}_${j}_${mod.slice(0,5)}`,_topic:t,_subtopic:mod}))];
             }catch{}
           }
@@ -4391,7 +4399,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 </button>
               ))}
             </div>
-            <div style={{fontSize:10,color:C.muted,marginTop:6,textAlign:"center"}}>Affects AI tutor, question generation, and study notes</div>
+            <div style={{fontSize:10,color:C.muted,marginTop:6,lineHeight:1.5}}>
+              {cfaLevel==="1"&&"Standalone MCQ · L1 curriculum topics · formula sheets"}
+              {cfaLevel==="2"&&<span style={{color:C.accentLight}}>Item-set vignettes auto-enabled · AI generates L2-depth scenario questions · curriculum topics are L1-based</span>}
+              {cfaLevel==="3"&&<span style={{color:C.accentLight}}>Portfolio management focus auto-enabled · AI frames questions as investment decisions · curriculum topics are L1-based</span>}
+            </div>
           </div>
           {/* AI Status */}
           <div style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.easy+"15",border:`1px solid ${C.easy+"44"}`,color:C.text,marginBottom:9}}>
