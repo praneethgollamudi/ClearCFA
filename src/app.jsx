@@ -2315,7 +2315,10 @@ ${levelGuidance}${personalisedSection}
 Return ONLY a JSON array, no markdown:
 [{"id":1,"question":"...","options":{"A":"...","B":"...","C":"..."},"answer":"A","explanation":"...","concept":"3-5 word tag","los_tested":"LOS text","misconception_targeted":"error exploited"}]
 
-Rules: 3 options only (A,B,C). Each wrong option exploits a misconception. Spread questions across different LOS.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
+Rules:
+- 3 options only (A,B,C). Each wrong option exploits a misconception. Spread questions across different LOS.
+- CRITICAL for numerical questions: FIRST compute the correct answer, THEN make that exact value one of the options. NEVER say "nearest available" or pick an approximate answer — the correct calculated value MUST appear verbatim as option A, B, or C. Wrong options should use common formula errors (e.g. forgetting to discount, using wrong rate, off-by-one period).
+- The "answer" field must match the letter whose option text equals the correct computed result.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
 }
 
 // Expand compact JSON keys returned by optimised prompt
@@ -5786,6 +5789,8 @@ Generate exactly ${cnt} multiple-choice questions. Distribute them roughly evenl
 
 Each question: different concept, LOS-anchored, with a plausible distractor targeting a real misconception.
 
+CRITICAL for numerical questions: FIRST compute the correct answer, THEN make that exact value one of the options (A, B, C, or D). The correct computed result MUST appear verbatim as one of the options — never say "nearest available" or approximate. Wrong options use common formula errors. The "answer" field must be the letter whose option text equals the correct result.
+
 Return ONLY a JSON array — no prose, no markdown fences:
 [{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic name from list above>","_subtopic":"<module name>"}]`;
       const qs=await callClaude(prompt,Math.min(cnt*300+500,4000),{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"interleaved"});
@@ -5929,11 +5934,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
         parsed=raw;
       }
       if(!Array.isArray(parsed)||!parsed.length)throw new Error("Empty");
-      const fresh=filterNewQuestions(parsed,qdb);
-      const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:parsed;
+      // Drop questions where the AI admitted the correct answer isn't in the options
+      const parsed_clean=parsed.filter(q=>{
+        if(!q||!q.question||!q.answer||!q.options)return false;
+        if(!q.options[q.answer])return false; // answer key points to nonexistent option
+        const exp=(q.explanation||"").toLowerCase();
+        if(/nearest available|closest answer|so [a-c] is nearest|approximate(ly)?|not exactly|so [a-c] is the best/i.test(exp))return false;
+        return true;
+      });
+      if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
+      const fresh=filterNewQuestions(parsed_clean,qdb);
+      const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:parsed_clean;
       // Cache successful non-vignette sets for reuse
-      if(!isVignette&&parsed.length>=5){
-        qCacheRef.current=qcAdd(qCacheRef.current,t,st,diff,parsed);
+      if(!isVignette&&parsed_clean.length>=5){
+        qCacheRef.current=qcAdd(qCacheRef.current,t,st,diff,parsed_clean);
         storageSet(QCACHE_KEY,qCacheRef.current);
       }
       setLoadingProgress(100);setLoadingMsg(isVignette?"Vignettes ready!":"Questions ready!");
