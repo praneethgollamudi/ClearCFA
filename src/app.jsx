@@ -1699,6 +1699,8 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const [dynamicFormulas, setDynamicFormulas] = useState(()=>{try{return JSON.parse(localStorage.getItem(DYNAMIC_FORMULAS_KEY)||"{}");}catch{return {};}});
   const [pnGenerating, setPnGenerating] = useState({});
   const [formulaGenerating, setFormulaGenerating] = useState({});
+  const [formulaGenError, setFormulaGenError] = useState({});
+  const [expandedFormula, setExpandedFormula] = useState(null);
 
   // Merge static POWER_NOTES with any AI-generated dynamic modules
   const staticTopics = POWER_NOTES[selTopic]?.topics || [];
@@ -1766,16 +1768,22 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     const key=name.toLowerCase();
     if(formulaGenerating[key]) return;
     setFormulaGenerating(s=>({...s,[key]:true}));
-    const prompt=`CFA Level ${cfaLevel} exam prep. A student got this concept wrong and needs the formula.\nConcept: "${name}" (Topic: ${selTopic})\nContext: "${(card.explanation||"").slice(0,300)}"\n\nRespond in EXACTLY this format:\nNAME: [formula name]\nFORMULA: [formula expression using standard notation]\nVARIABLES:\n[each variable on its own line: variable = what it means]\nWHEN: [one sentence: when to use on the exam]\nEXAMPLE: [one sentence worked example with numbers]`;
-    const reply=await callAIChat(userId,[{role:"user",content:prompt}],400,cfaLevel);
-    setFormulaGenerating(s=>({...s,[key]:false}));
-    if(!reply) return;
-    const formula=parseFormulaAIResponse(reply,name);
-    const existing=dynamicFormulas[selTopic]||[];
-    if(existing.some(f=>f.name.toLowerCase()===key)) return;
-    const updated={...dynamicFormulas,[selTopic]:[...existing,formula]};
-    setDynamicFormulas(updated);
-    try{localStorage.setItem(DYNAMIC_FORMULAS_KEY,JSON.stringify(updated));}catch{}
+    setFormulaGenError(s=>({...s,[key]:""}));
+    try{
+      const prompt=`CFA Level ${cfaLevel} exam prep. A student got this concept wrong and needs the formula.\nConcept: "${name}" (Topic: ${selTopic})\nContext: "${(card.explanation||"").slice(0,300)}"\n\nRespond in EXACTLY this format:\nNAME: [formula name]\nFORMULA: [formula expression using standard notation]\nVARIABLES:\n[each variable on its own line: variable = what it means]\nWHEN: [one sentence: when to use on the exam]\nEXAMPLE: [one sentence worked example with numbers]`;
+      const reply=await callAIChat(userId,[{role:"user",content:prompt}],400,cfaLevel);
+      if(!reply){setFormulaGenError(s=>({...s,[key]:"No response — try again."}));return;}
+      const formula=parseFormulaAIResponse(reply,name);
+      const existing=dynamicFormulas[selTopic]||[];
+      if(existing.some(f=>f.name.toLowerCase()===key)) return;
+      const updated={...dynamicFormulas,[selTopic]:[...existing,formula]};
+      setDynamicFormulas(updated);
+      try{localStorage.setItem(DYNAMIC_FORMULAS_KEY,JSON.stringify(updated));}catch{}
+    }catch(e){
+      setFormulaGenError(s=>({...s,[key]:e.message||"Generation failed — try again."}));
+    }finally{
+      setFormulaGenerating(s=>({...s,[key]:false}));
+    }
   };
 
   return (
@@ -1941,10 +1949,6 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                           <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:C.textMid,lineHeight:1.6}}>
                             <span style={{color:C.easy,flexShrink:0,fontWeight:700,marginTop:1}}>·</span>
                             <span style={{flex:1}}>{r}</span>
-                            <button onClick={()=>openAI(`Rule: ${r}`,`CFA Level ${cfaLevel} exam prep. I'm studying this rule: "${r}"\n\nExplain it in 2-3 sentences with a concrete numeric example, then name one common exam trap related to it. Be direct.`)}
-                              style={{fontSize:10,background:"none",border:`1px solid ${C.accent}44`,borderRadius:5,color:C.accentLight,cursor:"pointer",padding:"2px 6px",flexShrink:0,marginTop:1}}>
-                              💬
-                            </button>
                           </div>
                         ))}
                       </div>
@@ -1958,10 +1962,6 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                           <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:"#c0a0a0",lineHeight:1.6}}>
                             <span style={{color:C.hard,flexShrink:0,fontWeight:700,marginTop:1}}>!</span>
                             <span style={{flex:1}}>{t}</span>
-                            <button onClick={()=>openAI(`Trap: ${t}`,`CFA Level ${cfaLevel} exam prep. Explain why this is a common trap on the exam: "${t}"\n\nGive a concrete example of how a student gets it wrong versus the correct answer. Be brief and direct.`)}
-                              style={{fontSize:10,background:"none",border:`1px solid ${C.hard}44`,borderRadius:5,color:C.hard,cursor:"pointer",padding:"2px 6px",flexShrink:0,marginTop:1}}>
-                              💬
-                            </button>
                           </div>
                         ))}
                       </div>
@@ -2059,16 +2059,20 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                         const name=(card.subtopic||card.concept||"").trim();
                         const genKey=name.toLowerCase();
                         const isGen=formulaGenerating[genKey];
+                        const genErr=formulaGenError[genKey];
                         return(
-                          <div key={gi} style={{background:"#0a0818",border:"1px solid #8040c033",borderRadius:9,padding:"9px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontSize:12,fontWeight:700,color:"#c0a0e0"}}>{name}</div>
-                              <div style={{fontSize:10,color:"#6060a0",marginTop:2}}>No formula found — AI can generate one</div>
+                          <div key={gi} style={{background:"#0a0818",border:"1px solid #8040c033",borderRadius:9,padding:"9px 12px"}}>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:12,fontWeight:700,color:"#c0a0e0"}}>{name}</div>
+                                <div style={{fontSize:10,color:genErr?"#f87171":"#6060a0",marginTop:2}}>{genErr||"No formula found — AI can generate one"}</div>
+                              </div>
+                              <button onClick={()=>generateFormulaForConcept(card)} disabled={isGen||!userId}
+                                style={{padding:"6px 11px",borderRadius:7,fontSize:11,fontWeight:700,border:"1px solid #8040c055",background:"#8040c018",color:isGen||!userId?"#6060b0":"#c090f0",cursor:isGen||!userId?"default":"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                                {isGen?"⏳ Generating…":genErr?"↺ Retry":"✨ Generate"}
+                              </button>
                             </div>
-                            <button onClick={()=>generateFormulaForConcept(card)} disabled={isGen||!userId}
-                              style={{padding:"6px 11px",borderRadius:7,fontSize:11,fontWeight:700,border:"1px solid #8040c055",background:"#8040c018",color:isGen?"#6060b0":"#c090f0",cursor:isGen||!userId?"default":"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-                              {isGen?"⏳ Generating…":"✨ Generate"}
-                            </button>
+                            {!userId&&<div style={{fontSize:10,color:"#6060a0",marginTop:4}}>Sign in to generate AI formulas</div>}
                           </div>
                         );
                       })}
@@ -2081,16 +2085,30 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                 <div style={{textAlign:"center",padding:"40px 0",color:C.muted,fontSize:13}}>No formula sheet for this topic — it's primarily conceptual.</div>
               ):(
                 <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-                  {formulaData.map((f,i)=>(
-                    <div key={i} id={`formula-${i}`} style={{display:"flex",gap:10,alignItems:"center",padding:"11px 16px",borderBottom:i<formulaData.length-1?`1px solid ${C.border}`:"none"}}>
-                      <div style={{fontSize:11,color:f._aiGen?"#a060e0":C.muted,minWidth:110,flexShrink:0,lineHeight:1.4}}>{f.name}{f._aiGen&&<span style={{fontSize:9,color:"#7c5cbf",marginLeft:4}}>✦ AI</span>}</div>
-                      <div style={{fontSize:13,color:C.accentLight,fontFamily:"monospace",lineHeight:1.6,flex:1}}>{f.f}</div>
-                      <button onClick={()=>openAI(`Formula: ${f.name}`,`CFA Level ${cfaLevel} exam prep. Formula: ${f.name} = ${f.f}\n\nExplain what each variable means, walk me through a numeric example, and tell me how this formula typically appears on the exam. Be concise.`)}
-                        style={{fontSize:11,background:"none",border:`1px solid ${C.accent}44`,borderRadius:5,color:C.accentLight,cursor:"pointer",padding:"3px 7px",flexShrink:0}}>
-                        💬
-                      </button>
-                    </div>
-                  ))}
+                  {formulaData.map((f,i)=>{
+                    const isExp=expandedFormula===i;
+                    return(
+                      <div key={i} id={`formula-${i}`} style={{borderBottom:i<formulaData.length-1?`1px solid ${C.border}`:"none"}}>
+                        <div onClick={()=>setExpandedFormula(isExp?null:i)}
+                          style={{display:"flex",gap:10,alignItems:"center",padding:"11px 16px",cursor:"pointer",background:isExp?`${C.accent}08`:"transparent",transition:"background 0.15s"}}>
+                          <div style={{fontSize:11,color:f._aiGen?"#a060e0":C.muted,minWidth:100,flexShrink:0,lineHeight:1.4}}>{f.name}{f._aiGen&&<span style={{fontSize:9,color:"#7c5cbf",marginLeft:4}}>✦ AI</span>}</div>
+                          <div style={{fontSize:13,color:C.accentLight,fontFamily:"monospace",lineHeight:1.6,flex:1}}>{f.f}</div>
+                          <span style={{fontSize:10,color:C.muted,flexShrink:0}}>{isExp?"▲":"▼"}</span>
+                        </div>
+                        {isExp&&(
+                          <div style={{padding:"0 16px 12px",animation:"fadeIn 0.15s ease"}}>
+                            {f.variables&&<div style={{fontSize:11,color:C.muted,lineHeight:1.7,marginBottom:8,whiteSpace:"pre-line"}}>{f.variables}</div>}
+                            {f.when&&<div style={{fontSize:11,color:C.textMid,fontStyle:"italic",marginBottom:8}}>📌 {f.when}</div>}
+                            {f.example&&<div style={{fontSize:11,color:C.easy,marginBottom:10}}>💡 {f.example}</div>}
+                            <button onClick={()=>openAI(`Formula: ${f.name}`,`CFA Level ${cfaLevel} exam prep. Formula: ${f.name} = ${f.f}\n\nExplain what each variable means, walk me through a numeric example, and tell me how this formula typically appears on the exam. Be concise.`)}
+                              style={{fontSize:11,fontWeight:700,padding:"7px 14px",borderRadius:8,background:`${C.accent}18`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                              💬 Ask AI about this formula
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               <div style={{marginTop:10,fontSize:11,color:C.muted,textAlign:"center"}}>{formulaData.length} formulas · switch topic above</div>
