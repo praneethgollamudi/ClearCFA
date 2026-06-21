@@ -2182,6 +2182,18 @@ async function supabaseLoad(cfg, auth=null){
   }catch{return null;}
 }
 
+async function submitFeedback(cfg, {userId="anon", rating=0, category="General", message=""}){
+  if(!cfg||!cfg.url||!cfg.key) return false;
+  try{
+    const res=await fetch(`${cfg.url}/rest/v1/feedback`,{
+      method:"POST",
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Content-Type":"application/json","Prefer":"return=minimal"},
+      body:JSON.stringify({user_id:userId,rating,category,message:message.trim(),created_at:new Date().toISOString()})
+    });
+    return res.ok;
+  }catch{return false;}
+}
+
 // ─── SM-2 ─────────────────────────────────────────────────────────────────────
 function sm2Update(card,correct){
   let{interval=0,repetitions=0,ef=2.5}=card;
@@ -3819,6 +3831,82 @@ function parseFormulaAIResponse(text, conceptName){
   return{name,f:f||"See curriculum",variables,when,example,_aiGen:true};
 }
 
+function FeedbackModal({onClose, userId="", onSubmit}){
+  const [rating,setRating]=useState(0);
+  const [hovered,setHovered]=useState(0);
+  const [category,setCategory]=useState("General");
+  const [message,setMessage]=useState("");
+  const [state,setState]=useState("idle"); // idle | sending | done | error
+  const cats=["Bug Report","Feature Request","General","Praise"];
+  const catColors={"Bug Report":C.hard,"Feature Request":C.accent,"General":C.muted,"Praise":C.easy};
+  const send=async()=>{
+    if(!message.trim()&&rating===0) return;
+    setState("sending");
+    const ok=await onSubmit({userId,rating,category,message});
+    setState(ok?"done":"error");
+  };
+  if(state==="done") return (
+    <div style={{position:"fixed",inset:0,background:"#0009",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:900,padding:"0 0 0 0"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,background:C.surface,borderRadius:"20px 20px 0 0",padding:"28px 20px 40px",display:"flex",flexDirection:"column",alignItems:"center",gap:16}}>
+        <div style={{fontSize:40}}>🙏</div>
+        <div style={{fontSize:17,fontWeight:800,color:C.text,textAlign:"center"}}>Thanks for your feedback!</div>
+        <div style={{fontSize:13,color:C.muted,textAlign:"center"}}>It helps us make ClearCFA better for everyone.</div>
+        <button onClick={onClose} style={{marginTop:8,padding:"11px 32px",borderRadius:12,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Close</button>
+      </div>
+    </div>
+  );
+  return (
+    <div style={{position:"fixed",inset:0,background:"#0009",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:900}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,background:C.surface,borderRadius:"20px 20px 0 0",padding:"24px 20px 40px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+          <div style={{fontSize:16,fontWeight:800,color:C.text}}>Send Feedback</div>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,color:C.muted,cursor:"pointer",padding:"0 4px"}}>×</button>
+        </div>
+        {/* Star rating */}
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:11,color:C.muted,marginBottom:8,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em"}}>How's your experience?</div>
+          <div style={{display:"flex",gap:8}}>
+            {[1,2,3,4,5].map(n=>(
+              <button key={n} onMouseEnter={()=>setHovered(n)} onMouseLeave={()=>setHovered(0)} onClick={()=>setRating(n)}
+                style={{fontSize:26,background:"none",border:"none",cursor:"pointer",padding:"2px",transition:"transform 0.1s",transform:(hovered||rating)>=n?"scale(1.2)":"scale(1)"}}>
+                {(hovered||rating)>=n?"⭐":"☆"}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Category */}
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:11,color:C.muted,marginBottom:8,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em"}}>Type</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {cats.map(c=>(
+              <button key={c} onClick={()=>setCategory(c)}
+                style={{padding:"6px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",transition:"all 0.15s",
+                  background:category===c?catColors[c]+"22":C.surfaceHigh,
+                  border:`1.5px solid ${category===c?catColors[c]:"transparent"}`,
+                  color:category===c?catColors[c]:C.muted}}>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Message */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:11,color:C.muted,marginBottom:8,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em"}}>Message</div>
+          <textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Tell us what's on your mind…" maxLength={1000} rows={4}
+            style={{width:"100%",background:C.surfaceHigh,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 12px",fontSize:13,color:C.text,resize:"none",outline:"none",fontFamily:"inherit"}}/>
+          <div style={{fontSize:10,color:C.muted,textAlign:"right",marginTop:3}}>{message.length}/1000</div>
+        </div>
+        {state==="error"&&<div style={{fontSize:12,color:C.hard,marginBottom:10,textAlign:"center"}}>Something went wrong — please try again.</div>}
+        <button onClick={send} disabled={state==="sending"||(!message.trim()&&rating===0)}
+          style={{width:"100%",padding:"13px",borderRadius:14,fontSize:14,fontWeight:700,border:"none",cursor:state==="sending"||(!message.trim()&&rating===0)?"not-allowed":"pointer",
+            background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",opacity:state==="sending"||(!message.trim()&&rating===0)?0.5:1,transition:"opacity 0.15s"}}>
+          {state==="sending"?"Sending…":"Send Feedback"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function UpgradeModal({reason, onClose, userEmail=""}){
   const [joined,setJoined]=useState(false);
   const hoursLeft=()=>{const now=new Date();const midnight=new Date(now);midnight.setHours(24,0,0,0);return Math.max(1,Math.ceil((midnight-now)/(1000*60*60)));};
@@ -5295,6 +5383,7 @@ function CFAMock(){
   const [proStatus,setProStatus]=useState(getProStatus);
   const [dailyAIUsage,setDailyAIUsage]=useState(getDailyAIUsage);
   const [upgradeModal,setUpgradeModal]=useState(null); // null | {reason:string}
+  const [feedbackOpen,setFeedbackOpen]=useState(false);
   const [cfaLevel,setCfaLevel]=useState(()=>{try{return localStorage.getItem(CFA_LEVEL_KEY)||"1";}catch{return "1";}});
   const activeLOS=useMemo(()=>getActiveLOS(cfaLevel),[cfaLevel]);
   const activeTopicMap=useMemo(()=>getActiveTopicMap(cfaLevel),[cfaLevel]);
@@ -6776,6 +6865,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   if(screen==="home") return wrap(<>
     {/* Settings drawer overlay */}
     {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""}/>}
+    {feedbackOpen&&<FeedbackModal onClose={()=>setFeedbackOpen(false)} userId={authUser?.id||"anon"} onSubmit={(data)=>submitFeedback(SB_CFG,data)}/>}
     {settingsOpen&&(
       <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
         <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:"18px 18px 0 0",padding:"20px 16px 32px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
@@ -6881,6 +6971,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700}}>Backup & Restore</div>
               <div style={{fontSize:11,color:C.muted,marginTop:1}}>Export JSON · import on another device</div>
+            </div>
+          </button>
+          {/* Feedback */}
+          <button onClick={()=>{setSettingsOpen(false);setFeedbackOpen(true);}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+            <span style={{fontSize:18}}>💬</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700}}>Send Feedback</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>Report bugs · suggest features · share thoughts</div>
             </div>
           </button>
           {/* Account */}
