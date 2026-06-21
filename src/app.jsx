@@ -2806,6 +2806,7 @@ const PASS_TREND_KEY = "cfa_pass_trend_v1";
 const PLAN_KEY       = "cfa_week_plan_v1";
 const DYNAMIC_PN_KEY = "cfa_dynamic_pn_v1";
 const DYNAMIC_FORMULAS_KEY = "cfa_dynamic_formulas_v1";
+const LESSONS_KEY          = "cfa_lessons_v1";
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
@@ -3860,6 +3861,24 @@ async function callAIChat(userId, messages, maxTokens=450, level="1"){
 }
 
 // ─── REVISION SCREEN COMPONENTS ──────────────────────────────────────────────
+function parseLesson(text, topic){
+  const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);
+  let overview="",section="",concepts=[],traps=[],tips=[];
+  for(const line of lines){
+    if(/^OVERVIEW:\s*/i.test(line)){overview=line.replace(/^OVERVIEW:\s*/i,"").trim();section="overview";continue;}
+    if(/^KEY CONCEPTS?:?\s*$/i.test(line)){section="concepts";continue;}
+    if(/^COMMON TRAPS?:?\s*$/i.test(line)){section="traps";continue;}
+    if(/^EXAM TIPS?:?\s*$/i.test(line)){section="tips";continue;}
+    const bullet=line.replace(/^[•\-\*]\s*/,"").trim();
+    if(!bullet)continue;
+    if(section==="overview")overview=(overview?overview+" ":"")+bullet;
+    else if(section==="concepts")concepts.push(bullet);
+    else if(section==="traps")traps.push(bullet);
+    else if(section==="tips")tips.push(bullet);
+  }
+  return{topic,overview,concepts,traps,tips,_aiGen:true,generatedAt:new Date().toISOString()};
+}
+
 function parsePNAIResponse(text, moduleName){
   const lines=text.split('\n').map(s=>s.trim()).filter(Boolean);
   const rules=[],traps=[];
@@ -3977,6 +3996,7 @@ function UpgradeModal({reason, onClose, userEmail=""}){
     coach:{icon:"🤖",title:"Pro feature",sub:"AI Coach is unlimited on the Pro plan."},
     plan:{icon:"🗓",title:"Pro feature",sub:"Weekly AI study plans are available on Pro."},
     l2l3:{icon:"📚",title:"Pro feature",sub:"Full CFA L2 & L3 support is available on Pro."},
+    learn:{icon:"🎓",title:"Pro feature",sub:"AI Topic Lessons are available on Pro."},
     default:{icon:"🚀",title:"Upgrade to Pro",sub:"Get unlimited access to every ClearCFA feature."},
   };
   const {icon,title,sub}=headers[reason]||headers.default;
@@ -4038,7 +4058,21 @@ function UpgradeModal({reason, onClose, userEmail=""}){
   );
 }
 
-function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1"}){
+function LessonSection({title, items, color}){
+  if(!items?.length) return null;
+  return(
+    <div style={{background:C.surface,borderRadius:12,padding:"14px 16px",marginBottom:10,border:`1px solid ${C.border}`}}>
+      <div style={{fontSize:11,fontWeight:700,color,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.08em"}}>{title}</div>
+      {items.map((item,i)=>(
+        <div key={i} style={{fontSize:12,color:C.textMid,lineHeight:1.65,paddingLeft:14,marginBottom:4,position:"relative"}}>
+          <span style={{position:"absolute",left:0,color}}>•</span>{item}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1", isPro=false, onStartQuiz=null, topicLessons={}, setTopicLessons=()=>{}, onUpgrade=null}){
   const activePowerNotes=getActivePowerNotes(cfaLevel);
   const activeFormulas=getActiveFormulas(cfaLevel);
   const activeLOSR=getActiveLOS(cfaLevel);
@@ -4067,12 +4101,16 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const [formulaGenerating, setFormulaGenerating] = useState({});
   const [formulaGenError, setFormulaGenError] = useState({});
   const [expandedFormula, setExpandedFormula] = useState(null);
+  const [lessonGenerating, setLessonGenerating] = useState({});
 
-  // Auto-select first formula-bearing topic when switching to formulas tab
+  // Auto-select first formula-bearing topic when switching to formulas tab; auto-generate lesson for Pro users
   useEffect(()=>{
     if(tab==="formulas"&&(activeFormulas[selTopic]||[]).length===0){
       const first=Object.keys(activeFormulas).find(t=>(activeFormulas[t]||[]).length>0);
       if(first) setSelTopic(first);
+    }
+    if(tab==="learn"&&isPro&&userId&&!topicLessons[selTopic]&&!lessonGenerating[selTopic]){
+      generateLesson(selTopic);
     }
   },[tab]);
 
@@ -4161,6 +4199,26 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     }
   };
 
+  const generateLesson = async (topic) => {
+    if(lessonGenerating[topic]||topicLessons[topic]||!userId) return;
+    setLessonGenerating(s=>({...s,[topic]:true}));
+    const weak=Object.values(srDeck)
+      .filter(c=>c.topic===topic&&(c.wrongCount||0)>0)
+      .sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0))
+      .slice(0,4).map(c=>c.concept||c.subtopic).join(", ");
+    const prompt=`CFA Level ${cfaLevel} exam prep. Teach the topic "${topic}" in a concise lesson.\n\nFormat EXACTLY:\nOVERVIEW: [2 sentence plain-English overview of what this topic covers and why it matters for the exam]\nKEY CONCEPTS:\n• [concept]\n[5-7 bullet points, each max 20 words]\nCOMMON TRAPS:\n• [trap]\n[3-5 bullet points of frequent exam mistakes]\nEXAM TIPS:\n• [tip]\n[3-4 bullet points on how questions are structured]\n${weak?`\nFocus extra attention on: ${weak}`:""}\n\nBe concise. Total response under 400 words.`;
+    try{
+      const reply=await callAIChat(userId,[{role:"user",content:prompt}],500,cfaLevel);
+      if(!reply) return;
+      const lesson=parseLesson(reply,topic);
+      const updated={...topicLessons,[topic]:lesson};
+      setTopicLessons(updated);
+      try{localStorage.setItem(LESSONS_KEY,JSON.stringify(updated));}catch{}
+    }finally{
+      setLessonGenerating(s=>({...s,[topic]:false}));
+    }
+  };
+
   return (
     <div style={{fontFamily:"system-ui,sans-serif",background:C.bg,minHeight:"100vh",padding:"16px 16px 40px"}}>
       {/* Header */}
@@ -4174,7 +4232,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
 
       {/* Tab switcher */}
       <div style={{display:"flex",gap:0,marginBottom:14,background:C.surface,borderRadius:10,padding:3,border:`1px solid ${C.border}`}}>
-        {[["notes","📝 Power Notes"],["formulas","📐 Formulas"]].map(([t,label])=>(
+        {[["notes","📝 Notes"],["formulas","📐 Formulas"],["learn","🎓 Learn"]].map(([t,label])=>(
           <button key={t} onClick={()=>setTab(t)}
             style={{flex:1,padding:"8px",borderRadius:8,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
               background:tab===t?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.surface,
@@ -4547,6 +4605,87 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                 style={{padding:"12px 28px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.reward},${C.rewardLight})`,color:"#000",border:"none",cursor:"pointer"}}>
                 Drill again →
               </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── LEARN TAB ── */}
+      {tab==="learn"&&(
+        <div style={{animation:"fadeIn 0.2s ease"}}>
+          {/* Topic picker — same as notes/formulas */}
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+            {Object.keys(activePowerNotes).map(t=>{
+              const w=activeLOSR[t]?.weight||0;
+              return(
+                <button key={t} onClick={()=>setSelTopic(t)}
+                  style={{padding:"5px 11px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",
+                    border:selTopic===t?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,
+                    background:selTopic===t?C.accent+"22":C.surface,
+                    color:selTopic===t?C.accentLight:C.muted}}>
+                  {t.split(" ")[0]} <span style={{opacity:0.6,fontWeight:400}}>{w}%</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Not Pro — blurred teaser */}
+          {!isPro&&(
+            <div style={{textAlign:"center",padding:"28px 0"}}>
+              <div style={{fontSize:32,marginBottom:10}}>🎓</div>
+              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:6}}>AI Topic Lessons</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+                A concise exam-focused lesson for any CFA topic —<br/>key concepts, common traps, and exam tips in one read.
+              </div>
+              <div style={{filter:"blur(4px)",pointerEvents:"none",marginBottom:16,opacity:0.5}}>
+                <LessonSection title="✅ Key Concepts" items={["Duration measures interest rate sensitivity to yield changes","Convexity adjusts for non-linear price-yield relationship","YTM assumes coupons reinvested at the same rate"]} color={C.easy}/>
+              </div>
+              <button onClick={()=>onUpgrade&&onUpgrade({reason:"learn"})}
+                style={{padding:"11px 28px",borderRadius:12,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                🚀 Unlock AI Lessons — Go Pro
+              </button>
+            </div>
+          )}
+
+          {/* Pro — no lesson yet */}
+          {isPro&&!topicLessons[selTopic]&&(
+            <div style={{textAlign:"center",padding:"36px 0"}}>
+              <div style={{fontSize:32,marginBottom:12}}>🎓</div>
+              <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:8}}>{selTopic} — AI Lesson</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:20,lineHeight:1.6,maxWidth:280,margin:"0 auto 20px"}}>
+                Generates a concise exam-focused lesson personalised to your weak areas in this topic.
+              </div>
+              <button onClick={()=>generateLesson(selTopic)} disabled={lessonGenerating[selTopic]||!userId}
+                style={{padding:"11px 28px",borderRadius:12,fontSize:13,fontWeight:700,
+                  background:lessonGenerating[selTopic]?"#1a1a2e":`linear-gradient(135deg,${C.accent},${C.accentLight})`,
+                  color:"#fff",border:"none",cursor:lessonGenerating[selTopic]||!userId?"default":"pointer",opacity:!userId?0.5:1}}>
+                {lessonGenerating[selTopic]?"⏳ Generating…":"✨ Generate Lesson"}
+              </button>
+              {!userId&&<div style={{fontSize:11,color:C.muted,marginTop:8}}>Sign in to generate lessons</div>}
+            </div>
+          )}
+
+          {/* Pro — lesson ready */}
+          {isPro&&topicLessons[selTopic]&&(
+            <div>
+              <div style={{background:C.surface,borderRadius:12,padding:"14px 16px",marginBottom:10,border:`1px solid ${C.border}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Overview</div>
+                <div style={{fontSize:13,color:C.text,lineHeight:1.7}}>{topicLessons[selTopic].overview}</div>
+              </div>
+              <LessonSection title="✅ Key Concepts" items={topicLessons[selTopic].concepts} color={C.easy}/>
+              <LessonSection title="⚠️ Common Traps" items={topicLessons[selTopic].traps} color={C.hard}/>
+              <LessonSection title="📌 Exam Tips" items={topicLessons[selTopic].tips} color={C.accentLight}/>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,marginBottom:14}}>
+                <div style={{fontSize:10,color:C.muted}}>✦ AI · {new Date(topicLessons[selTopic].generatedAt).toLocaleDateString()}</div>
+                <button onClick={()=>{const u={...topicLessons};delete u[selTopic];setTopicLessons(u);try{localStorage.setItem(LESSONS_KEY,JSON.stringify(u));}catch{}}}
+                  style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer"}}>↺ Regenerate</button>
+              </div>
+              {onStartQuiz&&(
+                <button onClick={()=>onStartQuiz(selTopic)}
+                  style={{width:"100%",padding:"13px",borderRadius:12,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                  📝 Practice This Topic
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -5408,6 +5547,86 @@ const DIAGNOSTIC_QUESTIONS=[
   {id:"dg15",topic:"Derivatives",question:"A forward contract DIFFERS from a futures contract primarily because forwards are:",options:{A:"Always cash-settled with no possibility of delivery","B":"Exchange-traded and require daily mark-to-market margining","C":"Private bilateral agreements with no daily settlement"},answer:"C",explanation:"Forwards are OTC (private) contracts customised between two parties with no daily settlement — gain/loss is settled at expiry. Futures are standardised, exchange-traded contracts subject to daily mark-to-market and margin calls."},
 ];
 
+function StudyPathScreen({onBack, onLearn, onPractice, srDeck={}, cfaLevel="1", topicLessons={}, isPro=false}){
+  const activeLOS=getActiveLOS(cfaLevel);
+  const topics=Object.entries(activeLOS).sort((a,b)=>(b[1].weight||0)-(a[1].weight||0));
+  const statusMeta={
+    mastered:{label:"Mastered ✓",color:C.easy},
+    practicing:{label:"Practicing",color:C.reward},
+    learning:{label:"Lesson Ready",color:C.accentLight},
+    not_started:{label:"Not Started",color:C.muted},
+  };
+  const topicStats=topics.map(([topic,data])=>{
+    const cards=Object.values(srDeck).filter(c=>c.topic===topic);
+    const answered=cards.length;
+    const correct=cards.filter(c=>(c.wrongCount||0)===0&&(c.repetitions||0)>0).length;
+    const accuracy=answered>0?Math.round(correct/answered*100):0;
+    const hasLesson=!!topicLessons[topic];
+    const status=answered>=20&&accuracy>=80?"mastered":answered>0?"practicing":hasLesson?"learning":"not_started";
+    return{topic,weight:data.weight||0,answered,accuracy,hasLesson,status};
+  });
+  const nextTopic=topicStats.find(t=>t.status!=="mastered")?.topic||topicStats[0]?.topic;
+  return(
+    <div style={{fontFamily:"system-ui,sans-serif",background:C.bg,minHeight:"100vh",padding:"16px 16px 40px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div>
+          <h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📚 Study Path</h2>
+          <div style={{fontSize:11,color:C.muted,marginTop:2}}>Topics sorted by exam weight</div>
+        </div>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
+      </div>
+      {nextTopic&&(
+        <div style={{background:`linear-gradient(135deg,${C.accent}22,${C.accentLight}11)`,borderRadius:12,padding:"14px 16px",marginBottom:16,border:`1px solid ${C.accent}44`}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.accentLight,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.08em"}}>📍 Continue where you left off</div>
+          <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:10}}>{nextTopic}</div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>onLearn(nextTopic)} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:C.accent,color:"#fff",border:"none",cursor:"pointer"}}>
+              {topicLessons[nextTopic]?"📖 Review Lesson":"🎓 Learn"}
+            </button>
+            <button onClick={()=>onPractice(nextTopic)} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surfaceHigh,color:C.accentLight,border:`1px solid ${C.accent}44`,cursor:"pointer"}}>
+              📝 Practice
+            </button>
+          </div>
+        </div>
+      )}
+      {topicStats.map(({topic,weight,answered,accuracy,hasLesson,status})=>{
+        const{label,color}=statusMeta[status];
+        return(
+          <div key={topic} style={{background:C.surface,borderRadius:12,padding:"14px 16px",marginBottom:10,border:`1px solid ${color}33`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:answered>0?8:10}}>
+              <div>
+                <span style={{fontSize:14,fontWeight:800,color:C.text}}>{topic}</span>
+                <span style={{fontSize:11,color:C.muted,marginLeft:8}}>{weight}%</span>
+              </div>
+              <span style={{fontSize:11,fontWeight:700,color,background:`${color}18`,padding:"3px 9px",borderRadius:20,flexShrink:0}}>{label}</span>
+            </div>
+            {answered>0&&(
+              <div style={{marginBottom:10}}>
+                <div style={{height:4,background:C.border,borderRadius:2}}>
+                  <div style={{height:"100%",width:`${Math.min(accuracy,100)}%`,background:accuracy>=80?C.easy:C.reward,borderRadius:2,transition:"width 0.4s"}}/>
+                </div>
+                <div style={{fontSize:10,color:C.muted,marginTop:3}}>{answered} cards · {accuracy}% accuracy</div>
+              </div>
+            )}
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>onLearn(topic)}
+                style={{flex:1,padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,
+                  background:isPro?C.accent+"18":C.surfaceHigh,border:`1px solid ${isPro?C.accent+"44":C.border}`,
+                  color:isPro?C.accentLight:C.muted,cursor:"pointer"}}>
+                {hasLesson?"📖 Review Lesson":(isPro?"🎓 Learn":"🔒 Learn (Pro)")}
+              </button>
+              <button onClick={()=>onPractice(topic)}
+                style={{flex:1,padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>
+                📝 Practice
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CFAMock(){
   const [screen,setScreen]=useState("home");
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
@@ -5504,6 +5723,7 @@ function CFAMock(){
   const [revisionTopic,setRevisionTopic]=useState(null);
   const [revisionTab,setRevisionTab]=useState("notes");
   const [revisionConcept,setRevisionConcept]=useState(null);
+  const [topicLessons,setTopicLessons]=useState(()=>{try{return JSON.parse(localStorage.getItem(LESSONS_KEY)||"{}");}catch{return {};}});
   const [walkthroughTopic, setWalkthroughTopic] = useState(Object.keys(LOS)[0]);
   const [walkthroughModule, setWalkthroughModule] = useState("");
   const [walkthroughText, setWalkthroughText] = useState(null);
@@ -7780,6 +8000,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {key:"los_coverage",label:"🗺 LOS Map",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
         {key:"mastery_grid",label:"🎯 Mastery Grid",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
         {key:"interleaved",label:"🔀 Interleaved",style:{background:C.accent+"12",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
+        {key:"study_path",label:"📚 Study Path",style:{background:C.accent+"12",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("study_path");setScreen("studyPath");}},
       ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
       return(<>
         <button onClick={()=>{trackUsage("more_toggle");setShowMoreActions(v=>!v);}} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:11,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",marginBottom:showMoreActions?8:0,fontSize:12,fontWeight:600}}>
@@ -9344,7 +9565,10 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
   })());
 
   // ══ REVISION SCREEN ══════════════════════════════════════════════════════════
-  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel}/>;
+  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel} isPro={proStatus} topicLessons={topicLessons} setTopicLessons={setTopicLessons} onUpgrade={(cfg)=>setUpgradeModal(cfg)} onStartQuiz={(topic)=>{setScreen("home");const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});setTimeout(()=>generateQuestions(topic,mods[0]||topic,"Medium",10,"guided"),100);}}/>;
+
+  // ══ STUDY PATH SCREEN ════════════════════════════════════════════════════════
+  if(screen==="studyPath") return <StudyPathScreen onBack={()=>setScreen("home")} onLearn={(topic)=>{setRevisionTopic(topic);setRevisionTab("learn");setScreen("revision");}} onPractice={(topic)=>{const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});generateQuestions(topic,mods[0]||topic,"Medium",10,"guided");}} srDeck={srDeck} cfaLevel={cfaLevel} topicLessons={topicLessons} isPro={proStatus}/>;
 
   return null;
 }
