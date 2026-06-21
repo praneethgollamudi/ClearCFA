@@ -2227,15 +2227,75 @@ function addToQDB(questions,qdb){
 }
 
 // ─── PROMPTS ─────────────────────────────────────────────────────────────────
-function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null){
+// Analyses SR deck + session history for a topic/module to build personalised prompt context
+function buildDynamicContext(topic, module, srDeck, levelHistory){
+  // SR cards with 2+ mistakes in this module — sorted worst first
+  const moduleCards=Object.values(srDeck)
+    .filter(c=>c.topic===topic&&c.subtopic===module&&(c.wrongCount||0)>=2)
+    .sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));
+
+  // Deduplicate LOS and misconceptions from those cards
+  const weakLOS=[...new Set(moduleCards.map(c=>c.los_tested).filter(Boolean))].slice(0,4);
+  const userMisconceptions=[...new Set(moduleCards.map(c=>c.misconception_targeted).filter(Boolean))].slice(0,4);
+
+  // Timing signal from up to 5 recent sessions for this module
+  // Uses avgSecsPerQ (stored per session) or falls back to timeTaken/total
+  const recent=levelHistory.filter(h=>h.topic===topic&&h.subtopic===module&&h.total>=3).slice(0,5);
+  let timingSignal=null;
+  if(recent.length>=2){
+    const avgSecs=recent.reduce((s,h)=>s+(h.avgSecsPerQ||(h.timeTaken||0)/(h.total||1)),0)/recent.length;
+    const avgAcc=recent.reduce((s,h)=>s+(h.pct||0),0)/recent.length;
+    if(avgSecs<45&&avgAcc<72) timingSignal="rushing";       // fast but inaccurate
+    else if(avgSecs>120&&avgAcc<72) timingSignal="struggling"; // slow and inaccurate
+  }
+
+  return{weakLOS,userMisconceptions,timingSignal,hasData:moduleCards.length>0};
+}
+
+function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null,dynCtx=null){
   const activeLos=losData||LOS;
   const activeMisc=miscData||MISCONCEPTIONS;
   const losStatements=activeLos[topic]?.modules[module]||[];
-  const misconceptions=(activeMisc[topic]||[]).slice(0,3).join("; ");
   const verbsForDiff=LOS_VERB_DIFFICULTY[difficulty];
-  const priorityLOS=losStatements.filter(l=>verbsForDiff.some(v=>l.toLowerCase().startsWith(v)||l.toLowerCase().includes(` ${v} `)));
-  const allLOS=(priorityLOS.length>=count?priorityLOS:losStatements).slice(0,count+2);
-  const losText=allLOS.map((l,i)=>`${i+1}. ${l}`).join("\n");
+
+  // Prioritise weak LOS from SR errors, then difficulty-verb-matched LOS, then rest
+  const weakLOSTexts=dynCtx?.weakLOS||[];
+  const verbMatched=losStatements.filter(l=>verbsForDiff.some(v=>l.toLowerCase().startsWith(v)||l.toLowerCase().includes(` ${v} `)));
+  const weakMatched=losStatements.filter(l=>weakLOSTexts.some(w=>l.slice(0,50)===w.slice(0,50)||w.slice(0,50)===l.slice(0,50)));
+  const remaining=losStatements.filter(l=>!weakMatched.includes(l));
+  const orderedLOS=[...weakMatched,...remaining.filter(l=>verbMatched.includes(l)),...remaining.filter(l=>!verbMatched.includes(l))];
+  const allLOS=(orderedLOS.length?orderedLOS:losStatements).slice(0,count+2);
+
+  const losText=allLOS.map((l,i)=>{
+    const isWeak=weakLOSTexts.some(w=>l.slice(0,50)===w.slice(0,50)||w.slice(0,50)===l.slice(0,50));
+    return `${i+1}. ${isWeak?`⚠ [MISSED] `:""}${l}`;
+  }).join("\n");
+
+  // Misconceptions: user's actual proven errors first, then generic topic-level ones
+  const genericMiscs=(activeMisc[topic]||[]).slice(0,3);
+  const allMiscs=dynCtx?.userMisconceptions?.length
+    ?[...dynCtx.userMisconceptions.slice(0,3),...genericMiscs.slice(0,2)]
+    :genericMiscs;
+  const misconceptions=allMiscs.join("; ");
+
+  // Personalised section injected into the prompt when we have SR history
+  let personalisedSection="";
+  if(dynCtx?.hasData){
+    const parts=[];
+    if(weakLOSTexts.length){
+      const targetCount=Math.min(weakLOSTexts.length,Math.ceil(count*0.6));
+      parts.push(`STUDENT BLIND SPOTS — repeated errors in this module. Weight at least ${targetCount} of your ${count} questions toward the ⚠ [MISSED] LOS above.`);
+    }
+    if(dynCtx.userMisconceptions.length){
+      parts.push(`PROVEN student errors to exploit in distractors:\n${dynCtx.userMisconceptions.map(m=>`• ${m}`).join("\n")}`);
+    }
+    if(dynCtx.timingSignal==="rushing"){
+      parts.push(`Timing: student RUSHES (fast but inaccurate). Add subtle qualifiers ('EXCEPT', 'LEAST likely', specific conditions) that require careful reading to distinguish.`);
+    }else if(dynCtx.timingSignal==="struggling"){
+      parts.push(`Timing: student STRUGGLES (slow and inaccurate). Build each question from its core concept first — avoid multi-step chains, focus one LOS per question.`);
+    }
+    if(parts.length) personalisedSection=`\n\n[PERSONALISED]\n${parts.join("\n")}`;
+  }
 
   const levelGuidance=level==="2"
     ?`CFA Level 2 format: EVERY question must open with a 2–3 sentence mini-vignette/scenario (company, analyst, or portfolio context). Test deep analytical application, not recall. Complexity: ${difficulty==="Easy"?"apply a concept to the given scenario":difficulty==="Medium"?"multi-step calculation or integrated judgment":"evaluate competing interpretations or reconcile conflicting data"}.`
@@ -2250,7 +2310,7 @@ ${losText}
 
 Misconceptions to use in wrong options: ${misconceptions}
 
-${levelGuidance}
+${levelGuidance}${personalisedSection}
 
 Return ONLY a JSON array, no markdown:
 [{"id":1,"question":"...","options":{"A":"...","B":"...","C":"..."},"answer":"A","explanation":"...","concept":"3-5 word tag","los_tested":"LOS text","misconception_targeted":"error exploited"}]
@@ -5409,6 +5469,7 @@ function CFAMock(){
     const session={
       id:Date.now(),topic:t,subtopic:st,difficulty:diff,mode:m,
       score,total:qs.length,pct,timeTaken:elapsed,
+      avgSecsPerQ:qs.length>0?Math.round(elapsed/qs.length):0,
       date:new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"}),
       dateKey:new Date().toISOString().slice(0,10),
       wrongCount:qs.filter(q=>ans[q.id]!==q.answer).length,
@@ -5811,7 +5872,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         parsed=flattenVignettes(rawVig,t,st);
       } else {
         const tightMax={3:1600,5:2500,10:4500,15:6000,20:7000}[cnt]||(cnt*500);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions),tightMax,{retries:3,retryDelay:8000,model:useModel,feature:`questions:${diff}`});
+        const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx),tightMax,{retries:3,retryDelay:8000,model:useModel,feature:`questions:${diff}`});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
