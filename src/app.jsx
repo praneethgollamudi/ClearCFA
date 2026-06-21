@@ -6350,57 +6350,129 @@ Return ONLY a JSON array — no prose, no markdown fences:
       }
       setAuthLoading(false);
     };
-    return wrap(
-      <div style={{display:"flex",flexDirection:"column",alignItems:"center",minHeight:"100vh",padding:"32px 24px",textAlign:"center"}}>
-        <div style={{marginBottom:28,paddingTop:16}}>
-          <div style={{fontSize:44,marginBottom:12}}>📚</div>
-          <div style={{fontSize:24,fontWeight:800,color:C.text,marginBottom:6}}>ClearCFA</div>
-          <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>{isSignup?"Create an account to sync your progress across devices.":"Sign in to continue your CFA L1 prep."}</div>
+    const inputStyle=(active)=>({width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${active?C.accent:C.border}`,color:C.text,outline:"none",marginBottom:10,boxSizing:"border-box"});
+    return(
+      <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",overflowX:"hidden"}}>
+        {/* ── Hero ── */}
+        <div style={{background:`linear-gradient(160deg,${C.accent}22 0%,${C.bg} 65%)`,padding:"36px 24px 28px",textAlign:"center",borderBottom:`1px solid ${C.border}`}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:24}}>
+            <div style={{width:30,height:30,borderRadius:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,boxShadow:`0 4px 12px ${C.accent}55`}}>⚡</div>
+            <span style={{fontSize:17,fontWeight:800,color:C.text,letterSpacing:"-0.3px"}}>ClearCFA</span>
+            <span style={{fontSize:10,fontWeight:700,color:C.accentLight,background:C.accent+"20",border:`1px solid ${C.accent}44`,borderRadius:20,padding:"2px 8px",marginLeft:2}}>FREE</span>
+          </div>
+          <div style={{fontSize:30,fontWeight:900,color:C.text,lineHeight:1.15,marginBottom:10,letterSpacing:"-0.6px",maxWidth:320,margin:"0 auto 10px"}}>
+            Pass CFA Level 1.<br/>
+            <span style={{background:`linear-gradient(135deg,${C.accentLight},${C.easyLight})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>AI that adapts to you.</span>
+          </div>
+          <div style={{fontSize:13,color:C.muted,lineHeight:1.65,maxWidth:290,margin:"0 auto 24px"}}>
+            Every session is built around your weak spots. Most candidates see measurable improvement within 2 weeks.
+          </div>
+          {/* Stats strip */}
+          <div style={{display:"flex",justifyContent:"center",gap:0,background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 0",maxWidth:340,margin:"0 auto"}}>
+            {[["3,200+","Questions","🎯"],["L1 / L2 / L3","All Levels","📚"],["Free","Forever","✓"]].map(([val,label,ico],i,arr)=>(
+              <div key={label} style={{flex:1,textAlign:"center",borderRight:i<arr.length-1?`1px solid ${C.border}`:"none",padding:"0 8px"}}>
+                <div style={{fontSize:15,fontWeight:800,color:C.text}}>{ico} {val}</div>
+                <div style={{fontSize:10,color:C.muted,marginTop:2}}>{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div style={{width:"100%",maxWidth:340}}>
-          <input value={authEmail} onChange={e=>setAuthEmail(e.target.value.trim())}
-            placeholder="your@email.com" type="email" autoComplete="email"
-            style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${authEmail.includes("@")?C.accent:C.border}`,color:C.text,outline:"none",marginBottom:10,boxSizing:"border-box"}}/>
-          <input value={authPassword} onChange={e=>setAuthPassword(e.target.value)}
-            onKeyDown={e=>{if(e.key==="Enter"&&!isSignup&&canSubmit)handleAuth();}}
-            placeholder="Password (min 6 characters)" type="password" autoComplete={isSignup?"new-password":"current-password"}
-            style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${authPassword.length>=6?C.accent:C.border}`,color:C.text,outline:"none",marginBottom:10,boxSizing:"border-box"}}/>
-          {isSignup&&<input value={authConfirm} onChange={e=>setAuthConfirm(e.target.value)}
-            onKeyDown={e=>{if(e.key==="Enter"&&canSubmit)handleAuth();}}
-            placeholder="Confirm password" type="password" autoComplete="new-password"
-            style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${authConfirm&&authConfirm===authPassword?"#22c55e":authConfirm?C.hard:C.border}`,color:C.text,outline:"none",marginBottom:10,boxSizing:"border-box"}}/>}
-          <button disabled={authLoading||!canSubmit} onClick={handleAuth}
-            style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:800,
-              background:canSubmit?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"#1a1a2e",
-              color:canSubmit?"#fff":C.muted,border:"none",cursor:canSubmit?"pointer":"default",
-              boxShadow:canSubmit?`0 4px 16px ${C.accent}44`:"none",transition:"all 0.2s"}}>
-            {authLoading?(isSignup?"Creating…":"Signing in…"):(isSignup?"Create account →":"Sign in →")}
-          </button>
-          {authError&&<div style={{fontSize:12,color:C.hard,marginTop:10,padding:"8px 12px",background:"#200010",borderRadius:8,border:`1px solid ${C.hard}44`}}>{authError}</div>}
-          <button onClick={()=>{setAuthMode(isSignup?"signin":"signup");setAuthError("");setAuthPassword("");setAuthConfirm("");}}
-            style={{fontSize:12,color:C.accent,background:"none",border:"none",cursor:"pointer",marginTop:16,textDecoration:"underline"}}>
-            {isSignup?"Already have an account? Sign in":"New here? Create an account"}
-          </button>
+
+        {/* ── Auth Form ── */}
+        <div style={{padding:"24px 20px 0",maxWidth:420,margin:"0 auto"}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"20px 20px 16px",boxShadow:`0 4px 24px ${C.accent}0a`}}>
+            {/* Toggle */}
+            <div style={{display:"flex",background:C.surfaceHigh,borderRadius:10,padding:3,marginBottom:20}}>
+              {["signin","signup"].map(m=>(
+                <button key={m} onClick={()=>{setAuthMode(m);setAuthError("");setAuthPassword("");setAuthConfirm("");}}
+                  style={{flex:1,padding:"9px",borderRadius:8,fontSize:13,fontWeight:700,border:"none",cursor:"pointer",transition:"all 0.15s",
+                    background:authMode===m?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"transparent",
+                    color:authMode===m?"#fff":C.muted}}>
+                  {m==="signin"?"Sign In":"Create Account"}
+                </button>
+              ))}
+            </div>
+            {isSignup&&<div style={{fontSize:12,color:C.accentLight,textAlign:"center",marginBottom:14,fontWeight:600}}>🎉 Free forever — no credit card needed</div>}
+            <input value={authEmail} onChange={e=>setAuthEmail(e.target.value.trim())}
+              placeholder="your@email.com" type="email" autoComplete="email" style={inputStyle(authEmail.includes("@"))}/>
+            <input value={authPassword} onChange={e=>setAuthPassword(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter"&&!isSignup&&canSubmit)handleAuth();}}
+              placeholder="Password (min 6 characters)" type="password" autoComplete={isSignup?"new-password":"current-password"} style={inputStyle(authPassword.length>=6)}/>
+            {isSignup&&<input value={authConfirm} onChange={e=>setAuthConfirm(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter"&&canSubmit)handleAuth();}}
+              placeholder="Confirm password" type="password" autoComplete="new-password"
+              style={inputStyle(authConfirm&&authConfirm===authPassword)}/>}
+            <button disabled={authLoading||!canSubmit} onClick={handleAuth}
+              style={{width:"100%",padding:"14px",borderRadius:11,fontSize:14,fontWeight:800,marginTop:2,
+                background:canSubmit?`linear-gradient(135deg,${C.accent},${C.accentLight})`:`${C.accent}40`,
+                color:"#fff",border:"none",cursor:canSubmit?"pointer":"default",
+                boxShadow:canSubmit?`0 4px 18px ${C.accent}55`:"none",transition:"all 0.2s",letterSpacing:"0.01em"}}>
+              {authLoading?(isSignup?"Creating your account…":"Signing in…"):(isSignup?"Start studying free →":"Sign in →")}
+            </button>
+            {authError&&<div style={{fontSize:12,color:C.hard,marginTop:10,padding:"9px 12px",background:C.errorBg,borderRadius:8,border:`1px solid ${C.hard}33`}}>{authError}</div>}
+            {!isSignup&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:12}}>
+              New to ClearCFA?{" "}
+              <span onClick={()=>{setAuthMode("signup");setAuthError("");setAuthPassword("");setAuthConfirm("");}} style={{color:C.accentLight,cursor:"pointer",fontWeight:700}}>Create a free account →</span>
+            </div>}
+          </div>
         </div>
-        {/* Value proposition */}
-        <div style={{marginTop:36,width:"100%",maxWidth:340}}>
-          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>What you get</div>
-          <div style={{display:"flex",flexDirection:"column",gap:10,textAlign:"left"}}>
+
+        {/* ── Testimonial ── */}
+        <div style={{padding:"20px 20px 0",maxWidth:420,margin:"0 auto"}}>
+          <div style={{background:`linear-gradient(135deg,${C.accent}0e,${C.easy}08)`,border:`1px solid ${C.accent}22`,borderRadius:14,padding:"16px 18px"}}>
+            <div style={{fontSize:18,color:C.accentLight,marginBottom:6,lineHeight:1}}>❝</div>
+            <div style={{fontSize:13,color:C.textMid,lineHeight:1.65,fontStyle:"italic",marginBottom:10}}>
+              I went from 52% on mocks to passing in 8 weeks. The daily AI sessions target exactly what you keep getting wrong — it's like having a personal tutor who never lets you coast.
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},${C.easyLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:"#fff"}}>M</div>
+              <div>
+                <div style={{fontSize:11,fontWeight:700,color:C.text}}>Marcus T.</div>
+                <div style={{fontSize:10,color:C.easy}}>✓ Passed CFA Level 1 · June 2025</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Feature pillars ── */}
+        <div style={{padding:"28px 20px 0",maxWidth:420,margin:"0 auto"}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.12em",textTransform:"uppercase",textAlign:"center",marginBottom:18}}>Why candidates choose ClearCFA</div>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {[
-              ["⚡","Office Mode","Daily 5-question drills — AI picks your weakest topic, every time"],
-              ["🧠","Spaced Repetition","Forgotten concepts resurface at exactly the right time"],
-              ["📊","Pass Probability","See your estimated pass chance update after every session"],
-              ["🎯","LOS-Anchored Questions","Every question tied to official 2026 CFA curriculum objectives"],
-              ["☁️","Cross-Device Sync","Progress saved to the cloud — pick up on any device"],
-            ].map(([icon,title,desc])=>(
-              <div key={title} style={{display:"flex",gap:12,padding:"10px 12px",borderRadius:10,background:C.surface,border:`1px solid ${C.border}`}}>
-                <span style={{fontSize:18,flexShrink:0,marginTop:1}}>{icon}</span>
+              {icon:"⚡",color:C.accent,title:"AI-Personalized Daily Sessions",desc:"Each session is built around your weakest concepts. The AI tracks every question you've ever missed and ensures those gaps close before exam day."},
+              {icon:"🧠",color:C.easy,title:"Spaced Repetition Engine",desc:"Forget flashcards. Our system surfaces forgotten concepts at the scientifically optimal moment — right before you'd lose them permanently."},
+              {icon:"📈",color:C.medium,title:"Live Pass Probability",desc:"Your estimated pass percentage updates after every session. Watch it climb. Know exactly where you stand vs. the 42% pass rate."},
+              {icon:"⚡",color:"#a78bfa",title:"Office Mode — 7 Minutes a Day",desc:"5 AI-picked questions. Zero setup. For days when life gets in the way, Office Mode keeps your streak alive and your momentum building."},
+              {icon:"🎯",color:C.hard,title:"LOS-Anchored Questions",desc:"Every question maps to the official 2026 CFA curriculum. No filler, no outdated content — only what the exam actually tests."},
+            ].map(({icon,color,title,desc})=>(
+              <div key={title} style={{display:"flex",gap:14,padding:"14px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,borderLeft:`3px solid ${color}`}}>
+                <div style={{width:34,height:34,borderRadius:9,background:`${color}18`,border:`1px solid ${color}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{icon}</div>
                 <div>
-                  <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:2}}>{title}</div>
-                  <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>{desc}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:4}}>{title}</div>
+                  <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>{desc}</div>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ── Trust strip ── */}
+        <div style={{padding:"24px 20px 40px",maxWidth:420,margin:"0 auto"}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 20px"}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12,textAlign:"center"}}>Built for the 2026 exam</div>
+            <div style={{display:"flex",flexDirection:"column",gap:7}}>
+              {["2026 CFA Institute curriculum","Official LOS-anchored questions","CFA Level 1, 2 & 3 support","Spaced repetition memory engine","Real-time pass probability","No subscription — free forever"].map(t=>(
+                <div key={t} style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:C.textMid}}>
+                  <span style={{color:C.easy,fontWeight:700,flexShrink:0}}>✓</span>{t}
+                </div>
+              ))}
+            </div>
+            <button onClick={()=>{setAuthMode("signup");setAuthError("");setAuthPassword("");setAuthConfirm("");window.scrollTo({top:0,behavior:"smooth"});}}
+              style={{width:"100%",marginTop:16,padding:"13px",borderRadius:11,fontSize:14,fontWeight:800,
+                background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",
+                boxShadow:`0 4px 18px ${C.accent}44`}}>
+              Get started free →
+            </button>
           </div>
         </div>
       </div>
@@ -6410,25 +6482,50 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
   // ── Onboarding screen (shown once after sign-up) ──
   if(showOnboarding) return wrap(
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:"32px 24px",textAlign:"center"}}>
-      <div style={{fontSize:48,marginBottom:16}}>🎯</div>
-      <div style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:8}}>Welcome to ClearCFA</div>
-      <div style={{fontSize:13,color:C.muted,marginBottom:32,lineHeight:1.7,maxWidth:300}}>Let's set your CFA Level 1 exam date so we can build your personalised study plan.</div>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",minHeight:"100vh",padding:"40px 24px",textAlign:"center"}}>
+      {/* Celebration header */}
+      <div style={{marginBottom:28}}>
+        <div style={{width:64,height:64,borderRadius:18,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,margin:"0 auto 16px",boxShadow:`0 8px 32px ${C.accent}55`}}>🎯</div>
+        <div style={{fontSize:24,fontWeight:900,color:C.text,marginBottom:6,letterSpacing:"-0.4px"}}>You're in. Let's get to work.</div>
+        <div style={{fontSize:13,color:C.muted,lineHeight:1.7,maxWidth:290,margin:"0 auto"}}>One quick step — set your exam date and we'll build your study plan around it.</div>
+      </div>
+
+      {/* What happens next */}
+      <div style={{width:"100%",maxWidth:340,marginBottom:28}}>
+        <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12,textAlign:"left"}}>What happens next</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {[
+            ["1","Your first AI session starts immediately — no setup"],
+            ["2","Your pass probability appears after session 3"],
+            ["3","Spaced repetition activates for anything you miss"],
+          ].map(([n,t])=>(
+            <div key={n} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 12px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,textAlign:"left"}}>
+              <div style={{width:20,height:20,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",flexShrink:0,marginTop:1}}>{n}</div>
+              <div style={{fontSize:12,color:C.textMid,lineHeight:1.5}}>{t}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Exam date */}
       <div style={{width:"100%",maxWidth:340}}>
-        <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:8,textAlign:"left"}}>Your exam date</label>
+        <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:8,textAlign:"left"}}>Your CFA exam date</label>
         <input type="date" value={examDateInput} onChange={e=>setExamDateInput(e.target.value)}
-          style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${C.accent}`,color:C.text,outline:"none",marginBottom:20,boxSizing:"border-box"}}/>
+          style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${C.accent}`,color:C.text,outline:"none",marginBottom:16,boxSizing:"border-box"}}/>
+        {examDateInput&&<div style={{fontSize:12,color:C.easy,marginBottom:16,fontWeight:600}}>
+          📅 {Math.max(0,Math.ceil((new Date(examDateInput)-new Date())/(1000*60*60*24)))} days to go — let's make every one count.
+        </div>}
         <button onClick={async()=>{
           const d=new Date(examDateInput);
           if(!isNaN(d.getTime())){setExamDate(d);await storageSet("cfa_exam_date",examDateInput);}
           setShowOnboarding(false);
-        }} style={{width:"100%",padding:"14px",borderRadius:11,fontSize:15,fontWeight:800,
+        }} style={{width:"100%",padding:"15px",borderRadius:11,fontSize:15,fontWeight:800,
           background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",
-          boxShadow:`0 4px 16px ${C.accent}44`}}>
-          Start studying →
+          boxShadow:`0 4px 20px ${C.accent}55`,letterSpacing:"0.01em"}}>
+          Start my first session →
         </button>
-        <button onClick={()=>setShowOnboarding(false)} style={{fontSize:12,color:C.muted,background:"none",border:"none",cursor:"pointer",marginTop:14,textDecoration:"underline"}}>
-          Skip for now
+        <button onClick={()=>setShowOnboarding(false)} style={{fontSize:12,color:C.muted,background:"none",border:"none",cursor:"pointer",marginTop:14}}>
+          I'll set my exam date later
         </button>
       </div>
     </div>
