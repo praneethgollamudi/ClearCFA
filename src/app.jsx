@@ -7385,7 +7385,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
         <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:"18px 18px 0 0",padding:"20px 16px 32px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
           <div style={{width:36,height:4,borderRadius:2,background:C.border,margin:"0 auto 18px"}}/>
-          <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:16}}>Settings</div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontSize:14,fontWeight:800,color:C.text}}>Settings</div>
+            <button onClick={()=>setSettingsOpen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22,lineHeight:1,padding:"0 4px"}}>×</button>
+          </div>
           {/* CFA Level Selector */}
           <div style={{width:"100%",padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,marginBottom:9}}>
             <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>🎓 CFA Level</div>
