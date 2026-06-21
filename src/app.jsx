@@ -3888,7 +3888,9 @@ function parseFormulaAIResponse(text, conceptName){
     else if(section==="when") when=(when?when+" ":"")+line;
     else if(section==="example") example=(example?example+" ":"")+line;
   }
-  return{name,f:f||"See curriculum",variables,when,example,_aiGen:true};
+  const fClean=f.replace(/^N\/A\s*[-–—]?\s*/i,"").trim();
+  if(!f||/^N\/A$/i.test(f.trim())) return null;
+  return{name,f:fClean||f,variables,when,example,_aiGen:true};
 }
 
 function FeedbackModal({onClose, userId="", onSubmit}){
@@ -4079,7 +4081,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const dynamicTopics = dynamicPN[selTopic] || [];
   const topicData = {topics:[...staticTopics, ...dynamicTopics]};
   const staticFormulas = FORMULAS[selTopic] || [];
-  const dynamicFormulaData = dynamicFormulas[selTopic] || [];
+  const dynamicFormulaData = (dynamicFormulas[selTopic] || []).filter(f=>f&&f.f&&f.f!=="See curriculum");
   const formulaData = [...staticFormulas, ...dynamicFormulaData];
   const allFormulas = Object.values(FORMULAS).flat();
 
@@ -4142,10 +4144,11 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     setFormulaGenerating(s=>({...s,[key]:true}));
     setFormulaGenError(s=>({...s,[key]:""}));
     try{
-      const prompt=`CFA Level ${cfaLevel} exam prep. A student got this concept wrong and needs the formula.\nConcept: "${name}" (Topic: ${selTopic})\nContext: "${(card.explanation||"").slice(0,300)}"\n\nRespond in EXACTLY this format:\nNAME: [formula name]\nFORMULA: [formula expression using standard notation]\nVARIABLES:\n[each variable on its own line: variable = what it means]\nWHEN: [one sentence: when to use on the exam]\nEXAMPLE: [one sentence worked example with numbers]`;
+      const prompt=`CFA Level ${cfaLevel} exam prep. A student got this concept wrong and needs the key formula or metric.\nConcept: "${name}" (Topic: ${selTopic})\nContext: "${(card.explanation||"").slice(0,300)}"\n\nIf this concept has a quantitative formula, ratio, or key calculation, respond in EXACTLY this format:\nNAME: [formula or metric name]\nFORMULA: [expression using standard notation, e.g. ROE = Net Income / Equity]\nVARIABLES:\n[each variable on its own line: variable = what it means]\nWHEN: [one sentence: when to use on the exam]\nEXAMPLE: [one sentence worked example with numbers]\n\nIf this concept is purely qualitative with NO quantitative formula or ratio at all, respond with only:\nFORMULA: N/A`;
       const reply=await callAIChat(userId,[{role:"user",content:prompt}],400,cfaLevel);
       if(!reply){setFormulaGenError(s=>({...s,[key]:"No response — try again."}));return;}
       const formula=parseFormulaAIResponse(reply,name);
+      if(!formula){setFormulaGenError(s=>({...s,[key]:"This concept is primarily qualitative — no quantitative formula to generate."}));return;}
       const existing=dynamicFormulas[selTopic]||[];
       if(existing.some(f=>f.name.toLowerCase()===key)) return;
       const updated={...dynamicFormulas,[selTopic]:[...existing,formula]};
