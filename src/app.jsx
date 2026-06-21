@@ -3301,6 +3301,7 @@ function CFAMock(){
   useEffect(()=>{difficultyRef.current=difficulty;},[difficulty]);
   useEffect(()=>{modeRef.current=mode;},[mode]);
   useEffect(()=>{confidenceLogRef.current=confidenceLog;},[confidenceLog]);
+  useEffect(()=>{if(screen==="home")setError("");},[screen]);
 
   useEffect(()=>{
     if(screen==="quiz"){
@@ -3466,7 +3467,7 @@ function CFAMock(){
       const timeout=setTimeout(()=>controller.abort(),90000);
       try{
         const modelName=model;
-        const userId=typeof authUser!=="undefined"&&authUser?.userId?authUser.userId:"";
+        const userId=typeof authUser!=="undefined"&&authUser?.id?authUser.id:"";
         const res=await fetch(AI_PROXY_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY},signal:controller.signal,body:JSON.stringify({requestType:"generate",userId,prompt,maxTokens,model:modelName})});
         clearTimeout(timeout);
         // Rate limit: 429 or 529 — retry
@@ -3631,17 +3632,17 @@ function CFAMock(){
 
   // Auto-generate weekly plan silently after 3+ sessions if not yet created
   useEffect(()=>{
-    if(!weeklyPlanAutoRef.current&&history.length>=3&&!weeklyPlan&&authUser?.userId&&!weeklyPlanLoading){
+    if(!weeklyPlanAutoRef.current&&history.length>=3&&!weeklyPlan&&authUser?.id&&!weeklyPlanLoading){
       weeklyPlanAutoRef.current=true;
       generateWeeklyPlan();
     }
-  },[history.length,weeklyPlan,authUser?.userId,weeklyPlanLoading]); // eslint-disable-line
+  },[history.length,weeklyPlan,authUser?.id,weeklyPlanLoading]); // eslint-disable-line
 
   const generateInterleavedSession=async(diff,cnt)=>{
     if(generatingRef.current)return; generatingRef.current=true;
     setLoading(true);setError("");setLoadingProgress(0);setLoadingMsg("Building interleaved session…");
     try{
-      if(!authUser?.userId){setError("Interleaved mode requires a ClearCFA account — please sign in.");setLoading(false);generatingRef.current=false;return;}
+      if(!authUser?.id){setError("Interleaved mode requires a ClearCFA account — please sign in.");setLoading(false);generatingRef.current=false;return;}
       const weak=moduleReadiness.filter(m=>m.sessions>0&&m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy);
       const untested=moduleReadiness.filter(m=>m.sessions===0).slice(0,3);
       const pool=[...weak.slice(0,3),...(weak.length<3?untested:[])].slice(0,3);
@@ -3677,7 +3678,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setLoadingMsg("Building financial statements...");
     const progressInterval=setInterval(()=>{setLoadingProgress(p=>Math.min(85,p+3));},300);
     try{
-      if(!authUser?.userId){setError("FSA Vignette requires a ClearCFA account. Please sign in.");setLoading(false);clearInterval(progressInterval);generatingRef.current=false;return;}
+      if(!authUser?.id){setError("FSA Vignette requires a ClearCFA account. Please sign in.");setLoading(false);clearInterval(progressInterval);generatingRef.current=false;return;}
       const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),2500,{retries:2,retryDelay:6000,model:"claude-sonnet-4-6",feature:"fsa_vignette"});
       clearInterval(progressInterval);
       if(!raw||!raw.questions)throw new Error("Invalid FSA vignette format");
@@ -3709,7 +3710,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     // ── No auth: use local templates as fallback ──
     // When signed in, always use the API for exam-quality questions.
-    if(!isVignette && !authUser?.userId){
+    if(!isVignette && !authUser?.id){
       try{
         const localRaw=generateLocalQuestions(t,st,diff,cnt*3);
         const seen=new Set();
@@ -3739,7 +3740,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     }
 
     // ── API path — always used when signed in ──
-    if(!authUser?.userId){
+    if(!authUser?.id){
       setError(isVignette?"Vignette mode requires a ClearCFA account. Please sign in.":"Sign in to generate AI-powered exam questions.");
       setLoading(false);setLoadingProgress(0);generatingRef.current=false;
       return;
@@ -3837,7 +3838,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           const localQs=generateLocalQuestions(t,mod,"Medium",perModule);
           if(localQs.length>=perModule){
             allQs=[...allQs,...localQs.map(q=>({...q,_topic:t,_subtopic:mod}))];
-          } else if(authUser?.userId){
+          } else if(authUser?.id){
             try{
               const qs=await callClaude(buildQuestionPrompt(t,mod,"Medium",perModule),perModule*500,{retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001",feature:"full_exam"});
               allQs=[...allQs,...(Array.isArray(qs)?expandQuestionKeys(qs):[]).map((q,j)=>({...q,id:`${i}_${j}_${mod.slice(0,5)}`,_topic:t,_subtopic:mod}))];
@@ -3924,7 +3925,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setReviewAiPanel({context,messages:[userMsg]});
     setReviewAiInput("");
     setReviewAiLoading(true);
-    const reply=await callAIChat(authUser?.userId||"",[userMsg]);
+    const reply=await callAIChat(authUser?.id||"",[userMsg]);
     const withReply=[...reviewAiMsgsRef.current,{role:"assistant",content:reply||"No response — sign in and try again."}];
     reviewAiMsgsRef.current=withReply;
     setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
@@ -3938,7 +3939,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setReviewAiPanel(p=>p?{...p,messages:msgs}:null);
     setReviewAiInput("");
     setReviewAiLoading(true);
-    const reply=await callAIChat(authUser?.userId||"",msgs);
+    const reply=await callAIChat(authUser?.id||"",msgs);
     const withReply=[...msgs,{role:"assistant",content:reply||"No response — sign in and try again."}];
     reviewAiMsgsRef.current=withReply;
     setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
@@ -3968,7 +3969,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{padding:"10px 14px",borderRadius:"13px 13px 13px 3px",background:"#1a1a2e",border:`1px solid ${C.border}`,fontSize:12,color:C.muted,animation:"pulse 1.2s infinite"}}>Thinking…</div>
             </div>
           )}
-          {!authUser?.userId&&reviewAiPanel.messages.length===1&&(
+          {!authUser?.id&&reviewAiPanel.messages.length===1&&(
             <div style={{padding:"10px 14px",borderRadius:10,background:"#1a0a0e",border:"1px solid #c0304444",fontSize:12,color:"#e05070",lineHeight:1.6}}>Sign in to enable AI-powered explanations.</div>
           )}
         </div>
@@ -4065,7 +4066,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           "What's my biggest risk with 62 days left?"
         ].map(prompt=>(
           <button key={prompt} onClick={async()=>{
-            if(!authUser?.userId){setAiCoachMessages(m=>[...m,{role:"user",text:prompt},{role:"assistant",text:"Sign in to use AI Coach."}]);return;}
+            if(!authUser?.id){setAiCoachMessages(m=>[...m,{role:"user",text:prompt},{role:"assistant",text:"Sign in to use AI Coach."}]);return;}
             const userMsg={role:"user",text:prompt};
             setAiCoachMessages(m=>[...m,userMsg]);
             setAiCoachLoading(true);
@@ -4107,7 +4108,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <input value={aiCoachInput} onChange={e=>setAiCoachInput(e.target.value)}
           onKeyDown={async e=>{if(e.key==="Enter"&&aiCoachInput.trim()&&!aiCoachLoading){
             const q=aiCoachInput.trim();setAiCoachInput("");
-            if(!authUser?.userId){setAiCoachMessages(m=>[...m,{role:"user",text:q},{role:"assistant",text:"Sign in to use AI Coach."}]);return;}
+            if(!authUser?.id){setAiCoachMessages(m=>[...m,{role:"user",text:q},{role:"assistant",text:"Sign in to use AI Coach."}]);return;}
             setAiCoachMessages(m=>[...m,{role:"user",text:q}]);setAiCoachLoading(true);
             try{
               const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3).map(m=>`${m.topic}: ${m.accuracy}%`).join(", ");
@@ -5368,7 +5369,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{marginBottom:8}}>
           {!explainThisText&&!explainThisLoading&&(
             <button onClick={async()=>{
-              if(!authUser?.userId){setExplainThisText("Sign in to use Explain This.");return;}
+              if(!authUser?.id){setExplainThisText("Sign in to use Explain This.");return;}
               setExplainThisLoading(true);
               try{
                 const result=await callClaude(`You are a CFA L1 tutor. A student just answered this question:\n\nQuestion: ${q.question}\nCorrect answer: ${q.options[q.answer]} (${q.answer})\nConcept: ${q.concept||q.los_tested||""}\n\nIn 2-3 plain sentences, explain the core concept being tested and why the correct answer is right. Be direct, no preamble.`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"explain_this"});
@@ -5441,7 +5442,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {wrongs.length>0&&<div style={{background:"#0a0a1f",border:`1px solid ${C.accent}33`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:C.muted}}>📋 {wrongs.length} wrong answer{wrongs.length!==1?"s":""} added to SR deck with LOS tags + misconception flags.</div>}
 
       {/* AI Session Debrief */}
-      {authUser?.userId&&wrongs.length>0&&(
+      {authUser?.id&&wrongs.length>0&&(
         <div style={{background:"#080818",border:`1px solid #22d3ee33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
             <div style={{fontSize:12,fontWeight:700,color:"#22d3ee"}}>🤖 AI Debrief</div>
@@ -5534,7 +5535,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           🔁 Drill Missed LOS ({wrongs.length} gaps) →
         </button>
       )}
-      {history.length>=3&&authUser?.userId&&(
+      {history.length>=3&&authUser?.id&&(
         <div style={{background:weeklyPlan?`${C.easy}0c`:`${C.accent}10`,border:`1px solid ${weeklyPlan?C.easy+"30":C.accent+"30"}`,borderRadius:11,padding:"13px 15px",marginBottom:10}}>
           <div style={{fontSize:12,fontWeight:700,color:weeklyPlan?C.easy:C.accentLight,marginBottom:6}}>
             🗓 {weeklyPlan?"Weekly plan active":"Build your weekly study plan"}
@@ -6197,7 +6198,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
   if(screen==="calcTrainer") return wrap((()=>{
     const calcTopics=["Quantitative Methods","Fixed Income","Derivatives","Portfolio Management","Equity","Corporate Issuers"];
     const generateCalcProblem=async()=>{
-      if(!authUser?.userId){setCalcError("Sign in to use Calc Trainer.");return;}
+      if(!authUser?.id){setCalcError("Sign in to use Calc Trainer.");return;}
       setCalcLoading(true);setCalcError("");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});
       try{
         const result=await callClaude(`Generate a CFA Level 1 multi-step calculation problem for: ${calcTopic} (${calcDifficulty}).\n\nReturn JSON:\n{\n  "problem": "Full problem statement with all given data",\n  "steps": [\n    {"step_num": 1, "instruction": "Calculate X first", "answer": "exact numerical answer", "formula": "formula used", "explanation": "why this step"},\n    {"step_num": 2, "instruction": "...", "answer": "...", "formula": "...", "explanation": "..."}\n  ],\n  "final_answer": "final answer with units",\n  "concept": "what is being tested",\n  "los_tested": "relevant CFA LOS"\n}\n\nMake it 3-5 steps. Use realistic CFA exam numbers. Output ONLY valid JSON.`,1200,{retries:2,retryDelay:5000,model:"claude-haiku-4-5-20251001",feature:"calc_trainer"});
@@ -6317,7 +6318,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       {walkthroughError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:12}}>{walkthroughError}</div>}
       {!walkthroughText&&!walkthroughLoading&&(
         <button onClick={async()=>{
-          if(!authUser?.userId){setWalkthroughError("Sign in to use Concept Walkthrough.");return;}
+          if(!authUser?.id){setWalkthroughError("Sign in to use Concept Walkthrough.");return;}
           setWalkthroughLoading(true);setWalkthroughError("");setWalkthroughText(null);
           try{
             const result=await callClaude(`You are a CFA Level 1 tutor. Create a concise concept walkthrough for: ${walkthroughTopic} → ${activeWtMod}\n\nStructure your response as:\n**Core Concept** (2 sentences explaining the big idea)\n**Key Rules** (3-4 bullet points of what you MUST know for the exam)\n**Worked Example** (one numerical or scenario-based example with the solution)\n**Exam Traps** (2 bullet points of common mistakes)\n\nBe specific to CFA L1 2026 curriculum. No padding.`,800,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"walkthrough"});
@@ -6344,7 +6345,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
   })());
 
   // ══ REVISION SCREEN ══════════════════════════════════════════════════════════
-  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.userId||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel}/>;
+  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel}/>;
 
   return null;
 }
