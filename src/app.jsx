@@ -3314,6 +3314,7 @@ function CFAMock(){
   },[screen,mode,currentQ,endQuiz]);
 
   const sessionCommittedRef=useRef(false);
+  const weeklyPlanAutoRef=useRef(false);
   useEffect(()=>{
     if(screen!=="results"){
       sessionCommittedRef.current=false;
@@ -3602,6 +3603,14 @@ function CFAMock(){
     }
     setWeeklyPlanLoading(false);
   };
+
+  // Auto-generate weekly plan silently after 3+ sessions if not yet created
+  useEffect(()=>{
+    if(!weeklyPlanAutoRef.current&&history.length>=3&&!weeklyPlan&&authUser?.userId&&!weeklyPlanLoading){
+      weeklyPlanAutoRef.current=true;
+      generateWeeklyPlan();
+    }
+  },[history.length,weeklyPlan,authUser?.userId,weeklyPlanLoading]); // eslint-disable-line
 
   const generateFSAVignette=async(subtopic,difficulty)=>{
     if(generatingRef.current)return; generatingRef.current=true;
@@ -4394,9 +4403,11 @@ function CFAMock(){
     {(()=>{
       const nudges=[
         {id:"dashboard",cond:history.length>=3&&!usageStats.dashboard,icon:"📈",text:"See your full performance breakdown — by topic, difficulty and quality.",cta:"Dashboard",go:()=>{trackUsage("dashboard");setScreen("dashboard");}},
+        {id:"week_plan",cond:history.length>=3&&!usageStats.week_plan,icon:"🗓",text:weeklyPlan?"Your personalised weekly plan is ready — see today's sessions and focus.":"You've done enough sessions — let us build a personalised weekly plan around your schedule and weak spots.",cta:weeklyPlan?"View Plan":"Week Plan",go:()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}},
         {id:"los_coverage",cond:history.length>=5&&!usageStats.los_coverage,icon:"🗺",text:"Check which LOS topics you've covered and where the gaps are.",cta:"LOS Map",go:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
+        {id:"notes_review",cond:srWrongCount>=5&&!usageStats.notes_review,icon:"📝",text:`You have ${srWrongCount} concepts in your SR deck — Power Notes condenses the key rules and traps for each topic.`,cta:"Power Notes",go:()=>{trackUsage("notes_review");setRevisionTab("notes");setRevisionTopic(null);setScreen("revision");}},
         {id:"formulas",cond:srWrongCount>=3&&!usageStats.formulas,icon:"📐",text:"You have wrong answers — drill the formulas that are tripping you up.",cta:"Formula Drill",go:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
-        {id:"week_plan",cond:history.length>=10&&!usageStats.week_plan,icon:"🗓",text:"Build a personalised weekly study plan around your schedule.",cta:"Week Plan",go:()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}},
+        {id:"readiness",cond:history.length>=5&&!usageStats.readiness,icon:"📊",text:"Check your pass probability — see how your trend compares to the 70% threshold.",cta:"Pass %",go:()=>{trackUsage("readiness");setScreen("readiness");}},
         {id:"calc_trainer",cond:history.length>=7&&!usageStats.calc_trainer,icon:"🔢",text:"Practice TVM and fixed income calculations with your BA II Plus.",cta:"Calc Trainer",go:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
       ];
       const nudge=nudges.find(n=>n.cond&&!dismissedNudges[n.id]);
@@ -5388,6 +5399,26 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         }} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.hard+"20",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer",marginBottom:9}}>
           🔁 Drill Missed LOS ({wrongs.length} gaps) →
         </button>
+      )}
+      {history.length>=3&&authUser?.userId&&(
+        <div style={{background:weeklyPlan?`${C.easy}0c`:`${C.accent}10`,border:`1px solid ${weeklyPlan?C.easy+"30":C.accent+"30"}`,borderRadius:11,padding:"13px 15px",marginBottom:10}}>
+          <div style={{fontSize:12,fontWeight:700,color:weeklyPlan?C.easy:C.accentLight,marginBottom:6}}>
+            🗓 {weeklyPlan?"Weekly plan active":"Build your weekly study plan"}
+          </div>
+          {weeklyPlanLoading?(
+            <div style={{fontSize:12,color:C.muted}}>⏳ Generating your personalised plan…</div>
+          ):weeklyPlan?(
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontSize:12,color:C.muted}}>Today's sessions and your weak spots are mapped out.</div>
+              <button onClick={()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}} style={{fontSize:12,fontWeight:700,padding:"7px 13px",borderRadius:8,background:`${C.easy}18`,border:`1px solid ${C.easy}44`,color:C.easy,cursor:"pointer",flexShrink:0,marginLeft:10}}>View →</button>
+            </div>
+          ):(
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontSize:12,color:C.muted,lineHeight:1.45}}>Personalised sessions around your schedule and weak spots.</div>
+              <button onClick={()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}} style={{fontSize:12,fontWeight:700,padding:"7px 13px",borderRadius:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0,marginLeft:10}}>Build →</button>
+            </div>
+          )}
+        </div>
       )}
       <div style={{display:"flex",gap:9,marginTop:9}}>
         <button onClick={()=>{setScreen("home");setFocusSuggestions(null);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Home</button>
