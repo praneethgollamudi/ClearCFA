@@ -2988,6 +2988,10 @@ function CFAMock(){
   const passTrendRef=useRef([]);
   const [explainThisText,setExplainThisText]=useState(null);
   const [explainThisLoading,setExplainThisLoading]=useState(false);
+  const [reviewAiPanel,setReviewAiPanel]=useState(null);
+  const [reviewAiInput,setReviewAiInput]=useState("");
+  const [reviewAiLoading,setReviewAiLoading]=useState(false);
+  const reviewAiMsgsRef=useRef([]);
 
   // Auto-trigger focus refresh when flagged
   useEffect(()=>{
@@ -3790,6 +3794,73 @@ Reply with just "saved" when done.`}]
     const avg=omSessions.reduce((s,h)=>s+(h.pct||0),0)/omSessions.length;
     return avg>=80?"Hard":avg>=60?"Medium":"Easy";
   },[history]);
+
+  const openReviewAI=async(context,firstPrompt)=>{
+    const userMsg={role:"user",content:firstPrompt};
+    reviewAiMsgsRef.current=[userMsg];
+    setReviewAiPanel({context,messages:[userMsg]});
+    setReviewAiInput("");
+    setReviewAiLoading(true);
+    const reply=await askClaudeMT(apiKey,[userMsg]);
+    const withReply=[...reviewAiMsgsRef.current,{role:"assistant",content:reply||"No response — check your API key in Settings."}];
+    reviewAiMsgsRef.current=withReply;
+    setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
+    setReviewAiLoading(false);
+  };
+  const sendReviewAI=async()=>{
+    if(!reviewAiInput.trim()||reviewAiLoading)return;
+    const userMsg={role:"user",content:reviewAiInput.trim()};
+    const msgs=[...reviewAiMsgsRef.current,userMsg];
+    reviewAiMsgsRef.current=msgs;
+    setReviewAiPanel(p=>p?{...p,messages:msgs}:null);
+    setReviewAiInput("");
+    setReviewAiLoading(true);
+    const reply=await askClaudeMT(apiKey,msgs);
+    const withReply=[...msgs,{role:"assistant",content:reply||"No response — check your API key in Settings."}];
+    reviewAiMsgsRef.current=withReply;
+    setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
+    setReviewAiLoading(false);
+  };
+  const ReviewAIChatPanel=()=>reviewAiPanel?(
+    <>
+      <div onClick={()=>setReviewAiPanel(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:900}}/>
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:901,background:"#0d0d20",borderRadius:"18px 18px 0 0",border:`1px solid ${C.accent}55`,borderBottom:"none",display:"flex",flexDirection:"column",maxHeight:"72vh"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"14px 16px 10px",borderBottom:`1px solid ${C.accent}22`,flexShrink:0}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.accentLight,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:3}}>💬 Ask AI</div>
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.4,wordBreak:"break-word"}}>{reviewAiPanel.context}</div>
+          </div>
+          <button onClick={()=>setReviewAiPanel(null)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:18,lineHeight:1,marginLeft:10,flexShrink:0,padding:"2px 6px"}}>✕</button>
+        </div>
+        <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+          {reviewAiPanel.messages.map((m,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+              <div style={{maxWidth:"85%",padding:"10px 13px",borderRadius:m.role==="user"?"13px 13px 3px 13px":"13px 13px 13px 3px",background:m.role==="user"?`${C.accent}33`:"#1a1a2e",border:`1px solid ${m.role==="user"?C.accent+"44":C.border}`,fontSize:12,color:m.role==="user"?C.accentLight:C.textMid,lineHeight:1.7,whiteSpace:"pre-wrap"}}>
+                {m.content}
+              </div>
+            </div>
+          ))}
+          {reviewAiLoading&&(
+            <div style={{display:"flex",justifyContent:"flex-start"}}>
+              <div style={{padding:"10px 14px",borderRadius:"13px 13px 13px 3px",background:"#1a1a2e",border:`1px solid ${C.border}`,fontSize:12,color:C.muted,animation:"pulse 1.2s infinite"}}>Thinking…</div>
+            </div>
+          )}
+          {!apiKey&&reviewAiPanel.messages.length===1&&(
+            <div style={{padding:"10px 14px",borderRadius:10,background:"#1a0a0e",border:"1px solid #c0304444",fontSize:12,color:"#e05070",lineHeight:1.6}}>No API key set — go to Settings (⚙) to add your Anthropic key.</div>
+          )}
+        </div>
+        <div style={{display:"flex",gap:8,padding:"10px 12px 14px",borderTop:`1px solid ${C.accent}22`,flexShrink:0}}>
+          <input value={reviewAiInput} onChange={e=>setReviewAiInput(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendReviewAI();}}}
+            placeholder="Ask a follow-up question…"
+            style={{flex:1,padding:"10px 13px",borderRadius:10,background:"#0a0a1a",border:`1px solid ${C.accent}33`,color:C.text,fontSize:13,outline:"none"}}
+          />
+          <button onClick={sendReviewAI} disabled={reviewAiLoading||!reviewAiInput.trim()}
+            style={{padding:"10px 16px",borderRadius:10,fontSize:13,fontWeight:700,background:reviewAiLoading||!reviewAiInput.trim()?C.dim:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:reviewAiLoading||!reviewAiInput.trim()?C.muted:"#fff",border:"none",cursor:reviewAiLoading||!reviewAiInput.trim()?"not-allowed":"pointer",flexShrink:0}}>→</button>
+        </div>
+      </div>
+    </>
+  ):null;
 
   const wrap=(children,maxW=580)=>(
     <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
@@ -4823,8 +4894,14 @@ Reply with just "saved" when done.`}]
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
             {Object.entries(card.options).map(([key,val])=>{const isCorrect=key===card.answer,wasPicked=key===srAnswer;return(<div key={key} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 15px",borderRadius:10,background:isCorrect?"#041a0e":wasPicked&&!isCorrect?"#1a0407":C.surface,border:`1.5px solid ${isCorrect?"#22a05a":wasPicked&&!isCorrect?C.hard:C.border}`,fontSize:13,lineHeight:1.65,color:isCorrect?"#4ade80":wasPicked&&!isCorrect?"#fca5a5":C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?"#22a05a":wasPicked&&!isCorrect?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
           </div>
-          <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"14px",marginBottom:10,fontSize:13,color:"#a0a0c0",lineHeight:1.75}}>
-            <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>Explanation</div>
+          <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"14px",marginBottom:6,fontSize:13,color:"#a0a0c0",lineHeight:1.75}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Explanation</div>
+              <button onClick={()=>openReviewAI(`${card.concept||card.subtopic||"SR Card"} · ${card.topic}`,`CFA Level 1 — I just answered a spaced repetition card.\n\nConcept: "${card.concept||card.subtopic}"\nTopic: ${card.topic}\n\nExplanation given: "${card.explanation}"\n${card.los_tested?`LOS: ${card.los_tested}`:""}${card.misconception_targeted?`\nCommon error: ${card.misconception_targeted}`:""}\n\nHelp me understand this deeply with a worked example and the key exam nuance I must not miss.`)}
+                style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:7,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>
+                💬 Ask AI
+              </button>
+            </div>
             {card.explanation}
           </div>
           {card.los_tested&&<div style={{background:C.dim,borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:11,color:C.muted}}><span style={{fontWeight:700,color:C.accentLight}}>LOS: </span>{card.los_tested}</div>}
@@ -4837,12 +4914,14 @@ Reply with just "saved" when done.`}]
             const key=Object.keys(srDeck).find(k=>srDeck[k].question===card.question)||`sr_${Date.now()}`;
             setSrDeck(prev=>{const existing=prev[key]||card;const updated=sm2Update(existing,correct);if(!correct)updated.wrongCount=(existing.wrongCount||0)+1;return{...prev,[key]:updated};});
             setSrAnswer(null);
+            setReviewAiPanel(null);
             if(srIdx<srQueue.length-1)setSrIdx(i=>i+1);else setScreen("home");
           }} style={{width:"100%",padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
             {srIdx<srQueue.length-1?"Next Card →":"Finish Review ✓"}
           </button>
         </>
       )}
+      <ReviewAIChatPanel/>
     </>);
   }
 
@@ -5727,16 +5806,23 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
         {Object.entries(w.options).map(([key,val])=>{const isCorrect=key===w.answer,wasWrong=key===w.userAnswer&&!isCorrect;return(<div key={key} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 14px",borderRadius:10,background:isCorrect?"#041a0e":wasWrong?"#1a0407":C.surface,border:`1.5px solid ${isCorrect?"#22a05a":wasWrong?C.hard:C.border}`,fontSize:13,lineHeight:1.6,color:isCorrect?"#4ade80":wasWrong?"#fca5a5":C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?"#22a05a":wasWrong?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
       </div>
-      <div style={{background:"#08081a",border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:w.los_tested?8:16,fontSize:13,color:"#9090b8",lineHeight:1.75}}>
-        <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>Why you missed this</div>
+      <div style={{background:"#08081a",border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:6,fontSize:13,color:"#9090b8",lineHeight:1.75}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Why you missed this</div>
+          <button onClick={()=>openReviewAI(`${w.concept||w.subtopic||"Question"} · ${w.topic||""}`,`CFA Level 1 — I got this wrong in a practice session.\n\nConcept: "${w.concept||w.subtopic}"\n${w.topic?`Topic: ${w.topic}\n`:""}\nExplanation: "${w.explanation}"\n${w.los_tested?`LOS: ${w.los_tested}`:""}${w.misconception_targeted?`\nError pattern: ${w.misconception_targeted}`:""}\n\nHelp me truly understand why I missed this and what I must remember for the exam.`)}
+            style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:7,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>
+            💬 Ask AI
+          </button>
+        </div>
         {w.explanation}
       </div>
       {w.los_tested&&<div style={{background:C.dim,borderRadius:8,padding:"8px 12px",marginBottom:8,fontSize:11,color:C.muted}}><span style={{fontWeight:700,color:C.accentLight}}>LOS: </span>{w.los_tested}</div>}
-      {w.misconception_targeted&&<div style={{background:"#0a0518",borderRadius:8,padding:"8px 12px",marginBottom:16,fontSize:11,color:"#8060c0"}}><span style={{fontWeight:700}}>Error pattern: </span>{w.misconception_targeted}</div>}
+      {w.misconception_targeted&&<div style={{background:"#0a0518",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:11,color:"#8060c0"}}><span style={{fontWeight:700}}>Error pattern: </span>{w.misconception_targeted}</div>}
       <div style={{display:"flex",gap:9}}>
-        {reviewIdx>0&&<button onClick={()=>setReviewIdx(i=>i-1)} style={{flex:1,padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>← Prev</button>}
-        {reviewIdx<reviewList.length-1?<button onClick={()=>setReviewIdx(i=>i+1)} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Next →</button>:<button onClick={()=>setScreen("home")} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.easy},#16c98a)`,color:"#fff",border:"none",cursor:"pointer"}}>Done ✓</button>}
+        {reviewIdx>0&&<button onClick={()=>{setReviewIdx(i=>i-1);setReviewAiPanel(null);}} style={{flex:1,padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>← Prev</button>}
+        {reviewIdx<reviewList.length-1?<button onClick={()=>{setReviewIdx(i=>i+1);setReviewAiPanel(null);}} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Next →</button>:<button onClick={()=>setScreen("home")} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.easy},#16c98a)`,color:"#fff",border:"none",cursor:"pointer"}}>Done ✓</button>}
       </div>
+      <ReviewAIChatPanel/>
     </>);
   }
   // ══ API KEY SCREEN ══════════════════════════════════════════════════════════
