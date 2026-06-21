@@ -2835,7 +2835,16 @@ function _applyTheme(t){
 // ── Freemium tier ─────────────────────────────────────────────────────────────
 const FREE_DAILY_AI_LIMIT=5;
 const PRO_STORAGE_KEY='cfa_pro_status';
-function getProStatus(){try{const p=JSON.parse(localStorage.getItem(PRO_STORAGE_KEY)||'null');return p?.active===true;}catch{return false;}}
+const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
+function getProStatus(){
+  try{
+    const p=JSON.parse(localStorage.getItem(PRO_STORAGE_KEY)||'null');
+    if(p?.active===true)return true;
+    const auth=JSON.parse(localStorage.getItem('cfa_auth')||'null');
+    if(auth?.email&&OWNER_EMAILS.includes(auth.email.toLowerCase()))return true;
+  }catch{}
+  return false;
+}
 function getDailyAIUsage(){
   try{
     const d=JSON.parse(localStorage.getItem('cfa_daily_ai')||'null');
@@ -5344,6 +5353,8 @@ function CFAMock(){
 
   // Sync body background when theme changes
   useEffect(()=>{try{document.body.style.background=C.bg;}catch{}},[theme]);
+  // Re-evaluate Pro status when auth changes (owner email always gets Pro)
+  useEffect(()=>{setProStatus(getProStatus());},[authUser]);
 
   // Auto-trigger focus refresh when flagged
   useEffect(()=>{
