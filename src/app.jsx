@@ -3213,6 +3213,42 @@ function FormulaSheet({topic, level="1"}){
   );
 }
 
+function PowerNotesSheet({topic, level="1"}){
+  const [open,setOpen]=useState(false);
+  const notes=getActivePowerNotes(level)[topic];
+  if(!notes||!notes.topics||!notes.topics.length)return null;
+  const totalRules=notes.topics.reduce((s,t)=>s+(t.rules||[]).length+(t.traps||[]).length,0);
+  return(
+    <div style={{marginBottom:12}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:"#0a1a0a",border:`1px solid ${C.easy}33`,color:C.easy,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
+        <span>📝 Power Notes — {topic.split(" ")[0]}</span>
+        <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {totalRules} bullets</span>
+      </button>
+      {open&&(
+        <div style={{background:"#08120a",border:`1px solid ${C.easy}22`,borderRadius:"0 0 10px 10px",padding:"10px 14px",display:"flex",flexDirection:"column",gap:10}}>
+          {notes.topics.map((t,ti)=>(
+            <div key={ti}>
+              <div style={{fontSize:10,fontWeight:700,color:C.easy,marginBottom:5,textTransform:"uppercase",letterSpacing:0.5}}>{t.module}</div>
+              {(t.rules||[]).map((r,i)=>(
+                <div key={i} style={{fontSize:11,color:C.text,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.easy}44`,marginBottom:3}}>{r}</div>
+              ))}
+              {(t.traps||[]).length>0&&(
+                <div style={{marginTop:5}}>
+                  <div style={{fontSize:9,color:C.hard,fontWeight:700,marginBottom:3,letterSpacing:0.5}}>⚠ TRAPS</div>
+                  {t.traps.map((r,i)=>(
+                    <div key={i} style={{fontSize:11,color:"#fca5a5",lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.hard}66`,marginBottom:3}}>{r}</div>
+                  ))}
+                </div>
+              )}
+              {t.mnemonic&&<div style={{fontSize:10,color:C.accentLight,fontStyle:"italic",marginTop:4,padding:"4px 8px",background:C.dim,borderRadius:6}}>💡 {t.mnemonic}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 // ─── POWER NOTES ─────────────────────────────────────────────────────────────
 const POWER_NOTES = {
@@ -7430,7 +7466,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {q._isEthicsCase&&<Badge color={C.hard}>CFA Institute Case</Badge>}
       </div>
       {q._isEthicsCase&&<div style={{fontSize:10,color:C.muted,marginBottom:8,fontStyle:"italic"}}>© 2019 CFA Institute. Ethics in Practice Casebook. Used with attribution for non-commercial study.</div>}
-      <FormulaSheet topic={topic}/>
+      <FormulaSheet topic={topic} level={cfaLevel}/>
+      <PowerNotesSheet topic={topic} level={cfaLevel}/>
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,padding:"20px 22px",marginBottom:14,fontSize:14,lineHeight:1.8}}>{q.question}</div>
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
         {Object.entries(q.options).map(([key,val])=>{
