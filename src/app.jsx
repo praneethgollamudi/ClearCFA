@@ -2964,8 +2964,8 @@ function XPBar({ level, progress, label, xp, nextXP }) {
 }
 function StatCard({ label, value, color, sub, onClick, icon }) {
   return (
-    <div onClick={onClick} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:11, padding:"12px 13px", cursor:onClick?"pointer":"default", transition:"border-color 0.15s", position:"relative", overflow:"hidden" }}>
-      {icon && <div style={{ position:"absolute", right:10, top:10, fontSize:16, opacity:0.15 }}>{icon}</div>}
+    <div onClick={onClick} style={{ background:C.surface, border:`1px solid ${C.border}`, borderLeft:`3px solid ${color||C.accent}`, borderRadius:11, padding:"12px 13px", cursor:onClick?"pointer":"default", transition:"border-color 0.15s", position:"relative", overflow:"hidden" }}>
+      {icon && <div style={{ position:"absolute", right:8, top:8, fontSize:15, opacity:0.12 }}>{icon}</div>}
       <div style={{ fontSize:19, fontWeight:800, color:color||C.accentLight, lineHeight:1 }}>{value}</div>
       {sub && <div style={{ fontSize:10, color:color||C.accentLight, opacity:0.75, marginTop:2 }}>{sub}</div>}
       <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>{label}</div>
@@ -3773,7 +3773,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     return base;
   });
   const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
-  const [expandedModule, setExpandedModule] = useState(null);
+  const [expandedModule, setExpandedModule] = useState(0);
   const [drillMode, setDrillMode] = useState(false);
   const [drillIdx, setDrillIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -6752,7 +6752,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       else if(daysLeft>30){phase="Depth";icon="🎯";msg="Deepen weak topics. Anything below 65% accuracy needs 3+ more sessions.";color=C.medium;}
       else{phase="Final Push";icon="🔥";msg="High-weight focus: Ethics·FSA·Equity·Fixed Income = 50% of exam.";color=C.hard;}
       return(
-        <div style={{background:`${color}0c`,border:`1px solid ${color}30`,borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{background:`${color}0c`,border:`1px solid ${color}30`,borderLeft:`3px solid ${color}`,borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
             <div style={{fontSize:11,fontWeight:700,color,marginBottom:2}}>{icon} Phase: {phase} · {daysLeft} days left</div>
             <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>{msg}</div>
@@ -6776,7 +6776,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const mainTopic=worst[0].topic;
       const mainModule=worst[0].subtopic||activeTopicMap[mainTopic]?.subtopics[0];
       return(
-        <div style={{background:`linear-gradient(135deg,${C.hard}12,${C.hard}06)`,border:`1px solid ${C.hard}33`,borderRadius:12,padding:"12px 16px",marginBottom:10}}>
+        <div style={{background:`linear-gradient(135deg,${C.hard}12,${C.hard}06)`,border:`1px solid ${C.hard}33`,borderLeft:`3px solid ${C.hard}`,borderRadius:12,padding:"12px 16px",marginBottom:10}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
             <div>
               <div style={{fontSize:13,fontWeight:700,color:C.hard}}>⚡ Weak Spot Drill</div>
@@ -7036,11 +7036,17 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </button>
         {showMoreActions&&(
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:9}}>
-            {moreItems.map(item=>(
-              <button key={item.key} onClick={item.action} style={{padding:"11px 8px",borderRadius:11,fontSize:12,fontWeight:item.key==="pass_pct"?700:600,...item.style,cursor:"pointer"}}>
-                {item.label}
-              </button>
-            ))}
+            {moreItems.map(item=>{
+              const parts=item.label.match(/^([\p{Emoji}‍️]+)\s*(.+)$/u);
+              const icon=parts?parts[1]:item.label;
+              const text=parts?parts[2]:null;
+              return(
+                <button key={item.key} onClick={item.action} style={{padding:"11px 8px 10px",borderRadius:11,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,...item.style}}>
+                  <span style={{fontSize:18,lineHeight:1}}>{icon}</span>
+                  {text&&<span style={{fontSize:10,fontWeight:700,lineHeight:1.2,textAlign:"center"}}>{text}</span>}
+                </button>
+              );
+            })}
           </div>
         )}
       </>);
@@ -7228,7 +7234,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </button>
           ))}
         </div>
-        <div style={{textAlign:"center",marginTop:8}}>
+        <div style={{background:`${C.accent}08`,border:`1px dashed ${C.border}`,borderRadius:11,padding:"14px 16px",marginTop:8,marginBottom:4}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:6,letterSpacing:"0.03em"}}>💭 Retrieval practice</div>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.65,marginBottom:card.los_tested?8:0}}>Actively recall the answer before selecting. Retrieval effort — even when you get it wrong — strengthens long-term memory more than re-reading.</div>
+          {card.los_tested&&<div style={{fontSize:10,color:C.accentLight+"88",borderTop:`1px solid ${C.border}`,paddingTop:6,marginTop:2}}>LOS: {card.los_tested}</div>}
+        </div>
+        <div style={{textAlign:"center",marginTop:10}}>
           <button onClick={()=>{
             const key=Object.keys(srDeck).find(k=>srDeck[k].question===card.question)||null;
             if(key){setSrDeck(prev=>{const n={...prev};delete n[key];storageSet(SR_KEY,n);return n;});}
@@ -7409,7 +7420,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           })();
           return(<>
             <div style={{display:"flex",flexDirection:"column",gap:7}}>
-              {DIFFICULTIES.map(d=>{const verbHint={Easy:"describe/define/identify",Medium:"calculate/apply/contrast",Hard:"evaluate/analyze/formulate"}[d];return(<button key={d} onClick={()=>setDifficulty(d)} style={{padding:"10px 12px",borderRadius:8,fontSize:13,fontWeight:600,textAlign:"left",cursor:"pointer",border:difficulty===d?`1.5px solid ${diffC[d]}`:`1.5px solid ${C.border}`,background:difficulty===d?diffC[d]+"18":C.surface,color:difficulty===d?diffC[d]:C.muted}}>{d}<div style={{fontSize:9,opacity:0.6,marginTop:2}}>{verbHint}</div>{adaptiveDiff?.diff===d&&<div style={{fontSize:9,color:C.easy,marginTop:2}}>✓ Recommended</div>}</button>);})}
+              {DIFFICULTIES.map(d=>{const verbHint={Easy:"describe/define/identify",Medium:"calculate/apply/contrast",Hard:"evaluate/analyze/formulate"}[d];return(<button key={d} onClick={()=>setDifficulty(d)} style={{padding:"10px 12px",borderRadius:8,fontSize:13,fontWeight:600,textAlign:"left",cursor:"pointer",border:difficulty===d?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:difficulty===d?C.accent+"18":C.surface,color:difficulty===d?C.accentLight:C.muted,display:"flex",alignItems:"center",gap:8}}><span style={{width:8,height:8,borderRadius:"50%",background:diffC[d],flexShrink:0,marginTop:1}}/><span><div>{d}</div><div style={{fontSize:9,opacity:0.6,marginTop:1}}>{verbHint}</div>{adaptiveDiff?.diff===d&&<div style={{fontSize:9,color:C.easy,marginTop:1}}>✓ Recommended</div>}</span></button>);})}
             </div>
             {adaptiveDiff&&<div style={{marginTop:8,fontSize:11,color:adaptiveDiff.diff==="Hard"?C.easy:C.medium,background:C.surface,border:`1px solid ${adaptiveDiff.diff==="Hard"?C.easy+"33":C.medium+"33"}`,borderRadius:7,padding:"6px 10px"}}>{adaptiveDiff.diff==="Hard"?"🔥":"📉"} {adaptiveDiff.reason}</div>}
           </>);
@@ -8031,9 +8042,10 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
         <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
           {filteredHistory.slice(0,15).map(s=>{
             const sq=getSessionQuality(s);
-            return(<div key={s.id} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"11px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div><div style={{fontSize:13,fontWeight:600}}>{s.subtopic}</div><div style={{fontSize:11,color:C.muted}}>{s.date} · {s.difficulty} · {s.mode}</div></div>
-              <div style={{textAlign:"right"}}>
+            return(<div key={s.id} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"11px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${s.pct}%`,background:s.pct>=70?`${C.easy}0a`:`${C.hard}0a`,pointerEvents:"none",transition:"width 0.4s"}}/>
+              <div style={{position:"relative"}}><div style={{fontSize:13,fontWeight:600}}>{s.subtopic}</div><div style={{fontSize:11,color:C.muted}}>{s.date} · {s.difficulty} · {s.mode}</div></div>
+              <div style={{textAlign:"right",position:"relative"}}>
                 <div style={{fontSize:16,fontWeight:800,color:s.pct>=70?C.easy:C.hard}}>{s.pct}%</div>
                 <div style={{fontSize:10,color:sq?.quality>=70?C.easy:C.muted}}>Q:{sq?.quality||"-"}</div>
               </div>
