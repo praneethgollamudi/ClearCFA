@@ -6888,7 +6888,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     </div>
                     <div style={{display:"flex",gap:5,flexShrink:0,marginLeft:8}}>
                       <Badge color={urgencyColor[s.urgency]}>{s.urgency}</Badge>
-                      <Badge color={diffC[s.difficulty]}>{s.difficulty}</Badge>
+                      <Badge color={diffC[s.difficulty]||C.medium}>{{Easy:"easy",Medium:"med",Hard:"hard"}[s.difficulty]||s.difficulty} diff</Badge>
                     </div>
                   </div>
                   <div style={{fontSize:12,color:C.textMid,lineHeight:1.55,marginBottom:selectedFocus===i?12:0}}>{s.reason}</div>
