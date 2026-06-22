@@ -6694,7 +6694,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     </>
   ):null;
 
-  const wrap=(children,maxW=580)=>(
+  const wrap=(children,maxW=860)=>(
     <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
       <div style={{maxWidth:maxW,width:"100%",animation:"fadeIn 0.2s ease"}}>{children}</div>
     </div>
@@ -8012,7 +8012,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <span style={{fontSize:10,transition:"transform 0.2s",display:"inline-block",transform:showMoreActions?"rotate(180deg)":"none"}}>▾</span>
         </button>
         {showMoreActions&&(
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:9}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8,marginBottom:9}}>
             {moreItems.map(item=>{
               const parts=item.label.match(/^([\p{Emoji}‍️]+)\s*(.+)$/u);
               const icon=parts?parts[1]:item.label;
