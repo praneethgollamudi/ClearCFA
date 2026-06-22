@@ -5803,6 +5803,7 @@ function CFAMock(){
   const [workedExamples,setWorkedExamples]=useState(()=>{try{return JSON.parse(localStorage.getItem(WORKED_EX_KEY)||"{}");}catch{return {};}});
   const [workedExLoading,setWorkedExLoading]=useState(false);
   const [workedExDismissedKey,setWorkedExDismissedKey]=useState("");
+  const [consecutiveWrong,setConsecutiveWrong]=useState(0);
   const [warmupEnabled,setWarmupEnabled]=useState(false);
   const [focusLastGenerated,setFocusLastGenerated]=useState(null); // timestamp of last generation
   const [lastSession,setLastSession]=useState(null);
@@ -6529,7 +6530,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       await new Promise(r=>setTimeout(r,200));
       setTopic("Financial Statement Analysis");setSubtopic(subtopic);setDifficulty(difficulty);
       setMode("fsa_vignette");setVignetteMode(true);
-      setQuestions(qs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);
+      setQuestions(qs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setConsecutiveWrong(0);
       setScreen("quiz");
     }catch(e){
       clearInterval(progressInterval);
@@ -6719,7 +6720,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setLoading(false);
   };
 
-  const handleAnswer=(qId,opt)=>{if(answers[qId])return;setAnswers(a=>({...a,[qId]:opt}));if(mode==="guided")setShowExp(true);};
+  const handleAnswer=(qId,opt)=>{if(answers[qId])return;setAnswers(a=>({...a,[qId]:opt}));if(mode==="guided")setShowExp(true);const q=questions.find(q=>q.id===qId);if(q){if(opt===q.answer){setConsecutiveWrong(0);}else{setConsecutiveWrong(n=>n+1);}}}
   const nextQ=()=>{
     clearInterval(speedDrillRef.current);
     setExplainThisText(null);setExplainThisLoading(false);
@@ -7705,7 +7706,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
         <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-          {streak>0&&<div style={{marginTop:4}}><StreakFlame streak={streak}/></div>}
+          {streak>0&&(()=>{const studiedToday=history.some(h=>h.dateKey===localDateKey());return(<div style={{marginTop:4,position:"relative"}}><StreakFlame streak={streak}/>{!studiedToday&&<div style={{position:"absolute",top:-4,right:-4,width:8,height:8,borderRadius:"50%",background:C.hard,border:`1.5px solid ${C.bg}`,animation:"pulse 1.5s ease-in-out infinite"}}/>}</div>);})()}
           <div style={{textAlign:"right"}}>
             <div style={{fontSize:28,fontWeight:800,color:daysLeft<30?C.hard:daysLeft<60?C.medium:C.accentLight,lineHeight:1}}>{daysLeft}</div>
             <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>days to exam</div>
@@ -8772,6 +8773,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
           return(<button key={key} onClick={()=>handleAnswer(q.id,key)} disabled={!!answered} style={{display:"flex",alignItems:"flex-start",gap:13,padding:"13px 15px",borderRadius:10,textAlign:"left",background:bg,border:`1.5px solid ${border}`,color:col,cursor:answered?"default":"pointer",fontSize:13,lineHeight:1.65,transition:"all 0.15s"}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:reveal&&correct?"#22a05a":reveal&&sel?C.hard:sel?C.accent:C.dim,color:(reveal||sel)?"#fff":C.muted,transition:"all 0.15s"}}>{key}</span><span>{val}</span></button>);
         })}
       </div>
+      {consecutiveWrong>=3&&mode==="guided"&&!answered&&(
+        <div style={{background:`linear-gradient(135deg,${C.accent}12,${C.accent}06)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"14px 16px",marginBottom:12,animation:"fadeIn 0.3s ease"}}>
+          <div style={{fontSize:13,fontWeight:800,color:C.accentLight,marginBottom:4}}>Tough stretch — you're {consecutiveWrong} in a row wrong</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.6}}>This is normal. Hard questions expose the gaps, and gaps are where learning happens. Take a breath.</div>
+          <div style={{display:"flex",gap:8}}>
+            {difficulty!=="Easy"&&<button onClick={()=>{setDifficulty("Easy");setConsecutiveWrong(0);showToast("💙","Eased to Easy","Rebuilding from here.");}} style={{flex:1,padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,background:C.easy+"22",color:C.easy,border:`1px solid ${C.easy}44`,cursor:"pointer"}}>💙 Drop to Easy</button>}
+            <button onClick={()=>setConsecutiveWrong(0)} style={{flex:1,padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surface,color:C.muted,border:`1px solid ${C.border}`,cursor:"pointer"}}>Keep going →</button>
+          </div>
+        </div>
+      )}
       {showExp&&mode==="guided"&&answered&&(
         <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:"#a0a0c0",lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>Explanation</div>
@@ -8862,8 +8873,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
     return wrap(<>
       <div style={{background:C.surface,border:`1px solid ${passed?"#22a05a44":C.hard+"44"}`,borderRadius:16,padding:"24px 22px",textAlign:"center",marginBottom:16}}>
         <ScoreRing pct={sessionPct} size={96}/>
-        <div style={{fontSize:16,fontWeight:700,marginTop:12,color:passed?C.easy:C.hard}}>{passed?"Above Threshold ✓":"Below Threshold — keep drilling"}</div>
+        <div style={{fontSize:16,fontWeight:700,marginTop:12,color:passed?C.easy:C.hard}}>{passed?"Above Threshold ✓":"Not there yet — every wrong answer is data"}</div>
         <div style={{fontSize:12,color:C.muted,marginTop:5}}>{sessionScore}/{questions.length} · {fmt(timeTaken)} · ~{avgTime}s/q · {subtopic} · {difficulty}</div>
+        {!passed&&<div style={{marginTop:8,fontSize:12,color:C.muted,fontStyle:"italic",lineHeight:1.5}}>You attempted {questions.length} questions — that effort is what builds exam readiness.</div>}
         {sessionPct>=80&&difficulty!=="Hard"&&<div style={{marginTop:10,fontSize:12,color:C.easy,background:C.easy+"15",borderRadius:6,padding:"5px 10px",display:"inline-block"}}>🔥 Strong — try {difficulty==="Easy"?"Medium":"Hard"} next</div>}
         <div style={{marginTop:10,fontSize:11,color:sessionSaved?C.easy:C.hard}}>
           {sessionSaved===true?"✓ Session saved":sessionSaved===false?"⚠ Storage full — tap Home → backup your data":null}
