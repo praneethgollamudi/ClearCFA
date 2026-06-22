@@ -8205,7 +8205,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* More actions — sorted by usage frequency, collapsed by default */}
     {(()=>{
       const moreItems=[
-        {key:"fix_to_pass",label:"🎯 Fix to Pass",style:{background:C.hard+"15",border:`1px solid ${C.hard}44`,color:C.hard},action:()=>{trackUsage("fix_to_pass");setScreen("fixToPass");}},
         {key:"mix",label:"🎯 Weak Spots",style:{background:C.accent+"12",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
         {key:"vignette",label:"📖 Vignette",style:{background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight},action:()=>{trackUsage("vignette");setVignetteMode(true);setScreen("setup");}},
         {key:"full_exam",label:"🎓 Full Exam",style:{background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight},action:()=>{trackUsage("full_exam");startFullExam();}},
@@ -9032,43 +9031,71 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       </div>
     )}
 
-    {/* To move the needle this week */}
-    {passProbability&&(
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:12}}>To move the needle this week</div>
-        <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {(()=>{
-            const untested=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9).slice(0,3);
-            const weak=moduleReadiness.filter(m=>m.accuracy!==null&&m.accuracy<65&&m.weight>=8).slice(0,2);
-            const items=[...untested,...weak];
-            if(items.length>0) return(<>
-              {untested.map(m=>(
-                <div key={m.topic} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.dim,borderRadius:9}}>
-                  <div><div style={{fontSize:13,fontWeight:600,color:C.text}}>{m.topic}</div><div style={{fontSize:11,color:C.muted}}>Untested · {m.weight}% of exam</div></div>
-                  <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(m.topic,m.modules[0],"Easy",5,"guided"),100);}} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:7,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>5 Qs →</button>
-                </div>
-              ))}
-              {weak.map(m=>(
-                <div key={m.topic} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.dim,borderRadius:9}}>
-                  <div><div style={{fontSize:13,fontWeight:600,color:C.text}}>{m.topic}</div><div style={{fontSize:11,color:C.hard}}>{m.accuracy}% accuracy · needs work</div></div>
-                  <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(m.topic,m.untouchedModules[0]||m.modules[0],"Medium",5,"guided"),100);}} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:7,background:C.hard+"22",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>Drill →</button>
-                </div>
-              ))}
-            </>);
-            const stalest=moduleReadiness.filter(m=>m.weight>=8).sort((a,b)=>{if(!a.lastDate&&!b.lastDate)return b.weight-a.weight;if(!a.lastDate)return-1;if(!b.lastDate)return 1;return a.lastDate<b.lastDate?-1:1;}).slice(0,3);
-            return(<>
-              <div style={{fontSize:12,color:C.easy,marginBottom:8,padding:"8px 12px",background:C.easy+"11",borderRadius:8}}>✅ Strong coverage — keep these sharp</div>
+    {/* Fix to Pass — blocking topics ranked by impact */}
+    {(()=>{
+      const blocking=moduleReadiness.filter(m=>m.reliable&&m.accuracy!==null&&m.accuracy<70).map(m=>({...m,gap:70-m.accuracy,impact:(70-m.accuracy)*m.weight})).sort((a,b)=>b.impact-a.impact).slice(0,4);
+      const untouched=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=10).sort((a,b)=>b.weight-a.weight).slice(0,2).filter(u=>!blocking.find(b=>b.topic===u.topic));
+      const allTargets=[...blocking,...untouched];
+      const stalest=moduleReadiness.filter(m=>m.weight>=8).sort((a,b)=>{if(!a.lastDate&&!b.lastDate)return b.weight-a.weight;if(!a.lastDate)return-1;if(!b.lastDate)return 1;return a.lastDate<b.lastDate?-1:1;}).slice(0,3);
+      return(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:12}}>🎯 Fix to Pass</div>
+          {allTargets.length===0?(
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{fontSize:12,color:C.easy,padding:"8px 12px",background:C.easy+"11",borderRadius:8}}>✅ All tested topics at 70%+ — keep these sharp</div>
               {stalest.map(m=>(
                 <div key={m.topic} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.dim,borderRadius:9}}>
                   <div><div style={{fontSize:13,fontWeight:600,color:C.text}}>{m.topic}</div><div style={{fontSize:11,color:C.muted}}>{m.accuracy!=null?`${m.accuracy}% · `:""}last drilled {m.lastDate||"a while ago"}</div></div>
                   <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(m.topic,m.modules[0],"Medium",5,"guided"),100);}} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:7,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>Revise →</button>
                 </div>
               ))}
-            </>);
-          })()}
+            </div>
+          ):(
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {allTargets.map((m,i)=>{
+                const isUntouched=m.sessions===0;
+                const urgencyColor=i===0?C.hard:i===1?C.medium:C.reward;
+                const barPct=isUntouched?0:Math.min((m.accuracy/70)*100,100);
+                const weakestMod=m.modulesCovered?.length>0?[...m.modulesCovered].sort((a,b)=>(m.moduleStats[a]?.pct??100)-(m.moduleStats[b]?.pct??100))[0]:m.modules[0]||m.topic;
+                return(
+                  <div key={m.topic} style={{background:C.dim,borderRadius:10,padding:"12px 14px",border:`1px solid ${urgencyColor}22`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                      <div>
+                        <span style={{fontSize:13,fontWeight:700,color:C.text}}>{m.topic}</span>
+                        <span style={{fontSize:10,color:C.muted,marginLeft:8}}>{m.weight}% weight</span>
+                      </div>
+                      <span style={{fontSize:10,fontWeight:700,color:urgencyColor,background:`${urgencyColor}18`,padding:"2px 8px",borderRadius:20}}>
+                        {isUntouched?"Not started":i===0?"Top priority":i===1?"High impact":"Fix this"}
+                      </span>
+                    </div>
+                    <div style={{marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.muted,marginBottom:3}}>
+                        <span>{isUntouched?"No data yet":`Accuracy: ${m.accuracy}%`}</span>
+                        <span style={{color:C.easy}}>Need: 70%</span>
+                      </div>
+                      <div style={{height:4,background:C.border,borderRadius:2,overflow:"hidden",position:"relative"}}>
+                        <div style={{height:"100%",width:`${barPct}%`,background:urgencyColor,borderRadius:2}}/>
+                        <div style={{position:"absolute",top:0,left:"70%",width:2,height:"100%",background:C.easy}}/>
+                      </div>
+                    </div>
+                    <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(m.topic,weakestMod,i===0?"Hard":"Medium",15,"guided"),100);}} style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:`${urgencyColor}22`,color:urgencyColor,border:`1px solid ${urgencyColor}44`,cursor:"pointer"}}>
+                      {isUntouched?`Start ${m.topic} — 15 Qs`:`Fix ${m.topic} — 15 guided Qs →`}
+                    </button>
+                  </div>
+                );
+              })}
+              <button onClick={()=>{
+                const top=allTargets[0];
+                const weakestMod=top.modulesCovered?.length>0?[...top.modulesCovered].sort((a,b)=>(top.moduleStats[a]?.pct??100)-(top.moduleStats[b]?.pct??100))[0]:top.modules[0]||top.topic;
+                setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(top.topic,weakestMod,"Hard",15,"guided"),100);
+              }} style={{padding:"12px",borderRadius:10,fontSize:13,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
+                🚀 Start highest impact: {allTargets[0]?.topic} →
+              </button>
+            </div>
+          )}
         </div>
-      </div>
-    )}
+      );
+    })()}
 
     {/* LOS Heatmap — all 365 LOS at a glance */}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:16}}>
@@ -9789,9 +9816,6 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
 
   // ══ STUDY PATH SCREEN ════════════════════════════════════════════════════════
   if(screen==="studyPath") return <StudyPathScreen onBack={()=>setScreen("home")} onLearn={(topic)=>{setRevisionTopic(topic);setRevisionTab("learn");setScreen("revision");}} onPractice={(topic)=>{const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});generateQuestions(topic,mods[0]||topic,"Medium",10,"guided");}} srDeck={srDeck} cfaLevel={cfaLevel} topicLessons={topicLessons} isPro={proStatus}/>;
-
-  // ══ FIX TO PASS SCREEN ═══════════════════════════════════════════════════════
-  if(screen==="fixToPass") return <FixToPassScreen onBack={()=>setScreen("home")} passProbability={passProbability} moduleReadiness={moduleReadiness} generateQuestions={generateQuestions}/>;
 
   return null;
 }
