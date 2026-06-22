@@ -5638,16 +5638,21 @@ function StudyPathScreen({onBack, onLearn, onPractice, srDeck={}, cfaLevel="1", 
 function pickDailyRefresher(cfaLevel, moduleReadiness){
   const los=getActiveLOS(cfaLevel);
   const sorted=[...moduleReadiness].sort((a,b)=>(a.accuracy??-1)-(b.accuracy??-1));
-  const pool=sorted.slice(0,Math.max(3,Math.ceil(sorted.length*0.4)));
-  const pick=pool[Math.floor(Math.random()*pool.length)];
-  if(!pick)return null;
-  const {topic}=pick;
-  const modules=Object.keys(los[topic]?.modules||{});
-  if(!modules.length)return null;
-  const module=modules[Math.floor(Math.random()*modules.length)];
-  const losList=los[topic]?.modules[module]||[];
-  const los_stmt=losList[Math.floor(Math.random()*losList.length)]||module;
-  return{topic,module,los_stmt};
+  const pool=sorted.slice(0,Math.max(5,Math.ceil(sorted.length*0.6)));
+  const concepts=[];const usedTopics=new Set();
+  for(let attempt=0;attempt<30&&concepts.length<3;attempt++){
+    const pick=pool[Math.floor(Math.random()*pool.length)];
+    if(!pick||usedTopics.has(pick.topic))continue;
+    const modules=Object.keys(los[pick.topic]?.modules||{});
+    if(!modules.length)continue;
+    const module=modules[Math.floor(Math.random()*modules.length)];
+    const losList=los[pick.topic]?.modules[module]||[];
+    const los_stmt=losList[Math.floor(Math.random()*losList.length)]||module;
+    concepts.push({topic:pick.topic,module,los_stmt,reveal:null});
+    usedTopics.add(pick.topic);
+  }
+  if(!concepts.length)return null;
+  return{concepts,idx:0};
 }
 
 function CFAMock(){
@@ -5747,7 +5752,7 @@ function CFAMock(){
   const [revisionTab,setRevisionTab]=useState("notes");
   const [revisionConcept,setRevisionConcept]=useState(null);
   const [topicLessons,setTopicLessons]=useState(()=>{try{return JSON.parse(localStorage.getItem(LESSONS_KEY)||"{}");}catch{return {};}});
-  const [dailyRefresher,setDailyRefresher]=useState(()=>{try{const s=JSON.parse(localStorage.getItem(REFRESHER_KEY)||"null");if(s?.date===localDateKey())return s;}catch{}return null;});
+  const [dailyRefresher,setDailyRefresher]=useState(()=>{try{const s=JSON.parse(localStorage.getItem(REFRESHER_KEY)||"null");if(s?.date===localDateKey()&&s?.concepts?.length)return s;}catch{}return null;});
   const [refresherFlipped,setRefresherFlipped]=useState(false);
   const [refresherRevealLoading,setRefresherRevealLoading]=useState(false);
   const [walkthroughTopic, setWalkthroughTopic] = useState(Object.keys(LOS)[0]);
@@ -6633,23 +6638,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
     storageSet(PASS_TREND_KEY,updated);
   },[passProbability,levelHistory.length]);
   useEffect(()=>{
-    if(dailyRefresher)return;
+    if(dailyRefresher?.concepts?.length)return;
     if(!moduleReadiness.length)return;
     const pick=pickDailyRefresher(cfaLevel,moduleReadiness);
     if(!pick)return;
-    const entry={date:localDateKey(),...pick,seen:false};
+    const entry={date:localDateKey(),...pick};
     setDailyRefresher(entry);
     try{localStorage.setItem(REFRESHER_KEY,JSON.stringify(entry));}catch{}
   },[moduleReadiness,cfaLevel]);
-  const generateRefresherReveal=async()=>{
-    if(!authUser?.id||refresherRevealLoading||dailyRefresher?.reveal)return;
+  const generateRefresherReveal=async(conceptIdx)=>{
+    const concept=dailyRefresher?.concepts?.[conceptIdx];
+    if(!authUser?.id||refresherRevealLoading||concept?.reveal||!concept)return;
     setRefresherRevealLoading(true);
-    const prompt=`CFA Level ${cfaLevel} exam prep. Explain this learning objective briefly:\n"${dailyRefresher?.los_stmt}"\n\nFormat EXACTLY:\nEXPLANATION: [2-3 plain-English sentences: what it means and why it matters for the exam]\nTRAP: [The single most common exam mistake on this concept — 1 sentence]\n\nBe concise. Max 80 words total.`;
+    const prompt=`CFA Level ${cfaLevel} exam prep. Explain this learning objective briefly:\n"${concept.los_stmt}"\n\nFormat EXACTLY:\nEXPLANATION: [2-3 plain-English sentences: what it means and why it matters for the exam]\nTRAP: [The single most common exam mistake on this concept — 1 sentence]\n\nBe concise. Max 80 words total.`;
     try{
       const reply=await callAIChat(authUser.id,[{role:"user",content:prompt}],150,cfaLevel);
       if(!reply)return;
       const reveal=parseRefresherReveal(reply);
-      const updated={...dailyRefresher,reveal};
+      const updatedConcepts=dailyRefresher.concepts.map((c,i)=>i===conceptIdx?{...c,reveal}:c);
+      const updated={...dailyRefresher,concepts:updatedConcepts};
       setDailyRefresher(updated);
       try{localStorage.setItem(REFRESHER_KEY,JSON.stringify(updated));}catch{}
     }finally{setRefresherRevealLoading(false);}
@@ -7977,47 +7984,68 @@ Return ONLY a JSON array — no prose, no markdown fences:
       );
     })()}
 
-    {/* Daily Concept Refresher — flip card */}
-    {dailyRefresher&&(
-      <div style={{background:refresherFlipped?`linear-gradient(135deg,${C.reward}18,${C.reward}08)`:`linear-gradient(135deg,${C.reward}12,${C.reward}05)`,border:`1px solid ${refresherFlipped?C.reward+"55":C.reward+"33"}`,borderRadius:14,padding:"14px 16px",marginBottom:10,transition:"background 0.3s,border-color 0.3s"}}>
-        {!refresherFlipped?(
-          <div style={{animation:"fadeIn 0.25s ease"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-              <span style={{fontSize:12,fontWeight:800,color:C.rewardLight,letterSpacing:"0.04em"}}>✨ TODAY'S CONCEPT</span>
-              <span style={{fontSize:10,color:C.muted}}>{dailyRefresher.topic}</span>
+    {/* Daily Concept Refresher — 3/day flip card */}
+    {dailyRefresher?.concepts?.length&&(()=>{
+      const cur=dailyRefresher.concepts[dailyRefresher.idx];
+      const total=dailyRefresher.concepts.length;
+      const idx=dailyRefresher.idx;
+      const goTo=(newIdx)=>{
+        const updated={...dailyRefresher,idx:newIdx};
+        setDailyRefresher(updated);
+        try{localStorage.setItem(REFRESHER_KEY,JSON.stringify(updated));}catch{}
+        setRefresherFlipped(false);
+      };
+      return(
+        <div style={{background:refresherFlipped?`linear-gradient(135deg,${C.reward}18,${C.reward}08)`:`linear-gradient(135deg,${C.reward}12,${C.reward}05)`,border:`1px solid ${refresherFlipped?C.reward+"55":C.reward+"33"}`,borderRadius:14,padding:"14px 16px",marginBottom:10,transition:"background 0.3s,border-color 0.3s"}}>
+          {!refresherFlipped?(
+            <div style={{animation:"fadeIn 0.25s ease"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                <span style={{fontSize:12,fontWeight:800,color:C.rewardLight,letterSpacing:"0.04em"}}>✨ TODAY'S CONCEPTS</span>
+                <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                  {dailyRefresher.concepts.map((_,i)=>(
+                    <span key={i} onClick={()=>goTo(i)} style={{width:7,height:7,borderRadius:"50%",background:i===idx?C.rewardLight:C.border,cursor:"pointer",display:"inline-block",transition:"background 0.2s"}}/>
+                  ))}
+                  <span style={{fontSize:10,color:C.muted,marginLeft:4}}>{idx+1}/{total}</span>
+                </div>
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:4}}>{cur.topic} · {cur.module}</div>
+              <div style={{fontSize:13,color:C.text,lineHeight:1.6,fontStyle:"italic",paddingLeft:10,borderLeft:`2px solid ${C.reward}55`,marginBottom:12}}>
+                "{cur.los_stmt}"
+              </div>
+              <button onClick={()=>{setRefresherFlipped(true);if(!cur.reveal&&authUser?.id)generateRefresherReveal(idx);}} style={{width:"100%",padding:"9px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.rewardLight,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
+                ✨ Reveal explanation →
+              </button>
             </div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:8}}>{dailyRefresher.module}</div>
-            <div style={{fontSize:13,color:C.text,lineHeight:1.6,fontStyle:"italic",paddingLeft:10,borderLeft:`2px solid ${C.reward}55`,marginBottom:12}}>
-              "{dailyRefresher.los_stmt}"
+          ):(
+            <div style={{animation:"fadeIn 0.25s ease"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{fontSize:12,fontWeight:800,color:C.rewardLight}}>✨ {cur.topic}</span>
+                <button onClick={()=>setRefresherFlipped(false)} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:"2px 6px"}}>← back</button>
+              </div>
+              {refresherRevealLoading&&!cur.reveal?(
+                <div style={{textAlign:"center",padding:"18px 0",color:C.muted,fontSize:12,animation:"pulse 1.5s infinite"}}>✨ Generating explanation…</div>
+              ):cur.reveal?(
+                <>
+                  <div style={{fontSize:13,color:C.text,lineHeight:1.7,marginBottom:10}}>{cur.reveal.explanation}</div>
+                  {cur.reveal.trap&&(
+                    <div style={{background:C.hard+"18",border:`1px solid ${C.hard}33`,borderRadius:8,padding:"8px 12px",fontSize:12,color:C.text,lineHeight:1.5}}>
+                      <span style={{fontWeight:700,color:C.hard}}>⚠️ Exam trap: </span>{cur.reveal.trap}
+                    </div>
+                  )}
+                </>
+              ):(
+                <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"16px 0"}}>Sign in to unlock AI explanations</div>
+              )}
             </div>
-            <button onClick={()=>{setRefresherFlipped(true);if(!dailyRefresher.reveal&&authUser?.id)generateRefresherReveal();}} style={{width:"100%",padding:"9px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.rewardLight,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
-              ✨ Reveal explanation →
-            </button>
+          )}
+          {/* Prev / Next navigation */}
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:10}}>
+            <button onClick={()=>goTo(idx-1)} disabled={idx===0} style={{fontSize:11,color:idx===0?C.border:C.muted,background:"none",border:"none",cursor:idx===0?"default":"pointer",padding:"2px 4px"}}>← prev</button>
+            <button onClick={()=>goTo(idx+1)} disabled={idx===total-1} style={{fontSize:11,color:idx===total-1?C.border:C.accentLight,background:"none",border:"none",cursor:idx===total-1?"default":"pointer",fontWeight:700,padding:"2px 4px"}}>next concept →</button>
           </div>
-        ):(
-          <div style={{animation:"fadeIn 0.25s ease"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-              <span style={{fontSize:12,fontWeight:800,color:C.rewardLight}}>✨ {dailyRefresher.topic}</span>
-              <button onClick={()=>setRefresherFlipped(false)} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:"2px 6px"}}>← back</button>
-            </div>
-            {refresherRevealLoading&&!dailyRefresher.reveal?(
-              <div style={{textAlign:"center",padding:"18px 0",color:C.muted,fontSize:12,animation:"pulse 1.5s infinite"}}>✨ Generating explanation…</div>
-            ):dailyRefresher.reveal?(
-              <>
-                <div style={{fontSize:13,color:C.text,lineHeight:1.7,marginBottom:10}}>{dailyRefresher.reveal.explanation}</div>
-                {dailyRefresher.reveal.trap&&(
-                  <div style={{background:C.hard+"18",border:`1px solid ${C.hard}33`,borderRadius:8,padding:"8px 12px",fontSize:12,color:C.text,lineHeight:1.5}}>
-                    <span style={{fontWeight:700,color:C.hard}}>⚠️ Exam trap: </span>{dailyRefresher.reveal.trap}
-                  </div>
-                )}
-              </>
-            ):(
-              <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"16px 0"}}>Sign in to unlock AI explanations</div>
-            )}
-          </div>
-        )}
-      </div>
-    )}
+        </div>
+      );
+    })()}
 
     {/* Secondary actions row */}
     <div style={{display:"flex",gap:8,marginBottom:8}}>
