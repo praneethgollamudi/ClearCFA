@@ -2808,6 +2808,7 @@ const PLAN_KEY       = "cfa_week_plan_v1";
 const DYNAMIC_PN_KEY = "cfa_dynamic_pn_v1";
 const DYNAMIC_FORMULAS_KEY = "cfa_dynamic_formulas_v1";
 const LESSONS_KEY          = "cfa_lessons_v1";
+const REFRESHER_KEY        = "cfa_refresher_v1";
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
@@ -5628,6 +5629,21 @@ function StudyPathScreen({onBack, onLearn, onPractice, srDeck={}, cfaLevel="1", 
   );
 }
 
+function pickDailyRefresher(cfaLevel, moduleReadiness){
+  const los=getActiveLOS(cfaLevel);
+  const sorted=[...moduleReadiness].sort((a,b)=>(a.accuracy??-1)-(b.accuracy??-1));
+  const pool=sorted.slice(0,Math.max(3,Math.ceil(sorted.length*0.4)));
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  if(!pick)return null;
+  const {topic}=pick;
+  const modules=Object.keys(los[topic]?.modules||{});
+  if(!modules.length)return null;
+  const module=modules[Math.floor(Math.random()*modules.length)];
+  const losList=los[topic]?.modules[module]||[];
+  const los_stmt=losList[Math.floor(Math.random()*losList.length)]||module;
+  return{topic,module,los_stmt};
+}
+
 function CFAMock(){
   const [screen,setScreen]=useState("home");
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
@@ -5725,6 +5741,7 @@ function CFAMock(){
   const [revisionTab,setRevisionTab]=useState("notes");
   const [revisionConcept,setRevisionConcept]=useState(null);
   const [topicLessons,setTopicLessons]=useState(()=>{try{return JSON.parse(localStorage.getItem(LESSONS_KEY)||"{}");}catch{return {};}});
+  const [dailyRefresher,setDailyRefresher]=useState(()=>{try{const s=JSON.parse(localStorage.getItem(REFRESHER_KEY)||"null");if(s?.date===localDateKey())return s;}catch{}return null;});
   const [walkthroughTopic, setWalkthroughTopic] = useState(Object.keys(LOS)[0]);
   const [walkthroughModule, setWalkthroughModule] = useState("");
   const [walkthroughText, setWalkthroughText] = useState(null);
@@ -6607,6 +6624,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
     passTrendRef.current=updated;setPassTrend(updated);
     storageSet(PASS_TREND_KEY,updated);
   },[passProbability,levelHistory.length]);
+  useEffect(()=>{
+    if(dailyRefresher)return;
+    if(!moduleReadiness.length)return;
+    const pick=pickDailyRefresher(cfaLevel,moduleReadiness);
+    if(!pick)return;
+    const entry={date:localDateKey(),...pick,seen:false};
+    setDailyRefresher(entry);
+    try{localStorage.setItem(REFRESHER_KEY,JSON.stringify(entry));}catch{}
+  },[moduleReadiness,cfaLevel]);
   const studyPace=useMemo(()=>getStudyPace(levelHistory,daysLeft),[levelHistory,daysLeft]);
   const totalXP=useMemo(()=>getTotalXP(history),[history]);
   const levelInfo=useMemo(()=>getLevel(totalXP),[totalXP]);
@@ -7929,6 +7955,34 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       );
     })()}
+
+    {/* Daily Concept Refresher */}
+    {dailyRefresher&&(
+      <div style={{background:`linear-gradient(135deg,${C.reward}12,${C.reward}05)`,border:`1px solid ${C.reward}33`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <span style={{fontSize:12,fontWeight:800,color:C.rewardLight,letterSpacing:"0.04em"}}>✨ TODAY'S CONCEPT</span>
+          <span style={{fontSize:10,color:C.muted}}>{dailyRefresher.topic}</span>
+        </div>
+        <div style={{fontSize:11,color:C.muted,marginBottom:8}}>{dailyRefresher.module}</div>
+        <div style={{fontSize:13,color:C.text,lineHeight:1.6,fontStyle:"italic",paddingLeft:10,borderLeft:`2px solid ${C.reward}55`,marginBottom:12}}>
+          "{dailyRefresher.los_stmt}"
+        </div>
+        {dailyRefresher.seen?(
+          <div style={{fontSize:11,color:C.muted,textAlign:"center"}}>✓ Seen today · new concept tomorrow</div>
+        ):(
+          <button onClick={()=>{
+            const updated={...dailyRefresher,seen:true};
+            setDailyRefresher(updated);
+            try{localStorage.setItem(REFRESHER_KEY,JSON.stringify(updated));}catch{}
+            setRevisionTopic(dailyRefresher.topic);
+            setRevisionTab("notes");
+            setScreen("revision");
+          }} style={{width:"100%",padding:"9px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.rewardLight,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
+            📖 Explore topic →
+          </button>
+        )}
+      </div>
+    )}
 
     {/* Secondary actions row */}
     <div style={{display:"flex",gap:8,marginBottom:8}}>
