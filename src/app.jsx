@@ -7467,23 +7467,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </div>
             <span style={{fontSize:11,color:driveStatus==="synced"?C.easy:driveStatus==="error"?C.hard:"#22d3ee",fontWeight:700}}>{driveStatus==="synced"?"✓":driveStatus==="error"?"✗":"↑"}</span>
           </button>
-          {/* Office Mode Q count */}
-          <div style={{width:"100%",padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,marginBottom:9}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <div style={{fontSize:13,fontWeight:700}}>⚡ Office Mode Questions</div>
-              <div style={{fontSize:11,color:C.muted}}>{omQCount} Qs · ~{omQCount*1.5|0} min</div>
-            </div>
-            <div style={{display:"flex",gap:6}}>
-              {[3,5,10].map(n=>(
-                <button key={n} onClick={()=>{setOmQCount(n);try{localStorage.setItem("cfa_om_count",String(n));}catch{}}}
-                  style={{flex:1,padding:"7px",borderRadius:8,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
-                    background:omQCount===n?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.surfaceHigh,
-                    color:omQCount===n?"#fff":C.muted,transition:"all 0.15s"}}>
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
           {/* Backup */}
           <button onClick={()=>{setSettingsOpen(false);setScreen("backup");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
             <span style={{fontSize:18}}>💾</span>
