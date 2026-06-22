@@ -2854,6 +2854,7 @@ const REFRESHER_KEY        = "cfa_refresher_v1";
 const CONFIDENCE_KEY       = "cfa_confidence_v1";
 const STUDY_GOAL_KEY       = "cfa_study_goal_v1";
 const WORKED_EX_KEY        = "cfa_worked_ex_v1";
+const PRESETS_KEY          = "cfa_presets_v1";
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
@@ -5846,6 +5847,9 @@ function CFAMock(){
   const [workedExLoading,setWorkedExLoading]=useState(false);
   const [workedExDismissedKey,setWorkedExDismissedKey]=useState("");
   const [consecutiveWrong,setConsecutiveWrong]=useState(0);
+  const [presets,setPresets]=useState(()=>{try{return JSON.parse(localStorage.getItem(PRESETS_KEY)||"[]");}catch{return [];}});
+  const [savePresetName,setSavePresetName]=useState("");
+  const [showSavePreset,setShowSavePreset]=useState(false);
   const [warmupEnabled,setWarmupEnabled]=useState(false);
   const [focusLastGenerated,setFocusLastGenerated]=useState(null); // timestamp of last generation
   const [lastSession,setLastSession]=useState(null);
@@ -6762,6 +6766,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setLoading(false);
   };
 
+  const savePreset=()=>{
+    if(!savePresetName.trim())return;
+    const preset={id:Date.now(),name:savePresetName.trim(),topic:mode==="interleaved"?null:topic,subtopic:mode==="interleaved"?null:subtopic,difficulty,count,mode,warmupEnabled};
+    const updated=[preset,...presets.filter(p=>p.name!==preset.name)].slice(0,8);
+    setPresets(updated);try{localStorage.setItem(PRESETS_KEY,JSON.stringify(updated));}catch{}
+    setShowSavePreset(false);setSavePresetName("");
+    showToast("💾","Preset saved!",`"${preset.name}" ready on home screen.`);
+  };
   const handleAnswer=(qId,opt)=>{if(answers[qId])return;setAnswers(a=>({...a,[qId]:opt}));if(mode==="guided")setShowExp(true);const q=questions.find(q=>q.id===qId);if(q){if(opt===q.answer){setConsecutiveWrong(0);}else{setConsecutiveWrong(n=>n+1);}}}
   const nextQ=()=>{
     clearInterval(speedDrillRef.current);
@@ -7910,6 +7922,31 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     </div>
 
+    {/* Saved Presets */}
+    {presets.length>0&&(
+      <div style={{marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>My Presets</span>
+          <button onClick={()=>{setScreen("setup");}} style={{fontSize:11,fontWeight:700,color:C.accentLight,background:"none",border:"none",cursor:"pointer",padding:0}}>+ New →</button>
+        </div>
+        <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none",msOverflowStyle:"none"}}>
+          {presets.map(p=>(
+            <div key={p.id} style={{flexShrink:0,position:"relative"}}>
+              <button onClick={()=>{
+                trackUsage("preset");
+                if(p.mode==="interleaved"){generateInterleavedSession(p.difficulty,p.count);}
+                else{generateQuestions(p.topic,p.subtopic,p.difficulty,p.warmupEnabled?p.count+3:p.count,p.mode);}
+              }} style={{padding:"8px 22px 8px 12px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",background:C.accent+"15",border:`1.5px solid ${C.accent}44`,color:C.accentLight,display:"flex",flexDirection:"column",alignItems:"flex-start",gap:2,minWidth:80,maxWidth:120,transition:"all 0.15s"}}>
+                <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{p.name}</span>
+                <span style={{fontSize:9,fontWeight:600,color:C.muted}}>{p.mode==="interleaved"?"🔀 Mix":p.topic?.split(" ")[0]} · {p.count}Q · {p.difficulty[0]}</span>
+              </button>
+              <button onClick={()=>{const u=presets.filter(x=>x.id!==p.id);setPresets(u);try{localStorage.setItem(PRESETS_KEY,JSON.stringify(u));}catch{};}} style={{position:"absolute",top:3,right:3,width:15,height:15,borderRadius:3,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>✕</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
     {/* SR due */}
     {dueCards.length>0&&(
       <div onClick={()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}} style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",animation:"glow 3s ease infinite"}}>
@@ -8745,6 +8782,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
     }} disabled={mode!=="interleaved"&&(!topic||!subtopic)||loading} style={{width:"100%",padding:"15px",borderRadius:12,fontSize:15,fontWeight:700,background:(mode==="interleaved"||topic&&subtopic)&&!loading?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.dim,color:(mode==="interleaved"||topic&&subtopic)&&!loading?"#fff":C.muted,border:"none",cursor:(mode==="interleaved"||topic&&subtopic)&&!loading?"pointer":"not-allowed",boxShadow:(mode==="interleaved"||topic&&subtopic)&&!loading?`0 4px 20px ${C.accent}44`:"none"}}>
       {loading?loadingMsg:mode==="interleaved"?`Generate ${count} Interleaved Questions (3 topics) →`:vignetteMode?`Generate ${Math.ceil(count/3)} Vignettes (${count} questions) →`:`Generate ${warmupEnabled?count+3:count} Questions${warmupEnabled?" (incl. 3 warm-up)":""} →`}
     </button>
+    {!loading&&(mode==="interleaved"||(topic&&subtopic))&&(
+      <div style={{marginTop:10}}>
+        {!showSavePreset?(
+          <button onClick={()=>setShowSavePreset(true)} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:"transparent",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+            💾 Save as preset
+          </button>
+        ):(
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <input value={savePresetName} onChange={e=>setSavePresetName(e.target.value)}
+              placeholder='Name (e.g. "Morning Ethics")'
+              onKeyDown={e=>{if(e.key==="Enter")savePreset();if(e.key==="Escape"){setShowSavePreset(false);setSavePresetName("");}}}
+              autoFocus
+              style={{flex:1,padding:"10px 12px",borderRadius:9,fontSize:12,background:C.surface,border:`1px solid ${C.accent}66`,color:C.text,outline:"none"}}/>
+            <button onClick={savePreset} disabled={!savePresetName.trim()} style={{padding:"10px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:savePresetName.trim()?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"transparent",color:savePresetName.trim()?"#fff":C.muted,border:"none",cursor:savePresetName.trim()?"pointer":"default",flexShrink:0}}>Save</button>
+            <button onClick={()=>{setShowSavePreset(false);setSavePresetName("");}} style={{padding:"10px",borderRadius:9,fontSize:13,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",flexShrink:0}}>✕</button>
+          </div>
+        )}
+      </div>
+    )}
     {loading&&<div style={{marginTop:20,display:"flex",flexDirection:"column",gap:10}}>{[1,2,3].map(i=><div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:16}}><Skeleton height={13} style={{marginBottom:10}}/><Skeleton height={10} width="70%" style={{marginBottom:8}}/>{[1,2,3].map(j=><Skeleton key={j} height={9} width={`${58+j*9}%`} style={{marginBottom:6}}/>)}</div>)}</div>}
   </>);
   // ══ QUIZ ══════════════════════════════════════════════════════════════════
