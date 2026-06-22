@@ -8472,6 +8472,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
     )}
 
     <div style={{marginBottom:18}}>
+      <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:10}}>Mode</label>
+      <div style={{display:"flex",gap:9}}>
+        {[["guided","🧭 Guided","Explanation + LOS tag after each answer"],["exam","⚡ Exam Sim","No hints — results only at end"],["speed_drill","⏱ Speed Drill","100s/question — auto-advance on timeout"],["interleaved","🔀 Interleaved","Mix your 3 weakest topics — beats blocked practice for retention"]].map(([val,label,desc])=>(
+          <button key={val} onClick={()=>setMode(val)} style={{flex:1,padding:"12px",borderRadius:10,textAlign:"left",cursor:"pointer",border:mode===val?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:mode===val?C.accent+"18":C.surface,color:mode===val?C.accentLight:C.muted}}>
+            <div style={{fontSize:13,fontWeight:700}}>{label}</div><div style={{fontSize:11,marginTop:3,opacity:0.65}}>{desc}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {mode==="interleaved"&&(
+      <div style={{background:`${C.accent}0d`,border:`1px solid ${C.accent}33`,borderRadius:10,padding:"12px 14px",marginBottom:18}}>
+        <div style={{fontSize:12,fontWeight:700,color:C.accentLight,marginBottom:4}}>🔀 Interleaved Mode</div>
+        <div style={{fontSize:11,color:C.muted,lineHeight:1.55}}>Picks your 3 weakest topics automatically and mixes questions from all three in one session. Research shows interleaved practice beats blocked (single-topic) practice for long-term retention. Topic and module selectors are ignored in this mode.</div>
+      </div>
+    )}
+
+    {mode!=="interleaved"&&(<>
+    <div style={{marginBottom:18}}>
       <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:10}}>Topic</label>
       <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
         {Object.entries(activeTopicMap).map(([t,{weight}])=>(
@@ -8513,24 +8532,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         )}
       </div>
     )}
-
-    <div style={{marginBottom:18}}>
-      <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:10}}>Mode</label>
-      <div style={{display:"flex",gap:9}}>
-        {[["guided","🧭 Guided","Explanation + LOS tag after each answer"],["exam","⚡ Exam Sim","No hints — results only at end"],["speed_drill","⏱ Speed Drill","100s/question — auto-advance on timeout"],["interleaved","🔀 Interleaved","Mix your 3 weakest topics — beats blocked practice for retention"]].map(([val,label,desc])=>(
-          <button key={val} onClick={()=>setMode(val)} style={{flex:1,padding:"12px",borderRadius:10,textAlign:"left",cursor:"pointer",border:mode===val?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:mode===val?C.accent+"18":C.surface,color:mode===val?C.accentLight:C.muted}}>
-            <div style={{fontSize:13,fontWeight:700}}>{label}</div><div style={{fontSize:11,marginTop:3,opacity:0.65}}>{desc}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-
-    {mode==="interleaved"&&(
-      <div style={{background:`${C.accent}0d`,border:`1px solid ${C.accent}33`,borderRadius:10,padding:"12px 14px",marginBottom:18}}>
-        <div style={{fontSize:12,fontWeight:700,color:C.accentLight,marginBottom:4}}>🔀 Interleaved Mode</div>
-        <div style={{fontSize:11,color:C.muted,lineHeight:1.55}}>Picks your 3 weakest topics automatically and mixes questions from all three in one session. Research shows interleaved practice beats blocked (single-topic) practice for long-term retention. Topic and module selectors are ignored in this mode.</div>
-      </div>
-    )}
+    </>)}
     {mode!=="interleaved"&&(
       <div style={{marginBottom:18}}>
         <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:8}}>Warm-Up</label>
@@ -8750,6 +8752,57 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </button>
       </div>
 
+      {/* AM/PM break screen */}
+      {fullExamMode&&examSession===1&&window._cfaExamPMQs?.length>0&&(
+        <div style={{background:`linear-gradient(135deg,${C.easy}12,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"18px 20px",marginBottom:14,textAlign:"center"}}>
+          <div style={{fontSize:16,fontWeight:800,color:C.easy,marginBottom:6}}>AM Session Complete ✓</div>
+          <div style={{fontSize:13,color:C.muted,marginBottom:4}}>Score: {sessionPct}% · {sessionScore}/{questions.length} correct</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>Take a 30-minute break before PM session. Stand up, eat, rest your eyes. CFA examiners build this in — use it.</div>
+          <button onClick={()=>startFullExam(2)} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+            Start PM Session ({window._cfaExamPMQs.length} questions) →
+          </button>
+        </div>
+      )}
+
+      {/* Office Mode — Keep going prompt */}
+      {omMode&&(
+        <div style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"13px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>⚡ Keep going?</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{omQCount} more questions · next weakest topic</div>
+          </div>
+          <button onClick={()=>{
+            trackUsage("office_mode");
+            const weak=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
+              ||moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
+              ||moduleReadiness[0];
+            setOmMode(true);
+            generateQuestions(weak.topic,weak.untouchedModules?.[0]||weak.modules[0],adaptiveOmDifficulty,omQCount,"guided");
+          }} style={{fontSize:13,fontWeight:800,padding:"9px 18px",borderRadius:9,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`,flexShrink:0}}>
+            {omQCount} More →
+          </button>
+        </div>
+      )}
+      <div style={{display:"flex",gap:9,marginBottom:9}}>
+        <button onClick={()=>{setOmMode(false);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setScreen("quiz");}} style={{flex:1,padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Retry</button>
+        <button onClick={()=>{setOmMode(false);setScreen("setup");}} style={{flex:2,padding:"12px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>New Mock →</button>
+      </div>
+      {wrongs.length>0&&(
+        <button onClick={()=>{
+          // Generate new questions targeting only the LOS that were missed
+          const missedLOS=wrongs.map(q=>q.los_tested).filter(Boolean);
+          const missedConcepts=wrongs.map(q=>q.concept).filter(Boolean);
+          const drillModule=subtopic;
+          generateQuestions(topic,drillModule,difficulty,Math.min(10,wrongs.length+5),"guided");
+        }} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.hard+"20",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer",marginBottom:9}}>
+          🔁 Drill Missed LOS ({wrongs.length} gaps) →
+        </button>
+      )}
+      <div style={{display:"flex",gap:9,marginBottom:16}}>
+        <button onClick={()=>{setScreen("home");setFocusSuggestions(null);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Home</button>
+        <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setScreen("revision");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise {topic?.split(" ")[0]}</button>
+      </div>
+
       {/* Session quality breakdown */}
       {qScore&&(
         <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
@@ -8814,52 +8867,6 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           </div>
         </div>
       )}
-      {/* AM/PM break screen */}
-      {fullExamMode&&examSession===1&&window._cfaExamPMQs?.length>0&&(
-        <div style={{background:`linear-gradient(135deg,${C.easy}12,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"18px 20px",marginBottom:14,textAlign:"center"}}>
-          <div style={{fontSize:16,fontWeight:800,color:C.easy,marginBottom:6}}>AM Session Complete ✓</div>
-          <div style={{fontSize:13,color:C.muted,marginBottom:4}}>Score: {sessionPct}% · {sessionScore}/{questions.length} correct</div>
-          <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>Take a 30-minute break before PM session. Stand up, eat, rest your eyes. CFA examiners build this in — use it.</div>
-          <button onClick={()=>startFullExam(2)} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
-            Start PM Session ({window._cfaExamPMQs.length} questions) →
-          </button>
-        </div>
-      )}
-
-      {/* Office Mode — Keep going prompt */}
-      {omMode&&(
-        <div style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"13px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div>
-            <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>⚡ Keep going?</div>
-            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{omQCount} more questions · next weakest topic</div>
-          </div>
-          <button onClick={()=>{
-            trackUsage("office_mode");
-            const weak=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
-              ||moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
-              ||moduleReadiness[0];
-            setOmMode(true);
-            generateQuestions(weak.topic,weak.untouchedModules?.[0]||weak.modules[0],adaptiveOmDifficulty,omQCount,"guided");
-          }} style={{fontSize:13,fontWeight:800,padding:"9px 18px",borderRadius:9,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`,flexShrink:0}}>
-            {omQCount} More →
-          </button>
-        </div>
-      )}
-      <div style={{display:"flex",gap:9,marginBottom:9}}>
-        <button onClick={()=>{setOmMode(false);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setScreen("quiz");}} style={{flex:1,padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Retry</button>
-        <button onClick={()=>{setOmMode(false);setScreen("setup");}} style={{flex:2,padding:"12px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>New Mock →</button>
-      </div>
-      {wrongs.length>0&&(
-        <button onClick={()=>{
-          // Generate new questions targeting only the LOS that were missed
-          const missedLOS=wrongs.map(q=>q.los_tested).filter(Boolean);
-          const missedConcepts=wrongs.map(q=>q.concept).filter(Boolean);
-          const drillModule=subtopic;
-          generateQuestions(topic,drillModule,difficulty,Math.min(10,wrongs.length+5),"guided");
-        }} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.hard+"20",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer",marginBottom:9}}>
-          🔁 Drill Missed LOS ({wrongs.length} gaps) →
-        </button>
-      )}
       {history.length>=3&&authUser?.id&&(
         <div style={{background:weeklyPlan?`${C.easy}0c`:`${C.accent}10`,border:`1px solid ${weeklyPlan?C.easy+"30":C.accent+"30"}`,borderRadius:11,padding:"13px 15px",marginBottom:10}}>
           <div style={{fontSize:12,fontWeight:700,color:weeklyPlan?C.easy:C.accentLight,marginBottom:6}}>
@@ -8880,10 +8887,6 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           )}
         </div>
       )}
-      <div style={{display:"flex",gap:9,marginTop:9}}>
-        <button onClick={()=>{setScreen("home");setFocusSuggestions(null);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Home</button>
-        <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setScreen("revision");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise {topic?.split(" ")[0]}</button>
-      </div>
     </>);
   }
   // ══ READINESS ══════════════════════════════════════════════════════════════
@@ -9042,34 +9045,6 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
       );
     })()}
 
-    {/* LOS Heatmap — all 365 LOS at a glance */}
-    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:16}}>
-      <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10}}>LOS Coverage Heatmap <span style={{color:C.muted,fontWeight:400}}>({Object.values(LOS).flatMap(t=>Object.values(t.modules)).flat().length} total statements)</span></div>
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {Object.entries(activeLOS).map(([topic,{modules}])=>{
-          const topicSessions=history.filter(h=>h.topic===topic);
-          return(
-            <div key={topic} style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{fontSize:9,color:C.muted,width:90,flexShrink:0,textAlign:"right",lineHeight:1.2}}>{topic.split(" ").slice(0,2).join(" ")}</div>
-              <div style={{display:"flex",gap:2,flexWrap:"wrap"}}>
-                {Object.entries(modules).map(([mod,stmts])=>{
-                  const modSessions=topicSessions.filter(h=>h.subtopic===mod);
-                  const modPct=modSessions.length?Math.round(modSessions.reduce((s,h)=>s+(h.pct||0),0)/modSessions.length):null;
-                  return stmts.map((_,i)=><LOSHeatmapCell key={`${mod}_${i}`} tested={modPct!==null} pct={modPct||0}/>);
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div style={{display:"flex",gap:12,marginTop:10}}>
-        <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:C.border}}/><span style={{fontSize:10,color:C.muted}}>Not tested</span></div>
-        <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:C.hard}}/><span style={{fontSize:10,color:C.muted}}>&lt;60%</span></div>
-        <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:C.medium}}/><span style={{fontSize:10,color:C.muted}}>60-80%</span></div>
-        <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:"#16a34a"}}/><span style={{fontSize:10,color:C.muted}}>&gt;80%</span></div>
-      </div>
-    </div>
-
     {/* Module cards */}
     <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:16}}>
       {moduleReadiness.map(m=>{
@@ -9109,6 +9084,34 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
           </div>
         );
       })}
+    </div>
+
+    {/* LOS Heatmap — all 365 LOS at a glance */}
+    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:16}}>
+      <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10}}>LOS Coverage Heatmap <span style={{color:C.muted,fontWeight:400}}>({Object.values(LOS).flatMap(t=>Object.values(t.modules)).flat().length} total statements)</span></div>
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {Object.entries(activeLOS).map(([topic,{modules}])=>{
+          const topicSessions=history.filter(h=>h.topic===topic);
+          return(
+            <div key={topic} style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{fontSize:9,color:C.muted,width:90,flexShrink:0,textAlign:"right",lineHeight:1.2}}>{topic.split(" ").slice(0,2).join(" ")}</div>
+              <div style={{display:"flex",gap:2,flexWrap:"wrap"}}>
+                {Object.entries(modules).map(([mod,stmts])=>{
+                  const modSessions=topicSessions.filter(h=>h.subtopic===mod);
+                  const modPct=modSessions.length?Math.round(modSessions.reduce((s,h)=>s+(h.pct||0),0)/modSessions.length):null;
+                  return stmts.map((_,i)=><LOSHeatmapCell key={`${mod}_${i}`} tested={modPct!==null} pct={modPct||0}/>);
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{display:"flex",gap:12,marginTop:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:C.border}}/><span style={{fontSize:10,color:C.muted}}>Not tested</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:C.hard}}/><span style={{fontSize:10,color:C.muted}}>&lt;60%</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:C.medium}}/><span style={{fontSize:10,color:C.muted}}>60-80%</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:2,background:"#16a34a"}}/><span style={{fontSize:10,color:C.muted}}>&gt;80%</span></div>
+      </div>
     </div>
 
     <div style={{background:C.dim,borderRadius:10,padding:"12px 14px",fontSize:11,color:C.muted,lineHeight:1.6}}>
