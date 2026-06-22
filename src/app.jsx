@@ -7302,36 +7302,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ── Onboarding screen (shown once after sign-up) ──
   if(showOnboarding) return wrap(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",minHeight:"100vh",padding:"40px 24px",textAlign:"center"}}>
-      {/* Celebration header */}
+      {/* Header */}
       <div style={{marginBottom:28}}>
-        <div style={{width:64,height:64,borderRadius:18,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,margin:"0 auto 16px",boxShadow:`0 8px 32px ${C.accent}55`}}>🎯</div>
+        <div style={{width:64,height:64,borderRadius:18,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,margin:"0 auto 16px",boxShadow:`0 8px 32px ${C.accent}55`}}>⚡</div>
         <div style={{fontSize:24,fontWeight:900,color:C.text,marginBottom:6,letterSpacing:"-0.4px"}}>You're in. Let's get to work.</div>
-        <div style={{fontSize:13,color:C.muted,lineHeight:1.7,maxWidth:290,margin:"0 auto"}}>One quick step — set your exam date and we'll build your study plan around it.</div>
+        <div style={{fontSize:13,color:C.muted,lineHeight:1.7,maxWidth:290,margin:"0 auto"}}>Set your exam date — we'll calibrate your study plan around it.</div>
       </div>
 
-      {/* What happens next */}
+      {/* Exam date — primary action, first */}
       <div style={{width:"100%",maxWidth:340,marginBottom:28}}>
-        <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12,textAlign:"left"}}>What happens next</div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {[
-            ["1","Your first AI session starts immediately — no setup"],
-            ["2","Your pass probability appears after session 3"],
-            ["3","Spaced repetition activates for anything you miss"],
-          ].map(([n,t])=>(
-            <div key={n} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 12px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,textAlign:"left"}}>
-              <div style={{width:20,height:20,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"#fff",flexShrink:0,marginTop:1}}>{n}</div>
-              <div style={{fontSize:12,color:C.textMid,lineHeight:1.5}}>{t}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Exam date */}
-      <div style={{width:"100%",maxWidth:340}}>
         <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:8,textAlign:"left"}}>Your CFA exam date</label>
         <input type="date" value={examDateInput} onChange={e=>setExamDateInput(e.target.value)}
-          style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${C.accent}`,color:C.text,outline:"none",marginBottom:16,boxSizing:"border-box"}}/>
-        {examDateInput&&<div style={{fontSize:12,color:C.easy,marginBottom:16,fontWeight:600}}>
+          style={{width:"100%",padding:"13px 16px",borderRadius:11,fontSize:14,background:C.surface,border:`1.5px solid ${C.accent}`,color:C.text,outline:"none",marginBottom:12,boxSizing:"border-box"}}/>
+        {examDateInput&&<div style={{fontSize:12,color:C.easy,marginBottom:14,fontWeight:600}}>
           📅 {Math.max(0,Math.ceil((new Date(examDateInput)-new Date())/(1000*60*60*24)))} days to go — let's make every one count.
         </div>}
         <button onClick={async()=>{
@@ -7347,6 +7330,23 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <button onClick={()=>setShowOnboarding(false)} style={{fontSize:12,color:C.muted,background:"none",border:"none",cursor:"pointer",marginTop:14}}>
           I'll set my exam date later
         </button>
+      </div>
+
+      {/* What happens next — reassurance, below the CTA */}
+      <div style={{width:"100%",maxWidth:340}}>
+        <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12,textAlign:"left"}}>What you're getting</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {[
+            ["🤖","AI-generated questions calibrated to your weak topics"],
+            ["📈","Pass probability score after just 3 sessions"],
+            ["🔁","Spaced repetition for every concept you miss"],
+          ].map(([icon,t])=>(
+            <div key={icon} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"9px 12px",background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,textAlign:"left"}}>
+              <span style={{fontSize:15,flexShrink:0,marginTop:1}}>{icon}</span>
+              <div style={{fontSize:12,color:C.textMid,lineHeight:1.5}}>{t}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -7449,8 +7449,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
             {isLast?"See My Results →":"Next Question →"}
           </button>
         )}
-        <button onClick={()=>setShowDiagnostic(false)} style={{width:"100%",marginTop:10,padding:"9px",borderRadius:10,fontSize:12,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
-          Skip diagnostic — go to home
+        <button onClick={()=>setShowDiagnostic(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:11,marginTop:12,display:"block",width:"100%"}}>
+          Skip — go straight to home
         </button>
       </div>
     );
