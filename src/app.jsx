@@ -7726,26 +7726,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* XP Level bar */}
     {history.length>0&&<div style={{marginBottom:14}}><XPBar level={levelInfo.level} progress={levelInfo.progress} label={levelInfo.label} xp={levelInfo.xp} nextXP={levelInfo.nextXP}/></div>}
 
-    {/* Study time strip */}
-    {todayStudySecs>0&&(
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"9px 14px",marginBottom:12,cursor:"pointer"}} onClick={()=>setScreen("dashboard")}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:16}}>📖</span>
-          <div>
-            <div style={{fontSize:13,fontWeight:700,color:C.text}}>{fmtStudyTime(todayStudySecs)} studied today</div>
-            <div style={{fontSize:11,color:C.muted,marginTop:1}}>This week: {fmtStudyTime(weekStudySecs)}</div>
-          </div>
-        </div>
-        <div style={{display:"flex",alignItems:"flex-end",gap:3,height:24}}>
-          {weeklyStudyDays.map(d=>{
-            const maxS=Math.max(...weeklyStudyDays.map(x=>x.secs),1);
-            const h=d.secs>0?Math.max(4,Math.round((d.secs/maxS)*24)):2;
-            return<div key={d.key} style={{width:6,height:h,borderRadius:2,background:d.isToday?C.accent:d.secs>0?C.accent+"66":C.dim,alignSelf:"flex-end"}}/>;
-          })}
-        </div>
-      </div>
-    )}
-
     {/* Stats strip */}
     {!historyLoaded?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>{[0,1,2,3].map(i=><Skeleton key={i} height={68} radius={11}/>)}</div>:(
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
@@ -7756,87 +7736,55 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
 
-    {/* Feature discovery nudge */}
+    {/* Office Mode — primary CTA */}
     {(()=>{
-      const nudges=[
-        {id:"dashboard",cond:history.length>=3&&!usageStats.dashboard,icon:"📈",text:"See your full performance breakdown — by topic, difficulty and quality.",cta:"Dashboard",go:()=>{trackUsage("dashboard");setScreen("dashboard");}},
-        {id:"week_plan",cond:history.length>=3&&!usageStats.week_plan,icon:"🗓",text:weeklyPlan?"Your personalised weekly plan is ready — see today's sessions and focus.":"You've done enough sessions — let us build a personalised weekly plan around your schedule and weak spots.",cta:weeklyPlan?"View Plan":"Week Plan",go:()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}},
-        {id:"los_coverage",cond:history.length>=5&&!usageStats.los_coverage,icon:"🗺",text:"Check which LOS topics you've covered and where the gaps are.",cta:"LOS Map",go:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
-        {id:"notes_review",cond:srWrongCount>=5&&!usageStats.notes_review,icon:"📝",text:`You have ${srWrongCount} concepts in your SR deck — Power Notes condenses the key rules and traps for each topic.`,cta:"Power Notes",go:()=>{trackUsage("notes_review");setRevisionTab("notes");setRevisionTopic(null);setScreen("revision");}},
-        {id:"formulas",cond:srWrongCount>=3&&!usageStats.formulas,icon:"📐",text:"You have wrong answers — drill the formulas that are tripping you up.",cta:"Formula Drill",go:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
-        {id:"readiness",cond:history.length>=5&&!usageStats.readiness,icon:"📊",text:"Check your pass probability — see how your trend compares to the 70% threshold.",cta:"Pass %",go:()=>{trackUsage("readiness");setScreen("readiness");}},
-        {id:"calc_trainer",cond:history.length>=7&&!usageStats.calc_trainer,icon:"🔢",text:"Practice TVM and fixed income calculations with your BA II Plus.",cta:"Calc Trainer",go:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
-      ];
-      const nudge=nudges.find(n=>n.cond&&!dismissedNudges[n.id]);
-      if(!nudge)return null;
-      const dismiss=()=>{const u={...dismissedNudges,[nudge.id]:true};setDismissedNudges(u);try{localStorage.setItem("cfa_dismissed_nudges",JSON.stringify(u));}catch{}};
+      const omSessions=history.filter(h=>h.isOfficeMode);
+      const omStreak=(()=>{let s=0,d=new Date();for(let i=0;i<30;i++){const k=localDateKey(new Date(d-i*86400000));if(omSessions.some(h=>h.dateKey===k))s++;else if(i>0)break;}return s;})();
+      const diffColor=adaptiveOmDifficulty==="Hard"?C.hard:adaptiveOmDifficulty==="Easy"?C.easy:C.medium;
       return(
-        <div style={{background:`${C.accent}10`,border:`1px solid ${C.accent}30`,borderRadius:10,padding:"11px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:11,color:C.accentLight,fontWeight:700,marginBottom:3}}>{nudge.icon} Did you know?</div>
-            <div style={{fontSize:12,color:C.textMid,lineHeight:1.45}}>{nudge.text}</div>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0,alignItems:"flex-end"}}>
-            <button onClick={nudge.go} style={{fontSize:11,fontWeight:700,padding:"5px 10px",borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>{nudge.cta} →</button>
-            <button onClick={dismiss} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:0}}>dismiss</button>
-          </div>
-        </div>
-      );
-    })()}
-
-    {/* Daily target tracker */}
-    {(()=>{
-      const today=localDateKey();
-      const todayQs=levelHistory.filter(h=>h.dateKey===today).reduce((s,h)=>s+(h.total||0),0);
-      const baseTarget=daysLeft>0?(daysLeft<=30?30:daysLeft<=60?25:20):20;
-      const dailyTarget=history.length<5?Math.max(10,Math.round(baseTarget*(0.4+history.length*0.12))):baseTarget;
-      const pct=Math.min(100,Math.round((todayQs/dailyTarget)*100));
-      const done=todayQs>=dailyTarget;
-      return(
-        <div style={{background:C.surface,border:`1px solid ${done?C.easy+"44":C.border}`,borderRadius:10,padding:"10px 14px",marginBottom:12}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-            <span style={{fontSize:12,fontWeight:700,color:done?C.easy:C.textMid}}>📅 Today{done?" — target hit! 🎉":""}</span>
-            <span style={{fontSize:12,fontWeight:800,color:done?C.easy:pct>=60?C.medium:C.muted}}>{todayQs} / {dailyTarget} questions</span>
-          </div>
-          <div style={{height:5,background:C.dim,borderRadius:3}}>
-            <div style={{height:"100%",width:`${pct}%`,background:done?C.easy:pct>=60?C.medium:C.accent,borderRadius:3,transition:"width 0.4s"}}/>
-          </div>
-        </div>
-      );
-    })()}
-
-    {/* Streak */}
-    {/* Burnout recovery banner */}
-    {studyPace?.burnoutRisk && (
-      <div style={{background:`linear-gradient(135deg,${C.easy}12,${C.easy}06)`,border:`1px solid ${C.easy}33`,borderRadius:12,padding:"14px 16px",marginBottom:12}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.easyLight,marginBottom:4}}>
-          👋 {studyPace.daysSinceLastSession === 1 ? "Yesterday" : `${studyPace.daysSinceLastSession} days`} since your last session
-        </div>
-        <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.5}}>
-          No pressure. Start with just 5 questions — that's all. The habit matters more than the volume right now.
-        </div>
-        <button onClick={()=>{
-          // Find easiest entry point — best-performing topic at Easy
-          const best = moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>b.accuracy-a.accuracy)[0];
-          const target = best || moduleReadiness.find(m=>m.sessions===0);
-          if(target) generateQuestions(target.topic, target.modulesCovered[0]||target.modules[0], "Easy", 5, "guided");
-        }} style={{fontSize:13,fontWeight:700,padding:"9px 18px",borderRadius:9,background:`linear-gradient(135deg,${C.easy},#059669)`,color:"#fff",border:"none",cursor:"pointer"}}>
-          Ease back in — 5 questions →
-        </button>
-      </div>
-    )}
-    {daysLeft<=14&&daysLeft>0&&(
-      <div style={{background:`linear-gradient(135deg,${C.hard}18,${C.hard}08)`,border:`1px solid ${C.hard}55`,borderRadius:12,padding:"13px 16px",marginBottom:12,animation:"glow 2s ease infinite"}}>
-        <div style={{fontSize:13,fontWeight:800,color:C.hard,marginBottom:4}}>🚨 Final {daysLeft} days — High-Weight Only</div>
-        <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.5}}>Focus exclusively on Ethics (15%), FSA (13%), Equity (11%), Fixed Income (11%). These 4 topics are 50% of the exam.</div>
-        <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-          {[["Ethics","Code of Ethics & Standards"],["Financial Statement Analysis","Financial Ratios"],["Fixed Income","Yield Measures & Duration"],["Equity","Equity Valuation – DDM & Multiples"]].map(([t,m])=>(
-            <button key={t} onClick={()=>generateQuestions(t,m,"Hard",10,"guided")}
-              style={{fontSize:11,fontWeight:700,padding:"5px 10px",borderRadius:7,background:C.hard+"22",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
-              {t.split(" ")[0]} Hard →
+        <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+            <div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:13,fontWeight:800,color:C.accentLight}}>⚡ Office Mode</span>
+                {omStreak>1&&<span style={{fontSize:10,background:C.reward+"22",color:C.rewardLight,padding:"2px 7px",borderRadius:5,fontWeight:700}}>🔥 {omStreak}d streak</span>}
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginTop:3}}>
+                AI picks your weakest topic · {omQCount} Qs · ~{omQCount*1.5|0} min
+                {omSessions.length>0&&<span style={{marginLeft:6,color:diffColor,fontWeight:600}}>· {adaptiveOmDifficulty} (your form)</span>}
+              </div>
+            </div>
+            <button onClick={()=>{
+              trackUsage("office_mode");
+              setOmMode(true);
+              const weak=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
+                ||moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
+                ||moduleReadiness[0];
+              generateQuestions(weak.topic,weak.untouchedModules?.[0]||weak.modules[0],adaptiveOmDifficulty,omQCount,"guided");
+            }} style={{fontSize:14,fontWeight:800,padding:"10px 20px",borderRadius:10,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}55`,flexShrink:0,marginLeft:10}}>
+              Start →
             </button>
-          ))}
+          </div>
+          {/* Time selector */}
+          <div style={{display:"flex",gap:6}}>
+            {[{n:3,label:"3 Qs · ~5 min"},{n:5,label:"5 Qs · ~8 min"},{n:10,label:"10 Qs · ~15 min"}].map(({n,label})=>(
+              <button key={n} onClick={()=>{setOmQCount(n);try{localStorage.setItem("cfa_om_count",String(n));}catch{}}} style={{flex:1,padding:"6px 4px",borderRadius:8,fontSize:11,fontWeight:700,background:omQCount===n?C.accent+"33":"transparent",border:`1px solid ${omQCount===n?C.accent+"88":C.border}`,color:omQCount===n?C.accentLight:C.muted,cursor:"pointer",transition:"all 0.15s"}}>
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
+      );
+    })()}
+
+    {/* SR due */}
+    {dueCards.length>0&&(
+      <div onClick={()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}} style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",animation:"glow 3s ease infinite"}}>
+        <div>
+          <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>📋 {dueCards.length} card{dueCards.length!==1?"s":""} due for review</div>
+          <div style={{fontSize:11,color:C.muted,marginTop:2}}>SM-2 spaced repetition · tap to start</div>
+        </div>
+        <div style={{fontSize:18,color:C.accent,fontWeight:700}}>→</div>
       </div>
     )}
 
@@ -7851,78 +7799,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
 
-    {/* SR due */}
-    {dueCards.length>0&&(
-      <div onClick={()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}} style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",animation:"glow 3s ease infinite"}}>
-        <div>
-          <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>📋 {dueCards.length} card{dueCards.length!==1?"s":""} due for review</div>
-          <div style={{fontSize:11,color:C.muted,marginTop:2}}>SM-2 spaced repetition · tap to start</div>
-        </div>
-        <div style={{fontSize:18,color:C.accent,fontWeight:700}}>→</div>
-      </div>
-    )}
-
-    {/* Auto-escalation — subtle inline nudge, not a full card */}
-    {autoEscalation&&(
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.easy+"0d",border:`1px solid ${C.easy}33`,borderRadius:10,padding:"9px 13px",marginBottom:10}}>
-        <span style={{fontSize:12,color:C.easyLight}}>↑ Ready to level up · {autoEscalation.subtopic} → {autoEscalation.to}</span>
-        <div style={{display:"flex",gap:6}}>
-          <button onClick={()=>{generateQuestions(autoEscalation.topic,autoEscalation.subtopic,autoEscalation.to,10);setAutoEscalation(null);}} style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:7,background:C.easy+"25",border:`1px solid ${C.easy}44`,color:C.easyLight,cursor:"pointer"}}>Start</button>
-          <button onClick={()=>setAutoEscalation(null)} style={{fontSize:11,padding:"4px 7px",borderRadius:7,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>✕</button>
+    {daysLeft<=14&&daysLeft>0&&(
+      <div style={{background:`linear-gradient(135deg,${C.hard}18,${C.hard}08)`,border:`1px solid ${C.hard}55`,borderRadius:12,padding:"13px 16px",marginBottom:12,animation:"glow 2s ease infinite"}}>
+        <div style={{fontSize:13,fontWeight:800,color:C.hard,marginBottom:4}}>🚨 Final {daysLeft} days — High-Weight Only</div>
+        <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.5}}>Focus exclusively on Ethics (15%), FSA (13%), Equity (11%), Fixed Income (11%). These 4 topics are 50% of the exam.</div>
+        <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+          {[["Ethics","Code of Ethics & Standards"],["Financial Statement Analysis","Financial Ratios"],["Fixed Income","Yield Measures & Duration"],["Equity","Equity Valuation – DDM & Multiples"]].map(([t,m])=>(
+            <button key={t} onClick={()=>generateQuestions(t,m,"Hard",10,"guided")}
+              style={{fontSize:11,fontWeight:700,padding:"5px 10px",borderRadius:7,background:C.hard+"22",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
+              {t.split(" ")[0]} Hard →
+            </button>
+          ))}
         </div>
       </div>
     )}
-
-    {/* Exam countdown phase banner */}
-    {history.length>=3&&daysLeft>14&&(()=>{
-      let phase,icon,msg,color;
-      if(daysLeft>60){phase="Foundation";icon="🌱";msg="Build breadth — hit every topic at least once. Speed doesn't matter yet.";color=C.easy;}
-      else if(daysLeft>30){phase="Depth";icon="🎯";msg="Deepen weak topics. Anything below 65% accuracy needs 3+ more sessions.";color=C.medium;}
-      else{phase="Final Push";icon="🔥";msg="High-weight focus: Ethics·FSA·Equity·Fixed Income = 50% of exam.";color=C.hard;}
-      return(
-        <div style={{background:`${color}0c`,border:`1px solid ${color}30`,borderLeft:`3px solid ${color}`,borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div>
-            <div style={{fontSize:11,fontWeight:700,color,marginBottom:2}}>{icon} Phase: {phase} · {daysLeft} days left</div>
-            <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>{msg}</div>
-          </div>
-        </div>
-      );
-    })()}
-
-    {/* Session fatigue insight */}
-    {sessionFatigue&&(
-      <div style={{background:`${C.medium}0c`,border:`1px solid ${C.medium}30`,borderRadius:10,padding:"10px 14px",marginBottom:10}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.medium,marginBottom:2}}>⏳ Optimal session length: ~{sessionFatigue.optimalCount} questions</div>
-        <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>Short sessions average {sessionFatigue.shortAvg}% but longer ones drop to {sessionFatigue.longAvg}% (−{sessionFatigue.drop}pp). Two 10-question sessions beat one 20-question session.</div>
-      </div>
-    )}
-
-    {/* Weak spot drill */}
-    {(()=>{
-      const worst=Object.values(srDeck).filter(c=>(c.wrongCount||0)>=2).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,4);
-      if(worst.length===0)return null;
-      const mainTopic=worst[0].topic;
-      const mainModule=worst[0].subtopic||activeTopicMap[mainTopic]?.subtopics[0];
-      return(
-        <div style={{background:`linear-gradient(135deg,${C.hard}12,${C.hard}06)`,border:`1px solid ${C.hard}33`,borderLeft:`3px solid ${C.hard}`,borderRadius:12,padding:"12px 16px",marginBottom:10}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-            <div>
-              <div style={{fontSize:13,fontWeight:700,color:C.hard}}>⚡ Weak Spot Drill</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Your most-missed concepts need drilling</div>
-            </div>
-            <button onClick={()=>{if(mainTopic&&mainModule)generateQuestions(mainTopic,mainModule,"Medium",10,"guided");}} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:C.hard+"25",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer",flexShrink:0}}>Drill 10 →</button>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            {worst.slice(0,3).map((c,i)=>(
-              <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <span style={{fontSize:11,color:C.textMid,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.concept||c.subtopic}</span>
-                <span style={{fontSize:10,fontWeight:700,color:C.hard,flexShrink:0,marginLeft:8}}>×{c.wrongCount} wrong</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    })()}
 
     {/* Daily Focus */}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",marginBottom:12}}>
@@ -8058,46 +7948,81 @@ Return ONLY a JSON array — no prose, no markdown fences:
       })()}
     </div>
 
-    {/* Office Mode — primary CTA */}
+    {/* Daily target tracker */}
     {(()=>{
-      const omSessions=history.filter(h=>h.isOfficeMode);
-      const omStreak=(()=>{let s=0,d=new Date();for(let i=0;i<30;i++){const k=localDateKey(new Date(d-i*86400000));if(omSessions.some(h=>h.dateKey===k))s++;else if(i>0)break;}return s;})();
-      const diffColor=adaptiveOmDifficulty==="Hard"?C.hard:adaptiveOmDifficulty==="Easy"?C.easy:C.medium;
+      const today=localDateKey();
+      const todayQs=levelHistory.filter(h=>h.dateKey===today).reduce((s,h)=>s+(h.total||0),0);
+      const baseTarget=daysLeft>0?(daysLeft<=30?30:daysLeft<=60?25:20):20;
+      const dailyTarget=history.length<5?Math.max(10,Math.round(baseTarget*(0.4+history.length*0.12))):baseTarget;
+      const pct=Math.min(100,Math.round((todayQs/dailyTarget)*100));
+      const done=todayQs>=dailyTarget;
       return(
-        <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-            <div>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:13,fontWeight:800,color:C.accentLight}}>⚡ Office Mode</span>
-                {omStreak>1&&<span style={{fontSize:10,background:C.reward+"22",color:C.rewardLight,padding:"2px 7px",borderRadius:5,fontWeight:700}}>🔥 {omStreak}d streak</span>}
-              </div>
-              <div style={{fontSize:11,color:C.muted,marginTop:3}}>
-                AI picks your weakest topic · {omQCount} Qs · ~{omQCount*1.5|0} min
-                {omSessions.length>0&&<span style={{marginLeft:6,color:diffColor,fontWeight:600}}>· {adaptiveOmDifficulty} (your form)</span>}
-              </div>
-            </div>
-            <button onClick={()=>{
-              trackUsage("office_mode");
-              setOmMode(true);
-              const weak=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
-                ||moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
-                ||moduleReadiness[0];
-              generateQuestions(weak.topic,weak.untouchedModules?.[0]||weak.modules[0],adaptiveOmDifficulty,omQCount,"guided");
-            }} style={{fontSize:14,fontWeight:800,padding:"10px 20px",borderRadius:10,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}55`,flexShrink:0,marginLeft:10}}>
-              Start →
-            </button>
+        <div style={{background:C.surface,border:`1px solid ${done?C.easy+"44":C.border}`,borderRadius:10,padding:"10px 14px",marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <span style={{fontSize:12,fontWeight:700,color:done?C.easy:C.textMid}}>📅 Today{done?" — target hit! 🎉":""}</span>
+            <span style={{fontSize:12,fontWeight:800,color:done?C.easy:pct>=60?C.medium:C.muted}}>{todayQs} / {dailyTarget} questions</span>
           </div>
-          {/* Time selector */}
-          <div style={{display:"flex",gap:6}}>
-            {[{n:3,label:"3 Qs · ~5 min"},{n:5,label:"5 Qs · ~8 min"},{n:10,label:"10 Qs · ~15 min"}].map(({n,label})=>(
-              <button key={n} onClick={()=>{setOmQCount(n);try{localStorage.setItem("cfa_om_count",String(n));}catch{}}} style={{flex:1,padding:"6px 4px",borderRadius:8,fontSize:11,fontWeight:700,background:omQCount===n?C.accent+"33":"transparent",border:`1px solid ${omQCount===n?C.accent+"88":C.border}`,color:omQCount===n?C.accentLight:C.muted,cursor:"pointer",transition:"all 0.15s"}}>
-                {label}
-              </button>
-            ))}
+          <div style={{height:5,background:C.dim,borderRadius:3}}>
+            <div style={{height:"100%",width:`${pct}%`,background:done?C.easy:pct>=60?C.medium:C.accent,borderRadius:3,transition:"width 0.4s"}}/>
           </div>
         </div>
       );
     })()}
+
+    {/* Study time strip */}
+    {todayStudySecs>0&&(
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"9px 14px",marginBottom:12,cursor:"pointer"}} onClick={()=>setScreen("dashboard")}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:16}}>📖</span>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:C.text}}>{fmtStudyTime(todayStudySecs)} studied today</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:1}}>This week: {fmtStudyTime(weekStudySecs)}</div>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"flex-end",gap:3,height:24}}>
+          {weeklyStudyDays.map(d=>{
+            const maxS=Math.max(...weeklyStudyDays.map(x=>x.secs),1);
+            const h=d.secs>0?Math.max(4,Math.round((d.secs/maxS)*24)):2;
+            return<div key={d.key} style={{width:6,height:h,borderRadius:2,background:d.isToday?C.accent:d.secs>0?C.accent+"66":C.dim,alignSelf:"flex-end"}}/>;
+          })}
+        </div>
+      </div>
+    )}
+
+    {/* Exam countdown phase banner */}
+    {history.length>=3&&daysLeft>14&&(()=>{
+      let phase,icon,msg,color;
+      if(daysLeft>60){phase="Foundation";icon="🌱";msg="Build breadth — hit every topic at least once. Speed doesn't matter yet.";color=C.easy;}
+      else if(daysLeft>30){phase="Depth";icon="🎯";msg="Deepen weak topics. Anything below 65% accuracy needs 3+ more sessions.";color=C.medium;}
+      else{phase="Final Push";icon="🔥";msg="High-weight focus: Ethics·FSA·Equity·Fixed Income = 50% of exam.";color=C.hard;}
+      return(
+        <div style={{background:`${color}0c`,border:`1px solid ${color}30`,borderLeft:`3px solid ${color}`,borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color,marginBottom:2}}>{icon} Phase: {phase} · {daysLeft} days left</div>
+            <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>{msg}</div>
+          </div>
+        </div>
+      );
+    })()}
+
+    {/* Auto-escalation — subtle inline nudge, not a full card */}
+    {autoEscalation&&(
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:C.easy+"0d",border:`1px solid ${C.easy}33`,borderRadius:10,padding:"9px 13px",marginBottom:10}}>
+        <span style={{fontSize:12,color:C.easyLight}}>↑ Ready to level up · {autoEscalation.subtopic} → {autoEscalation.to}</span>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>{generateQuestions(autoEscalation.topic,autoEscalation.subtopic,autoEscalation.to,10);setAutoEscalation(null);}} style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:7,background:C.easy+"25",border:`1px solid ${C.easy}44`,color:C.easyLight,cursor:"pointer"}}>Start</button>
+          <button onClick={()=>setAutoEscalation(null)} style={{fontSize:11,padding:"4px 7px",borderRadius:7,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>✕</button>
+        </div>
+      </div>
+    )}
+
+    {/* Session fatigue insight */}
+    {sessionFatigue&&(
+      <div style={{background:`${C.medium}0c`,border:`1px solid ${C.medium}30`,borderRadius:10,padding:"10px 14px",marginBottom:10}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.medium,marginBottom:2}}>⏳ Optimal session length: ~{sessionFatigue.optimalCount} questions</div>
+        <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>Short sessions average {sessionFatigue.shortAvg}% but longer ones drop to {sessionFatigue.longAvg}% (−{sessionFatigue.drop}pp). Two 10-question sessions beat one 20-question session.</div>
+      </div>
+    )}
 
     {/* Daily Concept Refresher — 3/day flip card */}
     {dailyRefresher?.concepts?.length&&(()=>{
@@ -8241,6 +8166,33 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         )}
       </>);
+    })()}
+    {/* Feature discovery nudge */}
+    {(()=>{
+      const nudges=[
+        {id:"dashboard",cond:history.length>=3&&!usageStats.dashboard,icon:"📈",text:"See your full performance breakdown — by topic, difficulty and quality.",cta:"Dashboard",go:()=>{trackUsage("dashboard");setScreen("dashboard");}},
+        {id:"week_plan",cond:history.length>=3&&!usageStats.week_plan,icon:"🗓",text:weeklyPlan?"Your personalised weekly plan is ready — see today's sessions and focus.":"You've done enough sessions — let us build a personalised weekly plan around your schedule and weak spots.",cta:weeklyPlan?"View Plan":"Week Plan",go:()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}},
+        {id:"los_coverage",cond:history.length>=5&&!usageStats.los_coverage,icon:"🗺",text:"Check which LOS topics you've covered and where the gaps are.",cta:"LOS Map",go:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
+        {id:"notes_review",cond:srWrongCount>=5&&!usageStats.notes_review,icon:"📝",text:`You have ${srWrongCount} concepts in your SR deck — Power Notes condenses the key rules and traps for each topic.`,cta:"Power Notes",go:()=>{trackUsage("notes_review");setRevisionTab("notes");setRevisionTopic(null);setScreen("revision");}},
+        {id:"formulas",cond:srWrongCount>=3&&!usageStats.formulas,icon:"📐",text:"You have wrong answers — drill the formulas that are tripping you up.",cta:"Formula Drill",go:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
+        {id:"readiness",cond:history.length>=5&&!usageStats.readiness,icon:"📊",text:"Check your pass probability — see how your trend compares to the 70% threshold.",cta:"Pass %",go:()=>{trackUsage("readiness");setScreen("readiness");}},
+        {id:"calc_trainer",cond:history.length>=7&&!usageStats.calc_trainer,icon:"🔢",text:"Practice TVM and fixed income calculations with your BA II Plus.",cta:"Calc Trainer",go:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
+      ];
+      const nudge=nudges.find(n=>n.cond&&!dismissedNudges[n.id]);
+      if(!nudge)return null;
+      const dismiss=()=>{const u={...dismissedNudges,[nudge.id]:true};setDismissedNudges(u);try{localStorage.setItem("cfa_dismissed_nudges",JSON.stringify(u));}catch{}};
+      return(
+        <div style={{background:`${C.accent}10`,border:`1px solid ${C.accent}30`,borderRadius:10,padding:"11px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:11,color:C.accentLight,fontWeight:700,marginBottom:3}}>{nudge.icon} Did you know?</div>
+            <div style={{fontSize:12,color:C.textMid,lineHeight:1.45}}>{nudge.text}</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0,alignItems:"flex-end"}}>
+            <button onClick={nudge.go} style={{fontSize:11,fontWeight:700,padding:"5px 10px",borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>{nudge.cta} →</button>
+            <button onClick={dismiss} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:0}}>dismiss</button>
+          </div>
+        </div>
+      );
     })()}
     {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease"}}>{error}</div>}
 
