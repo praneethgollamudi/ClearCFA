@@ -7192,6 +7192,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
 
+        {/* ── Try before signup ── */}
+        <div style={{padding:"12px 20px 0",maxWidth:420,margin:"0 auto"}}>
+          <button onClick={()=>{setDemoMode(true);setDemoQ(0);setDemoAnswers({});setDemoComplete(false);}}
+            style={{width:"100%",padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,
+              background:"none",border:`1.5px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>
+            🎲 Try 5 sample questions first — no account needed
+          </button>
+        </div>
+
         {/* ── Testimonial ── */}
         <div style={{padding:"20px 20px 0",maxWidth:420,margin:"0 auto"}}>
           <div style={{background:`linear-gradient(135deg,${C.accent}0e,${C.easy}08)`,border:`1px solid ${C.accent}22`,borderRadius:14,padding:"16px 18px"}}>
@@ -7217,7 +7226,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               {icon:"⚡",color:C.accent,title:"AI-Personalized Daily Sessions",desc:"Each session is built around your weakest concepts. The AI tracks every question you've ever missed and ensures those gaps close before exam day."},
               {icon:"🧠",color:C.easy,title:"Spaced Repetition Engine",desc:"Forget flashcards. Our system surfaces forgotten concepts at the scientifically optimal moment — right before you'd lose them permanently."},
               {icon:"📈",color:C.medium,title:"Live Pass Probability",desc:"Your estimated pass percentage updates after every session. Watch it climb. Know exactly where you stand vs. the 42% pass rate."},
-              {icon:"⚡",color:"#a78bfa",title:"Office Mode — 7 Minutes a Day",desc:"5 AI-picked questions. Zero setup. For days when life gets in the way, Office Mode keeps your streak alive and your momentum building."},
+              {icon:"💼",color:"#a78bfa",title:"Office Mode — 7 Minutes a Day",desc:"5 AI-picked questions. Zero setup. For days when life gets in the way, Office Mode keeps your streak alive and your momentum building."},
               {icon:"🎯",color:C.hard,title:"LOS-Anchored Questions",desc:"Every question maps to the official 2026 CFA curriculum. No filler, no outdated content — only what the exam actually tests."},
             ].map(({icon,color,title,desc})=>(
               <div key={title} style={{display:"flex",gap:14,padding:"14px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,borderLeft:`3px solid ${color}`}}>
@@ -7285,12 +7294,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               style={{width:"100%",marginTop:16,padding:"13px",borderRadius:11,fontSize:14,fontWeight:800,
                 background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",
                 boxShadow:`0 4px 18px ${C.accent}44`}}>
-              Start free today →
-            </button>
-            <button onClick={()=>{setDemoMode(true);setDemoQ(0);setDemoAnswers({});setDemoComplete(false);}}
-              style={{width:"100%",marginTop:10,padding:"11px",borderRadius:11,fontSize:13,fontWeight:700,
-                background:"none",border:`1.5px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>
-              Try 5 sample questions first — no account needed →
+              Create free account →
             </button>
           </div>
         </div>
