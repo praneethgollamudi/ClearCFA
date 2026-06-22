@@ -2809,6 +2809,9 @@ const DYNAMIC_PN_KEY = "cfa_dynamic_pn_v1";
 const DYNAMIC_FORMULAS_KEY = "cfa_dynamic_formulas_v1";
 const LESSONS_KEY          = "cfa_lessons_v1";
 const REFRESHER_KEY        = "cfa_refresher_v1";
+const CONFIDENCE_KEY       = "cfa_confidence_v1";
+const STUDY_GOAL_KEY       = "cfa_study_goal_v1";
+const WORKED_EX_KEY        = "cfa_worked_ex_v1";
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
@@ -5795,7 +5798,11 @@ function CFAMock(){
   const [confirmClear,setConfirmClear]=useState(false);
   const [focusSuggestions,setFocusSuggestions]=useState(null);const [focusLoading,setFocusLoading]=useState(false);const [focusError,setFocusError]=useState("");const [selectedFocus,setSelectedFocus]=useState(null);const [focusCount,setFocusCount]=useState(10);
   const [quizConfidence,setQuizConfidence]=useState(null);
-  const [confidenceLog,setConfidenceLog]=useState({});
+  const [confidenceLog,setConfidenceLog]=useState(()=>{try{return JSON.parse(localStorage.getItem(CONFIDENCE_KEY)||"{}");}catch{return {};}});
+  const [studyGoal,setStudyGoal]=useState(()=>{try{return JSON.parse(localStorage.getItem(STUDY_GOAL_KEY)||"null");}catch{return null;}});
+  const [workedExamples,setWorkedExamples]=useState(()=>{try{return JSON.parse(localStorage.getItem(WORKED_EX_KEY)||"{}");}catch{return {};}});
+  const [workedExLoading,setWorkedExLoading]=useState(false);
+  const [workedExDismissedKey,setWorkedExDismissedKey]=useState("");
   const [warmupEnabled,setWarmupEnabled]=useState(false);
   const [focusLastGenerated,setFocusLastGenerated]=useState(null); // timestamp of last generation
   const [lastSession,setLastSession]=useState(null);
@@ -6717,7 +6724,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     clearInterval(speedDrillRef.current);
     setExplainThisText(null);setExplainThisLoading(false);
     const qId=questions[currentQ]?.id;
-    if(qId&&quizConfidence)setConfidenceLog(c=>({...c,[qId]:quizConfidence}));
+    if(qId&&quizConfidence){const correct=answers[qId]===questions[currentQ]?.answer;setConfidenceLog(c=>{const u={...c,[qId]:{c:quizConfidence,ok:correct}};try{localStorage.setItem(CONFIDENCE_KEY,JSON.stringify(u));}catch{}return u;});}
     setQuizConfidence(null);
     if(currentQ<questions.length-1){setCurrentQ(q=>q+1);setShowExp(false);}else endQuiz();
   };
@@ -7336,6 +7343,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </button>
       </div>
 
+      {/* Study time commitment — implementation intention */}
+      <div style={{width:"100%",maxWidth:340,marginBottom:24}}>
+        <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",display:"block",marginBottom:8,textAlign:"left"}}>When do you usually study?</label>
+        <div style={{display:"flex",gap:7}}>
+          {[["🌅","Morning","6–11am","morning"],["☀️","Midday","11–2pm","midday"],["🌆","Evening","5–9pm","evening"],["🌙","Night","9pm+","night"]].map(([icon,label,time,key])=>(
+            <button key={key} onClick={()=>{
+              const goal={time:key,setAt:new Date().toISOString()};
+              setStudyGoal(goal);
+              try{localStorage.setItem(STUDY_GOAL_KEY,JSON.stringify(goal));}catch{}
+            }} style={{flex:1,padding:"9px 4px",borderRadius:9,fontSize:11,fontWeight:700,cursor:"pointer",border:`1.5px solid ${studyGoal?.time===key?C.accent:C.border}`,background:studyGoal?.time===key?C.accent+"20":"transparent",color:studyGoal?.time===key?C.accentLight:C.muted,textAlign:"center"}}>
+              <div style={{fontSize:16,marginBottom:3}}>{icon}</div>
+              <div>{label}</div>
+              <div style={{fontSize:9,opacity:0.6,marginTop:1}}>{time}</div>
+            </button>
+          ))}
+        </div>
+        {studyGoal?.time&&<div style={{fontSize:11,color:C.easy,marginTop:8,textAlign:"center"}}>✓ We'll nudge you at your study time</div>}
+      </div>
+
       {/* What happens next — reassurance, below the CTA */}
       <div style={{width:"100%",maxWidth:340}}>
         <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12,textAlign:"left"}}>What you're getting</div>
@@ -7730,6 +7756,39 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"0"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":`${Object.keys(srDeck).length>0?`${Object.keys(srDeck).length} total · none due`:"no cards yet"}`} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
+
+    {/* Study time nudge — implementation intention reminder */}
+    {(()=>{
+      if(!studyGoal?.time)return null;
+      const h=new Date().getHours();
+      const inWindow={morning:h>=6&&h<11,midday:h>=11&&h<14,evening:h>=17&&h<21,night:h>=21||h<2}[studyGoal.time];
+      if(!inWindow)return null;
+      return(
+        <div style={{background:`${C.accent}12`,border:`1px solid ${C.accent}33`,borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{fontSize:18}}>⏰</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:700,color:C.accentLight}}>This is your study time</div>
+            <div style={{fontSize:11,color:C.muted}}>You committed to {studyGoal.time} sessions — your future self will thank you.</div>
+          </div>
+        </div>
+      );
+    })()}
+
+    {/* Overconfidence alert — metacognitive calibration */}
+    {(()=>{
+      const entries=Object.values(confidenceLog).filter(e=>e&&typeof e==="object"&&"c" in e);
+      const sure=entries.filter(e=>e.c==="sure");
+      if(sure.length<5)return null;
+      const sureWrong=sure.filter(e=>!e.ok).length;
+      const rate=Math.round(sureWrong/sure.length*100);
+      if(rate<35)return null;
+      return(
+        <div style={{background:`${C.hard}0d`,border:`1px solid ${C.hard}44`,borderRadius:10,padding:"10px 14px",marginBottom:10}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.hard,marginBottom:3}}>⚠ Confidence gap detected</div>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>{sureWrong} of {sure.length} answers you rated "Sure" were wrong ({rate}%). Overconfidence is the #1 exam risk — revisit those topics in Power Notes.</div>
+        </div>
+      );
+    })()}
 
     {/* Office Mode — primary CTA */}
     {(()=>{
@@ -8614,6 +8673,46 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       )}
       <div style={{height:3,background:C.border,borderRadius:2,marginBottom:18}}><div style={{height:"100%",width:`${(currentQ/questions.length)*100}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:2,transition:"width 0.35s"}}/></div>
+
+      {/* Worked example — shown on first question of untested module (guided mode only) */}
+      {currentQ===0&&mode==="guided"&&!history.some(h=>h.topic===topic&&h.subtopic===subtopic)&&workedExDismissedKey!==`${topic}__${subtopic}`&&(
+        <div style={{background:`${C.accent}0d`,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"14px 16px",marginBottom:16,animation:"fadeIn 0.2s ease"}}>
+          {!workedExamples[`${topic}__${subtopic}`]&&!workedExLoading&&(
+            <>
+              <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>🎓 First time in {subtopic}</div>
+              <div style={{fontSize:11,color:C.muted,marginBottom:12,lineHeight:1.5}}>Want to see a worked example before your first question? 30 seconds — it helps.</div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={async()=>{
+                  setWorkedExLoading(true);
+                  const k=`${topic}__${subtopic}`;
+                  try{
+                    const result=await callClaude(`CFA Level ${cfaLevel}. Topic: ${topic}. Module: ${subtopic}.\n\nProvide one worked example in this exact format (no extra text):\n\nQUESTION: [realistic 2-sentence CFA exam question]\nA) [option]\nB) [option]\nC) [option]\nANSWER: [letter only]\nWALK-THROUGH: [3-sentence step-by-step reasoning explaining why the answer is correct and why the others are wrong]`,350,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"worked_example"});
+                    const text=typeof result==="string"?result:"";
+                    setWorkedExamples(e=>{const u={...e,[k]:text};try{localStorage.setItem(WORKED_EX_KEY,JSON.stringify(u));}catch{}return u;});
+                  }catch(err){setWorkedExDismissedKey(k);}
+                  setWorkedExLoading(false);
+                }} style={{flex:2,padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                  🎓 Show me an example →
+                </button>
+                <button onClick={()=>setWorkedExDismissedKey(`${topic}__${subtopic}`)} style={{flex:1,padding:"9px",borderRadius:9,fontSize:12,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+                  Skip
+                </button>
+              </div>
+            </>
+          )}
+          {workedExLoading&&<div style={{fontSize:12,color:C.muted,padding:"4px 0"}}>⏳ Generating example…</div>}
+          {workedExamples[`${topic}__${subtopic}`]&&!workedExLoading&&(
+            <>
+              <div style={{fontSize:10,fontWeight:700,color:C.accentLight,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:10}}>🎓 Worked Example</div>
+              <div style={{fontSize:12,color:C.text,lineHeight:1.85,whiteSpace:"pre-line"}}>{workedExamples[`${topic}__${subtopic}`]}</div>
+              <button onClick={()=>setWorkedExDismissedKey(`${topic}__${subtopic}`)} style={{marginTop:12,width:"100%",padding:"10px",borderRadius:9,fontSize:12,fontWeight:700,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                Got it — start the questions →
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {mode==="speed_drill"&&(
         <div style={{marginBottom:12}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
