@@ -5635,6 +5635,121 @@ function StudyPathScreen({onBack, onLearn, onPractice, srDeck={}, cfaLevel="1", 
   );
 }
 
+function FixToPassScreen({onBack,passProbability,moduleReadiness,generateQuestions}){
+  const blocking=moduleReadiness
+    .filter(m=>m.reliable&&m.accuracy!==null&&m.accuracy<70)
+    .map(m=>({...m,gap:70-m.accuracy,impact:(70-m.accuracy)*m.weight}))
+    .sort((a,b)=>b.impact-a.impact).slice(0,4);
+  const untouched=moduleReadiness
+    .filter(m=>m.sessions===0&&m.weight>=10)
+    .sort((a,b)=>b.weight-a.weight).slice(0,2)
+    .filter(u=>!blocking.find(b=>b.topic===u.topic));
+  const allTargets=[...blocking,...untouched];
+  const prob=passProbability?.probability||null;
+  const probColor=passProbability?.color||C.muted;
+
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,color:C.text,padding:"20px 18px",fontFamily:"'Inter',system-ui,sans-serif"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,padding:"0 4px"}}>←</button>
+        <div style={{fontSize:16,fontWeight:800,color:C.text}}>🎯 Fix to Pass</div>
+      </div>
+
+      {/* Pass probability summary */}
+      <div style={{background:C.surface,borderRadius:14,padding:"16px",marginBottom:16,border:`1px solid ${probColor}44`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Current Pass Probability</div>
+            <div style={{fontSize:28,fontWeight:900,color:probColor}}>{prob!==null?`${prob}%`:"—"}</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{passProbability?.label||"Not enough data yet"}</div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:11,color:C.muted,marginBottom:4}}>Target</div>
+            <div style={{fontSize:22,fontWeight:800,color:C.easy}}>70%+</div>
+            <div style={{fontSize:10,color:C.muted}}>to pass</div>
+          </div>
+        </div>
+        {prob!==null&&(
+          <div style={{height:8,background:C.border,borderRadius:4,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${Math.min(prob,100)}%`,background:`linear-gradient(90deg,${probColor},${probColor}cc)`,borderRadius:4,transition:"width 0.6s"}}/>
+          </div>
+        )}
+        {allTargets.length>0&&(
+          <div style={{fontSize:11,color:C.muted,marginTop:10,lineHeight:1.5}}>
+            Getting {allTargets.slice(0,3).map(t=>t.topic).join(", ")} to 70%+ accuracy could significantly improve your pass probability.
+          </div>
+        )}
+      </div>
+
+      {/* Blocking topics */}
+      {allTargets.length===0?(
+        <div style={{textAlign:"center",padding:"40px 0"}}>
+          <div style={{fontSize:32,marginBottom:12}}>🎉</div>
+          <div style={{fontSize:15,fontWeight:800,color:C.easy,marginBottom:6}}>Nothing blocking your pass!</div>
+          <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>All tested topics are at or above 70% accuracy.<br/>Keep practising to maintain your edge.</div>
+        </div>
+      ):(
+        <>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>⚡ Blocking Topics — by impact</div>
+          {allTargets.map((m,i)=>{
+            const isUntouched=m.sessions===0;
+            const barWidth=isUntouched?0:Math.min((m.accuracy/70)*100,100);
+            const urgencyColor=i===0?C.hard:i===1?C.medium:C.reward;
+            return(
+              <div key={m.topic} style={{background:C.surface,borderRadius:12,padding:"14px 16px",marginBottom:10,border:`1px solid ${urgencyColor}33`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:800,color:C.text}}>{m.topic}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:2}}>{m.weight}% exam weight</div>
+                  </div>
+                  <span style={{fontSize:11,fontWeight:700,color:urgencyColor,background:`${urgencyColor}18`,padding:"3px 9px",borderRadius:20}}>
+                    {isUntouched?"Not started":i===0?"Highest impact":i===1?"High impact":"Medium impact"}
+                  </span>
+                </div>
+                {/* Accuracy bar */}
+                <div style={{marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.muted,marginBottom:4}}>
+                    <span>{isUntouched?"No data yet":`Your accuracy: ${m.accuracy}%`}</span>
+                    <span style={{color:C.easy}}>Target: 70%</span>
+                  </div>
+                  <div style={{height:5,background:C.border,borderRadius:3,overflow:"hidden",position:"relative"}}>
+                    <div style={{height:"100%",width:`${barWidth}%`,background:`linear-gradient(90deg,${urgencyColor},${urgencyColor}bb)`,borderRadius:3}}/>
+                    {/* 70% marker */}
+                    <div style={{position:"absolute",top:0,left:"70%",width:2,height:"100%",background:C.easy,borderRadius:1}}/>
+                  </div>
+                </div>
+                <button onClick={()=>{
+                  const mods=Object.keys(getActiveLOS("1")[m.topic]?.modules||{});
+                  const weakestMod=m.modulesCovered?.length>0
+                    ? m.modulesCovered.sort((a,b)=>(m.moduleStats[a]?.pct??100)-(m.moduleStats[b]?.pct??100))[0]
+                    : mods[0]||m.topic;
+                  generateQuestions(m.topic,weakestMod,i===0?"Hard":"Medium",15,"guided");
+                  onBack();
+                }} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${urgencyColor}33,${urgencyColor}18)`,color:urgencyColor,border:`1px solid ${urgencyColor}55`,cursor:"pointer"}}>
+                  {isUntouched?`Start ${m.topic} — 15 questions`:`Fix ${m.topic} — 15 guided questions`}
+                </button>
+              </div>
+            );
+          })}
+
+          {/* Primary CTA — start with highest impact */}
+          <button onClick={()=>{
+            const top=allTargets[0];
+            const mods=Object.keys(getActiveLOS("1")[top.topic]?.modules||{});
+            const weakestMod=top.modulesCovered?.length>0
+              ? top.modulesCovered.sort((a,b)=>(top.moduleStats[a]?.pct??100)-(top.moduleStats[b]?.pct??100))[0]
+              : mods[0]||top.topic;
+            generateQuestions(top.topic,weakestMod,"Hard",15,"guided");
+            onBack();
+          }} style={{width:"100%",padding:"14px",borderRadius:12,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",marginTop:4,boxShadow:`0 4px 16px ${C.accent}44`}}>
+            🚀 Start with highest impact: {allTargets[0]?.topic} →
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function pickDailyRefresher(cfaLevel, moduleReadiness){
   const los=getActiveLOS(cfaLevel);
   const sorted=[...moduleReadiness].sort((a,b)=>(a.accuracy??-1)-(b.accuracy??-1));
@@ -8090,6 +8205,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* More actions — sorted by usage frequency, collapsed by default */}
     {(()=>{
       const moreItems=[
+        {key:"fix_to_pass",label:"🎯 Fix to Pass",style:{background:C.hard+"15",border:`1px solid ${C.hard}44`,color:C.hard},action:()=>{trackUsage("fix_to_pass");setScreen("fixToPass");}},
         {key:"mix",label:"🎯 Weak Spots",style:{background:C.accent+"12",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
         {key:"vignette",label:"📖 Vignette",style:{background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight},action:()=>{trackUsage("vignette");setVignetteMode(true);setScreen("setup");}},
         {key:"full_exam",label:"🎓 Full Exam",style:{background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight},action:()=>{trackUsage("full_exam");startFullExam();}},
@@ -9673,6 +9789,9 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
 
   // ══ STUDY PATH SCREEN ════════════════════════════════════════════════════════
   if(screen==="studyPath") return <StudyPathScreen onBack={()=>setScreen("home")} onLearn={(topic)=>{setRevisionTopic(topic);setRevisionTab("learn");setScreen("revision");}} onPractice={(topic)=>{const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});generateQuestions(topic,mods[0]||topic,"Medium",10,"guided");}} srDeck={srDeck} cfaLevel={cfaLevel} topicLessons={topicLessons} isPro={proStatus}/>;
+
+  // ══ FIX TO PASS SCREEN ═══════════════════════════════════════════════════════
+  if(screen==="fixToPass") return <FixToPassScreen onBack={()=>setScreen("home")} passProbability={passProbability} moduleReadiness={moduleReadiness} generateQuestions={generateQuestions}/>;
 
   return null;
 }
