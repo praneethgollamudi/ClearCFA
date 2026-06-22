@@ -7598,26 +7598,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <span style={{fontSize:11,color:C.accentLight,fontWeight:700}}>→</span>
             </button>
           )}
-          {/* Theme Toggle */}
-          <div style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,marginBottom:9}}>
-            <span style={{fontSize:18}}>{theme==='dark'?'🌙':'☀️'}</span>
-            <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>Appearance</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:1}}>{theme==='dark'?'Dark mode active':'Light mode active'}</div>
-            </div>
-            <button onClick={toggleTheme} style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:700,border:`1.5px solid ${C.accent}`,background:C.accent+"18",color:C.accentLight,cursor:"pointer"}}>
-              {theme==='dark'?'☀️ Light':'🌙 Dark'}
-            </button>
-          </div>
-          {/* AI Status */}
-          <div style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.easy+"15",border:`1px solid ${C.easy+"44"}`,color:C.text,marginBottom:9}}>
-            <span style={{fontSize:18}}>🤖</span>
-            <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700}}>AI Features</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:1}}>Powered by ClearCFA backend — no key needed</div>
-            </div>
-            <span style={{fontSize:11,color:C.easy,fontWeight:700}}>✓</span>
-          </div>
           {/* Supabase */}
           <button onClick={async()=>{
             setSupabaseSyncing(true);
@@ -7644,6 +7624,17 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{fontSize:11,color:C.muted,marginTop:1}}>Export JSON · import on another device</div>
             </div>
           </button>
+          {/* Theme Toggle */}
+          <div style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,marginBottom:9}}>
+            <span style={{fontSize:18}}>{theme==='dark'?'🌙':'☀️'}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>Appearance</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>{theme==='dark'?'Dark mode active':'Light mode active'}</div>
+            </div>
+            <button onClick={toggleTheme} style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:700,border:`1.5px solid ${C.accent}`,background:C.accent+"18",color:C.accentLight,cursor:"pointer"}}>
+              {theme==='dark'?'☀️ Light':'🌙 Dark'}
+            </button>
+          </div>
           {/* Feedback */}
           <button onClick={()=>{setSettingsOpen(false);setFeedbackOpen(true);}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
             <span style={{fontSize:18}}>💬</span>
@@ -7663,9 +7654,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </button>
           </div>
           {/* Data status */}
-          <div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:10}}>
-            {history.length} sessions saved locally
-            {sessionSaved===false&&<span style={{color:C.hard}}> · ⚠ last save failed</span>}
+          <div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:10,lineHeight:1.6}}>
+            {history.length} sessions saved locally{sessionSaved===false&&<span style={{color:C.hard}}> · ⚠ last save failed</span>}
+            <br/><span style={{color:C.easy}}>🤖 AI powered by ClearCFA — no API key needed</span>
           </div>
         </div>
       </div>
