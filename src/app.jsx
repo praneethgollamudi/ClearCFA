@@ -2575,6 +2575,48 @@ function getModuleReadiness(history,losData=null){
   });
 }
 
+function computeTopicPriority(mr,daysLeft){
+  const daysSinceLast=mr.lastDate?Math.max(0,Math.floor((Date.now()-new Date(mr.lastDate+"T00:00:00"))/86400000)):999;
+  const examWeightFactor=mr.weight/15;
+  const weaknessFactor=mr.sessions===0?0.75:mr.accuracy===null?0.6:(100-mr.accuracy)/100;
+  const recencyFactor=daysSinceLast>=999?1.0:daysSinceLast<=1?0.4:daysSinceLast<=3?0.65:daysSinceLast<=7?0.85:daysSinceLast<=14?1.0:1.2;
+  const phaseMultiplier=daysLeft<14?(mr.sessions===0?0.5:1.4):daysLeft<30?(mr.sessions===0?0.8:1.2):daysLeft>90?(mr.sessions===0?1.3:1.0):1.0;
+  return examWeightFactor*weaknessFactor*recencyFactor*phaseMultiplier;
+}
+
+function pickNextSession(moduleReadiness,daysLeft,history=[]){
+  const lastTopic=history[0]?.topic;
+  const scored=moduleReadiness.map(mr=>({...mr,priority:computeTopicPriority(mr,daysLeft)})).sort((a,b)=>b.priority-a.priority);
+  const top=scored.length>1&&scored[0].topic===lastTopic?scored[1]:scored[0];
+  if(!top)return null;
+  let module=top.untouchedModules?.[0];
+  if(!module){const worst=Object.entries(top.moduleStats||{}).filter(([,v])=>v!==null).sort(([,a],[,b])=>(a.pct??100)-(b.pct??100));module=worst[0]?.[0]||top.modules[0];}
+  const modPct=top.moduleStats?.[module]?.pct??null;
+  const difficulty=modPct===null?"Medium":modPct>=80?"Hard":modPct<50?"Easy":"Medium";
+  return{topic:top.topic,module:module||top.modules[0],difficulty,priority:top.priority};
+}
+
+function getAdaptiveSuggestions(moduleReadiness,daysLeft,history=[]){
+  const lastTopic=history[0]?.topic;
+  return moduleReadiness.map(mr=>{
+    const priority=computeTopicPriority(mr,daysLeft);
+    const days=mr.lastDate?Math.max(0,Math.floor((Date.now()-new Date(mr.lastDate+"T00:00:00"))/86400000)):999;
+    let module=mr.untouchedModules?.[0];
+    if(!module){const worst=Object.entries(mr.moduleStats||{}).filter(([,v])=>v!==null).sort(([,a],[,b])=>(a.pct??100)-(b.pct??100));module=worst[0]?.[0]||mr.modules[0];}
+    if(!module)return null;
+    const modPct=mr.moduleStats?.[module]?.pct??null;
+    const difficulty=modPct===null?"Medium":modPct>=80?"Hard":modPct<50?"Easy":"Medium";
+    const urgency=priority>0.8?"critical":priority>0.5?"high":priority>0.3?"medium":"low";
+    let reason;
+    if(mr.sessions===0)reason=`Not started yet — ${mr.weight}% of the exam`;
+    else if(mr.accuracy!==null&&mr.accuracy<50)reason=`${mr.accuracy}% accuracy — needs work (${mr.weight}% exam weight)`;
+    else if(days>14)reason=`Last studied ${days} days ago — forgetting curve active`;
+    else if(mr.trend==="down")reason=`Score trending down — reinforce now`;
+    else reason=`${mr.weight}% exam weight — consistently high value`;
+    return{topic:mr.topic,module,difficulty,urgency,reason,priority};
+  }).filter(Boolean).sort((a,b)=>b.priority-a.priority).slice(0,4);
+}
+
 function getPredictedScore(moduleReadiness){
   const withData=moduleReadiness.filter(m=>m.accuracy!==null&&m.reliable);
   if(withData.length<3)return null;
@@ -6734,6 +6776,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const moduleReadiness=useMemo(()=>getModuleReadiness(levelHistory,activeLOS),[levelHistory,activeLOS]);
   const predicted=useMemo(()=>getPredictedScore(moduleReadiness),[moduleReadiness]);
   const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));const streak=getStreak(history);
+  const adaptiveSuggestions=useMemo(()=>getAdaptiveSuggestions(moduleReadiness,daysLeft,history),[moduleReadiness,daysLeft,history.length]);
   const weeklyStudyDays=useMemo(()=>getWeeklyStudyDays(levelHistory),[levelHistory]);
   const todayStudySecs=weeklyStudyDays[6]?.secs||0;
   const weekStudySecs=weeklyStudyDays.reduce((s,d)=>s+d.secs,0);
@@ -7812,10 +7855,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <button onClick={()=>{
               trackUsage("office_mode");
               setOmMode(true);
-              const weak=moduleReadiness.filter(m=>m.sessions===0&&m.weight>=9)[0]
-                ||moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0]
-                ||moduleReadiness[0];
-              generateQuestions(weak.topic,weak.untouchedModules?.[0]||weak.modules[0],adaptiveOmDifficulty,omQCount,"guided");
+              const pick=pickNextSession(moduleReadiness,daysLeft,history)||{topic:moduleReadiness[0]?.topic,module:moduleReadiness[0]?.modules[0],difficulty:adaptiveOmDifficulty};
+              generateQuestions(pick.topic,pick.module||moduleReadiness[0]?.modules[0],pick.difficulty||adaptiveOmDifficulty,omQCount,"guided");
             }} style={{fontSize:14,fontWeight:800,padding:"10px 20px",borderRadius:10,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}55`,flexShrink:0,marginLeft:10}}>
               Start →
             </button>
@@ -7839,26 +7880,33 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <button onClick={()=>{trackUsage("setup");setScreen("setup");}} style={{fontSize:11,fontWeight:700,color:C.accentLight,background:"none",border:"none",cursor:"pointer",padding:0}}>Custom →</button>
       </div>
       <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none",msOverflowStyle:"none"}}>
-        {Object.entries(activeTopicMap).sort((a,b)=>b[1].weight-a[1].weight).map(([t,{weight}])=>{
-          const mr=moduleReadiness.find(m=>m.topic===t);
-          const notStarted=!mr||mr.sessions===0;
-          const acc=mr?.accuracy??null;
-          const col=notStarted?C.muted:acc>=70?C.easy:acc>=50?C.medium:C.hard;
-          const bg=notStarted?C.surface:acc>=70?C.easy+"15":acc>=50?C.medium+"15":C.hard+"12";
-          const border=notStarted?C.border:acc>=70?C.easy+"44":acc>=50?C.medium+"44":C.hard+"44";
-          const short=({"Quantitative Methods":"Quant","Financial Statement Analysis":"FSA","Corporate Issuers":"Corp","Equity Investments":"Equity","Fixed Income":"Fixed Inc","Derivatives":"Deriv","Alternative Investments":"Alts","Portfolio Management":"Portfolio","Ethics and Professional Standards":"Ethics","Economics":"Econ"})[t]||t.split(" ")[0];
-          return(
-            <button key={t} onClick={()=>{
-              trackUsage("quick_start");
-              const mod=mr?.untouchedModules?.[0]||mr?.modules?.[0]||Object.keys(activeLOS[t]?.modules||{})[0];
-              if(!mod){setTopic(t);setScreen("setup");return;}
-              generateQuestions(t,mod,"Medium",10,"guided");
-            }} style={{flexShrink:0,padding:"8px 13px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",background:bg,border:`1.5px solid ${border}`,color:col,display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:68,transition:"all 0.15s"}}>
-              <span>{short}</span>
-              <span style={{fontSize:9,fontWeight:600,opacity:0.7}}>{notStarted?"New":`${acc??0}%`}</span>
-            </button>
-          );
-        })}
+        {(()=>{
+          const sortedTopics=Object.entries(activeTopicMap).map(([t,{weight}])=>{const mr=moduleReadiness.find(m=>m.topic===t);return{t,weight,mr,priority:mr?computeTopicPriority(mr,daysLeft):weight/15};}).sort((a,b)=>b.priority-a.priority);
+          return sortedTopics.map(({t,weight,mr},idx)=>{
+            const notStarted=!mr||mr.sessions===0;
+            const acc=mr?.accuracy??null;
+            const isRec=idx===0;
+            const col=isRec?C.accentLight:notStarted?C.muted:acc>=70?C.easy:acc>=50?C.medium:C.hard;
+            const bg=isRec?C.accent+"22":notStarted?C.surface:acc>=70?C.easy+"15":acc>=50?C.medium+"15":C.hard+"12";
+            const border=isRec?C.accent+"77":notStarted?C.border:acc>=70?C.easy+"44":acc>=50?C.medium+"44":C.hard+"44";
+            const short=({"Quantitative Methods":"Quant","Financial Statement Analysis":"FSA","Corporate Issuers":"Corp","Equity Investments":"Equity","Fixed Income":"Fixed Inc","Derivatives":"Deriv","Alternative Investments":"Alts","Portfolio Management":"Portfolio","Ethics and Professional Standards":"Ethics","Economics":"Econ"})[t]||t.split(" ")[0];
+            const worstMod=(()=>{const e=Object.entries(mr?.moduleStats||{}).filter(([,v])=>v!==null).sort(([,a],[,b])=>(a.pct??100)-(b.pct??100));return e[0]?.[0];})();
+            const mod=mr?.untouchedModules?.[0]||worstMod||mr?.modules?.[0]||Object.keys(activeLOS[t]?.modules||{})[0];
+            const modPct=mr?.moduleStats?.[mod]?.pct??null;
+            const diff=modPct===null?"Medium":modPct>=80?"Hard":modPct<50?"Easy":"Medium";
+            return(
+              <button key={t} onClick={()=>{
+                trackUsage("quick_start");
+                if(!mod){setTopic(t);setScreen("setup");return;}
+                generateQuestions(t,mod,diff,10,"guided");
+              }} style={{flexShrink:0,padding:"8px 13px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",background:bg,border:`1.5px solid ${border}`,color:col,display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:72,transition:"all 0.15s",position:"relative"}}>
+                {isRec&&<span style={{position:"absolute",top:-7,right:-4,fontSize:8,fontWeight:800,background:C.accent,color:"#fff",padding:"1px 4px",borderRadius:4,lineHeight:1.4}}>⚡</span>}
+                <span>{short}</span>
+                <span style={{fontSize:9,fontWeight:600,opacity:0.8}}>{notStarted?"New":`${acc??0}%`}</span>
+              </button>
+            );
+          });
+        })()}
       </div>
     </div>
 
@@ -7904,7 +7952,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <div>
           <div style={{fontSize:13,fontWeight:800,color:C.text}}>🎯 Today's Focus</div>
-          <div style={{fontSize:11,color:C.muted,marginTop:2}}>{weeklyPlan?"Plan · AI gaps · SR · leeches":"AI-powered · LOS gaps · SR · leeches"}</div>
+          <div style={{fontSize:11,color:C.muted,marginTop:2}}>{weeklyPlan?"Plan · adaptive + AI":"Adaptive engine · AI-enhanced"}</div>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           {weeklyPlan&&(
@@ -7977,12 +8025,38 @@ Return ONLY a JSON array — no prose, no markdown fences:
         );
       })()}
 
-      {focusLoading&&<div style={{display:"flex",flexDirection:"column",gap:9}}>{[0,1,2].map(i=><Skeleton key={i} height={72} radius={10}/>)}<div style={{fontSize:12,color:C.muted,textAlign:"center",animation:"pulse 1.5s infinite"}}>Analysing history + LOS gaps + SR deck…</div></div>}
+      {/* Adaptive picks — instant, always shown */}
+      {adaptiveSuggestions.length>0&&(
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:10,fontWeight:800,color:C.accentLight,letterSpacing:"0.08em",marginBottom:8}}>⚡ ADAPTIVE PICKS</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {adaptiveSuggestions.map((s,i)=>{
+              const uc={critical:C.hard,high:"#f97316",medium:C.accent,low:C.muted}[s.urgency]||C.muted;
+              return(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.surfaceHigh,borderRadius:10,border:`1px solid ${uc}33`}}>
+                  <div style={{flex:1,marginRight:10}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                      <span style={{fontSize:12,fontWeight:700,color:C.text}}>{s.module}</span>
+                      <span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:4,background:uc+"22",color:uc,textTransform:"uppercase"}}>{s.urgency}</span>
+                    </div>
+                    <div style={{fontSize:10,color:C.muted}}>{s.topic} · {s.difficulty}</div>
+                    <div style={{fontSize:11,color:C.textMid,marginTop:3,lineHeight:1.4}}>{s.reason}</div>
+                  </div>
+                  <button onClick={()=>generateQuestions(s.topic,s.module,s.difficulty,10,"guided")}
+                    style={{fontSize:11,fontWeight:700,padding:"7px 11px",borderRadius:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0}}>
+                    Start →
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {focusLoading&&<div style={{display:"flex",flexDirection:"column",gap:9}}>{[0,1,2].map(i=><Skeleton key={i} height={72} radius={10}/>)}<div style={{fontSize:12,color:C.muted,textAlign:"center",animation:"pulse 1.5s infinite"}}>Analysing LOS gaps + SR deck…</div></div>}
       {focusError&&<div style={{fontSize:13,color:C.hard,padding:"10px",background:C.errorBg,borderRadius:8}}>{focusError}</div>}
       {!focusLoading&&!focusSuggestions&&!focusError&&(
-        <div style={{textAlign:"center",padding:"14px 0"}}>
-          <div style={{fontSize:28,marginBottom:8}}>🤖</div>
-          <div style={{fontSize:13,color:C.muted,lineHeight:1.6}}>Claude analyses your accuracy trends, SR due cards, leech cards, and LOS coverage gaps to recommend what to drill today.</div>
+        <div style={{textAlign:"center",padding:"6px 0 2px"}}>
+          <div style={{fontSize:11,color:C.muted}}>↑ Tap Generate for AI analysis of LOS gaps + SR patterns</div>
         </div>
       )}
       {focusSuggestions&&!focusLoading&&(()=>{
@@ -7993,7 +8067,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         if(deduped.length===0) return null;
         return(
           <div>
-            {todayPlanSessions.length>0&&<div style={{fontSize:10,fontWeight:800,color:C.muted,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:8}}>Also suggested by AI</div>}
+            <div style={{fontSize:10,fontWeight:800,color:C.muted,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:8}}>🤖 AI ANALYSIS</div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {deduped.map((s,i)=>(
                 <div key={i} onClick={()=>setSelectedFocus(selectedFocus===i?null:i)}
