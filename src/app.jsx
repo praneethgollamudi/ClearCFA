@@ -4111,6 +4111,7 @@ function parseDebrief(text){
 }
 
 function parseRefresherReveal(text){
+  const expMatch=text.match(/EXPLANATION:\s*([\s\S]*?)(?=TRAP:|$)/i);
   const trapMatch=text.match(/TRAP:\s*([\s\S]*?)$/i);
   return{explanation:(expMatch?.[1]||"").trim(),trap:(trapMatch?.[1]||"").trim()};
 }
