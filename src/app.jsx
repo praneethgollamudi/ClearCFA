@@ -7275,12 +7275,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
     <div style={{position:"fixed",inset:0,background:`radial-gradient(ellipse at 50% 40%,${C.accent}1c 0%,${C.bg} 65%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 28px",fontFamily:"'Inter',system-ui,-apple-system,sans-serif",color:C.text,zIndex:9999}}>
       <div style={{position:"relative",marginBottom:22}}>
         <div style={{position:"absolute",inset:-18,borderRadius:"50%",background:`${C.accent}18`,filter:"blur(16px)"}}/>
-        <div style={{width:74,height:74,borderRadius:20,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,boxShadow:`0 8px 32px ${C.accent}55`,position:"relative"}}>⚡</div>
+        <div style={{width:80,height:80,borderRadius:22,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,boxShadow:`0 8px 32px ${C.accent}55`,position:"relative"}}>⚡</div>
       </div>
-      <div style={{fontSize:22,fontWeight:800,marginBottom:6,letterSpacing:"-0.01em"}}>ClearCFA</div>
+      <div style={{fontSize:24,fontWeight:800,marginBottom:6,letterSpacing:"-0.01em"}}>ClearCFA</div>
       <div style={{fontSize:15,fontWeight:600,color:C.accentLight,marginBottom:4,textAlign:"center"}}>{loadingMsg}</div>
       <div style={{fontSize:12,color:C.muted,marginBottom:32}}>{loadingETA>0?`~${loadingETA}s remaining`:"Finishing up…"}</div>
-      <div style={{width:"100%",maxWidth:300}}>
+      <div style={{width:"100%",maxWidth:420}}>
         <div style={{height:5,background:`${C.accent}20`,borderRadius:3,marginBottom:8,overflow:"hidden"}}>
           <div style={{height:"100%",width:`${loadingProgress}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s ease",boxShadow:`0 0 10px ${C.accent}88`}}/>
         </div>
@@ -7289,17 +7289,17 @@ Return ONLY a JSON array — no prose, no markdown fences:
           const done=loadingProgress>=pct+20;
           const active=loadingProgress>=pct&&!done;
           return(
-            <div key={i} style={{display:"flex",gap:12,marginBottom:i<arr.length-1?14:0,alignItems:"center"}}>
-              <div style={{width:22,height:22,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,flexShrink:0,transition:"all 0.3s",background:done?"#16a34a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,boxShadow:done?`0 0 10px #16a34a55`:active?`0 0 10px ${C.accent}55`:"none"}}>{done?"✓":i+1}</div>
+            <div key={i} style={{display:"flex",gap:14,marginBottom:i<arr.length-1?16:0,alignItems:"center"}}>
+              <div style={{width:24,height:24,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0,transition:"all 0.3s",background:done?"#16a34a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,boxShadow:done?`0 0 10px #16a34a55`:active?`0 0 10px ${C.accent}55`:"none"}}>{done?"✓":i+1}</div>
               <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
-                <span style={{fontSize:13,transition:"color 0.3s",color:done?C.easy:active?C.text:C.muted}}>{label}</span>
+                <span style={{fontSize:14,transition:"color 0.3s",color:done?C.easy:active?C.text:C.muted}}>{label}</span>
                 {active&&<span style={{width:6,height:6,borderRadius:"50%",background:C.accent,display:"inline-block",animation:"pulse 1.2s ease-in-out infinite",flexShrink:0}}/>}
               </div>
             </div>
           );
         })}
       </div>
-      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");}} style={{marginTop:40,fontSize:12,padding:"9px 26px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
         Cancel
       </button>
     </div>
@@ -7418,7 +7418,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:44,marginBottom:12}}>{pct>=80?"🎯":pct>=60?"📊":"📚"}</div>
             <div style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:6}}>You scored {pct}%</div>
             <div style={{fontSize:13,color:C.muted,marginBottom:6}}>{correct}/{DEMO_QUESTIONS.length} correct across Ethics, Quant, Fixed Income, FSA & Equity</div>
-            <div style={{fontSize:13,color:C.textMid,lineHeight:1.7,maxWidth:300,marginBottom:28}}>
+            <div style={{fontSize:13,color:C.textMid,lineHeight:1.7,maxWidth:420,marginBottom:28}}>
               {pct>=80?"Strong foundation. ClearCFA will sharpen the gaps.":pct>=60?"Solid start. AI-targeted sessions will accelerate your progress.":"Lots of ground to cover — ClearCFA will get you there, systematically."}
             </div>
             <div style={{width:"100%",maxWidth:360,background:C.surface,border:`1px solid ${C.accent}44`,borderRadius:16,padding:"20px",marginBottom:16}}>
@@ -9024,12 +9024,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
     <div style={{position:"fixed",inset:0,background:`radial-gradient(ellipse at 50% 40%,${C.accent}1c 0%,${C.bg} 65%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 28px",fontFamily:"'Inter',system-ui,-apple-system,sans-serif",color:C.text,zIndex:9999}}>
       <div style={{position:"relative",marginBottom:22}}>
         <div style={{position:"absolute",inset:-18,borderRadius:"50%",background:`${C.accent}18`,filter:"blur(16px)"}}/>
-        <div style={{width:74,height:74,borderRadius:20,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,boxShadow:`0 8px 32px ${C.accent}55`,position:"relative"}}>⚡</div>
+        <div style={{width:80,height:80,borderRadius:22,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,boxShadow:`0 8px 32px ${C.accent}55`,position:"relative"}}>⚡</div>
       </div>
-      <div style={{fontSize:22,fontWeight:800,marginBottom:6,letterSpacing:"-0.01em"}}>ClearCFA</div>
+      <div style={{fontSize:24,fontWeight:800,marginBottom:6,letterSpacing:"-0.01em"}}>ClearCFA</div>
       <div style={{fontSize:15,fontWeight:600,color:C.accentLight,marginBottom:4,textAlign:"center"}}>{loadingMsg}</div>
       <div style={{fontSize:12,color:C.muted,marginBottom:32}}>{loadingETA>0?`~${loadingETA}s remaining`:"Finishing up…"}</div>
-      <div style={{width:"100%",maxWidth:300}}>
+      <div style={{width:"100%",maxWidth:420}}>
         <div style={{height:5,background:`${C.accent}20`,borderRadius:3,marginBottom:8,overflow:"hidden"}}>
           <div style={{height:"100%",width:`${loadingProgress}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s ease",boxShadow:`0 0 10px ${C.accent}88`}}/>
         </div>
@@ -9038,17 +9038,17 @@ Return ONLY a JSON array — no prose, no markdown fences:
           const done=loadingProgress>=pct+20;
           const active=loadingProgress>=pct&&!done;
           return(
-            <div key={i} style={{display:"flex",gap:12,marginBottom:i<arr.length-1?14:0,alignItems:"center"}}>
-              <div style={{width:22,height:22,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,flexShrink:0,transition:"all 0.3s",background:done?"#16a34a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,boxShadow:done?`0 0 10px #16a34a55`:active?`0 0 10px ${C.accent}55`:"none"}}>{done?"✓":i+1}</div>
+            <div key={i} style={{display:"flex",gap:14,marginBottom:i<arr.length-1?16:0,alignItems:"center"}}>
+              <div style={{width:24,height:24,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0,transition:"all 0.3s",background:done?"#16a34a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,boxShadow:done?`0 0 10px #16a34a55`:active?`0 0 10px ${C.accent}55`:"none"}}>{done?"✓":i+1}</div>
               <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
-                <span style={{fontSize:13,transition:"color 0.3s",color:done?C.easy:active?C.text:C.muted}}>{label}</span>
+                <span style={{fontSize:14,transition:"color 0.3s",color:done?C.easy:active?C.text:C.muted}}>{label}</span>
                 {active&&<span style={{width:6,height:6,borderRadius:"50%",background:C.accent,display:"inline-block",animation:"pulse 1.2s ease-in-out infinite",flexShrink:0}}/>}
               </div>
             </div>
           );
         })}
       </div>
-      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");}} style={{marginTop:40,fontSize:12,padding:"9px 26px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
         Cancel
       </button>
     </div>
@@ -10494,7 +10494,7 @@ function ToastManager(){
       padding:"13px 16px",display:"flex",alignItems:"center",gap:12,
       boxShadow:"0 8px 32px #00000099",
       animation:"toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-      maxWidth:300,minWidth:220,
+      maxWidth:420,minWidth:220,
     }},
       React.createElement("span",{style:{fontSize:26,lineHeight:1,flexShrink:0}},t.emoji),
       React.createElement("div",null,
