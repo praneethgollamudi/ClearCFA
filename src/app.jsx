@@ -2202,6 +2202,7 @@ function sm2Update(card,correct){
   return{...card,interval,repetitions,ef,nextReview:localDateKey(new Date(Date.now()+interval*86400000))};
 }
 function localDateKey(date){const d=date||new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function getWeekMondayKey(){const d=new Date();const day=d.getDay();const diff=day===0?-6:1-day;const mon=new Date(d.getFullYear(),d.getMonth(),d.getDate()+diff);return localDateKey(mon);}
 function getDueCards(srDeck){const today=localDateKey();return Object.values(srDeck).filter(c=>c.nextReview<=today);}
 function getLeeches(srDeck){return Object.values(srDeck).filter(c=>(c.wrongCount||0)>=4);}
 function getForgettingCurve(srDeck){
@@ -7892,7 +7893,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
   );
 
   // ══ WEEKLY PLAN SCREEN ══════════════════════════════════════════════════════
-  if(weeklyPlanScreen) return wrap(<>
+  if(weeklyPlanScreen){
+  // Compute this-week session completion status
+  const mondayKey=getWeekMondayKey();
+  const thisWeekHistory=levelHistory.filter(h=>h.dateKey>=mondayKey);
+  const sessionDoneMap={};
+  const _usedIds=new Set();
+  (weeklyPlan?.days||[]).forEach((day,di)=>{
+    (day.sessions||[]).forEach((session,si)=>{
+      const match=thisWeekHistory.find(h=>!_usedIds.has(h.id)&&h.topic===session.topic);
+      if(match)_usedIds.add(match.id);
+      sessionDoneMap[`${di}-${si}`]=!!match;
+    });
+  });
+  const totalPlanSessions=(weeklyPlan?.days||[]).reduce((s,d)=>s+(d.sessions?.length||0),0);
+  const donePlanSessions=Object.values(sessionDoneMap).filter(Boolean).length;
+  return wrap(<>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
       <div>
         <h2 style={{margin:0,fontSize:22,fontWeight:800}}>Weekly Study Plan</h2>
@@ -7930,10 +7946,21 @@ Return ONLY a JSON array — no prose, no markdown fences:
     )}
 
     {weeklyPlan&&!weeklyPlanLoading&&(<>
-      {/* Headline */}
+      {/* Headline + weekly progress */}
       <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
         <div style={{fontSize:14,fontWeight:700,color:C.accentLight,marginBottom:4}}>{weeklyPlan.headline}</div>
-        <div style={{fontSize:12,color:C.muted}}>{weeklyPlan.totalMinutes} min total · {hoursThisWeek}h available</div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:totalPlanSessions>0?10:0}}>{weeklyPlan.totalMinutes} min total · {hoursThisWeek}h available</div>
+        {totalPlanSessions>0&&(<>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+            <span style={{fontSize:11,fontWeight:700,color:donePlanSessions===totalPlanSessions?C.easy:C.text}}>
+              {donePlanSessions===totalPlanSessions?"🎉 All sessions done this week!":"This week's progress"}
+            </span>
+            <span style={{fontSize:11,fontWeight:800,color:donePlanSessions===totalPlanSessions?C.easy:C.accentLight}}>{donePlanSessions}/{totalPlanSessions}</span>
+          </div>
+          <div style={{height:6,background:C.border,borderRadius:3}}>
+            <div style={{height:"100%",width:`${totalPlanSessions>0?Math.round(donePlanSessions/totalPlanSessions*100):0}%`,background:donePlanSessions===totalPlanSessions?C.easy:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s"}}/>
+          </div>
+        </>)}
       </div>
 
       {/* Day-by-day */}
@@ -7941,19 +7968,28 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {(weeklyPlan.days||[]).map((day,di)=>(
           <div key={di} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px"}}>
             <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:10}}>{day.day}</div>
-            {(day.sessions||[]).map((session,si)=>(
-              <div key={si} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"10px 12px",background:C.dim,borderRadius:9,marginBottom:6}}>
+            {(day.sessions||[]).map((session,si)=>{
+              const isDone=sessionDoneMap[`${di}-${si}`];
+              return(
+              <div key={si} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"10px 12px",background:isDone?C.easy+"0d":C.dim,borderRadius:9,marginBottom:6,border:isDone?`1px solid ${C.easy}33`:"none"}}>
                 <div style={{flex:1,marginRight:10}}>
                   <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
-                    <span style={{fontSize:12,fontWeight:700,color:C.text}}>{session.title}</span>
-                    <span style={{fontSize:9,padding:"1px 6px",borderRadius:10,background:session.type==="sr"?C.accent+"22":session.type==="review"?C.medium+"22":C.easy+"22",color:session.type==="sr"?C.accentLight:session.type==="review"?C.medium:C.easy,fontWeight:700,textTransform:"uppercase"}}>{session.type}</span>
+                    <span style={{fontSize:12,fontWeight:700,color:isDone?C.easy:C.text,textDecoration:isDone?"line-through":"none"}}>{session.title}</span>
+                    {isDone
+                      ? <span style={{fontSize:9,padding:"1px 6px",borderRadius:10,background:C.easy+"22",color:C.easy,fontWeight:700}}>✓ DONE</span>
+                      : <span style={{fontSize:9,padding:"1px 6px",borderRadius:10,background:session.type==="sr"?C.accent+"22":session.type==="review"?C.medium+"22":C.easy+"22",color:session.type==="sr"?C.accentLight:session.type==="review"?C.medium:C.easy,fontWeight:700,textTransform:"uppercase"}}>{session.type}</span>
+                    }
                   </div>
                   <div style={{fontSize:11,color:C.muted}}>{session.module} · {session.durationMin}min · {session.count}Q · {session.difficulty}</div>
-                  <div style={{fontSize:11,color:C.muted,fontStyle:"italic",marginTop:2}}>{session.why}</div>
+                  {!isDone&&<div style={{fontSize:11,color:C.muted,fontStyle:"italic",marginTop:2}}>{session.why}</div>}
                 </div>
-                <button onClick={()=>{setWeeklyPlanScreen(false);generateQuestions(session.topic,session.module,session.difficulty,session.count,"guided");}} style={{fontSize:11,fontWeight:700,padding:"6px 11px",borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0}}>Start</button>
+                {isDone
+                  ? <div style={{fontSize:16,color:C.easy,flexShrink:0,fontWeight:700,paddingTop:2}}>✓</div>
+                  : <button onClick={()=>{setWeeklyPlanScreen(false);generateQuestions(session.topic,session.module,session.difficulty,session.count,"guided");}} style={{fontSize:11,fontWeight:700,padding:"6px 11px",borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0}}>Start</button>
+                }
               </div>
-            ))}
+              );
+            })}
             {(!day.sessions||day.sessions.length===0)&&<div style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>Rest day — review your notes</div>}
           </div>
         ))}
@@ -7967,6 +8003,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <button onClick={()=>{setWeeklyPlan(null);setWeeklyPlanError("");try{localStorage.removeItem(PLAN_KEY);}catch{}}} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Regenerate with different hours</button>
     </>)}
   </>);
+  }
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
