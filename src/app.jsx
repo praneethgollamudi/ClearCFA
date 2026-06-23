@@ -3409,7 +3409,7 @@ function FormulaSheet({topic, level="1"}){
           {formulas.map((f,i)=>(
             <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",paddingBottom:6,borderBottom:i<formulas.length-1?`1px solid ${C.border}`:"none"}}>
               <div style={{fontSize:10,color:C.muted,minWidth:110,flexShrink:0,paddingTop:2}}>{f.name}</div>
-              <div style={{fontSize:12,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.5}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
+              <div style={{fontSize:12,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.5,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
             </div>
           ))}
         </div>
@@ -4709,7 +4709,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                           <button key={fi} onClick={()=>document.getElementById(`formula-${fi}`)?.scrollIntoView({behavior:"smooth",block:"center"})}
                             style={{width:"100%",display:"flex",gap:12,alignItems:"flex-start",padding:"10px 14px",background:"none",border:"none",borderBottom:i<arr.length-1?"1px solid #c0304422":"none",cursor:"pointer",textAlign:"left"}}>
                             <div style={{fontSize:11,color:"#a05070",minWidth:110,flexShrink:0,paddingTop:2,lineHeight:1.4}}>{f.name}</div>
-                            <div style={{fontSize:12,color:"#d090a0",fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
+                            <div style={{fontSize:12,color:"#d090a0",fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
                             <span style={{fontSize:10,color:"#6060a0",flexShrink:0,marginTop:2}}>↓</span>
                           </button>
                         );
@@ -4770,10 +4770,10 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                     return(
                       <div key={i} id={`formula-${i}`} style={{borderBottom:i<formulaData.length-1?`1px solid ${C.border}`:"none"}}>
                         <div onClick={()=>setExpandedFormula(isExp?null:i)}
-                          style={{display:"flex",gap:10,alignItems:"center",padding:"11px 16px",cursor:"pointer",background:isExp?`${C.accent}08`:"transparent",transition:"background 0.15s"}}>
-                          <div style={{fontSize:11,color:f._aiGen?"#a060e0":C.muted,minWidth:100,flexShrink:0,lineHeight:1.4}}>{f.name}{f._aiGen&&<span style={{fontSize:9,color:"#7c5cbf",marginLeft:4}}>✦ AI</span>}</div>
-                          <div style={{fontSize:13,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
-                          <span style={{fontSize:10,color:C.muted,flexShrink:0}}>{isExp?"▲":"▼"}</span>
+                          style={{display:"flex",gap:10,alignItems:"flex-start",padding:"11px 16px",cursor:"pointer",background:isExp?`${C.accent}08`:"transparent",transition:"background 0.15s"}}>
+                          <div style={{fontSize:11,color:f._aiGen?"#a060e0":C.muted,minWidth:100,flexShrink:0,lineHeight:1.4,paddingTop:2}}>{f.name}{f._aiGen&&<span style={{fontSize:9,color:"#7c5cbf",marginLeft:4}}>✦ AI</span>}</div>
+                          <div style={{fontSize:13,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
+                          <span style={{fontSize:10,color:C.muted,flexShrink:0,paddingTop:3}}>{isExp?"▲":"▼"}</span>
                         </div>
                         {isExp&&(
                           <div style={{padding:"0 16px 12px",animation:"fadeIn 0.15s ease"}}>
