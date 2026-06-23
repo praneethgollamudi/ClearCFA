@@ -3910,23 +3910,32 @@ async function callAIChat(userId, messages, maxTokens=450, level="1"){
 }
 
 // Self-contained formula block with optional AI breakdown button.
-function FormulaBlock({text,C,onExplain}){
+function FormulaBlock({text,C,onExplain,conceptLabel}){
   const [exp,setExp]=React.useState(null);
   const [loading,setLoading]=React.useState(false);
+  // Parse structured AI response: first line starting with 📐 is the formula name
+  const lines=exp?exp.split("\n").map(s=>s.trim()).filter(Boolean):[];
+  const nameMatch=lines[0]&&/^📐/.test(lines[0]);
+  const formulaName=nameMatch?lines[0]:"";
+  const bodyLines=nameMatch?lines.slice(1):lines;
   return(
     <div style={{margin:"7px 0"}}>
+      {conceptLabel&&!exp&&<div style={{fontSize:10,color:C.muted,marginBottom:3,paddingLeft:4,letterSpacing:"0.04em"}}>📐 {conceptLabel}</div>}
       <div style={{fontFamily:"'Courier New',monospace",fontSize:12,background:`${C.accent}12`,border:`1px solid ${C.accent}33`,borderLeft:`3px solid ${C.accentLight}`,borderRadius:"0 8px 8px 0",padding:"9px 12px",color:C.accentLight,wordBreak:"break-word",lineHeight:1.9}}>{text}</div>
       {!exp&&!loading&&onExplain&&(
         <button onClick={async()=>{setLoading(true);try{const r=await onExplain(text);setExp(r);}catch{setExp("Could not explain — try again.");}setLoading(false);}}
           style={{marginTop:5,fontSize:11,color:C.accentLight,background:"none",border:`1px solid ${C.accent}33`,borderRadius:6,padding:"4px 11px",cursor:"pointer"}}>
-          🔍 Break it down
+          🔍 What formula is this?
         </button>
       )}
-      {loading&&<div style={{marginTop:5,fontSize:11,color:C.muted,fontStyle:"italic"}}>Analysing formula…</div>}
+      {loading&&<div style={{marginTop:5,fontSize:11,color:C.muted,fontStyle:"italic"}}>Identifying formula…</div>}
       {exp&&(
-        <div style={{marginTop:6,background:`${C.accent}08`,border:`1px solid ${C.accent}22`,borderRadius:8,padding:"10px 13px",fontSize:12,color:C.text,lineHeight:1.75,whiteSpace:"pre-wrap"}}>
-          {exp}
-          <button onClick={()=>setExp(null)} style={{display:"block",marginTop:8,fontSize:10,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:0}}>✕ Close</button>
+        <div style={{marginTop:6,background:`${C.accent}08`,border:`1px solid ${C.accent}33`,borderRadius:8,padding:"12px 14px",fontSize:12,color:C.text,lineHeight:1.8}}>
+          {formulaName&&<div style={{fontSize:13,fontWeight:800,color:C.accentLight,marginBottom:8}}>{formulaName}</div>}
+          {bodyLines.map((line,i)=>(
+            <div key={i} style={{marginBottom:3,paddingLeft:line.startsWith("•")?0:0,color:line.startsWith("Calculates:")||line.startsWith("What it")?"#a0c8ff":C.text}}>{line}</div>
+          ))}
+          <button onClick={()=>setExp(null)} style={{display:"block",marginTop:10,fontSize:10,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:0}}>✕ Close</button>
         </div>
       )}
     </div>
@@ -3936,12 +3945,12 @@ function FormulaBlock({text,C,onExplain}){
 // Renders explanation text with formula sentences in a distinct monospace block.
 // A sentence is "formula-heavy" if it contains = and complex math operators (^, /, [, *).
 // Pass onExplain(formulaText)=>Promise<string> to enable the "Break it down" button.
-function renderExplanation(text,C,onExplain){
+function renderExplanation(text,C,onExplain,conceptLabel){
   if(!text)return null;
   const parts=text.split(/\.\s+(?=[A-Z\$\(])/).filter(Boolean);
   const isFormula=s=>/=/.test(s)&&/[\^\/\[\]\*]/.test(s)&&/\d/.test(s);
   if(!parts.some(isFormula))return <span>{text}</span>;
-  return(<>{parts.map((s,i)=>{const trimmed=s.trim();const last=i===parts.length-1;if(isFormula(trimmed)){return <FormulaBlock key={i} text={trimmed} C={C} onExplain={onExplain}/>;}return <span key={i}>{trimmed}{!last?". ":""}</span>;})}</>);
+  return(<>{parts.map((s,i)=>{const trimmed=s.trim();const last=i===parts.length-1;if(isFormula(trimmed)){return <FormulaBlock key={i} text={trimmed} C={C} onExplain={onExplain} conceptLabel={conceptLabel}/>;}return <span key={i}>{trimmed}{!last?". ":""}</span>;})}</>);
 }
 
 function parseRefresherReveal(text){
@@ -9045,10 +9054,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:"#a0a0c0",lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>Explanation</div>
           {renderExplanation(q.explanation,C,authUser?.id?async(formulaText)=>{
-            const prompt=`CFA exam tutor. A student wants to understand this formula:\n\n"${formulaText}"\n\nContext: topic "${topic}", concept "${q.concept||q.los_tested||""}"\n\nExplain in plain English using exactly this format:\n• [variable] = [what it means] (use the actual number from the formula if present)\nRepeat for each variable/component, then one final bullet:\n• Formula calculates: [one sentence on what the result represents]\n\nNo preamble. Under 100 words total.`;
-            const r=await callClaude(prompt,250,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"formula_explain"});
+            const prompt=`CFA exam tutor. A student sees this formula in an exam explanation and doesn't know what it is:\n\n"${formulaText}"\n\nContext: topic "${topic}", concept "${q.concept||q.los_tested||""}"\n\nRespond in EXACTLY this format (no preamble, no extra text):\n📐 [Official CFA/finance name for this formula, e.g. "Bond Pricing Formula" or "Macaulay Duration"]\nStandard form: [compact textbook version, e.g. P = Σ C/(1+y)ᵗ + FV/(1+y)ⁿ]\n\n• [symbol from formula] = [plain-English meaning] (= [actual value if present in formula])\n[one bullet per variable/component]\n\nCalculates: [one sentence — what does solving this formula give you?]\n\nUnder 120 words total.`;
+            const r=await callClaude(prompt,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"formula_explain"});
             return typeof r==="string"?r:"Formula breakdown unavailable.";
-          }:null)}
+          }:null,q.concept||q.los_tested||"")}
           {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:"#6060a0"}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
           {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:"#60508a"}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
         </div>
