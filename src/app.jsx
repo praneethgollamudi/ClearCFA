@@ -5952,6 +5952,7 @@ function CFAMock(){
   const [levelUpInfo,setLevelUpInfo]=useState(null);
   const [speedQTime,setSpeedQTime]=useState(100);
   const speedDrillRef=useRef(null);
+  const refresherTouchX=useRef(null);
   const [passTrend,setPassTrend]=useState([]);
   const passTrendRef=useRef([]);
   const [explainThisText,setExplainThisText]=useState(null);
@@ -8232,17 +8233,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
         setRefresherFlipped(false);
       };
       return(
-        <div style={{background:refresherFlipped?`linear-gradient(135deg,${C.reward}18,${C.reward}08)`:`linear-gradient(135deg,${C.reward}12,${C.reward}05)`,border:`1px solid ${refresherFlipped?C.reward+"55":C.reward+"33"}`,borderRadius:14,padding:"14px 16px",marginBottom:10,transition:"background 0.3s,border-color 0.3s"}}>
+        <div
+          onTouchStart={(e)=>{refresherTouchX.current=e.touches[0].clientX;}}
+          onTouchEnd={(e)=>{
+            if(refresherTouchX.current===null)return;
+            const dx=e.changedTouches[0].clientX-refresherTouchX.current;
+            refresherTouchX.current=null;
+            if(Math.abs(dx)<50)return;
+            if(dx<0&&idx<total-1)goTo(idx+1);
+            else if(dx>0&&idx>0)goTo(idx-1);
+          }}
+          style={{background:refresherFlipped?`linear-gradient(135deg,${C.reward}18,${C.reward}08)`:`linear-gradient(135deg,${C.reward}12,${C.reward}05)`,border:`1px solid ${refresherFlipped?C.reward+"55":C.reward+"33"}`,borderRadius:14,padding:"14px 16px",marginBottom:10,transition:"background 0.3s,border-color 0.3s",userSelect:"none"}}>
           {!refresherFlipped?(
             <div style={{animation:"fadeIn 0.25s ease"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                 <span style={{fontSize:12,fontWeight:800,color:C.rewardLight,letterSpacing:"0.04em"}}>✨ TODAY'S CONCEPTS</span>
-                <div style={{display:"flex",gap:4,alignItems:"center"}}>
-                  {dailyRefresher.concepts.map((_,i)=>(
-                    <span key={i} onClick={()=>goTo(i)} style={{width:7,height:7,borderRadius:"50%",background:i===idx?C.rewardLight:C.border,cursor:"pointer",display:"inline-block",transition:"background 0.2s"}}/>
-                  ))}
-                  <span style={{fontSize:10,color:C.muted,marginLeft:4}}>{idx+1}/{total}</span>
-                </div>
+                <span style={{fontSize:10,color:C.muted}}>{idx+1}/{total}</span>
               </div>
               <div style={{fontSize:11,color:C.muted,marginBottom:4}}>{cur.topic} · {cur.module}</div>
               <div style={{fontSize:13,color:C.text,lineHeight:1.6,fontStyle:"italic",paddingLeft:10,borderLeft:`2px solid ${C.reward}55`,marginBottom:12}}>
@@ -8275,9 +8281,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </div>
           )}
           {/* Prev / Next navigation */}
-          <div style={{display:"flex",justifyContent:"space-between",marginTop:10}}>
-            <button onClick={()=>goTo(idx-1)} disabled={idx===0} style={{fontSize:11,color:idx===0?C.border:C.muted,background:"none",border:"none",cursor:idx===0?"default":"pointer",padding:"2px 4px"}}>← prev</button>
-            <button onClick={()=>goTo(idx+1)} disabled={idx===total-1} style={{fontSize:11,color:idx===total-1?C.border:C.accentLight,background:"none",border:"none",cursor:idx===total-1?"default":"pointer",fontWeight:700,padding:"2px 4px"}}>next concept →</button>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10}}>
+            <button onClick={()=>goTo(idx-1)} style={{fontSize:11,color:C.textMid,background:"none",border:"none",cursor:"pointer",padding:"4px 6px",borderRadius:6,visibility:idx===0?"hidden":"visible"}}>← prev</button>
+            <div style={{display:"flex",gap:5,alignItems:"center"}}>
+              {dailyRefresher.concepts.map((_,i)=>(
+                <span key={i} onClick={()=>goTo(i)} style={{width:6,height:6,borderRadius:"50%",background:i===idx?C.rewardLight:C.border,cursor:"pointer",display:"inline-block",transition:"background 0.2s"}}/>
+              ))}
+            </div>
+            <button onClick={()=>goTo(idx+1)} style={{fontSize:11,color:C.accentLight,background:"none",border:"none",cursor:"pointer",fontWeight:700,padding:"4px 6px",borderRadius:6,visibility:idx===total-1?"hidden":"visible"}}>next →</button>
           </div>
         </div>
       );
