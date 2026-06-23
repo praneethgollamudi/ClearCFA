@@ -6187,6 +6187,13 @@ function CFAMock(){
   useEffect(()=>{modeRef.current=mode;},[mode]);
   useEffect(()=>{confidenceLogRef.current=confidenceLog;},[confidenceLog]);
   useEffect(()=>{if(screen==="home")setError("");},[screen]);
+  // Warn before accidental page refresh/close during an active quiz
+  useEffect(()=>{
+    if(screen!=="quiz")return;
+    const handler=e=>{e.preventDefault();e.returnValue="";};
+    window.addEventListener("beforeunload",handler);
+    return()=>window.removeEventListener("beforeunload",handler);
+  },[screen]);
 
   useEffect(()=>{
     if(screen==="quiz"){
