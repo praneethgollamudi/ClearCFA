@@ -3229,9 +3229,14 @@ function MotivationalBanner({ daysLeft }) {
 // ─── FORMULA SHEETS ──────────────────────────────────────────────────────────
 const FORMULAS = {
   "Quantitative Methods": [
-    {name:"FV (single)",f:"FV = PV × (1 + r)ⁿ"},
-    {name:"PV (single)",f:"PV = FV / (1 + r)ⁿ"},
-    {name:"EAR",f:"EAR = (1 + r/m)ᵐ − 1"},
+    {name:"FV (single cash flow)",f:"FV = PV × (1 + r)ⁿ"},
+    {name:"PV (single cash flow)",f:"PV = FV / (1 + r)ⁿ"},
+    {name:"FV of Annuity",f:"FV = PMT × [(1+r)ⁿ − 1] / r"},
+    {name:"PV of Annuity",f:"PV = PMT × [1 − (1+r)⁻ⁿ] / r"},
+    {name:"PV Annuity Due",f:"PV_due = PMT × [1 − (1+r)⁻ⁿ] / r × (1+r)"},
+    {name:"Perpetuity PV",f:"PV = PMT / r"},
+    {name:"EAR (from periodic rate)",f:"EAR = (1 + r/m)ᵐ − 1"},
+    {name:"EAR (from continuous)",f:"EAR = eʳ − 1"},
     {name:"HPR",f:"HPR = (P₁ − P₀ + D) / P₀"},
     {name:"TWR",f:"TWR = (1+r₁)(1+r₂)…(1+rₙ) − 1"},
     {name:"MWR (IRR)",f:"Solve: PV(inflows) = PV(outflows)"},
@@ -3319,9 +3324,11 @@ const FORMULAS = {
     {name:"Jensen's Alpha",f:"α = R_p − [R_f + β_p(R_m − R_f)]"},
   ],
   "Fixed Income": [
-    {name:"Bond Price",f:"P = Σ C/(1+y)ᵗ + FV/(1+y)ⁿ"},
+    {name:"Bond Price (annuity form)",f:"P = C×[1−(1+y)⁻ⁿ]/y + FV/(1+y)ⁿ"},
+    {name:"Bond Price (semi-annual)",f:"P = (C/2)×[1−(1+y/2)⁻²ⁿ]/(y/2) + FV/(1+y/2)²ⁿ"},
+    {name:"Bond Price (summation)",f:"P = Σ C/(1+y)ᵗ + FV/(1+y)ⁿ  [same formula, Σ form]"},
     {name:"Current Yield",f:"CY = Annual Coupon / Price"},
-    {name:"YTM (semi-annual)",f:"Solve: P = Σ (C/2)/(1+y/2)ᵗ + FV/(1+y/2)²ⁿ"},
+    {name:"YTM — solve for y",f:"Set P = (C/2)×[1−(1+y/2)⁻²ⁿ]/(y/2) + FV/(1+y/2)²ⁿ, solve iteratively"},
     {name:"Spot/Forward relationship",f:"(1+S₂)² = (1+S₁)(1+₁f₁)"},
     {name:"Macaulay Duration",f:"D_Mac = Σ[t × PV(CF_t)] / Price"},
     {name:"Modified Duration",f:"MD = D_Mac / (1 + y/m)"},
