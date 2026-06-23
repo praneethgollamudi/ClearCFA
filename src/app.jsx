@@ -7911,8 +7911,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 trackUsage("quick_start");
                 if(!mod){setTopic(t);setScreen("setup");return;}
                 generateQuestions(t,mod,diff,10,"guided");
-              }} style={{flexShrink:0,padding:"8px 13px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",background:bg,border:`1.5px solid ${border}`,color:col,display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:72,transition:"all 0.15s",position:"relative"}}>
-                {isRec&&<span style={{position:"absolute",top:-7,right:-4,fontSize:8,fontWeight:800,background:C.accent,color:"#fff",padding:"1px 4px",borderRadius:4,lineHeight:1.4}}>⚡</span>}
+              }} style={{flexShrink:0,padding:"8px 13px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",background:bg,border:`1.5px solid ${border}`,color:col,display:"flex",flexDirection:"column",alignItems:"center",gap:1,minWidth:72,transition:"all 0.15s"}}>
+                {isRec&&<span style={{fontSize:8,fontWeight:800,color:C.accentLight,lineHeight:1,marginBottom:1,letterSpacing:"0.04em"}}>⚡ TOP</span>}
                 <span>{short}</span>
                 <span style={{fontSize:9,fontWeight:600,opacity:0.8}}>{notStarted?"New":`${acc??0}%`}</span>
               </button>
