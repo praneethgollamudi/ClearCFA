@@ -6229,6 +6229,7 @@ function CFAMock(){
   },[screen,mode,currentQ,endQuiz]);
 
   const sessionCommittedRef=useRef(false);
+  const srProcessedRef=useRef(new Set()); // qIds already SR-updated in real-time
   const weeklyPlanAutoRef=useRef(false);
   const confidenceLogRef=useRef({});
   const pendingPlanKeyRef=useRef(null);
@@ -6273,6 +6274,7 @@ function CFAMock(){
       const correct=ans[q.id]===q.answer;
       const isFlagged=!!flagged[q.id];
       if(correct&&!isFlagged) return; // skip correct+unflagged
+      if(!correct&&srProcessedRef.current.has(q.id)) return; // already updated in real-time
       const key=`${t}|||${st}|||${q.id}`;
       const existing=updatedSrDeck[key]||{concept:(q.concept||st).slice(0,60),topic:t,subtopic:st,question:(q.question||""),options:q.options,answer:q.answer,explanation:(q.explanation||"").slice(0,1200),los_tested:(q.los_tested||"").slice(0,120),wrongCount:0};
       const card=sm2Update(existing,correct);
@@ -6617,6 +6619,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     if(generatingRef.current){return;} generatingRef.current=true;
     try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
     setSessionDraft(null);
+    srProcessedRef.current=new Set();
     setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
     loadingStartRef.current=Date.now();
 
@@ -6809,7 +6812,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setAnswers(newAnswers);
     if(mode==="guided")setShowExp(true);
     const q=questions.find(q=>q.id===qId);
-    if(q){if(opt===q.answer){setConsecutiveWrong(0);}else{setConsecutiveWrong(n=>n+1);}}
+    if(q){
+      const correct=opt===q.answer;
+      if(correct){setConsecutiveWrong(0);}
+      else{
+        setConsecutiveWrong(n=>n+1);
+        // Real-time SR update — persists wrong answer immediately so it survives a mid-session refresh
+        srProcessedRef.current.add(qId);
+        const srKey=`${topic}|||${subtopic}|||${qId}`;
+        setSrDeck(deck=>{
+          const existing=deck[srKey]||{concept:(q.concept||subtopic).slice(0,60),topic,subtopic,question:(q.question||""),options:q.options,answer:q.answer,explanation:(q.explanation||"").slice(0,1200),los_tested:(q.los_tested||"").slice(0,120),wrongCount:0};
+          const card=sm2Update(existing,false);
+          card.wrongCount=(existing.wrongCount||0)+1;
+          const updated={...deck,[srKey]:card};
+          try{localStorage.setItem(SR_KEY,JSON.stringify(updated));}catch{}
+          srDeckRef.current=updated;
+          return updated;
+        });
+      }
+    }
     // Persist in-progress session so a refresh can offer to resume
     if(mode!=="exam"&&mode!=="speed_drill"){
       try{localStorage.setItem(SESSION_DRAFT_KEY,JSON.stringify({ts:Date.now(),topic,subtopic,difficulty,mode,count,currentQ,questions,answers:newAnswers}));}catch{}
@@ -7836,6 +7857,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 setQuestions(sessionDraft.questions);setAnswers(sessionDraft.answers);
                 setCurrentQ(sessionDraft.currentQ);setShowExp(false);setLastSession(null);
                 setFullExamMode(false);setVignetteMode(false);
+                // Already SR-processed on original answer — don't double-count on resume
+                srProcessedRef.current=new Set(Object.keys(sessionDraft.answers||{}));
                 setScreen("quiz");
               }} style={{padding:"7px 13px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent,color:"#fff",border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
                 Resume →
