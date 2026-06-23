@@ -6338,6 +6338,7 @@ function CFAMock(){
   const callClaude=async(prompt,maxTokens=8000,{retries=3,retryDelay=8000,model="claude-sonnet-4-6",feature=""}={})=>{
     if(!navigator.onLine) throw new Error("No internet — check your connection and retry.");
     let lastError;
+    let currentMaxTokens=maxTokens;
     for(let attempt=0;attempt<retries;attempt++){
       if(attempt>0){
         // Exponential backoff: 8s, 16s, 32s
@@ -6350,7 +6351,7 @@ function CFAMock(){
       try{
         const modelName=model;
         const userId=typeof authUser!=="undefined"&&authUser?.id?authUser.id:"";
-        const res=await fetch(AI_PROXY_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},signal:controller.signal,body:JSON.stringify({requestType:"generate",userId,prompt,maxTokens,model:modelName})});
+        const res=await fetch(AI_PROXY_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},signal:controller.signal,body:JSON.stringify({requestType:"generate",userId,prompt,maxTokens:currentMaxTokens,model:modelName})});
         clearTimeout(timeout);
         // Rate limit: 429 or 529 — retry
         if(res.status===429||res.status===529){
@@ -6371,7 +6372,12 @@ function CFAMock(){
         if(!data.content||!data.content.length) throw new Error("Empty response from API");
         const raw=data.content.map(i=>i.text||"").join("").replace(/```json\n?|```/g,"").trim();
         if(!raw) throw new Error("No text content in response");
-        if(data.stop_reason==="max_tokens") throw new Error("Response too long — tap retry (using more budget next time).");
+        if(data.stop_reason==="max_tokens"){
+          currentMaxTokens=Math.round(currentMaxTokens*1.75);
+          lastError=new Error("Response too long — retrying with more budget...");
+          setLoadingMsg(`Response too long — retrying with larger budget (attempt ${attempt+2}/${retries})...`);
+          continue;
+        }
         if(data.usage){
           const inTok=data.usage.input_tokens||0,outTok=data.usage.output_tokens||0;
           const pr=MODEL_PRICING[modelName]||{in:3.00,out:15.00};
