@@ -6697,6 +6697,157 @@ function LofiPlayer(){
   );
 }
 
+// ─── POMODORO TIMER ───────────────────────────────────────────────────────────
+function PomodoroTimer(){
+  const [phase,setPhase]=useState("work"); // "work"|"shortBreak"|"longBreak"
+  const [timeLeft,setTimeLeft]=useState(25*60);
+  const [running,setRunning]=useState(false);
+  const [done,setDone]=useState(false);
+  const [count,setCount]=useState(0); // completed work sessions
+  const [showPanel,setShowPanel]=useState(false);
+  const ivRef=useRef(null);
+
+  const DUR={work:25*60,shortBreak:5*60,longBreak:15*60};
+  const LABEL={work:"Focus",shortBreak:"Short Break",longBreak:"Long Break"};
+  const COLOR={work:"#e05050",shortBreak:"#40b870",longBreak:"#4090e0"};
+
+  useEffect(()=>{
+    if(!running){clearInterval(ivRef.current);return;}
+    ivRef.current=setInterval(()=>{
+      setTimeLeft(t=>{
+        if(t<=1){clearInterval(ivRef.current);setRunning(false);setDone(true);playChime();return 0;}
+        return t-1;
+      });
+    },1000);
+    return()=>clearInterval(ivRef.current);
+  },[running]);
+
+  function playChime(){
+    try{
+      const ctx=new AudioContext();
+      [[523,0],[659,0.18],[784,0.36],[1047,0.54]].forEach(([freq,delay])=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.type="sine";o.frequency.value=freq;
+        const t=ctx.currentTime+delay;
+        g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.15,t+0.04);g.gain.exponentialRampToValueAtTime(0.001,t+1.1);
+        o.start(t);o.stop(t+1.1);
+      });
+      setTimeout(()=>ctx.close(),2500);
+    }catch{}
+  }
+
+  function advance(){
+    const newCount=phase==="work"?count+1:count;
+    const next=phase==="work"?(newCount%4===0?"longBreak":"shortBreak"):"work";
+    setCount(newCount);setPhase(next);setTimeLeft(DUR[next]);setDone(false);setRunning(true);
+  }
+  function reset(){setRunning(false);setDone(false);setTimeLeft(DUR[phase]);}
+  function fullReset(){setRunning(false);setDone(false);setPhase("work");setCount(0);setTimeLeft(DUR.work);}
+
+  const mins=String(Math.floor(timeLeft/60)).padStart(2,"0");
+  const secs=String(timeLeft%60).padStart(2,"0");
+  const pct=1-timeLeft/DUR[phase];
+  const R=38, C2=45, circ=2*Math.PI*R;
+  const col=COLOR[phase];
+
+  return(
+    <>
+      {/* Floating button */}
+      <button onClick={()=>setShowPanel(p=>!p)}
+        style={{position:"fixed",bottom:76,left:16,zIndex:200,width:46,height:46,borderRadius:"50%",
+          background:"linear-gradient(135deg,#2a1010,#5a1818)",
+          border:`1px solid ${col}55`,fontSize:20,cursor:"pointer",
+          boxShadow:"0 4px 16px #0008",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>
+        🍅
+        {running&&(
+          <span style={{position:"absolute",top:-4,right:-4,background:col,color:"#fff",
+            borderRadius:"50%",width:18,height:18,fontSize:9,display:"flex",alignItems:"center",
+            justifyContent:"center",fontWeight:800,lineHeight:1}}>{mins}</span>
+        )}
+        {done&&!running&&(
+          <span style={{position:"absolute",top:-4,right:-4,background:"#f5a623",color:"#000",
+            borderRadius:"50%",width:18,height:18,fontSize:9,display:"flex",alignItems:"center",
+            justifyContent:"center",fontWeight:800}}>!</span>
+        )}
+      </button>
+
+      {/* Panel */}
+      {showPanel&&(
+        <div style={{position:"fixed",bottom:130,left:12,zIndex:201,width:204,
+          background:"#0e0e22",border:`1px solid ${col}55`,borderRadius:16,
+          padding:"14px 16px",boxShadow:"0 8px 32px #000c"}}>
+
+          {/* Header */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <span style={{fontSize:12,fontWeight:800,color:col,textTransform:"uppercase",letterSpacing:"0.06em"}}>
+              {LABEL[phase]}
+            </span>
+            <span style={{fontSize:11,color:"#888"}}>
+              {Array.from({length:Math.min(count%4||0,4)}).map((_,i)=><span key={i}>🍅</span>)}
+              {count>0&&<span style={{fontSize:10,color:"#666",marginLeft:3}}>×{count}</span>}
+            </span>
+          </div>
+
+          {/* Circular progress + countdown */}
+          <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
+            <div style={{position:"relative",width:90,height:90}}>
+              <svg width="90" height="90" style={{position:"absolute",top:0,left:0}}>
+                <circle cx={C2} cy={C2} r={R} fill="none" stroke="#ffffff08" strokeWidth="5"/>
+                <circle cx={C2} cy={C2} r={R} fill="none" stroke={col} strokeWidth="5"
+                  strokeDasharray={circ} strokeDashoffset={circ*(1-pct)}
+                  strokeLinecap="round"
+                  style={{transform:"rotate(-90deg)",transformOrigin:`${C2}px ${C2}px`,transition:"stroke-dashoffset 0.8s"}}/>
+              </svg>
+              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                <div style={{fontSize:23,fontWeight:800,color:"#fff",fontFamily:"'Courier New',monospace",lineHeight:1,letterSpacing:"0.02em"}}>
+                  {mins}:{secs}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Controls */}
+          {done?(
+            <div>
+              <div style={{fontSize:12,color:col,fontWeight:700,textAlign:"center",marginBottom:10}}>
+                {phase==="work"?"🎉 Session complete!":"☕ Break over!"}
+              </div>
+              <button onClick={advance}
+                style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,
+                  background:`linear-gradient(135deg,${col},${col}bb)`,color:"#fff",border:"none",cursor:"pointer",marginBottom:6}}>
+                {phase==="work"?(count%4===0?"Start Long Break →":"Start Break →"):"Start Focus →"}
+              </button>
+              <button onClick={fullReset}
+                style={{width:"100%",padding:"6px",borderRadius:9,fontSize:11,
+                  background:"none",border:`1px solid ${col}33`,color:"#666",cursor:"pointer"}}>
+                Reset all
+              </button>
+            </div>
+          ):(
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setRunning(r=>!r)}
+                style={{flex:1,padding:"9px",borderRadius:9,fontSize:16,fontWeight:700,
+                  background:`linear-gradient(135deg,${col},${col}bb)`,color:"#fff",border:"none",cursor:"pointer"}}>
+                {running?"⏸":"▶"}
+              </button>
+              <button onClick={reset}
+                style={{padding:"9px 13px",borderRadius:9,fontSize:14,
+                  background:"none",border:`1px solid ${col}33`,color:"#666",cursor:"pointer"}}>
+                ↺
+              </button>
+            </div>
+          )}
+
+          <div style={{fontSize:9,color:"#444",textAlign:"center",marginTop:10}}>
+            25 min focus · 5 min break · 15 min long break
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function CFAMock(){
   const [screen,setScreen]=useState("home");
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
@@ -11262,3 +11413,7 @@ const lofiEl = document.createElement('div');
 document.body.appendChild(lofiEl);
 const lofiRoot = ReactDOM.createRoot(lofiEl);
 lofiRoot.render(React.createElement(LofiPlayer));
+const pomEl = document.createElement('div');
+document.body.appendChild(pomEl);
+const pomRoot = ReactDOM.createRoot(pomEl);
+pomRoot.render(React.createElement(PomodoroTimer));
