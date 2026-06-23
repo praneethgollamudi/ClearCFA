@@ -2853,6 +2853,7 @@ const DYNAMIC_FORMULAS_KEY = "cfa_dynamic_formulas_v1";
 const RESOLVED_GAPS_KEY = "cfa_resolved_gaps_v1";
 const LESSONS_KEY          = "cfa_lessons_v1";
 const REFRESHER_KEY        = "cfa_refresher_v1";
+const CALC_SNAP_KEY        = "cfa_calc_snap_v1";
 const CONFIDENCE_KEY       = "cfa_confidence_v1";
 const STUDY_GOAL_KEY       = "cfa_study_goal_v1";
 const WORKED_EX_KEY        = "cfa_worked_ex_v1";
@@ -6093,20 +6094,21 @@ function calcIRRValue(flows){
   return r0*100;
 }
 
-function CFACalculator({onClose}){
+function CFACalculator({onClose, onMinimize=null}){
   const {useState:uS,useRef:uR,useCallback:uCB}=React;
-  const [disp,setDisp]=uS("0");
-  const [pendingOp,setPendingOp]=uS(null);
-  const [prevVal,setPrevVal]=uS(null);
-  const [lastB,setLastB]=uS(null); // last right-operand for = repeat
-  const [fresh,setFresh]=uS(true); // next digit clears display
+  const snap=(()=>{try{return JSON.parse(localStorage.getItem(CALC_SNAP_KEY)||"null");}catch{return null;}})();
+  const [disp,setDisp]=uS(snap?.disp||"0");
+  const [pendingOp,setPendingOp]=uS(snap?.pendingOp||null);
+  const [prevVal,setPrevVal]=uS(snap?.prevVal||null);
+  const [lastB,setLastB]=uS(snap?.lastB||null); // last right-operand for = repeat
+  const [fresh,setFresh]=uS(snap?.fresh!==undefined?snap.fresh:true); // next digit clears display
   const [is2nd,setIs2nd]=uS(false);
-  const [isBGN,setIsBGN]=uS(false);
+  const [isBGN,setIsBGN]=uS(snap?.isBGN||false);
   const [cptMode,setCptMode]=uS(false);
-  const [tvm,setTvm]=uS({N:"",IY:"",PV:"",PMT:"",FV:""});
+  const [tvm,setTvm]=uS(snap?.tvm||{N:"",IY:"",PV:"",PMT:"",FV:""});
   const [tvmLbl,setTvmLbl]=uS("");
-  const [mem,setMem]=uS(0);
-  const [py,setPy]=uS(1);
+  const [mem,setMem]=uS(snap?.mem||0);
+  const [py,setPy]=uS(snap?.py||1);
   const [pyMode,setPyMode]=uS(false);
   const [cfMode,setCfMode]=uS(false);
   const [cfFlows,setCfFlows]=uS([]);
@@ -6322,7 +6324,11 @@ function CFACalculator({onClose}){
           {cfMode&&<span style={{fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:20,background:"#0c2a5040",color:"#7dd3fc",border:"1px solid #2563eb55"}}>CF</span>}
           {py!==1&&<span style={{fontSize:10,color:"#334466",fontFamily:"monospace",marginLeft:2}}>P/Y={py}</span>}
         </div>
-        <button onClick={onClose} style={{background:"linear-gradient(135deg,#1a1a30,#222240)",border:"1px solid #3a3a58",color:"#a5b4fc",cursor:"pointer",fontSize:12,borderRadius:10,padding:"7px 16px",fontWeight:700,letterSpacing:"0.02em",boxShadow:"0 2px 8px #0004"}}>Done ✓</button>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          {onMinimize&&<button onClick={()=>{try{localStorage.setItem(CALC_SNAP_KEY,JSON.stringify({disp,pendingOp,prevVal,lastB,fresh,isBGN,tvm,mem,py}));}catch{}onMinimize(disp);}}
+            style={{background:"linear-gradient(135deg,#1a1a30,#222240)",border:"1px solid #3a3a58",color:"#a5b4fc",cursor:"pointer",fontSize:12,borderRadius:10,padding:"7px 14px",fontWeight:700,boxShadow:"0 2px 8px #0004"}}>⊟ Min</button>}
+          <button onClick={onClose} style={{background:"linear-gradient(135deg,#1a1a30,#222240)",border:"1px solid #3a3a58",color:"#a5b4fc",cursor:"pointer",fontSize:12,borderRadius:10,padding:"7px 16px",fontWeight:700,letterSpacing:"0.02em",boxShadow:"0 2px 8px #0004"}}>Done ✓</button>
+        </div>
       </div>
 
       {/* LCD Display */}
@@ -6691,6 +6697,8 @@ function CFAMock(){
   const [fsaSubtopic, setFsaSubtopic] = useState("Financial Ratios");
   const [fsaDifficulty, setFsaDifficulty] = useState("Medium");
   const [calcOpen, setCalcOpen] = useState(false);
+  const [calcMinimized, setCalcMinimized] = useState(false);
+  const [calcDisplayVal, setCalcDisplayVal] = useState("0");
   const [calcTopic, setCalcTopic] = useState("Fixed Income");
   const [calcDifficulty, setCalcDifficulty] = useState("Medium");
   const [calcProblem, setCalcProblem] = useState(null);
@@ -7800,13 +7808,45 @@ Return ONLY a JSON array — no prose, no markdown fences:
     </>
   ):null;
 
-  const wrap=(children,maxW=860)=>(
-    <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      <div style={{maxWidth:maxW,width:"100%",animation:"fadeIn 0.2s ease"}}>{children}</div>
+  const calcMiniWidget = calcOpen && calcMinimized && (
+    <div style={{position:"fixed",bottom:76,right:16,zIndex:9500,
+      background:"linear-gradient(135deg,#0d0d1c,#141428)",
+      border:"1px solid #3a3a5855",borderRadius:14,
+      padding:"10px 14px",boxShadow:"0 8px 28px #00000099",
+      minWidth:160,animation:"fadeIn 0.15s ease"}}>
+      <div style={{fontSize:9,color:"#555580",fontWeight:700,letterSpacing:"0.06em",marginBottom:4}}>🧮 CALCULATOR</div>
+      <div style={{fontSize:24,color:"#b6f066",fontFamily:"'Courier New',monospace",textAlign:"right",marginBottom:8,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
+        {calcDisplayVal}
+      </div>
+      <div style={{display:"flex",gap:6}}>
+        <button onClick={()=>setCalcMinimized(false)}
+          style={{flex:1,padding:"7px",borderRadius:8,fontSize:11,fontWeight:700,
+            background:"linear-gradient(135deg,#1a1a30,#222244)",
+            border:"1px solid #4a4a70",color:"#a5b4fc",cursor:"pointer"}}>
+          ⊞ Resume
+        </button>
+        <button onClick={()=>{setCalcOpen(false);setCalcMinimized(false);}}
+          style={{padding:"7px 10px",borderRadius:8,fontSize:11,
+            background:"none",border:"1px solid #3a3a50",color:"#555580",cursor:"pointer"}}>
+          ✕
+        </button>
+      </div>
     </div>
   );
+
+  const wrap=(children,maxW=860)=>(
+    <>
+      <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+        <div style={{maxWidth:maxW,width:"100%",animation:"fadeIn 0.2s ease"}}>{children}</div>
+      </div>
+      {calcMiniWidget}
+    </>
+  );
   // ══ BA II PLUS CALCULATOR OVERLAY ════════════════════════════════════════
-  if(calcOpen) return <CFACalculator onClose={()=>setCalcOpen(false)}/>;
+  if(calcOpen && !calcMinimized) return <CFACalculator
+    onClose={()=>setCalcOpen(false)}
+    onMinimize={(disp)=>{setCalcDisplayVal(disp);setCalcMinimized(true);}}
+  />;
 
   // ══ GLOBAL LOADING OVERLAY — shown from any screen when generating ══════
   if(loading) return (
