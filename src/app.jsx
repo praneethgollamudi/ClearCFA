@@ -4438,7 +4438,19 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const aiMsgsRef = useRef([]);
   const [expandedWrong, setExpandedWrong] = useState(null);
   const [dynamicPN, setDynamicPN] = useState(()=>{try{return JSON.parse(localStorage.getItem(DYNAMIC_PN_KEY)||"{}");}catch{return {};}});
-  const [dynamicFormulas, setDynamicFormulas] = useState(()=>{try{return JSON.parse(localStorage.getItem(DYNAMIC_FORMULAS_KEY)||"{}");}catch{return {};}});
+  const [dynamicFormulas, setDynamicFormulas] = useState(()=>{
+    try{
+      const raw=JSON.parse(localStorage.getItem(DYNAMIC_FORMULAS_KEY)||"{}");
+      // Sanitize on load: ensure each topic is an array of valid formula objects
+      const clean={};
+      for(const [k,v] of Object.entries(raw)){
+        if(!Array.isArray(v)) continue;
+        const valid=v.filter(f=>f&&f.name&&f.f&&f.name.length<=70&&!/^N\/A/i.test(f.f.trim())&&f.f!=="See curriculum");
+        if(valid.length) clean[k]=valid;
+      }
+      return clean;
+    }catch{return {};}
+  });
   const [pnGenerating, setPnGenerating] = useState({});
   const [formulaGenerating, setFormulaGenerating] = useState({});
   const [formulaGenError, setFormulaGenError] = useState({});
@@ -4468,9 +4480,12 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const topicData = {topics:[...staticTopics, ...dynamicTopics]};
   const staticFormulas = FORMULAS[selTopic] || [];
   const dynSeenNames=new Set();
-  const dynamicFormulaData = (dynamicFormulas[selTopic] || []).filter(f=>{
-    if(!f||!f.f||f.f==="See curriculum")return false;
-    const nk=(f.name||"").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,18);
+  const _rawDynFormulas = Array.isArray(dynamicFormulas[selTopic]) ? dynamicFormulas[selTopic] : [];
+  const dynamicFormulaData = _rawDynFormulas.filter(f=>{
+    if(!f||!f.f||!f.name) return false;
+    if(f.f==="See curriculum"||/^N\/A/i.test(f.f.trim())) return false;
+    if(f.name.length>70) return false; // reject AI descriptions masquerading as formula names
+    const nk=f.name.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,18);
     if(dynSeenNames.has(nk))return false;
     dynSeenNames.add(nk);
     return true;
@@ -4828,15 +4843,17 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                     <div style={{background:"#0e0818",border:"1px solid #c0304433",borderRadius:10,overflow:"hidden"}}>
                       {[...matchedIdxs].map((fi,i,arr)=>{
                         const f=formulaData[fi];
+                        if(!f||!f.name||!f.f) return null;
                         const fmod=enrichedFormulas[fi]?.module;
+                        const dispName=f.name.length>44?f.name.slice(0,42)+"…":f.name;
                         return(
                           <button key={fi} onClick={()=>{
                             if(fmod){setExpandedFormulaModule(fmod);}
                             setTimeout(()=>document.getElementById(`formula-${fi}`)?.scrollIntoView({behavior:"smooth",block:"center"}),50);
                           }}
                             style={{width:"100%",display:"flex",gap:12,alignItems:"flex-start",padding:"10px 14px",background:"none",border:"none",borderBottom:i<arr.length-1?"1px solid #c0304422":"none",cursor:"pointer",textAlign:"left"}}>
-                            <div style={{fontSize:11,color:"#a05070",minWidth:110,flexShrink:0,paddingTop:2,lineHeight:1.4}}>{f.name}</div>
-                            <div style={{fontSize:12,color:"#d090a0",fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
+                            <div style={{fontSize:11,color:"#a05070",minWidth:100,maxWidth:120,flexShrink:0,paddingTop:2,lineHeight:1.4}}>{dispName}</div>
+                            <div style={{fontSize:12,color:"#d090a0",fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word",overflow:"hidden"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
                             <span style={{fontSize:10,color:"#6060a0",flexShrink:0,marginTop:2}}>↓</span>
                           </button>
                         );
