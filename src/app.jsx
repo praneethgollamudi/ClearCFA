@@ -6038,6 +6038,345 @@ function pickDailyRefresher(cfaLevel, moduleReadiness){
   return{concepts,idx:0};
 }
 
+// ─── BA II PLUS CALCULATOR ─────────────────────────────────────────────────
+function solveTVMCalc({N,IY,PV,PMT,FV},PY,isBGN,solveFor){
+  const r=(IY/100)/PY;
+  const m=isBGN?1:0;
+  function A(r,n){if(Math.abs(r)<1e-12)return n;return(Math.pow(1+r,n)-1)/r;}
+  function tvmF(n,r){return PV*Math.pow(1+r,n)+PMT*A(r,n)*(1+r*m)+FV;}
+  if(solveFor==='FV'){if(Math.abs(r)<1e-12)return-(PV+PMT*N);return-(PV*Math.pow(1+r,N)+PMT*A(r,N)*(1+r*m));}
+  if(solveFor==='PV'){if(Math.abs(r)<1e-12)return-(FV+PMT*N);return-(FV+PMT*A(r,N)*(1+r*m))/Math.pow(1+r,N);}
+  if(solveFor==='PMT'){const d=A(r,N)*(1+r*m);if(Math.abs(d)<1e-12)return null;return-(PV*Math.pow(1+r,N)+FV)/d;}
+  if(solveFor==='N'){
+    if(Math.abs(r)<1e-12){const d=PMT;if(Math.abs(d)<1e-12)return null;return-(PV+FV)/d;}
+    let n0=Math.max(1,10);
+    for(let i=0;i<300;i++){
+      const fn=tvmF(n0,r);const coeff=PV+PMT*(1+r*m)/r;
+      if(Math.abs(coeff)<1e-12)break;
+      const fpn=Math.log(1+r)*Math.pow(1+r,n0)*coeff;if(Math.abs(fpn)<1e-15)break;
+      const n1=n0-fn/fpn;if(Math.abs(n1-n0)<1e-8){n0=n1;break;}n0=n1<=0?n0/2:n1;
+    }return n0;
+  }
+  if(solveFor==='IY'){
+    let r0=0.1/PY;
+    for(let i=0;i<500;i++){
+      const fr=tvmF(N,r0),h=Math.max(Math.abs(r0)*1e-5,1e-10);
+      const dfr=(tvmF(N,r0+h)-tvmF(N,r0-h))/(2*h);if(Math.abs(dfr)<1e-15)break;
+      const r1=r0-fr/dfr;if(r1<=-1+1e-10){r0=r0/2;continue;}if(Math.abs(r1-r0)<1e-10){r0=r1;break;}r0=r1;
+    }return r0*PY*100;
+  }
+  return null;
+}
+function calcNPVValue(flows,rate){
+  const r=rate/100;let npv=0,p=0;
+  flows.forEach((cf,i)=>{if(i===0)npv+=cf;else{p++;npv+=cf/Math.pow(1+r,p);}});
+  return npv;
+}
+function calcIRRValue(flows){
+  function f(r){let npv=0,p=0;flows.forEach((cf,i)=>{if(i===0)npv+=cf;else{p++;npv+=cf/Math.pow(1+r,p);}});return npv;}
+  let r0=0.1;
+  for(let i=0;i<300;i++){
+    const fr=f(r0),h=1e-6,dfr=(f(r0+h)-f(r0-h))/(2*h);if(Math.abs(dfr)<1e-15)break;
+    const r1=r0-fr/dfr;if(r1<=-1+1e-10){r0=r0/2;continue;}if(Math.abs(r1-r0)<1e-10){r0=r1;break;}r0=r1;
+  }
+  return r0*100;
+}
+
+function CFACalculator({onClose}){
+  const {useState:uS,useRef:uR,useCallback:uCB}=React;
+  const [disp,setDisp]=uS("0");
+  const [pendingOp,setPendingOp]=uS(null);
+  const [prevVal,setPrevVal]=uS(null);
+  const [lastB,setLastB]=uS(null); // last right-operand for = repeat
+  const [fresh,setFresh]=uS(true); // next digit clears display
+  const [is2nd,setIs2nd]=uS(false);
+  const [isBGN,setIsBGN]=uS(false);
+  const [cptMode,setCptMode]=uS(false);
+  const [tvm,setTvm]=uS({N:"",IY:"",PV:"",PMT:"",FV:""});
+  const [tvmLbl,setTvmLbl]=uS("");
+  const [mem,setMem]=uS(0);
+  const [py,setPy]=uS(1);
+  const [pyMode,setPyMode]=uS(false);
+  const [cfMode,setCfMode]=uS(false);
+  const [cfFlows,setCfFlows]=uS([]);
+  const [cfNPVMode,setCfNPVMode]=uS(false);
+  const [cfFlowsForNPV,setCfFlowsForNPV]=uS([]);
+  const [msg,setMsg]=uS("");
+  const msgTimer=uR(null);
+
+  const showMsg=(m,ms=1600)=>{clearTimeout(msgTimer.current);setMsg(m);msgTimer.current=setTimeout(()=>setMsg(""),ms);};
+  const fmtD=(n)=>{
+    if(!isFinite(n))return"Error";if(n===0)return"0";
+    const a=Math.abs(n);
+    if(a>=1e10||(a<0.0001&&a>0))return n.toExponential(4);
+    let s=parseFloat(n.toPrecision(10)).toString();
+    return s.length>13?parseFloat(n.toPrecision(6)).toString():s;
+  };
+  const getN=()=>{const v=parseFloat(disp);return isNaN(v)?0:v;};
+  const doOp=(a,b,op)=>{
+    if(op==='+')return a+b;if(op==='-')return a-b;
+    if(op==='×')return a*b;if(op==='÷')return Math.abs(b)<1e-15?Infinity:a/b;return b;
+  };
+
+  const handleKey=(id)=>{
+    const DIGITS=['0','1','2','3','4','5','6','7','8','9'];
+
+    // ── 2nd key ──
+    if(id==='2nd'){setIs2nd(s=>!s);return;}
+
+    // ── 2nd-modified actions ──
+    if(is2nd){
+      setIs2nd(false);
+      if(id==='PMT'){setIsBGN(b=>!b);showMsg(isBGN?"END mode":"BGN mode");return;}
+      if(id==='FV'){setTvm({N:"",IY:"",PV:"",PMT:"",FV:""});setDisp("0");setFresh(true);setTvmLbl("CLR TVM");return;}
+      if(id==='ce'){setTvm({N:"",IY:"",PV:"",PMT:"",FV:""});setPendingOp(null);setPrevVal(null);setDisp("0");setFresh(true);setTvmLbl("CLR WRK");return;}
+      if(id==='IY'){setPyMode(true);setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");return;}
+      if(id==='ln'){setDisp(fmtD(Math.exp(getN())));setFresh(true);return;}
+      if(id==='sqrt'){setDisp(fmtD(Math.pow(getN(),2)));setFresh(true);setTvmLbl("x²");return;}
+      if(id==='npv'&&cfFlows.length>0){setCfNPVMode(true);setCfFlowsForNPV([...cfFlows]);setDisp("0");setFresh(true);setTvmLbl("I =");return;}
+      return;
+    }
+
+    // ── P/Y mode ──
+    if(pyMode){
+      if(DIGITS.includes(id)){setDisp(p=>fresh||(p==='0')?(setFresh(false),id):p.length<4?p+id:p);setFresh(false);return;}
+      if(id==='eq'||id==='N'||id==='IY'){const v=Math.max(1,Math.min(365,parseInt(disp)||1));setPy(v);setPyMode(false);setDisp(String(v));setFresh(true);setTvmLbl("P/Y");return;}
+      if(id==='ce'){setPyMode(false);setDisp(String(py));setFresh(true);setTvmLbl("");return;}
+      return;
+    }
+
+    // ── NPV rate entry ──
+    if(cfNPVMode){
+      if(DIGITS.includes(id)||id==='dot'||id==='neg'){/* fall through to digit handling below */}
+      else if(id==='eq'){
+        const irateV=getN();setCfNPVMode(false);
+        const npv=calcNPVValue(cfFlowsForNPV,irateV);
+        setDisp(fmtD(npv));setFresh(true);setTvmLbl("NPV");return;
+      }else if(id==='ce'){setCfNPVMode(false);setDisp("0");setFresh(true);setTvmLbl("");return;}
+      else return;
+    }
+
+    // ── CPT mode: next TVM key computes that variable ──
+    if(cptMode){
+      if(['N','IY','PV','PMT','FV'].includes(id)){
+        setCptMode(false);
+        const known={N:parseFloat(tvm.N),IY:parseFloat(tvm.IY),PV:parseFloat(tvm.PV),PMT:parseFloat(tvm.PMT),FV:parseFloat(tvm.FV)};
+        const unset=Object.entries(known).filter(([k])=>k!==id&&isNaN(known[k]));
+        if(unset.length>0){showMsg("Set 4 TVM vars first");setDisp("Error");setFresh(true);return;}
+        const result=solveTVMCalc(known,py,isBGN,id);
+        if(result===null||!isFinite(result)){setDisp("Error");setFresh(true);return;}
+        const r2=parseFloat(result.toFixed(6));
+        setTvm(t=>({...t,[id]:r2}));setDisp(fmtD(r2));setFresh(true);setTvmLbl(id==='IY'?'I/Y':id);return;
+      }
+      setCptMode(false);
+    }
+
+    // ── CF mode ──
+    if(cfMode){
+      if(id==='cf'){
+        const v=getN();const next=[...cfFlows,v];
+        setCfFlows(next);showMsg(`CF${next.length-1} = ${fmtD(v)}`);
+        setDisp("0");setFresh(true);setTvmLbl(`CF${next.length}`);return;
+      }
+      if(id==='irr'){
+        const allF=fresh?cfFlows:[...cfFlows,getN()];
+        if(allF.length<2){showMsg("Need ≥2 cash flows");return;}
+        setCfMode(false);const irr=calcIRRValue(allF);
+        setDisp(fmtD(irr));setFresh(true);setTvmLbl("IRR %");return;
+      }
+      if(id==='npv'){
+        const allF=fresh?cfFlows:[...cfFlows,getN()];
+        if(allF.length<1){showMsg("Enter CF0 first");return;}
+        setCfMode(false);setCfNPVMode(true);setCfFlowsForNPV(allF);
+        setDisp("0");setFresh(true);setTvmLbl("I =");return;
+      }
+      if(id==='ce'){if(!fresh){setDisp("0");setFresh(true);}else{setCfMode(false);setCfFlows([]);setTvmLbl("");showMsg("CF cleared");}return;}
+      // digits fall through to main
+    }
+
+    // ── Main calculator ──
+    switch(id){
+      case '0':case '1':case '2':case '3':case '4':
+      case '5':case '6':case '7':case '8':case '9':
+        setDisp(p=>{if(fresh)return id;if(p==='0'&&id==='0')return'0';if(p==='0')return id;if(p.replace('-','').replace('.','').length>=10)return p;return p+id;});
+        setFresh(false);if(!cfNPVMode&&!pyMode)setTvmLbl("");break;
+      case 'dot':
+        setDisp(p=>{if(fresh)return'0.';if(p.includes('.'))return p;if(p.replace('-','').length>=10)return p;return p+'.';});
+        setFresh(false);break;
+      case 'neg':
+        {const n=getN();setDisp(isNaN(n)?disp:fmtD(-n));}break;
+      case 'pct':
+        setDisp(fmtD(getN()/100));setFresh(true);break;
+      case 'sqrt':
+        {const n=getN();setDisp(n<0?"Error":fmtD(Math.sqrt(n)));setFresh(true);}break;
+      case 'inv':
+        {const n=getN();setDisp(n===0?"Error":fmtD(1/n));setFresh(true);}break;
+      case 'ln':
+        {const n=getN();setDisp(n<=0?"Error":fmtD(Math.log(n)));setFresh(true);}break;
+      case 'ce':
+        if(!fresh)setDisp("0");
+        else{setPendingOp(null);setPrevVal(null);setTvmLbl("");}
+        setFresh(true);break;
+      case 'sto':
+        setMem(getN());showMsg(`M = ${fmtD(getN())}`);break;
+      case 'rcl':
+        setDisp(fmtD(mem));setFresh(true);break;
+      case 'add':case 'sub':case 'mul':case 'div':{
+        const opS={add:'+',sub:'-',mul:'×',div:'÷'}[id];
+        const cur=getN();
+        if(pendingOp!==null&&!fresh){const r=doOp(prevVal??cur,cur,pendingOp);setDisp(fmtD(r));setPrevVal(r);}
+        else setPrevVal(cur);
+        setPendingOp(opS);setLastB(cur);setFresh(true);setTvmLbl("");break;
+      }
+      case 'eq':{
+        if(cfNPVMode){const irateV=getN();setCfNPVMode(false);const npv=calcNPVValue(cfFlowsForNPV,irateV);setDisp(fmtD(npv));setFresh(true);setTvmLbl("NPV");break;}
+        if(pyMode){const v=Math.max(1,Math.min(365,parseInt(disp)||1));setPy(v);setPyMode(false);setDisp(String(v));setFresh(true);setTvmLbl("P/Y");break;}
+        if(pendingOp!==null){
+          const b=fresh?(lastB??0):getN();
+          const result=doOp(prevVal??0,b,pendingOp);
+          setLastB(b);setPrevVal(result);setDisp(fmtD(result));setFresh(true);
+        }break;
+      }
+      case 'N':case 'IY':case 'PV':case 'PMT':case 'FV':{
+        const v=getN();setTvm(t=>({...t,[id]:v}));setTvmLbl(id==='IY'?'I/Y':id);setDisp(fmtD(v));setFresh(true);setCptMode(false);break;
+      }
+      case 'cpt':setCptMode(true);setTvmLbl("CPT ▶");break;
+      case 'cf':
+        if(!cfMode){setCfMode(true);setCfFlows([]);setDisp("0");setFresh(true);setTvmLbl("CF0");showMsg("Enter CF0 → press CF");}
+        else{const v=getN();const next=[...cfFlows,v];setCfFlows(next);showMsg(`CF${next.length-1}=${fmtD(v)}`);setDisp("0");setFresh(true);setTvmLbl(`CF${next.length}`);}
+        break;
+      case 'npv':
+        if(!cfMode&&cfFlows.length<1){showMsg("Press CF first");break;}
+        {const allF=cfFlows;setCfNPVMode(true);setCfFlowsForNPV(allF);setDisp("0");setFresh(true);setTvmLbl("I =");}break;
+      case 'irr':
+        if(!cfMode&&cfFlows.length>=2){const irr=calcIRRValue(cfFlows);setDisp(fmtD(irr));setFresh(true);setTvmLbl("IRR %");}
+        else showMsg("Press CF first");
+        break;
+      case 'py':setPyMode(true);setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");break;
+      default:break;
+    }
+  };
+
+  const BTNS=[
+    {id:'2nd', main:'2nd',  sub:'',        t:'k2nd'},
+    {id:'cf',  main:'CF',   sub:'',        t:'ws'},
+    {id:'npv', main:'NPV',  sub:'I',       t:'ws'},
+    {id:'irr', main:'IRR',  sub:'',        t:'ws'},
+    {id:'py',  main:'P/Y',  sub:'C/Y',     t:'ws'},
+    {id:'N',   main:'N',    sub:'xP/Y',    t:'tvm'},
+    {id:'IY',  main:'I/Y',  sub:'P/Y',     t:'tvm'},
+    {id:'PV',  main:'PV',   sub:'',        t:'tvm'},
+    {id:'PMT', main:'PMT',  sub:'BGN',     t:'tvm'},
+    {id:'FV',  main:'FV',   sub:'CLR TVM', t:'tvm'},
+    {id:'cpt', main:'CPT',  sub:'',        t:'cpt'},
+    {id:'pct', main:'%',    sub:'',        t:'fn'},
+    {id:'sqrt',main:'√x',   sub:'x²',      t:'fn'},
+    {id:'inv', main:'1/x',  sub:'',        t:'fn'},
+    {id:'eq',  main:'=',    sub:'',        t:'eq'},
+    {id:'ce',  main:'CE/C', sub:'CLR WRK', t:'clr'},
+    {id:'7',   main:'7',    sub:'',        t:'d'},
+    {id:'8',   main:'8',    sub:'',        t:'d'},
+    {id:'9',   main:'9',    sub:'',        t:'d'},
+    {id:'div', main:'÷',    sub:'',        t:'op'},
+    {id:'sto', main:'STO',  sub:'',        t:'mem'},
+    {id:'4',   main:'4',    sub:'',        t:'d'},
+    {id:'5',   main:'5',    sub:'',        t:'d'},
+    {id:'6',   main:'6',    sub:'',        t:'d'},
+    {id:'mul', main:'×',    sub:'',        t:'op'},
+    {id:'rcl', main:'RCL',  sub:'',        t:'mem'},
+    {id:'1',   main:'1',    sub:'',        t:'d'},
+    {id:'2',   main:'2',    sub:'',        t:'d'},
+    {id:'3',   main:'3',    sub:'',        t:'d'},
+    {id:'sub', main:'−',    sub:'',        t:'op'},
+    {id:'ln',  main:'LN',   sub:'e^x',     t:'fn'},
+    {id:'0',   main:'0',    sub:'',        t:'d'},
+    {id:'dot', main:'.',    sub:'',        t:'d'},
+    {id:'neg', main:'+/−',  sub:'',        t:'fn'},
+    {id:'add', main:'+',    sub:'',        t:'op'},
+  ];
+  const BG={k2nd:is2nd?'#b45309':'#3a2800',ws:'#0e1e3a',tvm:'#0a2040',cpt:cptMode?'#4c1d95':'#1c1040',fn:'#131320',eq:'#5b21b6',clr:'#2d0000',d:'#111128',op:'#0a0a18',mem:'#0a1e14'};
+  const TX={k2nd:is2nd?'#fff':'#d97706',ws:'#60a5fa',tvm:'#93c5fd',cpt:cptMode?'#ddd6fe':'#a78bfa',fn:'#c4c4f4',eq:'#fff',clr:'#fca5a5',d:'#e2e2ff',op:'#7dd3fc',mem:'#6ee7b7'};
+  const BO={k2nd:is2nd?'1px solid #d97706':'1px solid #5a3800',ws:'1px solid #1e3a7a',tvm:'1px solid #1e4a8a',cpt:cptMode?'1px solid #7c3aed':'1px solid #3d2080',fn:'1px solid #2a2a50',eq:'1px solid #7c3aed',clr:'1px solid #5d0000',d:'1px solid #22224a',op:'1px solid #181828',mem:'1px solid #0a2e1a'};
+
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:9500,background:"#0a0a16",display:"flex",flexDirection:"column",fontFamily:"'SF Pro Display','Helvetica Neue',sans-serif"}}>
+      {/* Top bar */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:"1px solid #1a1a30",background:"#060610",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:12,fontWeight:800,color:"#60a5fa",letterSpacing:"0.06em"}}>🧮 BA II PLUS</span>
+          {isBGN&&<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:"#4c1d9522",color:"#a78bfa",border:"1px solid #7c3aed44"}}>BGN</span>}
+          {is2nd&&<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:"#7c3a0022",color:"#fbbf24",border:"1px solid #d9770644"}}>2ND</span>}
+          {cptMode&&<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:"#4c1d9522",color:"#a78bfa",border:"1px solid #7c3aed44"}}>CPT</span>}
+          {cfMode&&<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:"#0a2a5022",color:"#7dd3fc",border:"1px solid #2563eb44"}}>CF WS</span>}
+          {py!==1&&<span style={{fontSize:9,color:"#444466",fontFamily:"monospace"}}>P/Y={py}</span>}
+        </div>
+        <button onClick={onClose} style={{background:"none",border:"1px solid #2a2a44",color:"#6666aa",cursor:"pointer",fontSize:11,borderRadius:6,padding:"5px 12px",fontWeight:700,letterSpacing:"0.02em"}}>Done ✓</button>
+      </div>
+
+      {/* LCD Display */}
+      <div style={{background:"#091409",padding:"10px 16px 8px",borderBottom:"1px solid #091409",flexShrink:0}}>
+        {(tvmLbl||msg)&&<div style={{fontSize:11,fontWeight:700,color:msg?"#fbbf24":"#4ade80",marginBottom:2,minHeight:16,transition:"color 0.2s"}}>{msg||tvmLbl}</div>}
+        <div style={{fontSize:34,fontWeight:300,color:disp==="Error"?"#f87171":"#a3e050",fontFamily:"'Courier New',Courier,monospace",textAlign:"right",letterSpacing:"0.03em",minHeight:48,display:"flex",alignItems:"center",justifyContent:"flex-end",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>
+          {pendingOp&&<span style={{fontSize:14,color:"#3a5a3a",marginRight:6}}>{pendingOp}</span>}
+          {disp}
+        </div>
+      </div>
+
+      {/* TVM variable strip */}
+      <div style={{background:"#060610",padding:"4px 6px",display:"flex",borderBottom:"1px solid #0e0e20",flexShrink:0}}>
+        {[['N','N'],['IY','I/Y'],['PV','PV'],['PMT','PMT'],['FV','FV']].map(([k,lbl])=>(
+          <div key={k} style={{flex:1,textAlign:"center",padding:"2px 0",borderRadius:3,background:tvm[k]!==""?"#0a160a":"transparent",cursor:tvm[k]!==""?"pointer":"default",margin:"0 1px"}}
+            onClick={()=>{if(tvm[k]!==""){setDisp(fmtD(parseFloat(tvm[k])));setFresh(true);setTvmLbl(lbl);}}}>
+            <div style={{fontSize:7,color:"#2a2a50",fontWeight:700,letterSpacing:"0.04em"}}>{lbl}</div>
+            <div style={{fontSize:9,color:tvm[k]!==""?"#4ade80":"#1a1a2a",fontFamily:"'Courier New',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+              {tvm[k]!==""?parseFloat(parseFloat(tvm[k]).toFixed(4)).toString():"·"}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CF flows strip */}
+      {cfMode&&cfFlows.length>0&&(
+        <div style={{background:"#060610",padding:"3px 10px",borderBottom:"1px solid #0e0e20",flexShrink:0,overflowX:"auto"}}>
+          <div style={{display:"flex",gap:5,alignItems:"center",whiteSpace:"nowrap"}}>
+            <span style={{fontSize:8,color:"#2a2a50",fontWeight:700,flexShrink:0}}>CFs:</span>
+            {cfFlows.map((v,i)=>(
+              <span key={i} style={{fontSize:8,color:"#7dd3fc",fontFamily:"monospace",padding:"1px 4px",borderRadius:3,background:"#0a1a2a",flexShrink:0}}>
+                {i===0?"CF₀":i<10?`C0${i}`:`C${i}`}:{fmtD(v)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Button grid */}
+      <div style={{flex:1,overflowY:"auto",padding:"6px 5px",display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:4,alignContent:"start"}}>
+        {BTNS.map(btn=>(
+          <button key={btn.id} onClick={()=>handleKey(btn.id)}
+            style={{padding:"0",borderRadius:6,border:BO[btn.t],cursor:"pointer",background:BG[btn.t],color:TX[btn.t],
+              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+              minHeight:44,fontSize:btn.main.length>=7?7:btn.main.length>=5?9:btn.main.length>=4?10:13,
+              fontWeight:700,position:"relative",transition:"filter 0.08s",userSelect:"none",WebkitUserSelect:"none",touchAction:"manipulation"}}
+            onPointerDown={e=>{e.currentTarget.style.filter="brightness(1.6)";}}
+            onPointerUp={e=>{e.currentTarget.style.filter="";}}
+            onPointerLeave={e=>{e.currentTarget.style.filter="";}}>
+            {btn.sub&&<span style={{fontSize:7,color:"#d97706",position:"absolute",top:3,fontWeight:700,letterSpacing:"0.01em",lineHeight:1}}>{btn.sub}</span>}
+            <span style={{marginTop:btn.sub?5:0,lineHeight:1}}>{btn.main}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Quick reference */}
+      <div style={{background:"#060610",borderTop:"1px solid #0e0e20",padding:"5px 10px",flexShrink:0,display:"flex",gap:12,overflowX:"auto",whiteSpace:"nowrap"}}>
+        <span style={{fontSize:9,color:"#2a2a50"}}>📖 TVM: set 4 vars → CPT → unknown key</span>
+        <span style={{fontSize:9,color:"#2a2a50"}}>CF: CF key to enter flows → NPV/IRR</span>
+        <span style={{fontSize:9,color:"#2a2a50"}}>2nd+PMT = BGN</span>
+        <span style={{fontSize:9,color:"#2a2a50"}}>2nd+FV = CLR TVM</span>
+      </div>
+    </div>
+  );
+}
+
 function CFAMock(){
   const [screen,setScreen]=useState("home");
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
@@ -6157,6 +6496,7 @@ function CFAMock(){
   const [fsaVignetteOpen, setFsaVignetteOpen] = useState(false);
   const [fsaSubtopic, setFsaSubtopic] = useState("Financial Ratios");
   const [fsaDifficulty, setFsaDifficulty] = useState("Medium");
+  const [calcOpen, setCalcOpen] = useState(false);
   const [calcTopic, setCalcTopic] = useState("Fixed Income");
   const [calcDifficulty, setCalcDifficulty] = useState("Medium");
   const [calcProblem, setCalcProblem] = useState(null);
@@ -7271,6 +7611,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{maxWidth:maxW,width:"100%",animation:"fadeIn 0.2s ease"}}>{children}</div>
     </div>
   );
+  // ══ BA II PLUS CALCULATOR OVERLAY ════════════════════════════════════════
+  if(calcOpen) return <CFACalculator onClose={()=>setCalcOpen(false)}/>;
+
   // ══ GLOBAL LOADING OVERLAY — shown from any screen when generating ══════
   if(loading) return (
     <div style={{position:"fixed",inset:0,background:`radial-gradient(ellipse at 50% 40%,${C.accent}1c 0%,${C.bg} 65%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 28px",fontFamily:"'Inter',system-ui,-apple-system,sans-serif",color:C.text,zIndex:9999}}>
@@ -9251,6 +9594,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
     );
     const q=questions[currentQ];const answered=answers[q.id];const isLast=currentQ===questions.length-1;
     return wrap(<>
+      {/* Floating calculator button */}
+      <button onClick={()=>setCalcOpen(true)} title="Open BA II Plus Calculator"
+        style={{position:"fixed",bottom:22,right:16,zIndex:200,width:46,height:46,borderRadius:"50%",background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",border:"1px solid #2563eb55",color:"#93c5fd",fontSize:20,cursor:"pointer",boxShadow:"0 4px 16px #0008",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>
+        🧮
+      </button>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <button onClick={()=>setExitConfirm(true)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,flexShrink:0}}>← Home</button>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
@@ -10372,10 +10720,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
       setCalcChecked(c=>({...c,[stepIdx]:ok?"correct":"wrong"}));
     };
     return(<>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <div><h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>🔢 Calc Trainer</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>Step-by-step calculation practice</div></div>
         <button onClick={()=>{setScreen("home");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
       </div>
+      {/* Open the real BA II Plus calculator */}
+      <button onClick={()=>setCalcOpen(true)}
+        style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",color:"#93c5fd",border:"1px solid #2563eb44",cursor:"pointer",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+        <span style={{fontSize:18}}>🧮</span>
+        <div style={{textAlign:"left"}}>
+          <div style={{fontSize:13,fontWeight:800,color:"#e2e8f0"}}>Open BA II Plus Calculator</div>
+          <div style={{fontSize:11,color:"#7dd3fc",fontWeight:400}}>TVM · NPV/IRR · Arithmetic · Memory</div>
+        </div>
+        <span style={{marginLeft:"auto",fontSize:16,opacity:0.6}}>→</span>
+      </button>
       {!calcProblem&&(
         <>
           <div style={{marginBottom:14}}>
