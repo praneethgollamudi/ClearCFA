@@ -4366,7 +4366,14 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const dynamicTopics = dynamicPN[selTopic] || [];
   const topicData = {topics:[...staticTopics, ...dynamicTopics]};
   const staticFormulas = FORMULAS[selTopic] || [];
-  const dynamicFormulaData = (dynamicFormulas[selTopic] || []).filter(f=>f&&f.f&&f.f!=="See curriculum");
+  const dynSeenNames=new Set();
+  const dynamicFormulaData = (dynamicFormulas[selTopic] || []).filter(f=>{
+    if(!f||!f.f||f.f==="See curriculum")return false;
+    const nk=(f.name||"").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,18);
+    if(dynSeenNames.has(nk))return false;
+    dynSeenNames.add(nk);
+    return true;
+  });
   const formulaData = [...staticFormulas, ...dynamicFormulaData];
   const allFormulas = Object.values(FORMULAS).flat();
 
@@ -4434,9 +4441,14 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
       if(!reply){setFormulaGenError(s=>({...s,[key]:"No response — try again."}));return;}
       const formula=parseFormulaAIResponse(reply,name);
       if(!formula){setFormulaGenError(s=>({...s,[key]:"This concept is primarily qualitative — no quantitative formula to generate."}));return;}
+      const normN=s=>s.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,15);
       const existing=dynamicFormulas[selTopic]||[];
-      if(existing.some(f=>f.name.toLowerCase()===key)) return;
-      const updated={...dynamicFormulas,[selTopic]:[...existing,formula]};
+      const formulaNameN=normN(formula.name||"");
+      if(existing.some(f=>normN(f.name||"")===formulaNameN||normN(f.name||"")===normN(key))) return;
+      // Deduplicate entire list before saving to prevent accumulated duplicates
+      const seen=new Set();
+      const deduped=existing.filter(f=>{const k=normN(f.name||"");if(seen.has(k))return false;seen.add(k);return true;});
+      const updated={...dynamicFormulas,[selTopic]:[...deduped,formula]};
       setDynamicFormulas(updated);
       try{localStorage.setItem(DYNAMIC_FORMULAS_KEY,JSON.stringify(updated));}catch{}
     }catch(e){
@@ -4723,12 +4735,19 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
               {(()=>{
                 const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,8);
                 if(!wrongCards.length) return null;
+                const normName=s=>s.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,15);
                 const gaps=wrongCards.filter(card=>{
                   const words=((card.concept||"")+" "+(card.subtopic||"")).toLowerCase().split(/[\s\-\/\(\)]+/).filter(w=>w.length>3);
                   const matched=formulaData.some(f=>{const fn=f.name.toLowerCase();return words.some(w=>fn.includes(w)||w.includes(fn.split(" ")[0]));});
                   if(matched) return false;
                   const key=((card.subtopic||card.concept||"").trim()).toLowerCase();
-                  return key&&!dynamicFormulas[selTopic]?.some(f=>f.name.toLowerCase()===key);
+                  const keyN=normName(key);
+                  // Hide if any dynamic formula's name overlaps with the card's concept (fuzzy)
+                  const alreadyGen=(dynamicFormulas[selTopic]||[]).some(f=>{
+                    const fn=normName(f.name||"");
+                    return fn===keyN||fn.includes(keyN.slice(0,12))||keyN.includes(fn.slice(0,12));
+                  });
+                  return key&&!alreadyGen;
                 });
                 if(!gaps.length) return null;
                 return(
