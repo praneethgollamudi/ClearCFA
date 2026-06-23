@@ -2330,7 +2330,7 @@ Return ONLY a JSON array, no markdown:
 
 Rules:
 - 3 options only (A,B,C). Each wrong option exploits a misconception. Spread questions across different LOS.
-- CRITICAL for numerical questions: FIRST compute the correct answer, THEN make that exact value one of the options. NEVER say "nearest available" or pick an approximate answer — the correct calculated value MUST appear verbatim as option A, B, or C. Wrong options should use common formula errors (e.g. forgetting to discount, using wrong rate, off-by-one period).
+- CRITICAL for numerical questions: FIRST compute the exact correct answer (show full precision), THEN include that exact value as one of the options. NEVER describe any option as "closest", "nearest", "best approximation", or "closest when accounting for rounding" — if you use such language in the explanation, the question will be discarded. If rounding is needed for a clean option, round the answer FIRST, then build all three options around that rounded figure. The correct computed result must appear verbatim as exactly one of A, B, or C — no approximations. Wrong options must use recognisable formula errors (wrong rate, wrong periods, missing compounding step).
 - The "answer" field must match the letter whose option text equals the correct computed result.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
 }
 
@@ -6704,7 +6704,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         if(!q||!q.question||!q.answer||!q.options)return false;
         if(!q.options[q.answer])return false; // answer key points to nonexistent option
         const exp=(q.explanation||"").toLowerCase();
-        if(/nearest available|closest answer|so [a-c] is nearest|approximate(ly)?|not exactly|so [a-c] is the best/i.test(exp))return false;
+        if(/nearest available|closest answer|so [a-c] is nearest|approximate(ly)?|not exactly|so [a-c] is the best|\bis closest\b|\bthe closest\b|closest when|closest option|closest to the|best approximat|due to rounding.*clos|clos.*due to rounding/i.test(exp))return false;
         return true;
       });
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
