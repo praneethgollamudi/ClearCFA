@@ -6380,65 +6380,120 @@ function CFACalculator({onClose}){
 // ─── LOFI AMBIENT PLAYER ─────────────────────────────────────────────────────
 function LofiPlayer(){
   const [isPlaying,setIsPlaying]=useState(false);
-  const [vol,setVol]=useState(()=>{try{return parseFloat(localStorage.getItem('cfa_lofi_vol')||'0.18');}catch{return 0.18;}});
+  const [vol,setVol]=useState(()=>{try{return parseFloat(localStorage.getItem('cfa_lofi_vol')||'0.35');}catch{return 0.35;}});
   const [showPanel,setShowPanel]=useState(false);
   const ctxRef=useRef(null);
   const masterRef=useRef(null);
-  const noiseRef=useRef(null);
-  const oscsRef=useRef([]);
-  const timerRef=useRef(null);
+  const sched=useRef(null); // {nextBeat, beatCount, chordIdx, active}
+
+  const BPM=82, BEAT=60/BPM;
+  // Lofi jazz chord voicings (Hz) + bass root
   const CHORDS=[
-    [261.6,329.6,392.0,493.9], // Cmaj7
-    [349.2,440.0,523.3,659.3], // Fmaj7
-    [329.6,392.0,493.9,587.3], // Em7
-    [293.7,349.2,440.0,523.3], // Dm7
+    {pad:[130.8,196.0,261.6,329.6,493.9],bass:65.4},  // Cmaj7
+    {pad:[174.6,220.0,261.6,349.2,440.0],bass:87.3},  // Fmaj7
+    {pad:[164.8,196.0,246.9,329.6,493.9],bass:82.4},  // Em7
+    {pad:[146.8,174.6,220.0,293.7,440.0],bass:73.4},  // Dm7
   ];
-  function mkBrownNoise(ctx){
-    const sr=ctx.sampleRate,len=sr*8;
-    const buf=ctx.createBuffer(1,len,sr);
-    const d=buf.getChannelData(0);
-    let last=0;
-    for(let i=0;i<len;i++){const w=Math.random()*2-1;last=(last+0.02*w)/1.02;d[i]=last*3.5;}
-    return buf;
+
+  function mkNoiseBuf(ctx,len){
+    const b=ctx.createBuffer(1,len,ctx.sampleRate);
+    const d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+    return b;
   }
+  function kick(ctx,t,dest){
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.frequency.setValueAtTime(160,t);
+    o.frequency.exponentialRampToValueAtTime(38,t+0.18);
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.75,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.32);
+    o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.38);
+  }
+  function snare(ctx,t,dest){
+    const ns=ctx.createBufferSource();
+    ns.buffer=mkNoiseBuf(ctx,Math.floor(ctx.sampleRate*0.13));
+    const hpf=ctx.createBiquadFilter();hpf.type='highpass';hpf.frequency.value=1800;
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.22,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.13);
+    ns.connect(hpf);hpf.connect(g);g.connect(dest);ns.start(t);ns.stop(t+0.16);
+  }
+  function hihat(ctx,t,v,dest){
+    const ns=ctx.createBufferSource();
+    ns.buffer=mkNoiseBuf(ctx,Math.floor(ctx.sampleRate*0.045));
+    const hpf=ctx.createBiquadFilter();hpf.type='highpass';hpf.frequency.value=7500;
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.045);
+    ns.connect(hpf);hpf.connect(g);g.connect(dest);ns.start(t);ns.stop(t+0.06);
+  }
+  function pad(ctx,t,freqs,dur,dest){
+    freqs.forEach((f,i)=>{
+      const o=ctx.createOscillator(),lpf=ctx.createBiquadFilter(),g=ctx.createGain();
+      o.type='sawtooth';o.frequency.value=f;o.detune.value=(i%2===0?6:-6);
+      lpf.type='lowpass';lpf.frequency.value=700;lpf.Q.value=0.7;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.032,t+0.9);
+      g.gain.setValueAtTime(0.032,t+dur-1.0);
+      g.gain.linearRampToValueAtTime(0,t+dur);
+      o.connect(lpf);lpf.connect(g);g.connect(dest);
+      o.start(t);o.stop(t+dur+0.1);
+    });
+  }
+  function bass(ctx,t,freq,dur,dest){
+    const o=ctx.createOscillator(),lpf=ctx.createBiquadFilter(),g=ctx.createGain();
+    o.type='triangle';o.frequency.value=freq;
+    lpf.type='lowpass';lpf.frequency.value=280;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.18,t+0.08);
+    g.gain.setValueAtTime(0.09,t+0.4);
+    g.gain.linearRampToValueAtTime(0,t+dur);
+    o.connect(lpf);lpf.connect(g);g.connect(dest);
+    o.start(t);o.stop(t+dur+0.05);
+  }
+
   function startAudio(){
     if(!ctxRef.current) ctxRef.current=new(window.AudioContext||window.webkitAudioContext)();
     const ctx=ctxRef.current;
     if(ctx.state==='suspended') ctx.resume();
     const master=ctx.createGain();
-    master.gain.setValueAtTime(vol,ctx.currentTime);
+    master.gain.value=vol;
     master.connect(ctx.destination);
     masterRef.current=master;
-    const ns=ctx.createBufferSource();
-    ns.buffer=mkBrownNoise(ctx);
-    ns.loop=true;
-    const lpf=ctx.createBiquadFilter();
-    lpf.type='lowpass';lpf.frequency.value=900;
-    const ng=ctx.createGain();ng.gain.value=0.04;
-    ns.connect(lpf);lpf.connect(ng);ng.connect(master);
-    ns.start();noiseRef.current=ns;
-    const oscs=CHORDS[0].map((f,i)=>{
-      const o=ctx.createOscillator();
-      o.type='sine';o.frequency.value=f;o.detune.value=(i%2===0?4:-4);
-      const g=ctx.createGain();g.gain.value=0.045;
-      o.connect(g);g.connect(master);o.start();
-      return o;
-    });
-    oscsRef.current=oscs;
-    let idx=0;
-    function nextChord(){
-      idx=(idx+1)%CHORDS.length;
-      const t=ctx.currentTime;
-      CHORDS[idx].forEach((f,i)=>oscs[i].frequency.setTargetAtTime(f,t,1.8));
-      timerRef.current=setTimeout(nextChord,10000);
+
+    const state={nextBeat:ctx.currentTime+0.1,beatCount:0,chordIdx:0,active:true};
+    sched.current=state;
+
+    function schedule(){
+      if(!state.active) return;
+      while(state.nextBeat < ctx.currentTime+0.5){
+        const t=state.nextBeat, b=state.beatCount, bar=b%4, ci=state.chordIdx;
+        // Kick on 1 and 3
+        if(bar===0) kick(ctx,t,master);
+        if(bar===2) kick(ctx,t,master);
+        // Snare on 2 and 4
+        if(bar===1||bar===3) snare(ctx,t,master);
+        // Hihat every beat + offbeat
+        hihat(ctx,t,bar%2===0?0.08:0.05,master);
+        hihat(ctx,t+BEAT*0.5,0.035,master);
+        // Pad: new chord every 16 beats
+        if(b%16===0){
+          pad(ctx,t,CHORDS[ci].pad,BEAT*16,master);
+        }
+        // Bass every 4 beats (repeating root)
+        if(b%4===0) bass(ctx,t,CHORDS[ci].bass,BEAT*3.8,master);
+        // Advance chord
+        if((b+1)%16===0) state.chordIdx=(ci+1)%CHORDS.length;
+        state.beatCount++;
+        state.nextBeat+=BEAT;
+      }
+      sched._timer=setTimeout(schedule,80);
     }
-    timerRef.current=setTimeout(nextChord,10000);
+    schedule();
   }
+
   function stopAudio(){
-    clearTimeout(timerRef.current);
-    try{noiseRef.current?.stop();}catch{}
-    oscsRef.current.forEach(o=>{try{o.stop();}catch{}});
-    oscsRef.current=[];noiseRef.current=null;
+    if(sched.current) sched.current.active=false;
+    clearTimeout(sched._timer);
     if(ctxRef.current?.state==='running') ctxRef.current.suspend();
   }
   const toggle=()=>{
@@ -6448,7 +6503,7 @@ function LofiPlayer(){
   const onVol=v=>{
     setVol(v);
     try{localStorage.setItem('cfa_lofi_vol',String(v));}catch{}
-    if(masterRef.current&&ctxRef.current) masterRef.current.gain.setTargetAtTime(v,ctxRef.current.currentTime,0.1);
+    if(masterRef.current&&ctxRef.current) masterRef.current.gain.setTargetAtTime(v,ctxRef.current.currentTime,0.05);
   };
   useEffect(()=>()=>{stopAudio();try{ctxRef.current?.close();}catch{};},[]);
   return (
@@ -6484,7 +6539,7 @@ function LofiPlayer(){
               style={{flex:1,accentColor:"#6366f1",cursor:"pointer"}}/>
             <span style={{fontSize:14}}>🔊</span>
           </div>
-          <div style={{fontSize:10,color:"#4a4869",textAlign:"center",marginTop:10}}>ambient · lofi jazz · study focus</div>
+          <div style={{fontSize:10,color:"#4a4869",textAlign:"center",marginTop:10}}>lofi jazz · 82 BPM · study focus</div>
         </div>
       )}
     </>
