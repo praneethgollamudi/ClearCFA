@@ -8469,7 +8469,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     {/* Study time strip */}
     {todayStudySecs>0&&(
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"9px 14px",marginBottom:12,cursor:"pointer"}} onClick={()=>setScreen("dashboard")}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"9px 14px",marginBottom:12}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:16}}>📖</span>
           <div>
@@ -8577,7 +8577,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   )}
                 </>
               ):(
-                <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"16px 0"}}>Sign in to unlock AI explanations</div>
+                authUser?.id?(
+                  <button onClick={()=>generateRefresherReveal(idx)} style={{width:"100%",padding:"9px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.rewardLight,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>✨ Generate explanation →</button>
+                ):(
+                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"16px 0"}}>Sign in to unlock AI explanations</div>
+                )
               )}
             </div>
           )}
