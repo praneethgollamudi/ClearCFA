@@ -3975,6 +3975,11 @@ function renderExplanation(text,C,onExplain,conceptLabel){
   return(<>{parts.map((s,i)=>{const trimmed=s.trim();const last=i===parts.length-1;if(isFormula(trimmed)){return <FormulaBlock key={i} text={trimmed} C={C} onExplain={onExplain} conceptLabel={conceptLabel}/>;}return <span key={i}>{trimmed}{!last?". ":""}</span>;})}</>);
 }
 
+function parseDebrief(text){
+  const get=(label)=>{const m=text.match(new RegExp(label+":\\s*([^\\n]+)"));return m?m[1].trim():"";};
+  return{pattern:get("PATTERN"),fix:get("FIX"),priority:get("PRIORITY"),time:get("TIME"),coach:get("COACH")};
+}
+
 function parseRefresherReveal(text){
   const trapMatch=text.match(/TRAP:\s*([\s\S]*?)$/i);
   return{explanation:(expMatch?.[1]||"").trim(),trap:(trapMatch?.[1]||"").trim()};
@@ -6411,6 +6416,33 @@ function CFAMock(){
       else setDriveStatus("error");
       setTimeout(()=>setDriveStatus(null),4000);
     })();
+
+    // Auto-generate AI debrief when there are wrong answers
+    const wrongQs=qs.filter(q=>ans[q.id]!==q.answer);
+    if(authUserRef.current?.id&&wrongQs.length>0){
+      setAiDebriefLoading(true);
+      const wrongItems=wrongQs.map(q=>{
+        const mc=q.misconception_targeted?` [${q.misconception_targeted}]`:"";
+        return `- "${q.concept||q.los_tested||"unknown"}"${mc}`;
+      }).join("\n");
+      const mins=elapsed?Math.round(elapsed/60):null;
+      const timeStr=mins?`, ${mins} min`:"";
+      const debriefPrompt=`CFA Level ${cfaLevel} exam coach. Student scored ${pct}% on ${diff} ${t} — ${st} (${wrongQs.length} wrong / ${qs.length} total${timeStr}).
+
+Wrong concepts:
+${wrongItems}
+
+Respond in EXACTLY this format — no preamble, no extra text:
+PATTERN: [1 sentence — the single error pattern explaining most mistakes]
+FIX: [1 specific action to take today — concrete and actionable]
+PRIORITY: [exact concept name from wrong list to drill first]
+TIME: [realistic time to close this gap, e.g. "20 min" or "1 hour"]
+COACH: [1 honest, direct sentence — no generic cheerleading]`;
+      callClaude(debriefPrompt,500,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_debrief"})
+        .then(r=>{setAiDebrief(typeof r==="string"?r:"");})
+        .catch(()=>{setAiDebrief("PATTERN: Could not generate debrief.\nFIX: Review the wrong answers below.\nPRIORITY: \nTIME: \nCOACH: Every session is data — keep going.");})
+        .finally(()=>setAiDebriefLoading(false));
+    }
   },[screen]);
 
   const callClaude=async(prompt,maxTokens=8000,{retries=3,retryDelay=8000,model="claude-sonnet-4-6",feature=""}={})=>{
@@ -9256,28 +9288,41 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {/* AI Session Debrief */}
       {authUser?.id&&wrongs.length>0&&(
         <div style={{background:"#080818",border:`1px solid #22d3ee33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div style={{fontSize:12,fontWeight:700,color:"#22d3ee"}}>🤖 AI Debrief</div>
-            {!aiDebrief&&<button onClick={async()=>{
-              setAiDebriefLoading(true);
-              try{
-                const wrongSummary=wrongs.slice(0,5).map(q=>`- "${q.concept||q.los_tested}": got ${answers[q.id]}, correct ${q.answer}`).join("\n");
-                const prompt=`You are a CFA Level 1 tutor. A student just scored ${sessionPct}% on a ${difficulty} ${subtopic} mock (${wrongs.length}/${questions.length} wrong).
-
-Wrong answers:
-${wrongSummary}
-
-Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to do next, (3) one honest motivational sentence. Be direct and specific, not generic. No markdown.`;
-                const result=await callClaude(prompt,400,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_debrief"});
-                setAiDebrief(typeof result==="string"?result:JSON.stringify(result));
-              }catch(e){setAiDebrief("Could not load debrief — check API key.");}
-              setAiDebriefLoading(false);
-            }} style={{fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:7,background:"#22d3ee22",border:"1px solid #22d3ee44",color:"#22d3ee",cursor:"pointer"}}>
-              Get debrief
-            </button>}
+            {aiDebriefLoading&&<span style={{fontSize:11,color:"#22d3ee66",fontStyle:"italic"}}>Analysing session…</span>}
           </div>
-          {aiDebriefLoading&&<Skeleton height={48} radius={6}/>}
-          {aiDebrief&&<div style={{fontSize:12,color:"#a0d8e8",lineHeight:1.7}}>{aiDebrief}</div>}
+          {aiDebriefLoading&&<Skeleton height={80} radius={6}/>}
+          {aiDebrief&&(()=>{
+            const d=parseDebrief(aiDebrief);
+            return(
+              <div>
+                {d.pattern&&(
+                  <div style={{background:"#22d3ee0d",borderLeft:"3px solid #22d3ee44",borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:9,fontSize:12,color:"#a0d8e8",lineHeight:1.65}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#22d3ee77",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>⚠ Root pattern</div>
+                    {d.pattern}
+                  </div>
+                )}
+                {d.fix&&(
+                  <div style={{background:"#22c55e0d",borderLeft:"3px solid #22c55e44",borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:9,fontSize:12,color:"#86efac",lineHeight:1.65}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#22c55e77",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>🎯 Do next</div>
+                    {d.fix}
+                  </div>
+                )}
+                {(d.priority||d.time)&&(
+                  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:10}}>
+                    {d.priority&&<span style={{fontSize:11,color:"#a0d8e8"}}>Focus: <b style={{color:"#22d3ee"}}>{d.priority}</b></span>}
+                    {d.time&&<span style={{fontSize:11,background:"#22d3ee15",border:"1px solid #22d3ee33",borderRadius:20,padding:"2px 10px",color:"#22d3ee",flexShrink:0}}>⏱ {d.time}</span>}
+                  </div>
+                )}
+                <button onClick={()=>generateQuestions(topic,subtopic,difficulty,5,"guided")}
+                  style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:"#22d3ee22",border:"1px solid #22d3ee44",color:"#22d3ee",cursor:"pointer",marginBottom:d.coach?10:0}}>
+                  🔁 Drill weak concepts now — 5 questions
+                </button>
+                {d.coach&&<div style={{fontSize:11,color:"#6a8a9a",lineHeight:1.6,fontStyle:"italic",textAlign:"center"}}>"{d.coach}"</div>}
+              </div>
+            );
+          })()}
         </div>
       )}
 
