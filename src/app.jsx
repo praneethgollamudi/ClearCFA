@@ -3975,6 +3975,128 @@ function renderExplanation(text,C,onExplain,conceptLabel){
   return(<>{parts.map((s,i)=>{const trimmed=s.trim();const last=i===parts.length-1;if(isFormula(trimmed)){return <FormulaBlock key={i} text={trimmed} C={C} onExplain={onExplain} conceptLabel={conceptLabel}/>;}return <span key={i}>{trimmed}{!last?". ":""}</span>;})}</>);
 }
 
+// Canvas rounded-rect path helper (ctx.roundRect not available in all browsers)
+function _crr(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+function buildShareImage({sessionPct,sessionScore,total,subtopic,difficulty,timeTaken,todayStudySecs,cfaLevel,fmtStudyTime}){
+  const W=1080,H=1080;
+  const canvas=document.createElement('canvas');
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+
+  const accent=sessionPct>=70?'#22c55e':sessionPct>=50?'#f59e0b':'#ef4444';
+
+  // ── Background ──
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#06061a');bg.addColorStop(1,'#0c0c26');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  // Dot grid texture
+  ctx.fillStyle='#ffffff07';
+  for(let gx=54;gx<W;gx+=54)for(let gy=54;gy<H;gy+=54){
+    ctx.beginPath();ctx.arc(gx,gy,1.5,0,Math.PI*2);ctx.fill();
+  }
+
+  // Radial glow behind ring
+  const glow=ctx.createRadialGradient(W/2,460,0,W/2,460,400);
+  glow.addColorStop(0,accent+'22');glow.addColorStop(1,'transparent');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+
+  // ── Header ──
+  ctx.font='bold 40px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#6060b0';ctx.textAlign='left';
+  ctx.fillText('✦ ClearCFA',90,106);
+  ctx.font='28px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#40408a';ctx.textAlign='right';
+  ctx.fillText(`CFA Level ${cfaLevel}`,W-90,106);
+  ctx.strokeStyle='#ffffff0d';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(90,124);ctx.lineTo(W-90,124);ctx.stroke();
+
+  // ── Topic name (wrapped, max 2 lines) ──
+  ctx.font='bold 54px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#dcdcf8';ctx.textAlign='center';
+  const tWords=subtopic.split(' ');
+  let tLine='',tLines=[];
+  for(const w of tWords){
+    const test=tLine?tLine+' '+w:w;
+    if(ctx.measureText(test).width>W-180&&tLine){tLines.push(tLine);tLine=w;}
+    else tLine=test;
+  }
+  tLines.push(tLine);
+  const tBlockH=tLines.length*66;
+  const tStartY=148+(170-tBlockH)/2+54; // centre in 148-318 band
+  tLines.forEach((l,i)=>ctx.fillText(l,W/2,tStartY+i*66));
+
+  // ── Score ring ──
+  const cx=W/2,cy=490,R=172,lw=28;
+  // Track
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle='#ffffff12';ctx.lineWidth=lw;ctx.stroke();
+  // Filled arc
+  const endAng=-Math.PI/2+(sessionPct/100)*Math.PI*2;
+  const arcG=ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R);
+  arcG.addColorStop(0,accent);arcG.addColorStop(1,accent+'bb');
+  ctx.beginPath();ctx.arc(cx,cy,R,-Math.PI/2,endAng);
+  ctx.strokeStyle=arcG;ctx.lineWidth=lw;ctx.lineCap='round';
+  ctx.shadowColor=accent;ctx.shadowBlur=28;ctx.stroke();ctx.shadowBlur=0;
+  // Score number
+  ctx.font='bold 128px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(`${sessionPct}%`,cx,cy-4);
+  ctx.textBaseline='alphabetic';
+  // Verdict below ring
+  const verdict=sessionPct>=70?'Above Threshold ✓':sessionPct>=50?'Getting there →':'Keep drilling 💪';
+  ctx.font='bold 32px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle=accent;
+  ctx.fillText(verdict,cx,cy+R+50);
+
+  // ── Stats pill ──
+  const sY=cy+R+80;
+  ctx.fillStyle='#ffffff09';
+  _crr(ctx,90,sY,W-180,68,14);ctx.fill();
+  const mins=timeTaken>0?` · ⏱ ${Math.round(timeTaken/60)} min`:'';
+  ctx.font='31px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#8080b8';
+  ctx.fillText(`${sessionScore}/${total} correct  ·  ${difficulty}${mins}`,cx,sY+44);
+
+  // ── Progress bar ──
+  const bY=sY+88,bH=10,bX=100,bW=W-200;
+  ctx.fillStyle='#ffffff10';_crr(ctx,bX,bY,bW,bH,5);ctx.fill();
+  const fW=Math.max(bH,(sessionPct/100)*bW);
+  const bG=ctx.createLinearGradient(bX,0,bX+fW,0);
+  bG.addColorStop(0,accent+'88');bG.addColorStop(1,accent);
+  ctx.fillStyle=bG;ctx.shadowColor=accent;ctx.shadowBlur=10;
+  _crr(ctx,bX,bY,fW,bH,5);ctx.fill();ctx.shadowBlur=0;
+
+  // ── Study time badge ──
+  let footY=bY+68;
+  if(todayStudySecs>0){
+    ctx.font='27px system-ui,-apple-system,sans-serif';
+    ctx.fillStyle='#4c4c90';
+    ctx.fillText(`📚 ${fmtStudyTime(todayStudySecs)} studied today`,cx,footY);
+    footY+=46;
+  }
+
+  // ── Footer ──
+  footY+=18;
+  ctx.strokeStyle='#ffffff09';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(90,footY);ctx.lineTo(W-90,footY);ctx.stroke();
+  footY+=48;
+  ctx.font='bold 29px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#38388a';
+  ctx.fillText('clearcfa.com  ·  Free AI-powered CFA exam prep',cx,footY);
+
+  return canvas;
+}
+
 function parseDebrief(text){
   const get=(label)=>{const m=text.match(new RegExp(label+":\\s*([^\\n]+)"));return m?m[1].trim():"";};
   return{pattern:get("PATTERN"),fix:get("FIX"),priority:get("PRIORITY"),time:get("TIME"),coach:get("COACH")};
@@ -9210,14 +9332,27 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <span style={{fontSize:11,color:C.muted}}>earned · {levelInfo.label} · Level {levelInfo.level}</span>
         </div>}
         <button onClick={()=>{
-          const filled=Math.min(10,Math.round(sessionPct/10));
-          const bar="█".repeat(filled)+"░".repeat(10-filled);
-          const mins=timeTaken>0?` · ⏱ ~${Math.round(timeTaken/60)} min`:"";
-          const verdict=sessionPct>=70?"✅ Above pass threshold":sessionPct>=50?"📈 Getting there (pass mark = 70%)":"💪 Every miss is data — keep drilling";
-          const studyLine=todayStudySecs>0?`\n📚 ${fmtStudyTime(todayStudySecs)} studied today`:"";
-          const text=`📊 ClearCFA Score Card\n━━━━━━━━━━━━━━━━━\n🎓 CFA Level ${cfaLevel} · ${subtopic}\n\n${bar}  ${sessionPct}%\n${sessionScore}/${questions.length} correct · ${difficulty}${mins}\n${verdict}${studyLine}\n\nPrepping smarter with ClearCFA ✨\nFree AI-powered CFA exam prep\nclearcfa.com`;
-          if(navigator.share){navigator.share({title:"ClearCFA Score",text}).catch(()=>{});}
-          else{navigator.clipboard.writeText(text).then(()=>showToast("📋","Copied!","Paste anywhere to share your score.")).catch(()=>{});}
+          const fallbackText=`📊 ClearCFA Score Card\n━━━━━━━━━━━━━━━━━\n🎓 CFA Level ${cfaLevel} · ${subtopic}\n\n${sessionPct}%  ${sessionScore}/${questions.length} correct · ${difficulty}\n${sessionPct>=70?"✅ Above pass threshold":sessionPct>=50?"📈 Getting there (pass = 70%)":"💪 Keep drilling"}${todayStudySecs>0?`\n📚 ${fmtStudyTime(todayStudySecs)} studied today`:""}\n\nPrepping smarter with ClearCFA ✨\nclearcfa.com`;
+          try{
+            const imgCanvas=buildShareImage({sessionPct,sessionScore,total:questions.length,subtopic,difficulty,timeTaken,todayStudySecs,cfaLevel,fmtStudyTime});
+            imgCanvas.toBlob(async(blob)=>{
+              if(!blob){if(navigator.share)navigator.share({title:"ClearCFA Score",text:fallbackText}).catch(()=>{});return;}
+              const file=new File([blob],'clearcfa-score.png',{type:'image/png'});
+              if(navigator.canShare&&navigator.canShare({files:[file]})){
+                navigator.share({files:[file],text:fallbackText}).catch(e=>{if(e.name!=='AbortError')showToast("📋","Copied!","Share image saved to clipboard.");});
+              } else if(navigator.share){
+                navigator.share({title:"ClearCFA Score",text:fallbackText}).catch(()=>{});
+              } else {
+                // Download the image
+                const url=URL.createObjectURL(blob);
+                const a=document.createElement('a');a.href=url;a.download='clearcfa-score.png';a.click();
+                setTimeout(()=>URL.revokeObjectURL(url),1000);
+                showToast("📥","Score card saved!","Image downloaded to your device.");
+              }
+            },'image/png');
+          }catch(e){
+            if(navigator.share)navigator.share({title:"ClearCFA Score",text:fallbackText}).catch(()=>{});
+          }
         }} style={{marginTop:14,padding:"8px 20px",borderRadius:20,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
           📤 Share Result
         </button>
