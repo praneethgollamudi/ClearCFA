@@ -3915,8 +3915,8 @@ const POWER_NOTES = {
 };
 
 
-async function callAIChat(userId, messages, maxTokens=450, level="1"){
-  if(!userId) return null;
+async function callAIChat(userId, messages, maxTokens=450, level="1", {throws=false}={}){
+  if(!userId){if(throws)throw new Error("Not signed in");return null;}
   try{
     const trimmed=messages.slice(-10).map(m=>({role:m.role==="user"?"user":"assistant",content:String(m.content||"").slice(0,800)}));
     const res=await fetch(AI_PROXY_URL,{
@@ -3924,11 +3924,19 @@ async function callAIChat(userId, messages, maxTokens=450, level="1"){
       headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},
       body:JSON.stringify({requestType:"chat",userId,messages:trimmed,maxTokens:Math.min(maxTokens,450),level})
     });
-    if(!res.ok) return null;
+    if(!res.ok){
+      const body=await res.json().catch(()=>({}));
+      const msg=body?.error?.message||`Server error ${res.status}`;
+      if(throws)throw new Error(msg);
+      return null;
+    }
     const data=await res.json();
-    if(data.error) return null;
+    if(data.error){const msg=data.error?.message||"AI error";if(throws)throw new Error(msg);return null;}
     return data.content?.map(i=>i.text||"").join("").trim()||null;
-  }catch{return null;}
+  }catch(e){
+    if(throws)throw e;
+    return null;
+  }
 }
 
 // Self-contained formula block with optional AI breakdown button.
@@ -4437,7 +4445,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     setFormulaGenError(s=>({...s,[key]:""}));
     try{
       const prompt=`CFA Level ${cfaLevel} exam prep. A student got this concept wrong and needs the key formula or metric.\nConcept: "${name}" (Topic: ${selTopic})\nContext: "${(card.explanation||"").slice(0,300)}"\n\nIf this concept has a quantitative formula, ratio, or key calculation, respond in EXACTLY this format:\nNAME: [formula or metric name]\nFORMULA: [expression using standard notation, e.g. ROE = Net Income / Equity]\nVARIABLES:\n[each variable on its own line: variable = what it means]\nWHEN: [one sentence: when to use on the exam]\nEXAMPLE: [one sentence worked example with numbers]\n\nIf this concept is purely qualitative with NO quantitative formula or ratio at all, respond with only:\nFORMULA: N/A`;
-      const reply=await callAIChat(userId,[{role:"user",content:prompt}],400,cfaLevel);
+      const reply=await callAIChat(userId,[{role:"user",content:prompt}],400,cfaLevel,{throws:true});
       if(!reply){setFormulaGenError(s=>({...s,[key]:"No response — try again."}));return;}
       const formula=parseFormulaAIResponse(reply,name);
       if(!formula){setFormulaGenError(s=>({...s,[key]:"This concept is primarily qualitative — no quantitative formula to generate."}));return;}
@@ -7149,15 +7157,24 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setRefresherRevealError(null);
     const prompt=`CFA Level ${cfaLevel} exam prep. Explain this learning objective briefly:\n"${concept.los_stmt}"\n\nFormat EXACTLY:\nEXPLANATION: [2-3 plain-English sentences: what it means and why it matters for the exam]\nTRAP: [The single most common exam mistake on this concept — 1 sentence]\n\nBe concise. Max 80 words total.`;
     try{
-      const reply=await callAIChat(authUser.id,[{role:"user",content:prompt}],150,cfaLevel);
-      if(!reply){setRefresherRevealError("Generation failed — tap to retry");return;}
+      const reply=await callAIChat(authUser.id,[{role:"user",content:prompt}],200,cfaLevel,{throws:true});
+      if(!reply){setRefresherRevealError("No response — tap to retry");return;}
       const reveal=parseRefresherReveal(reply);
       const updatedConcepts=dailyRefresher.concepts.map((c,i)=>i===conceptIdx?{...c,reveal}:c);
       const updated={...dailyRefresher,concepts:updatedConcepts};
       setDailyRefresher(updated);
       try{localStorage.setItem(REFRESHER_KEY,JSON.stringify(updated));}catch{}
     }catch(e){
-      setRefresherRevealError("Generation failed — tap to retry");
+      const msg=e?.message||"";
+      setRefresherRevealError(
+        msg.includes("fetch")||msg.includes("network")||msg.includes("Failed")?
+          "Network error — check connection and retry":
+        msg.includes("429")||msg.includes("rate")||msg.includes("busy")?
+          "API busy — wait a moment and retry":
+        msg.includes("sign")||msg.includes("auth")?
+          "Sign in to unlock AI explanations":
+          `Failed — tap to retry`
+      );
     }finally{setRefresherRevealLoading(false);}
   };
   const studyPace=useMemo(()=>getStudyPace(levelHistory,daysLeft),[levelHistory,daysLeft]);
