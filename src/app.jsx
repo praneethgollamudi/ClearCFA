@@ -7211,40 +7211,37 @@ Return ONLY a JSON array — no prose, no markdown fences:
     </div>
   );
   // ══ GLOBAL LOADING OVERLAY — shown from any screen when generating ══════
-  if(loading) return wrap(
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px"}}>
-      <div style={{maxWidth:400,width:"100%",textAlign:"center"}}>
-        {/* Icon */}
-        <div style={{width:56,height:56,borderRadius:16,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto 14px"}}>⚡</div>
-        <div style={{fontSize:18,fontWeight:800,marginBottom:4,color:C.text}}>ClearCFA</div>
-        <div style={{fontSize:16,fontWeight:700,marginBottom:6,color:C.accentLight}}>{loadingMsg}</div>
-        <div style={{fontSize:12,color:C.muted,marginBottom:28}}>
-          {loadingETA>0?`About ${loadingETA}s remaining`:"Finishing up..."}
-        </div>
-        {/* Progress bar */}
-        <div style={{height:6,background:C.border,borderRadius:3,marginBottom:12,overflow:"hidden"}}>
-          <div style={{height:"100%",width:`${loadingProgress}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.2s ease",boxShadow:`0 0 8px ${C.accent}88`}}/>
-        </div>
-        <div style={{fontSize:12,color:C.accent,fontWeight:700}}>{loadingProgress}%</div>
-        {/* Step indicators */}
-        <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:24,flexWrap:"wrap"}}>
-          {["LOS anchor","Distractor eng.","Deduplication","Ready"].map((step,i)=>{
-            const stepPct=[0,30,70,90][i];
-            const done=loadingProgress>=stepPct+20;
-            const active=loadingProgress>=stepPct&&!done;
-            return(
-              <div key={step} style={{display:"flex",alignItems:"center",gap:5,fontSize:11}}>
-                <div style={{width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,background:done?"#22a05a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,transition:"background 0.3s"}}>{done?"✓":i+1}</div>
-                <span style={{color:done?C.easy:active?C.accentLight:C.muted,transition:"color 0.3s"}}>{step}</span>
-              </div>
-            );
-          })}
-        </div>
-        {/* Cancel button - always available */}
-        <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");}} style={{marginTop:32,fontSize:12,padding:"8px 20px",borderRadius:8,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
-          Cancel
-        </button>
+  if(loading) return (
+    <div style={{position:"fixed",inset:0,background:`radial-gradient(ellipse at 50% 40%,${C.accent}1c 0%,${C.bg} 65%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 28px",fontFamily:"'Inter',system-ui,-apple-system,sans-serif",color:C.text,zIndex:9999}}>
+      <div style={{position:"relative",marginBottom:22}}>
+        <div style={{position:"absolute",inset:-18,borderRadius:"50%",background:`${C.accent}18`,filter:"blur(16px)"}}/>
+        <div style={{width:74,height:74,borderRadius:20,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,boxShadow:`0 8px 32px ${C.accent}55`,position:"relative"}}>⚡</div>
       </div>
+      <div style={{fontSize:22,fontWeight:800,marginBottom:6,letterSpacing:"-0.01em"}}>ClearCFA</div>
+      <div style={{fontSize:15,fontWeight:600,color:C.accentLight,marginBottom:4,textAlign:"center"}}>{loadingMsg}</div>
+      <div style={{fontSize:12,color:C.muted,marginBottom:32}}>{loadingETA>0?`~${loadingETA}s remaining`:"Finishing up…"}</div>
+      <div style={{width:"100%",maxWidth:300}}>
+        <div style={{height:5,background:`${C.accent}20`,borderRadius:3,marginBottom:8,overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${loadingProgress}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s ease",boxShadow:`0 0 10px ${C.accent}88`}}/>
+        </div>
+        <div style={{textAlign:"right",fontSize:12,fontWeight:800,color:C.accentLight,marginBottom:28}}>{loadingProgress}%</div>
+        {[["Anchoring to LOS curriculum",0],["Engineering distractor options",30],["Deduplication & quality check",70],["Ready to go",90]].map(([label,pct],i,arr)=>{
+          const done=loadingProgress>=pct+20;
+          const active=loadingProgress>=pct&&!done;
+          return(
+            <div key={i} style={{display:"flex",gap:12,marginBottom:i<arr.length-1?14:0,alignItems:"center"}}>
+              <div style={{width:22,height:22,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,flexShrink:0,transition:"all 0.3s",background:done?"#16a34a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,boxShadow:done?`0 0 10px #16a34a55`:active?`0 0 10px ${C.accent}55`:"none"}}>{done?"✓":i+1}</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
+                <span style={{fontSize:13,transition:"color 0.3s",color:done?C.easy:active?C.text:C.muted}}>{label}</span>
+                {active&&<span style={{width:6,height:6,borderRadius:"50%",background:C.accent,display:"inline-block",animation:"pulse 1.2s ease-in-out infinite",flexShrink:0}}/>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");}} style={{marginTop:40,fontSize:12,padding:"9px 26px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+        Cancel
+      </button>
     </div>
   );
 
@@ -8951,32 +8948,37 @@ Return ONLY a JSON array — no prose, no markdown fences:
   }
 
   // ══ SETUP ═════════════════════════════════════════════════════════════════
-  if(loading && screen==="setup") return wrap(
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 20px"}}>
-      <div style={{maxWidth:400,width:"100%",textAlign:"center"}}>
-        <div style={{width:56,height:56,borderRadius:16,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,margin:"0 auto 20px"}}>⚡</div>
-        <div style={{fontSize:16,fontWeight:700,marginBottom:6}}>{loadingMsg}</div>
-        <div style={{fontSize:12,color:C.muted,marginBottom:28}}>
-          {loadingETA>0?`About ${loadingETA}s remaining`:"Finishing up..."}
-        </div>
-        <div style={{height:6,background:C.border,borderRadius:3,marginBottom:12,overflow:"hidden"}}>
-          <div style={{height:"100%",width:`${loadingProgress}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.2s ease",boxShadow:`0 0 8px ${C.accent}88`}}/>
-        </div>
-        <div style={{fontSize:12,color:C.accent,fontWeight:700,marginBottom:24}}>{loadingProgress}%</div>
-        <div style={{display:"flex",justifyContent:"center",gap:8,flexWrap:"wrap"}}>
-          {["LOS anchor","Distractor eng.","Deduplication","Ready"].map((step,i)=>{
-            const stepPct=[0,30,70,90][i];
-            const done=loadingProgress>=stepPct+20;
-            const active=loadingProgress>=stepPct&&!done;
-            return(
-              <div key={step} style={{display:"flex",alignItems:"center",gap:5,fontSize:11}}>
-                <div style={{width:16,height:16,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,background:done?"#22a05a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,transition:"background 0.3s"}}>{done?"checkmark":i+1}</div>
-                <span style={{color:done?C.easy:active?C.accentLight:C.muted}}>{step}</span>
-              </div>
-            );
-          })}
-        </div>
+  if(loading && screen==="setup") return (
+    <div style={{position:"fixed",inset:0,background:`radial-gradient(ellipse at 50% 40%,${C.accent}1c 0%,${C.bg} 65%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 28px",fontFamily:"'Inter',system-ui,-apple-system,sans-serif",color:C.text,zIndex:9999}}>
+      <div style={{position:"relative",marginBottom:22}}>
+        <div style={{position:"absolute",inset:-18,borderRadius:"50%",background:`${C.accent}18`,filter:"blur(16px)"}}/>
+        <div style={{width:74,height:74,borderRadius:20,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,boxShadow:`0 8px 32px ${C.accent}55`,position:"relative"}}>⚡</div>
       </div>
+      <div style={{fontSize:22,fontWeight:800,marginBottom:6,letterSpacing:"-0.01em"}}>ClearCFA</div>
+      <div style={{fontSize:15,fontWeight:600,color:C.accentLight,marginBottom:4,textAlign:"center"}}>{loadingMsg}</div>
+      <div style={{fontSize:12,color:C.muted,marginBottom:32}}>{loadingETA>0?`~${loadingETA}s remaining`:"Finishing up…"}</div>
+      <div style={{width:"100%",maxWidth:300}}>
+        <div style={{height:5,background:`${C.accent}20`,borderRadius:3,marginBottom:8,overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${loadingProgress}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s ease",boxShadow:`0 0 10px ${C.accent}88`}}/>
+        </div>
+        <div style={{textAlign:"right",fontSize:12,fontWeight:800,color:C.accentLight,marginBottom:28}}>{loadingProgress}%</div>
+        {[["Anchoring to LOS curriculum",0],["Engineering distractor options",30],["Deduplication & quality check",70],["Ready to go",90]].map(([label,pct],i,arr)=>{
+          const done=loadingProgress>=pct+20;
+          const active=loadingProgress>=pct&&!done;
+          return(
+            <div key={i} style={{display:"flex",gap:12,marginBottom:i<arr.length-1?14:0,alignItems:"center"}}>
+              <div style={{width:22,height:22,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,flexShrink:0,transition:"all 0.3s",background:done?"#16a34a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,boxShadow:done?`0 0 10px #16a34a55`:active?`0 0 10px ${C.accent}55`:"none"}}>{done?"✓":i+1}</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
+                <span style={{fontSize:13,transition:"color 0.3s",color:done?C.easy:active?C.text:C.muted}}>{label}</span>
+                {active&&<span style={{width:6,height:6,borderRadius:"50%",background:C.accent,display:"inline-block",animation:"pulse 1.2s ease-in-out infinite",flexShrink:0}}/>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");}} style={{marginTop:40,fontSize:12,padding:"9px 26px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+        Cancel
+      </button>
     </div>
   );
 
