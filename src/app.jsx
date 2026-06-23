@@ -6299,37 +6299,43 @@ function CFACalculator({onClose}){
   const BO={k2nd:is2nd?'1px solid #d97706':'1px solid #5a3800',ws:'1px solid #1e3a7a',tvm:'1px solid #1e4a8a',cpt:cptMode?'1px solid #7c3aed':'1px solid #3d2080',fn:'1px solid #2a2a50',eq:'1px solid #7c3aed',clr:'1px solid #5d0000',d:'1px solid #22224a',op:'1px solid #181828',mem:'1px solid #0a2e1a'};
 
   return(
-    <div style={{position:"fixed",inset:0,zIndex:9500,background:"#0a0a16",display:"flex",flexDirection:"column",fontFamily:"'SF Pro Display','Helvetica Neue',sans-serif"}}>
-      {/* Top bar */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderBottom:"1px solid #1a1a30",background:"#060610",flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:12,fontWeight:800,color:"#60a5fa",letterSpacing:"0.06em"}}>🧮 BA II PLUS</span>
-          {isBGN&&<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:"#4c1d9522",color:"#a78bfa",border:"1px solid #7c3aed44"}}>BGN</span>}
-          {is2nd&&<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:"#7c3a0022",color:"#fbbf24",border:"1px solid #d9770644"}}>2ND</span>}
-          {cptMode&&<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:"#4c1d9522",color:"#a78bfa",border:"1px solid #7c3aed44"}}>CPT</span>}
-          {cfMode&&<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,background:"#0a2a5022",color:"#7dd3fc",border:"1px solid #2563eb44"}}>CF WS</span>}
-          {py!==1&&<span style={{fontSize:9,color:"#444466",fontFamily:"monospace"}}>P/Y={py}</span>}
+    <div style={{position:"fixed",inset:0,zIndex:9500,background:"#0d0d1a",display:"flex",flexDirection:"column",fontFamily:"'SF Pro Display','Helvetica Neue',sans-serif",overflow:"hidden"}}>
+
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",background:"linear-gradient(180deg,#0a0a18,#0d0d1c)",borderBottom:"1px solid #1e1e35",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:7}}>
+          <span style={{fontSize:14,fontWeight:900,color:"#7dd3fc",letterSpacing:"0.07em"}}>🧮 BA II PLUS</span>
+          {isBGN&&<span style={{fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:20,background:"#4c1d9540",color:"#c4b5fd",border:"1px solid #7c3aed55"}}>BGN</span>}
+          {is2nd&&<span style={{fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:20,background:"#78350f40",color:"#fbbf24",border:"1px solid #d9770655"}}>2ND</span>}
+          {cptMode&&<span style={{fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:20,background:"#4c1d9540",color:"#c4b5fd",border:"1px solid #7c3aed55"}}>CPT</span>}
+          {cfMode&&<span style={{fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:20,background:"#0c2a5040",color:"#7dd3fc",border:"1px solid #2563eb55"}}>CF</span>}
+          {py!==1&&<span style={{fontSize:10,color:"#334466",fontFamily:"monospace",marginLeft:2}}>P/Y={py}</span>}
         </div>
-        <button onClick={onClose} style={{background:"none",border:"1px solid #2a2a44",color:"#6666aa",cursor:"pointer",fontSize:11,borderRadius:6,padding:"5px 12px",fontWeight:700,letterSpacing:"0.02em"}}>Done ✓</button>
+        <button onClick={onClose} style={{background:"linear-gradient(135deg,#1a1a30,#222240)",border:"1px solid #3a3a58",color:"#a5b4fc",cursor:"pointer",fontSize:12,borderRadius:10,padding:"7px 16px",fontWeight:700,letterSpacing:"0.02em",boxShadow:"0 2px 8px #0004"}}>Done ✓</button>
       </div>
 
       {/* LCD Display */}
-      <div style={{background:"#091409",padding:"10px 16px 8px",borderBottom:"1px solid #091409",flexShrink:0}}>
-        {(tvmLbl||msg)&&<div style={{fontSize:11,fontWeight:700,color:msg?"#fbbf24":"#4ade80",marginBottom:2,minHeight:16,transition:"color 0.2s"}}>{msg||tvmLbl}</div>}
-        <div style={{fontSize:34,fontWeight:300,color:disp==="Error"?"#f87171":"#a3e050",fontFamily:"'Courier New',Courier,monospace",textAlign:"right",letterSpacing:"0.03em",minHeight:48,display:"flex",alignItems:"center",justifyContent:"flex-end",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>
-          {pendingOp&&<span style={{fontSize:14,color:"#3a5a3a",marginRight:6}}>{pendingOp}</span>}
+      <div style={{background:"linear-gradient(180deg,#050e05,#071107)",padding:"12px 18px 10px",borderBottom:"2px solid #060810",flexShrink:0}}>
+        <div style={{minHeight:20,marginBottom:3,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontSize:11,fontWeight:700,color:msg?"#fbbf24":"#3aba3a",letterSpacing:"0.05em",transition:"color 0.2s"}}>{msg||tvmLbl||" "}</div>
+          {pendingOp&&<div style={{fontSize:13,color:"#2a5a2a",fontFamily:"monospace"}}>{pendingOp}</div>}
+        </div>
+        <div style={{fontSize:44,fontWeight:300,color:disp==="Error"?"#f87171":"#b6f066",fontFamily:"'Courier New',Courier,monospace",textAlign:"right",letterSpacing:"0.02em",lineHeight:1.1,minHeight:54,display:"flex",alignItems:"center",justifyContent:"flex-end",overflow:"hidden",whiteSpace:"nowrap"}}>
           {disp}
         </div>
       </div>
 
-      {/* TVM variable strip */}
-      <div style={{background:"#060610",padding:"4px 6px",display:"flex",borderBottom:"1px solid #0e0e20",flexShrink:0}}>
+      {/* TVM strip */}
+      <div style={{background:"#08080f",padding:"5px 6px",display:"flex",gap:3,borderBottom:"1px solid #111124",flexShrink:0}}>
         {[['N','N'],['IY','I/Y'],['PV','PV'],['PMT','PMT'],['FV','FV']].map(([k,lbl])=>(
-          <div key={k} style={{flex:1,textAlign:"center",padding:"2px 0",borderRadius:3,background:tvm[k]!==""?"#0a160a":"transparent",cursor:tvm[k]!==""?"pointer":"default",margin:"0 1px"}}
-            onClick={()=>{if(tvm[k]!==""){setDisp(fmtD(parseFloat(tvm[k])));setFresh(true);setTvmLbl(lbl);}}}>
-            <div style={{fontSize:7,color:"#2a2a50",fontWeight:700,letterSpacing:"0.04em"}}>{lbl}</div>
-            <div style={{fontSize:9,color:tvm[k]!==""?"#4ade80":"#1a1a2a",fontFamily:"'Courier New',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-              {tvm[k]!==""?parseFloat(parseFloat(tvm[k]).toFixed(4)).toString():"·"}
+          <div key={k} onClick={()=>{if(tvm[k]!==""){setDisp(fmtD(parseFloat(tvm[k])));setFresh(true);setTvmLbl(lbl);}}}
+            style={{flex:1,textAlign:"center",padding:"4px 2px",borderRadius:5,
+              background:tvm[k]!==""?"#0b1e0b":"#0d0d1c",
+              border:`1px solid ${tvm[k]!==""?"#1c3c1c":"#1a1a30"}`,
+              cursor:tvm[k]!==""?"pointer":"default",transition:"background 0.15s"}}>
+            <div style={{fontSize:8,color:tvm[k]!==""?"#2a5a2a":"#282840",fontWeight:800,letterSpacing:"0.06em",marginBottom:1}}>{lbl}</div>
+            <div style={{fontSize:9,color:tvm[k]!==""?"#5eea5e":"#202035",fontFamily:"'Courier New',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+              {tvm[k]!==""?parseFloat(parseFloat(tvm[k]).toFixed(4)).toString():"—"}
             </div>
           </div>
         ))}
@@ -6337,41 +6343,49 @@ function CFACalculator({onClose}){
 
       {/* CF flows strip */}
       {cfMode&&cfFlows.length>0&&(
-        <div style={{background:"#060610",padding:"3px 10px",borderBottom:"1px solid #0e0e20",flexShrink:0,overflowX:"auto"}}>
+        <div style={{background:"#08080f",padding:"4px 10px",borderBottom:"1px solid #111124",flexShrink:0,overflowX:"auto"}}>
           <div style={{display:"flex",gap:5,alignItems:"center",whiteSpace:"nowrap"}}>
-            <span style={{fontSize:8,color:"#2a2a50",fontWeight:700,flexShrink:0}}>CFs:</span>
+            <span style={{fontSize:8,color:"#2a2a50",fontWeight:800,flexShrink:0}}>CFs:</span>
             {cfFlows.map((v,i)=>(
-              <span key={i} style={{fontSize:8,color:"#7dd3fc",fontFamily:"monospace",padding:"1px 4px",borderRadius:3,background:"#0a1a2a",flexShrink:0}}>
-                {i===0?"CF₀":i<10?`C0${i}`:`C${i}`}:{fmtD(v)}
+              <span key={i} style={{fontSize:9,color:"#7dd3fc",fontFamily:"monospace",padding:"2px 6px",borderRadius:4,background:"#0a1a2a",border:"1px solid #1a3a5a",flexShrink:0}}>
+                {i===0?"CF₀":`C${i}`}:{fmtD(v)}
               </span>
             ))}
           </div>
         </div>
       )}
 
-      {/* Button grid */}
-      <div style={{flex:1,overflowY:"auto",padding:"6px 5px",display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:4,alignContent:"start"}}>
+      {/* Button grid — fills all remaining space with 7 equal rows */}
+      <div style={{flex:1,minHeight:0,padding:"5px 4px 4px",display:"grid",gridTemplateColumns:"repeat(5,1fr)",gridTemplateRows:"repeat(7,1fr)",gap:3}}>
         {BTNS.map(btn=>(
           <button key={btn.id} onClick={()=>handleKey(btn.id)}
-            style={{padding:"0",borderRadius:6,border:BO[btn.t],cursor:"pointer",background:BG[btn.t],color:TX[btn.t],
+            style={{
+              padding:0,borderRadius:8,border:BO[btn.t],cursor:"pointer",
+              background:BG[btn.t],color:TX[btn.t],
               display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-              minHeight:44,fontSize:btn.main.length>=7?7:btn.main.length>=5?9:btn.main.length>=4?10:13,
-              fontWeight:700,position:"relative",transition:"filter 0.08s",userSelect:"none",WebkitUserSelect:"none",touchAction:"manipulation"}}
-            onPointerDown={e=>{e.currentTarget.style.filter="brightness(1.6)";}}
-            onPointerUp={e=>{e.currentTarget.style.filter="";}}
-            onPointerLeave={e=>{e.currentTarget.style.filter="";}}>
-            {btn.sub&&<span style={{fontSize:7,color:"#d97706",position:"absolute",top:3,fontWeight:700,letterSpacing:"0.01em",lineHeight:1}}>{btn.sub}</span>}
-            <span style={{marginTop:btn.sub?5:0,lineHeight:1}}>{btn.main}</span>
+              width:"100%",height:"100%",
+              fontSize:btn.main.length>=7?8:btn.main.length>=5?10:btn.main.length>=4?11:14,
+              fontWeight:700,position:"relative",
+              boxShadow:`0 2px 4px #00000066,inset 0 1px 0 #ffffff0a`,
+              userSelect:"none",WebkitUserSelect:"none",touchAction:"manipulation",
+              transition:"filter 0.06s,transform 0.06s",
+            }}
+            onPointerDown={e=>{e.currentTarget.style.filter="brightness(1.7)";e.currentTarget.style.transform="scale(0.95)";}}
+            onPointerUp={e=>{e.currentTarget.style.filter="";e.currentTarget.style.transform="";}}
+            onPointerLeave={e=>{e.currentTarget.style.filter="";e.currentTarget.style.transform="";}}>
+            {btn.sub&&<span style={{fontSize:7,color:"#e07b10",position:"absolute",top:3,left:0,right:0,textAlign:"center",fontWeight:800,lineHeight:1,letterSpacing:"0.01em"}}>{btn.sub}</span>}
+            <span style={{marginTop:btn.sub?6:0,lineHeight:1}}>{btn.main}</span>
           </button>
         ))}
       </div>
 
-      {/* Quick reference */}
-      <div style={{background:"#060610",borderTop:"1px solid #0e0e20",padding:"5px 10px",flexShrink:0,display:"flex",gap:12,overflowX:"auto",whiteSpace:"nowrap"}}>
-        <span style={{fontSize:9,color:"#2a2a50"}}>📖 TVM: set 4 vars → CPT → unknown key</span>
-        <span style={{fontSize:9,color:"#2a2a50"}}>CF: CF key to enter flows → NPV/IRR</span>
-        <span style={{fontSize:9,color:"#2a2a50"}}>2nd+PMT = BGN</span>
-        <span style={{fontSize:9,color:"#2a2a50"}}>2nd+FV = CLR TVM</span>
+      {/* Quick ref */}
+      <div style={{background:"#06060e",borderTop:"1px solid #111120",padding:"4px 12px",flexShrink:0,display:"flex",gap:10,overflowX:"auto",whiteSpace:"nowrap",alignItems:"center"}}>
+        <span style={{fontSize:9,color:"#252540"}}>TVM: set 4 → CPT → solve</span>
+        <span style={{fontSize:9,color:"#1c1c30"}}>·</span>
+        <span style={{fontSize:9,color:"#252540"}}>CF key enters flows</span>
+        <span style={{fontSize:9,color:"#1c1c30"}}>·</span>
+        <span style={{fontSize:9,color:"#252540"}}>2nd+FV clears TVM</span>
       </div>
     </div>
   );
