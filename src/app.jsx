@@ -2855,6 +2855,7 @@ const CONFIDENCE_KEY       = "cfa_confidence_v1";
 const STUDY_GOAL_KEY       = "cfa_study_goal_v1";
 const WORKED_EX_KEY        = "cfa_worked_ex_v1";
 const PRESETS_KEY          = "cfa_presets_v1";
+const SESSION_DRAFT_KEY    = "cfa_session_draft_v1";
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
@@ -5851,6 +5852,7 @@ function CFAMock(){
   const [focusSuggestions,setFocusSuggestions]=useState(null);const [focusLoading,setFocusLoading]=useState(false);const [focusError,setFocusError]=useState("");const [selectedFocus,setSelectedFocus]=useState(null);const [focusCount,setFocusCount]=useState(10);
   const [quizConfidence,setQuizConfidence]=useState(null);
   const [confidenceLog,setConfidenceLog]=useState(()=>{try{return JSON.parse(localStorage.getItem(CONFIDENCE_KEY)||"{}");}catch{return {};}});
+  const [sessionDraft,setSessionDraft]=useState(()=>{try{const d=JSON.parse(localStorage.getItem(SESSION_DRAFT_KEY)||"null");if(d&&Date.now()-d.ts<7200000&&d.questions?.length>0&&Object.keys(d.answers||{}).length<d.questions.length)return d;}catch{}return null;});
   const [studyGoal,setStudyGoal]=useState(()=>{try{return JSON.parse(localStorage.getItem(STUDY_GOAL_KEY)||"null");}catch{return null;}});
   const [workedExamples,setWorkedExamples]=useState(()=>{try{return JSON.parse(localStorage.getItem(WORKED_EX_KEY)||"{}");}catch{return {};}});
   const [workedExLoading,setWorkedExLoading]=useState(false);
@@ -6159,6 +6161,8 @@ function CFAMock(){
     setTimeTaken(elapsed);
     setExitConfirm(false);
     pendingSessionRef.current={elapsed};
+    try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
+    setSessionDraft(null);
     setScreen("results");
   },[]);
 
@@ -6604,6 +6608,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const generateQuestionsRef=React.useRef(null);
   const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
+    try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
+    setSessionDraft(null);
     setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
     loadingStartRef.current=Date.now();
 
@@ -6790,7 +6796,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setShowSavePreset(false);setSavePresetName("");
     showToast("💾","Preset saved!",`"${preset.name}" ready on home screen.`);
   };
-  const handleAnswer=(qId,opt)=>{if(answers[qId])return;setAnswers(a=>({...a,[qId]:opt}));if(mode==="guided")setShowExp(true);const q=questions.find(q=>q.id===qId);if(q){if(opt===q.answer){setConsecutiveWrong(0);}else{setConsecutiveWrong(n=>n+1);}}}
+  const handleAnswer=(qId,opt)=>{
+    if(answers[qId])return;
+    const newAnswers={...answers,[qId]:opt};
+    setAnswers(newAnswers);
+    if(mode==="guided")setShowExp(true);
+    const q=questions.find(q=>q.id===qId);
+    if(q){if(opt===q.answer){setConsecutiveWrong(0);}else{setConsecutiveWrong(n=>n+1);}}
+    // Persist in-progress session so a refresh can offer to resume
+    if(mode!=="exam"&&mode!=="speed_drill"){
+      try{localStorage.setItem(SESSION_DRAFT_KEY,JSON.stringify({ts:Date.now(),topic,subtopic,difficulty,mode,count,currentQ,questions,answers:newAnswers}));}catch{}
+    }
+  }
   const nextQ=()=>{
     clearInterval(speedDrillRef.current);
     setExplainThisText(null);setExplainThisLoading(false);
@@ -7792,6 +7809,35 @@ Return ONLY a JSON array — no prose, no markdown fences:
       ) : (
         <MotivationalBanner daysLeft={daysLeft}/>
       )}
+      {/* Resume interrupted session banner */}
+      {sessionDraft&&(()=>{
+        const mins=Math.round((Date.now()-sessionDraft.ts)/60000);
+        const answered=Object.keys(sessionDraft.answers||{}).length;
+        const total=sessionDraft.questions?.length||0;
+        const ago=mins<2?"just now":mins<60?`${mins}m ago`:`${Math.round(mins/60)}h ago`;
+        return(
+          <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:13,padding:"12px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:12}}>
+            <div style={{fontSize:22,flexShrink:0}}>⚡</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:2}}>Resume your session</div>
+              <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>{sessionDraft.topic} · {sessionDraft.subtopic} · {answered}/{total} answered · {ago}</div>
+            </div>
+            <div style={{display:"flex",gap:6,flexShrink:0}}>
+              <button onClick={()=>{
+                setTopic(sessionDraft.topic);setSubtopic(sessionDraft.subtopic);
+                setDifficulty(sessionDraft.difficulty);setMode(sessionDraft.mode);setCount(sessionDraft.count);
+                setQuestions(sessionDraft.questions);setAnswers(sessionDraft.answers);
+                setCurrentQ(sessionDraft.currentQ);setShowExp(false);setLastSession(null);
+                setFullExamMode(false);setVignetteMode(false);
+                setScreen("quiz");
+              }} style={{padding:"7px 13px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent,color:"#fff",border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                Resume →
+              </button>
+              <button onClick={()=>{try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}setSessionDraft(null);}} style={{padding:"7px 10px",borderRadius:9,fontSize:12,color:C.muted,background:"none",border:`1px solid ${C.border}`,cursor:"pointer"}}>✕</button>
+            </div>
+          </div>
+        );
+      })()}
       {/* Free tier AI usage indicator */}
       {!proStatus&&authUser&&(()=>{
         const used=dailyAIUsage.count;
