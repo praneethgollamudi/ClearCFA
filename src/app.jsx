@@ -2331,7 +2331,7 @@ Return ONLY a JSON array, no markdown:
 Rules:
 - 3 options only (A,B,C). Each wrong option exploits a misconception. Spread questions across different LOS.
 - CRITICAL for numerical questions: FIRST compute the exact correct answer (show full precision), THEN include that exact value as one of the options. NEVER describe any option as "closest", "nearest", "best approximation", or "closest when accounting for rounding" — if you use such language in the explanation, the question will be discarded. If rounding is needed for a clean option, round the answer FIRST, then build all three options around that rounded figure. The correct computed result must appear verbatim as exactly one of A, B, or C — no approximations. Wrong options must use recognisable formula errors (wrong rate, wrong periods, missing compounding step).
-- The "answer" field must match the letter whose option text equals the correct computed result.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
+- The "answer" field must match the letter whose option text equals the correct computed result. The explanation MUST begin with "Correct: [letter]. " (e.g. "Correct: B. Sample variance = 30/4 = 7.5") — questions whose explanation does not start with "Correct: A/B/C" will be discarded.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
 }
 
 // Expand compact JSON keys returned by optimised prompt
@@ -6943,14 +6943,30 @@ Return ONLY a JSON array — no prose, no markdown fences:
         if(!q.options[q.answer])return false; // answer key points to nonexistent option
         const exp=(q.explanation||"").toLowerCase();
         if(/nearest available|closest answer|so [a-c] is nearest|approximate(ly)?|not exactly|so [a-c] is the best|\bis closest\b|\bthe closest\b|closest when|closest option|closest to the|best approximat|due to rounding.*clos|clos.*due to rounding/i.test(exp))return false;
-        // Reject if explanation explicitly names a DIFFERENT correct-answer letter
         const qAns=(q.answer||"").toUpperCase();
         const expU=(q.explanation||"").toUpperCase();
+        // Check new "Correct: X." prefix that the prompt now requires
+        const prefixMatch=expU.match(/^CORRECT:\s*([A-C])\b/);
+        if(prefixMatch&&prefixMatch[1]!==qAns)return false;
+        // Reject if explanation explicitly names a DIFFERENT correct-answer letter
         const lm=expU.match(/CORRECT ANSWER IS\s+([A-C])\b/)||expU.match(/(?:THEREFORE|SO)[,\s]+(?:OPTION\s+)?([A-C])\s+IS(?:\s+THE)?\s+CORRECT\b/)||expU.match(/\bOPTION\s+([A-C])\s+IS(?:\s+THE)?\s+CORRECT\s+ANSWER\b/);
         if(lm&&lm[1]!==qAns)return false;
         // Reject if explanation says "correct answer is [value]" that doesn't match options[answer]
         const vm=(q.explanation||"").match(/correct answer is\s+([^\.\n]{2,40})/i);
         if(vm){const norm=s=>s.toLowerCase().replace(/\s+/g,"").replace(/[^0-9a-z.%]/g,"");const stated=norm(vm[1]);const ansOpt=norm(q.options[q.answer]||"");if(stated.length>1&&ansOpt.length>1&&stated!==ansOpt&&!ansOpt.includes(stated)&&!stated.includes(ansOpt))return false;}
+        // Numeric cross-check: scan all "= X.XX" results in explanation; if a result matches
+        // a non-answer option exactly, the answer key is wrong — reject the question
+        const optVals=Object.entries(q.options).map(([k,v])=>({k,v:parseFloat(String(v).replace(/[^0-9.-]/g,""))})).filter(o=>!isNaN(o.v));
+        if(optVals.length>=2){
+          const ansVal=parseFloat(String(q.options[q.answer]||"").replace(/[^0-9.-]/g,""));
+          const eqNums=[...expU.matchAll(/=\s*([\d]+\.[\d]+)/g)].map(m=>parseFloat(m[1]));
+          for(const n of eqNums){
+            if(Math.abs(n-ansVal)>0.01){// computed value differs from stated answer
+              const matchesOther=optVals.find(o=>o.k!==qAns&&Math.abs(o.v-n)<0.01);
+              if(matchesOther)return false; // computed value matches a different option
+            }
+          }
+        }
         return true;
       });
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
