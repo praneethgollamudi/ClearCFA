@@ -3908,8 +3908,17 @@ async function callAIChat(userId, messages, maxTokens=450, level="1"){
   }catch{return null;}
 }
 
+// Renders explanation text with formula sentences in a distinct monospace block.
+// A sentence is "formula-heavy" if it contains = and complex math operators (^, /, [, *).
+function renderExplanation(text,C){
+  if(!text)return null;
+  const parts=text.split(/\.\s+(?=[A-Z\$\(])/).filter(Boolean);
+  const isFormula=s=>/=/.test(s)&&/[\^\/\[\]\*]/.test(s)&&/\d/.test(s);
+  if(!parts.some(isFormula))return <span>{text}</span>;
+  return(<>{parts.map((s,i)=>{const trimmed=s.trim();const last=i===parts.length-1;if(isFormula(trimmed)){return(<div key={i} style={{fontFamily:"'Courier New',monospace",fontSize:12,background:`${C.accent}12`,border:`1px solid ${C.accent}33`,borderLeft:`3px solid ${C.accentLight}`,borderRadius:"0 8px 8px 0",padding:"9px 12px",margin:"7px 0",color:C.accentLight,wordBreak:"break-word",lineHeight:1.9}}>{trimmed}</div>);}return <span key={i}>{trimmed}{!last?". ":""}</span>;})}</>);
+}
+
 function parseRefresherReveal(text){
-  const expMatch=text.match(/EXPLANATION:\s*([\s\S]*?)(?=TRAP:|$)/i);
   const trapMatch=text.match(/TRAP:\s*([\s\S]*?)$/i);
   return{explanation:(expMatch?.[1]||"").trim(),trap:(trapMatch?.[1]||"").trim()};
 }
@@ -8934,7 +8943,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {showExp&&mode==="guided"&&answered&&(
         <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:"#a0a0c0",lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>Explanation</div>
-          {q.explanation}
+          {renderExplanation(q.explanation,C)}
           {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:"#6060a0"}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
           {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:"#60508a"}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
         </div>
@@ -9144,7 +9153,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
               <div key={q.id} style={{background:C.surface,border:`1px solid #2a1018`,borderRadius:10,padding:"14px"}}>
                 <div style={{fontSize:13,color:C.text,lineHeight:1.6,marginBottom:8}}>{q.question}</div>
                 <div style={{fontSize:12,color:C.muted}}>Your: <span style={{color:"#f87171"}}>{answers[q.id]||"–"}</span> · Correct: <span style={{color:C.easy}}>{q.answer}</span></div>
-                <div style={{fontSize:12,color:"#6a6a8a",marginTop:8,lineHeight:1.65,borderTop:`1px solid ${C.border}`,paddingTop:8}}>{q.explanation}</div>
+                <div style={{fontSize:12,color:"#6a6a8a",marginTop:8,lineHeight:1.65,borderTop:`1px solid ${C.border}`,paddingTop:8}}>{renderExplanation(q.explanation,C)}</div>
                 {q.los_tested&&<div style={{fontSize:11,color:"#5050a0",marginTop:6}}><span style={{fontWeight:700}}>LOS: </span>{q.los_tested}</div>}
                 {q.misconception_targeted&&<div style={{fontSize:11,color:"#60508a",marginTop:4}}><span style={{fontWeight:700}}>Error pattern: </span>{q.misconception_targeted}</div>}
                 <button onClick={()=>{setRevisionTopic(q._topic||topic);setRevisionTab("notes");setRevisionConcept(q.concept||q.los_tested||null);setScreen("revision");}}
@@ -9844,7 +9853,7 @@ Give a 3-sentence debrief: (1) root cause of errors, (2) one specific thing to d
             💬 Ask AI
           </button>
         </div>
-        {w.explanation}
+        {renderExplanation(w.explanation,C)}
       </div>
       {w.los_tested&&<div style={{background:C.dim,borderRadius:8,padding:"8px 12px",marginBottom:8,fontSize:11,color:C.muted}}><span style={{fontWeight:700,color:C.accentLight}}>LOS: </span>{w.los_tested}</div>}
       {w.misconception_targeted&&<div style={{background:"#0a0518",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:11,color:"#8060c0"}}><span style={{fontWeight:700}}>Error pattern: </span>{w.misconception_targeted}</div>}
