@@ -2850,6 +2850,7 @@ const PASS_TREND_KEY = "cfa_pass_trend_v1";
 const PLAN_KEY       = "cfa_week_plan_v1";
 const DYNAMIC_PN_KEY = "cfa_dynamic_pn_v1";
 const DYNAMIC_FORMULAS_KEY = "cfa_dynamic_formulas_v1";
+const RESOLVED_GAPS_KEY = "cfa_resolved_gaps_v1";
 const LESSONS_KEY          = "cfa_lessons_v1";
 const REFRESHER_KEY        = "cfa_refresher_v1";
 const CONFIDENCE_KEY       = "cfa_confidence_v1";
@@ -4357,6 +4358,8 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const [pnGenerating, setPnGenerating] = useState({});
   const [formulaGenerating, setFormulaGenerating] = useState({});
   const [formulaGenError, setFormulaGenError] = useState({});
+  const [resolvedGapKeys, setResolvedGapKeys] = useState(()=>{try{return new Set(JSON.parse(localStorage.getItem(RESOLVED_GAPS_KEY)||"[]"));}catch{return new Set();}});
+  const markGapResolved=(key)=>setResolvedGapKeys(s=>{const n=new Set([...s,key]);try{localStorage.setItem(RESOLVED_GAPS_KEY,JSON.stringify([...n]));}catch{}return n;});
   const [expandedFormula, setExpandedFormula] = useState(null);
   const [lessonGenerating, setLessonGenerating] = useState({});
 
@@ -4450,7 +4453,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
       const reply=await callAIChat(userId,[{role:"user",content:prompt}],400,cfaLevel,{throws:true});
       if(!reply){setFormulaGenError(s=>({...s,[key]:"No response — try again."}));return;}
       const formula=parseFormulaAIResponse(reply,name);
-      if(!formula){setFormulaGenError(s=>({...s,[key]:"This concept is primarily qualitative — no quantitative formula to generate."}));return;}
+      if(!formula){markGapResolved(key);return;}
       const normN=s=>s.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,15);
       const existing=dynamicFormulas[selTopic]||[];
       const formulaNameN=normN(formula.name||"");
@@ -4461,6 +4464,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
       const updated={...dynamicFormulas,[selTopic]:[...deduped,formula]};
       setDynamicFormulas(updated);
       try{localStorage.setItem(DYNAMIC_FORMULAS_KEY,JSON.stringify(updated));}catch{}
+      markGapResolved(key);
     }catch(e){
       setFormulaGenError(s=>({...s,[key]:e.message||"Generation failed — try again."}));
     }finally{
@@ -4745,19 +4749,16 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
               {(()=>{
                 const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,8);
                 if(!wrongCards.length) return null;
-                const normName=s=>s.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,15);
+                // Deduplicate by subtopic/concept name, exclude resolved keys
+                const seenNames=new Set();
                 const gaps=wrongCards.filter(card=>{
-                  const words=((card.concept||"")+" "+(card.subtopic||"")).toLowerCase().split(/[\s\-\/\(\)]+/).filter(w=>w.length>3);
-                  const matched=formulaData.some(f=>{const fn=f.name.toLowerCase();return words.some(w=>fn.includes(w)||w.includes(fn.split(" ")[0]));});
-                  if(matched) return false;
                   const key=((card.subtopic||card.concept||"").trim()).toLowerCase();
-                  const keyN=normName(key);
-                  // Hide if any dynamic formula's name overlaps with the card's concept (fuzzy)
-                  const alreadyGen=(dynamicFormulas[selTopic]||[]).some(f=>{
-                    const fn=normName(f.name||"");
-                    return fn===keyN||fn.includes(keyN.slice(0,12))||keyN.includes(fn.slice(0,12));
-                  });
-                  return key&&!alreadyGen;
+                  if(!key||resolvedGapKeys.has(key)) return false;
+                  if(seenNames.has(key)) return false;
+                  seenNames.add(key);
+                  const words=key.split(/[\s\-\/\(\)]+/).filter(w=>w.length>3);
+                  const matched=formulaData.some(f=>{const fn=f.name.toLowerCase();return words.some(w=>fn.includes(w)||w.includes(fn.split(" ")[0]));});
+                  return !matched;
                 });
                 if(!gaps.length) return null;
                 return(
@@ -4789,6 +4790,16 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                   </div>
                 );
               })()}
+
+              {/* Clear AI formulas button — shown when topic has any stored AI formulas */}
+              {(dynamicFormulas[selTopic]||[]).length>0&&(
+                <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
+                  <button onClick={()=>{const u={...dynamicFormulas};delete u[selTopic];setDynamicFormulas(u);try{localStorage.setItem(DYNAMIC_FORMULAS_KEY,JSON.stringify(u));}catch{}}}
+                    style={{fontSize:10,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:"2px 6px",textDecoration:"underline"}}>
+                    × Clear AI-generated formulas
+                  </button>
+                </div>
+              )}
 
               {formulaData.length===0&&!dynamicFormulas[selTopic]?.length?(
                 <div style={{textAlign:"center",padding:"40px 0",color:C.muted,fontSize:13}}>No formula sheet for this topic — it's primarily conceptual.</div>
