@@ -6940,6 +6940,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
         if(!q.options[q.answer])return false; // answer key points to nonexistent option
         const exp=(q.explanation||"").toLowerCase();
         if(/nearest available|closest answer|so [a-c] is nearest|approximate(ly)?|not exactly|so [a-c] is the best|\bis closest\b|\bthe closest\b|closest when|closest option|closest to the|best approximat|due to rounding.*clos|clos.*due to rounding/i.test(exp))return false;
+        // Reject if explanation explicitly names a DIFFERENT correct-answer letter
+        const qAns=(q.answer||"").toUpperCase();
+        const expU=(q.explanation||"").toUpperCase();
+        const lm=expU.match(/CORRECT ANSWER IS\s+([A-C])\b/)||expU.match(/(?:THEREFORE|SO)[,\s]+(?:OPTION\s+)?([A-C])\s+IS(?:\s+THE)?\s+CORRECT\b/)||expU.match(/\bOPTION\s+([A-C])\s+IS(?:\s+THE)?\s+CORRECT\s+ANSWER\b/);
+        if(lm&&lm[1]!==qAns)return false;
+        // Reject if explanation says "correct answer is [value]" that doesn't match options[answer]
+        const vm=(q.explanation||"").match(/correct answer is\s+([^\.\n]{2,40})/i);
+        if(vm){const norm=s=>s.toLowerCase().replace(/\s+/g,"").replace(/[^0-9a-z.%]/g,"");const stated=norm(vm[1]);const ansOpt=norm(q.options[q.answer]||"");if(stated.length>1&&ansOpt.length>1&&stated!==ansOpt&&!ansOpt.includes(stated)&&!stated.includes(ansOpt))return false;}
         return true;
       });
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
