@@ -9210,7 +9210,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <span style={{fontSize:11,color:C.muted}}>earned · {levelInfo.label} · Level {levelInfo.level}</span>
         </div>}
         <button onClick={()=>{
-          const text=`I scored ${sessionPct}% on ${subtopic} (CFA L1 · ${difficulty}) 🎯${todayStudySecs>0?`\n📖 ${fmtStudyTime(todayStudySecs)} studied today`:""}\n\nPreparing with ClearCFA — free AI-powered CFA exam prep.\nclearcfa.com`;
+          const filled=Math.min(10,Math.round(sessionPct/10));
+          const bar="█".repeat(filled)+"░".repeat(10-filled);
+          const mins=timeTaken>0?` · ⏱ ~${Math.round(timeTaken/60)} min`:"";
+          const verdict=sessionPct>=70?"✅ Above pass threshold":sessionPct>=50?"📈 Getting there (pass mark = 70%)":"💪 Every miss is data — keep drilling";
+          const studyLine=todayStudySecs>0?`\n📚 ${fmtStudyTime(todayStudySecs)} studied today`:"";
+          const text=`📊 ClearCFA Score Card\n━━━━━━━━━━━━━━━━━\n🎓 CFA Level ${cfaLevel} · ${subtopic}\n\n${bar}  ${sessionPct}%\n${sessionScore}/${questions.length} correct · ${difficulty}${mins}\n${verdict}${studyLine}\n\nPrepping smarter with ClearCFA ✨\nFree AI-powered CFA exam prep\nclearcfa.com`;
           if(navigator.share){navigator.share({title:"ClearCFA Score",text}).catch(()=>{});}
           else{navigator.clipboard.writeText(text).then(()=>showToast("📋","Copied!","Paste anywhere to share your score.")).catch(()=>{});}
         }} style={{marginTop:14,padding:"8px 20px",borderRadius:20,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
