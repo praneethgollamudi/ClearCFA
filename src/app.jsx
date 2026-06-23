@@ -6377,6 +6377,120 @@ function CFACalculator({onClose}){
   );
 }
 
+// ─── LOFI AMBIENT PLAYER ─────────────────────────────────────────────────────
+function LofiPlayer(){
+  const [isPlaying,setIsPlaying]=useState(false);
+  const [vol,setVol]=useState(()=>{try{return parseFloat(localStorage.getItem('cfa_lofi_vol')||'0.18');}catch{return 0.18;}});
+  const [showPanel,setShowPanel]=useState(false);
+  const ctxRef=useRef(null);
+  const masterRef=useRef(null);
+  const noiseRef=useRef(null);
+  const oscsRef=useRef([]);
+  const timerRef=useRef(null);
+  const CHORDS=[
+    [261.6,329.6,392.0,493.9], // Cmaj7
+    [349.2,440.0,523.3,659.3], // Fmaj7
+    [329.6,392.0,493.9,587.3], // Em7
+    [293.7,349.2,440.0,523.3], // Dm7
+  ];
+  function mkBrownNoise(ctx){
+    const sr=ctx.sampleRate,len=sr*8;
+    const buf=ctx.createBuffer(1,len,sr);
+    const d=buf.getChannelData(0);
+    let last=0;
+    for(let i=0;i<len;i++){const w=Math.random()*2-1;last=(last+0.02*w)/1.02;d[i]=last*3.5;}
+    return buf;
+  }
+  function startAudio(){
+    if(!ctxRef.current) ctxRef.current=new(window.AudioContext||window.webkitAudioContext)();
+    const ctx=ctxRef.current;
+    if(ctx.state==='suspended') ctx.resume();
+    const master=ctx.createGain();
+    master.gain.setValueAtTime(vol,ctx.currentTime);
+    master.connect(ctx.destination);
+    masterRef.current=master;
+    const ns=ctx.createBufferSource();
+    ns.buffer=mkBrownNoise(ctx);
+    ns.loop=true;
+    const lpf=ctx.createBiquadFilter();
+    lpf.type='lowpass';lpf.frequency.value=900;
+    const ng=ctx.createGain();ng.gain.value=0.04;
+    ns.connect(lpf);lpf.connect(ng);ng.connect(master);
+    ns.start();noiseRef.current=ns;
+    const oscs=CHORDS[0].map((f,i)=>{
+      const o=ctx.createOscillator();
+      o.type='sine';o.frequency.value=f;o.detune.value=(i%2===0?4:-4);
+      const g=ctx.createGain();g.gain.value=0.045;
+      o.connect(g);g.connect(master);o.start();
+      return o;
+    });
+    oscsRef.current=oscs;
+    let idx=0;
+    function nextChord(){
+      idx=(idx+1)%CHORDS.length;
+      const t=ctx.currentTime;
+      CHORDS[idx].forEach((f,i)=>oscs[i].frequency.setTargetAtTime(f,t,1.8));
+      timerRef.current=setTimeout(nextChord,10000);
+    }
+    timerRef.current=setTimeout(nextChord,10000);
+  }
+  function stopAudio(){
+    clearTimeout(timerRef.current);
+    try{noiseRef.current?.stop();}catch{}
+    oscsRef.current.forEach(o=>{try{o.stop();}catch{}});
+    oscsRef.current=[];noiseRef.current=null;
+    if(ctxRef.current?.state==='running') ctxRef.current.suspend();
+  }
+  const toggle=()=>{
+    if(isPlaying){stopAudio();setIsPlaying(false);}
+    else{startAudio();setIsPlaying(true);}
+  };
+  const onVol=v=>{
+    setVol(v);
+    try{localStorage.setItem('cfa_lofi_vol',String(v));}catch{}
+    if(masterRef.current&&ctxRef.current) masterRef.current.gain.setTargetAtTime(v,ctxRef.current.currentTime,0.1);
+  };
+  useEffect(()=>()=>{stopAudio();try{ctxRef.current?.close();}catch{};},[]);
+  return (
+    <>
+      <button onClick={()=>setShowPanel(s=>!s)} title="Lofi study music"
+        style={{position:"fixed",bottom:22,left:16,zIndex:200,width:46,height:46,borderRadius:"50%",
+          background:isPlaying?"linear-gradient(135deg,#1a3a2a,#1e5c3a)":"linear-gradient(135deg,#1a1a2e,#1e1e38)",
+          border:isPlaying?"1px solid #22c55e55":"1px solid #6366f133",
+          color:isPlaying?"#86efac":"#a5b4fc",fontSize:20,cursor:"pointer",
+          boxShadow:isPlaying?"0 4px 16px #22c55e33":"0 4px 16px #0008",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          touchAction:"manipulation",transition:"all 0.2s"}}>
+        🎵
+      </button>
+      {showPanel&&(
+        <div style={{position:"fixed",bottom:76,left:16,zIndex:200,background:"#1a1a38",
+          border:"1px solid #6366f144",borderRadius:16,padding:"16px",
+          boxShadow:"0 8px 32px #00000099",minWidth:210,animation:"fadeIn 0.15s ease"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#a5b4fc",letterSpacing:"0.05em"}}>🎵 LOFI STUDY</div>
+            <button onClick={()=>setShowPanel(false)} style={{fontSize:14,color:"#7c7a9e",background:"none",border:"none",cursor:"pointer",lineHeight:1,padding:"2px 6px"}}>✕</button>
+          </div>
+          <button onClick={toggle} style={{width:"100%",padding:"10px",borderRadius:10,marginBottom:12,
+            fontSize:13,fontWeight:700,
+            background:isPlaying?"linear-gradient(135deg,#14532d,#166534)":"linear-gradient(135deg,#4338ca,#6366f1)",
+            color:"#fff",border:"none",cursor:"pointer"}}>
+            {isPlaying?"⏸ Pause":"▶ Play"}
+          </button>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:14}}>🔈</span>
+            <input type="range" min="0" max="1" step="0.05" value={vol}
+              onChange={e=>onVol(parseFloat(e.target.value))}
+              style={{flex:1,accentColor:"#6366f1",cursor:"pointer"}}/>
+            <span style={{fontSize:14}}>🔊</span>
+          </div>
+          <div style={{fontSize:10,color:"#4a4869",textAlign:"center",marginTop:10}}>ambient · lofi jazz · study focus</div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function CFAMock(){
   const [screen,setScreen]=useState("home");
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
@@ -10904,3 +11018,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CFAMock));
 const toastRoot = ReactDOM.createRoot(document.getElementById('toast-root'));
 toastRoot.render(React.createElement(ToastManager));
+const lofiEl = document.createElement('div');
+document.body.appendChild(lofiEl);
+const lofiRoot = ReactDOM.createRoot(lofiEl);
+lofiRoot.render(React.createElement(LofiPlayer));
