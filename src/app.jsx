@@ -6059,6 +6059,7 @@ function CFAMock(){
   const [importError,setImportError]=useState("");
   const [sessionSaved,setSessionSaved]=useState(null); // null=not attempted, true=ok, false=failed
   const generatingRef=useRef(false); // debounce double-tap
+  const lastGenParamsRef=useRef(null); // for tap-to-retry
   const [weeklyPlanScreen,setWeeklyPlanScreen]=useState(false);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [showMoreActions,setShowMoreActions]=useState(true);
@@ -6118,6 +6119,7 @@ function CFAMock(){
   const [dailyRefresher,setDailyRefresher]=useState(()=>{try{const s=JSON.parse(localStorage.getItem(REFRESHER_KEY)||"null");if(s?.date===localDateKey()&&s?.concepts?.length)return s;}catch{}return null;});
   const [refresherFlipped,setRefresherFlipped]=useState(false);
   const [refresherRevealLoading,setRefresherRevealLoading]=useState(false);
+  const [refresherRevealError,setRefresherRevealError]=useState(null);
   const [walkthroughTopic, setWalkthroughTopic] = useState(Object.keys(LOS)[0]);
   const [walkthroughModule, setWalkthroughModule] = useState("");
   const [walkthroughText, setWalkthroughText] = useState(null);
@@ -6827,6 +6829,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const generateQuestionsRef=React.useRef(null);
   const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
+    lastGenParamsRef.current={t,st,diff,cnt,m,isVignette,st2};
     try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
     setSessionDraft(null);
     srProcessedRef.current=new Set();
@@ -7105,17 +7108,21 @@ Return ONLY a JSON array — no prose, no markdown fences:
   },[moduleReadiness,cfaLevel]);
   const generateRefresherReveal=async(conceptIdx)=>{
     const concept=dailyRefresher?.concepts?.[conceptIdx];
-    if(!authUser?.id||refresherRevealLoading||concept?.reveal||!concept)return;
+    if(refresherRevealLoading||concept?.reveal||!concept)return;
+    if(!authUser?.id){setRefresherRevealError("Sign in to unlock AI explanations");return;}
     setRefresherRevealLoading(true);
+    setRefresherRevealError(null);
     const prompt=`CFA Level ${cfaLevel} exam prep. Explain this learning objective briefly:\n"${concept.los_stmt}"\n\nFormat EXACTLY:\nEXPLANATION: [2-3 plain-English sentences: what it means and why it matters for the exam]\nTRAP: [The single most common exam mistake on this concept — 1 sentence]\n\nBe concise. Max 80 words total.`;
     try{
       const reply=await callAIChat(authUser.id,[{role:"user",content:prompt}],150,cfaLevel);
-      if(!reply)return;
+      if(!reply){setRefresherRevealError("Generation failed — tap to retry");return;}
       const reveal=parseRefresherReveal(reply);
       const updatedConcepts=dailyRefresher.concepts.map((c,i)=>i===conceptIdx?{...c,reveal}:c);
       const updated={...dailyRefresher,concepts:updatedConcepts};
       setDailyRefresher(updated);
       try{localStorage.setItem(REFRESHER_KEY,JSON.stringify(updated));}catch{}
+    }catch(e){
+      setRefresherRevealError("Generation failed — tap to retry");
     }finally{setRefresherRevealLoading(false);}
   };
   const studyPace=useMemo(()=>getStudyPace(levelHistory,daysLeft),[levelHistory,daysLeft]);
@@ -8560,7 +8567,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{fontSize:13,color:C.text,lineHeight:1.6,fontStyle:"italic",paddingLeft:10,borderLeft:`2px solid ${C.reward}55`,marginBottom:12}}>
                 "{cur.los_stmt}"
               </div>
-              <button onClick={()=>{setRefresherFlipped(true);if(!cur.reveal&&authUser?.id)generateRefresherReveal(idx);}} style={{width:"100%",padding:"9px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.rewardLight,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
+              <button onClick={()=>{setRefresherFlipped(true);setRefresherRevealError(null);generateRefresherReveal(idx);}} style={{width:"100%",padding:"9px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.rewardLight,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
                 ✨ Reveal explanation →
               </button>
             </div>
@@ -8581,12 +8588,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     </div>
                   )}
                 </>
+              ):refresherRevealError?(
+                <div style={{textAlign:"center",padding:"10px 0"}}>
+                  <div style={{fontSize:12,color:"#f87171",marginBottom:10}}>{refresherRevealError}</div>
+                  {refresherRevealError!=="Sign in to unlock AI explanations"&&(
+                    <button onClick={()=>{setRefresherRevealError(null);generateRefresherReveal(idx);}} style={{padding:"8px 20px",borderRadius:9,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.rewardLight,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>↺ Retry</button>
+                  )}
+                </div>
               ):(
-                authUser?.id?(
-                  <button onClick={()=>generateRefresherReveal(idx)} style={{width:"100%",padding:"9px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.rewardLight,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>✨ Generate explanation →</button>
-                ):(
-                  <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"16px 0"}}>Sign in to unlock AI explanations</div>
-                )
+                <button onClick={()=>generateRefresherReveal(idx)} style={{width:"100%",padding:"9px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.rewardLight,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>✨ Generate explanation →</button>
               )}
             </div>
           )}
@@ -8712,7 +8722,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       );
     })()}
-    {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease"}}>{error}</div>}
+    {error&&(()=>{
+      const canRetry=lastGenParamsRef.current&&error.includes("retry");
+      return(
+        <div onClick={canRetry?()=>{const p=lastGenParamsRef.current;setError("");generateQuestionsRef.current&&generateQuestionsRef.current(p.t,p.st,p.diff,p.cnt,p.m,p.isVignette,p.st2);}:()=>setError("")}
+          style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease",cursor:canRetry?"pointer":"default",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span>{error}</span>
+          {canRetry?<span style={{fontSize:11,fontWeight:700,color:"#fca5a5",marginLeft:12,flexShrink:0}}>↺</span>:<span style={{fontSize:11,color:"#fca5a5",opacity:0.6,marginLeft:12,flexShrink:0}}>✕</span>}
+        </div>
+      );
+    })()}
 
     {/* Empty state — shown when no sessions yet */}
     {historyLoaded && history.length === 0 && (
