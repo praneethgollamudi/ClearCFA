@@ -3382,6 +3382,89 @@ const FORMULAS = {
   ],
 };
 
+const FORMULA_MODULES = {
+  "Quantitative Methods": {
+    "FV (single cash flow)":"Time Value of Money","PV (single cash flow)":"Time Value of Money",
+    "FV of Annuity":"Time Value of Money","PV of Annuity":"Time Value of Money",
+    "PV Annuity Due":"Time Value of Money","Perpetuity PV":"Time Value of Money",
+    "EAR (from periodic rate)":"Rates & Returns","EAR (from continuous)":"Rates & Returns",
+    "HPR":"Rates & Returns","TWR":"Rates & Returns","MWR (IRR)":"Rates & Returns",
+    "Variance":"Statistics","Sample Variance":"Statistics","Covariance":"Statistics",
+    "Correlation":"Statistics","Portfolio σ (2 asset)":"Statistics",
+    "t-statistic":"Hypothesis Testing","Confidence interval":"Hypothesis Testing",
+    "Chi-square (variance test)":"Hypothesis Testing",
+    "Regression slope":"Regression","R² (coefficient of det.)":"Regression","F-stat (regression)":"Regression",
+    "Safety-first ratio":"Probability & Risk","Bayes":"Probability & Risk",
+    "Combination":"Probability & Risk","Permutation":"Probability & Risk",
+  },
+  "Economics": {
+    "GDP (expenditure)":"National Accounts","GDP (income)":"National Accounts","Quantity of money":"National Accounts",
+    "Fisher equation":"Inflation & Interest Rates",
+    "Fiscal multiplier":"Fiscal Policy","Tax multiplier":"Fiscal Policy",
+    "Absolute PPP":"Exchange Rates","Relative PPP":"Exchange Rates",
+    "Covered interest parity":"Exchange Rates","Real exchange rate":"Exchange Rates",
+    "Uncovered interest parity":"Exchange Rates","Current account balance":"Exchange Rates",
+    "Elasticity of demand":"Microeconomics",
+  },
+  "Financial Statement Analysis": {
+    "ROE (DuPont 3-factor)":"Profitability","ROE (DuPont 5-factor)":"Profitability",
+    "Current Ratio":"Liquidity","Quick Ratio":"Liquidity","Cash Ratio":"Liquidity",
+    "DSO (days sales outstanding)":"Efficiency","DIO (days inventory outstanding)":"Efficiency",
+    "DPO (days payable outstanding)":"Efficiency","CCC (cash conversion cycle)":"Efficiency",
+    "Basic EPS":"Per-Share Data","Diluted EPS":"Per-Share Data",
+    "Debt-to-Equity":"Leverage","Debt-to-Assets":"Leverage","Interest Coverage":"Leverage",
+    "FCFF":"Cash Flow","FCFE":"Cash Flow","CFO (indirect)":"Cash Flow",
+    "LIFO reserve":"Inventory & Tax","LIFO to FIFO (COGS adj.)":"Inventory & Tax","Tax expense":"Inventory & Tax",
+  },
+  "Corporate Issuers": {
+    "WACC":"Cost of Capital","Cost of equity (CAPM)":"Cost of Capital",
+    "Cost of equity (DDM)":"Cost of Capital","Cost of debt":"Cost of Capital",
+    "NPV":"Capital Budgeting","Profitability Index":"Capital Budgeting",
+    "IRR":"Capital Budgeting","Payback Period":"Capital Budgeting","Discounted Payback":"Capital Budgeting",
+    "DOL":"Leverage","DFL":"Leverage","DTL (total leverage)":"Leverage","Breakeven (units)":"Leverage",
+    "M-M (with taxes)":"Capital Structure",
+  },
+  "Equity": {
+    "Gordon Growth Model (DDM)":"Dividend Discount Models","Two-stage DDM":"Dividend Discount Models","FCFE":"Dividend Discount Models",
+    "P/E (justified leading)":"Relative Valuation","P/B (justified)":"Relative Valuation",
+    "EV/EBITDA":"Relative Valuation","Enterprise Value":"Relative Valuation",
+    "CAPM":"Risk & Return","Beta":"Risk & Return","Sharpe Ratio":"Risk & Return",
+    "Treynor Ratio":"Risk & Return","Jensen's Alpha":"Risk & Return",
+  },
+  "Fixed Income": {
+    "Bond Price (annuity form)":"Bond Pricing","Bond Price (semi-annual)":"Bond Pricing",
+    "Bond Price (summation)":"Bond Pricing","Current Yield":"Bond Pricing","YTM — solve for y":"Bond Pricing",
+    "Spot/Forward relationship":"Spot & Forward Rates",
+    "Macaulay Duration":"Duration & Convexity","Modified Duration":"Duration & Convexity",
+    "Price change (Duration)":"Duration & Convexity","Price change (Duration+Convexity)":"Duration & Convexity",
+    "PVBP / DV01":"Duration & Convexity","Convexity (approx.)":"Duration & Convexity",
+    "Portfolio Duration":"Portfolio & Spreads","Yield Spread":"Portfolio & Spreads","OAS":"Portfolio & Spreads",
+  },
+  "Derivatives": {
+    "Call Payoff (long)":"Options","Put Payoff (long)":"Options",
+    "Put-Call Parity":"Options","Put-Call Parity (dividends)":"Options","Delta (option)":"Options",
+    "Forward Price (no income)":"Forwards & Futures","Forward Price (with income)":"Forwards & Futures",
+    "Forward Price (continuous)":"Forwards & Futures",
+    "FRA settlement":"FRAs & Swaps","Swap fixed rate":"FRAs & Swaps",
+    "Binomial option (1-period)":"Option Pricing",
+  },
+  "Portfolio Management": {
+    "Expected Return (portfolio)":"Portfolio Construction","Portfolio Variance (2 asset)":"Portfolio Construction",
+    "CML (Capital Market Line)":"Capital Market Theory","SML (CAPM)":"Capital Market Theory","Beta":"Capital Market Theory",
+    "Tracking Error":"Performance Measures","Sharpe Ratio":"Performance Measures",
+    "Treynor Ratio":"Performance Measures","Jensen's Alpha":"Performance Measures",
+    "Information Ratio":"Performance Measures","M² (Modigliani)":"Performance Measures",
+    "Roy's Safety-First":"Risk Management",
+  },
+  "Alternatives": {
+    "NAV per share":"Funds & Structures",
+    "PE / VC IRR":"Private Equity","Management Fee (PE)":"Private Equity",
+    "Carried Interest":"Private Equity","MOIC (multiple on invested capital)":"Private Equity",
+    "Cap Rate (Real Estate)":"Real Assets","Gross vs Net Return (RE)":"Real Assets",
+    "Commodity futures return":"Commodities",
+  },
+};
+
 function FracFormula({parts}){
   return(
     <span style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:"4px",fontFamily:"'Courier New',monospace",fontSize:12,color:C.accentLight,lineHeight:2}}>
@@ -4362,7 +4445,11 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const [resolvedGapKeys, setResolvedGapKeys] = useState(()=>{try{return new Set(JSON.parse(localStorage.getItem(RESOLVED_GAPS_KEY)||"[]"));}catch{return new Set();}});
   const markGapResolved=(key)=>setResolvedGapKeys(s=>{const n=new Set([...s,key]);try{localStorage.setItem(RESOLVED_GAPS_KEY,JSON.stringify([...n]));}catch{}return n;});
   const [expandedFormula, setExpandedFormula] = useState(null);
+  const [expandedFormulaModule, setExpandedFormulaModule] = useState(null);
   const [lessonGenerating, setLessonGenerating] = useState({});
+
+  // Reset formula module accordion when topic changes
+  useEffect(()=>{setExpandedFormulaModule(null);setExpandedFormula(null);},[selTopic]);
 
   // Auto-select first formula-bearing topic when switching to formulas tab; auto-generate lesson for Pro users
   useEffect(()=>{
@@ -4390,6 +4477,15 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   });
   const formulaData = [...staticFormulas, ...dynamicFormulaData];
   const allFormulas = Object.values(FORMULAS).flat();
+  // Enrich formulaData with module groupings; build ordered module list
+  const _fModLookup = FORMULA_MODULES[selTopic] || {};
+  const enrichedFormulas = formulaData.map((f, fi) => ({...f, _fi: fi, module: f.module || _fModLookup[f.name] || "General"}));
+  const _fModOrder = [];
+  const _fModMap = {};
+  for (const f of enrichedFormulas) {
+    if (!_fModMap[f.module]) { _fModMap[f.module] = []; _fModOrder.push(f.module); }
+    _fModMap[f.module].push(f);
+  }
 
   const drillData = formulaData.length > 0 ? formulaData : allFormulas;
   const drillTotal = drillData.length;
@@ -4732,8 +4828,12 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                     <div style={{background:"#0e0818",border:"1px solid #c0304433",borderRadius:10,overflow:"hidden"}}>
                       {[...matchedIdxs].map((fi,i,arr)=>{
                         const f=formulaData[fi];
+                        const fmod=enrichedFormulas[fi]?.module;
                         return(
-                          <button key={fi} onClick={()=>document.getElementById(`formula-${fi}`)?.scrollIntoView({behavior:"smooth",block:"center"})}
+                          <button key={fi} onClick={()=>{
+                            if(fmod){setExpandedFormulaModule(fmod);}
+                            setTimeout(()=>document.getElementById(`formula-${fi}`)?.scrollIntoView({behavior:"smooth",block:"center"}),50);
+                          }}
                             style={{width:"100%",display:"flex",gap:12,alignItems:"flex-start",padding:"10px 14px",background:"none",border:"none",borderBottom:i<arr.length-1?"1px solid #c0304422":"none",cursor:"pointer",textAlign:"left"}}>
                             <div style={{fontSize:11,color:"#a05070",minWidth:110,flexShrink:0,paddingTop:2,lineHeight:1.4}}>{f.name}</div>
                             <div style={{fontSize:12,color:"#d090a0",fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
@@ -4805,26 +4905,46 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
               {formulaData.length===0&&!dynamicFormulas[selTopic]?.length?(
                 <div style={{textAlign:"center",padding:"40px 0",color:C.muted,fontSize:13}}>No formula sheet for this topic — it's primarily conceptual.</div>
               ):(
-                <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,overflow:"hidden"}}>
-                  {formulaData.map((f,i)=>{
-                    const isExp=expandedFormula===i;
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {_fModOrder.map((modName)=>{
+                    const isModOpen=expandedFormulaModule===modName;
+                    const mFormulas=_fModMap[modName];
                     return(
-                      <div key={i} id={`formula-${i}`} style={{borderBottom:i<formulaData.length-1?`1px solid ${C.border}`:"none"}}>
-                        <div onClick={()=>setExpandedFormula(isExp?null:i)}
-                          style={{display:"flex",gap:10,alignItems:"flex-start",padding:"11px 16px",cursor:"pointer",background:isExp?`${C.accent}08`:"transparent",transition:"background 0.15s"}}>
-                          <div style={{fontSize:11,color:f._aiGen?"#a060e0":C.muted,minWidth:100,flexShrink:0,lineHeight:1.4,paddingTop:2}}>{f.name}{f._aiGen&&<span style={{fontSize:9,color:"#7c5cbf",marginLeft:4}}>✦ AI</span>}</div>
-                          <div style={{fontSize:13,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
-                          <span style={{fontSize:10,color:C.muted,flexShrink:0,paddingTop:3}}>{isExp?"▲":"▼"}</span>
-                        </div>
-                        {isExp&&(
-                          <div style={{padding:"0 16px 12px",animation:"fadeIn 0.15s ease"}}>
-                            {f.variables&&<div style={{fontSize:11,color:C.muted,lineHeight:1.7,marginBottom:8,whiteSpace:"pre-line"}}>{f.variables}</div>}
-                            {f.when&&<div style={{fontSize:11,color:C.textMid,fontStyle:"italic",marginBottom:8}}>📌 {f.when}</div>}
-                            {f.example&&<div style={{fontSize:11,color:C.easy,marginBottom:10}}>💡 {f.example}</div>}
-                            <button onClick={()=>openAI(`Formula: ${f.name}`,`CFA Level ${cfaLevel} exam prep. Formula: ${f.name} = ${f.f}\n\nExplain what each variable means, walk me through a numeric example, and tell me how this formula typically appears on the exam. Be concise.`)}
-                              style={{fontSize:11,fontWeight:700,padding:"7px 14px",borderRadius:8,background:`${C.accent}18`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
-                              💬 Ask AI about this formula
-                            </button>
+                      <div key={modName} style={{background:C.surface,border:`1px solid ${isModOpen?C.accent+"55":C.border}`,borderRadius:12,overflow:"hidden",transition:"border-color 0.15s"}}>
+                        <button onClick={()=>setExpandedFormulaModule(isModOpen?null:modName)}
+                          style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",background:isModOpen?`${C.accent}0a`:"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
+                          <div>
+                            <div style={{fontSize:13,fontWeight:700,color:C.text}}>{modName}</div>
+                            <div style={{fontSize:10,color:C.muted,marginTop:2}}>{mFormulas.length} formula{mFormulas.length!==1?"s":""}</div>
+                          </div>
+                          <span style={{fontSize:11,color:C.muted}}>{isModOpen?"▲":"▼"}</span>
+                        </button>
+                        {isModOpen&&(
+                          <div style={{borderTop:`1px solid ${C.border}`}}>
+                            {mFormulas.map((f,i)=>{
+                              const isExp=expandedFormula===f._fi;
+                              return(
+                                <div key={f._fi} id={`formula-${f._fi}`} style={{borderBottom:i<mFormulas.length-1?`1px solid ${C.border}`:"none"}}>
+                                  <div onClick={()=>setExpandedFormula(isExp?null:f._fi)}
+                                    style={{display:"flex",gap:10,alignItems:"flex-start",padding:"11px 16px",cursor:"pointer",background:isExp?`${C.accent}08`:"transparent",transition:"background 0.15s"}}>
+                                    <div style={{fontSize:11,color:f._aiGen?"#a060e0":C.muted,minWidth:96,flexShrink:0,lineHeight:1.4,paddingTop:2}}>{f.name}{f._aiGen&&<span style={{fontSize:9,color:"#7c5cbf",marginLeft:4}}>✦ AI</span>}</div>
+                                    <div style={{fontSize:13,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
+                                    <span style={{fontSize:10,color:C.muted,flexShrink:0,paddingTop:3}}>{isExp?"▲":"▼"}</span>
+                                  </div>
+                                  {isExp&&(
+                                    <div style={{padding:"0 16px 12px",animation:"fadeIn 0.15s ease"}}>
+                                      {f.variables&&<div style={{fontSize:11,color:C.muted,lineHeight:1.7,marginBottom:8,whiteSpace:"pre-line"}}>{f.variables}</div>}
+                                      {f.when&&<div style={{fontSize:11,color:C.textMid,fontStyle:"italic",marginBottom:8}}>📌 {f.when}</div>}
+                                      {f.example&&<div style={{fontSize:11,color:C.easy,marginBottom:10}}>💡 {f.example}</div>}
+                                      <button onClick={()=>openAI(`Formula: ${f.name}`,`CFA Level ${cfaLevel} exam prep. Formula: ${f.name} = ${f.f}\n\nExplain what each variable means, walk me through a numeric example, and tell me how this formula typically appears on the exam. Be concise.`)}
+                                        style={{fontSize:11,fontWeight:700,padding:"7px 14px",borderRadius:8,background:`${C.accent}18`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                                        💬 Ask AI about this formula
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -4832,7 +4952,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                   })}
                 </div>
               )}
-              <div style={{marginTop:10,fontSize:11,color:C.muted,textAlign:"center"}}>{formulaData.length} formulas · switch topic above</div>
+              <div style={{marginTop:10,fontSize:11,color:C.muted,textAlign:"center"}}>{formulaData.length} formulas across {_fModOrder.length} subtopics · switch topic above</div>
             </>
           )}
 
