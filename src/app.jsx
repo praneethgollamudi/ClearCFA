@@ -3909,14 +3909,39 @@ async function callAIChat(userId, messages, maxTokens=450, level="1"){
   }catch{return null;}
 }
 
+// Self-contained formula block with optional AI breakdown button.
+function FormulaBlock({text,C,onExplain}){
+  const [exp,setExp]=React.useState(null);
+  const [loading,setLoading]=React.useState(false);
+  return(
+    <div style={{margin:"7px 0"}}>
+      <div style={{fontFamily:"'Courier New',monospace",fontSize:12,background:`${C.accent}12`,border:`1px solid ${C.accent}33`,borderLeft:`3px solid ${C.accentLight}`,borderRadius:"0 8px 8px 0",padding:"9px 12px",color:C.accentLight,wordBreak:"break-word",lineHeight:1.9}}>{text}</div>
+      {!exp&&!loading&&onExplain&&(
+        <button onClick={async()=>{setLoading(true);try{const r=await onExplain(text);setExp(r);}catch{setExp("Could not explain — try again.");}setLoading(false);}}
+          style={{marginTop:5,fontSize:11,color:C.accentLight,background:"none",border:`1px solid ${C.accent}33`,borderRadius:6,padding:"4px 11px",cursor:"pointer"}}>
+          🔍 Break it down
+        </button>
+      )}
+      {loading&&<div style={{marginTop:5,fontSize:11,color:C.muted,fontStyle:"italic"}}>Analysing formula…</div>}
+      {exp&&(
+        <div style={{marginTop:6,background:`${C.accent}08`,border:`1px solid ${C.accent}22`,borderRadius:8,padding:"10px 13px",fontSize:12,color:C.text,lineHeight:1.75,whiteSpace:"pre-wrap"}}>
+          {exp}
+          <button onClick={()=>setExp(null)} style={{display:"block",marginTop:8,fontSize:10,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:0}}>✕ Close</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Renders explanation text with formula sentences in a distinct monospace block.
 // A sentence is "formula-heavy" if it contains = and complex math operators (^, /, [, *).
-function renderExplanation(text,C){
+// Pass onExplain(formulaText)=>Promise<string> to enable the "Break it down" button.
+function renderExplanation(text,C,onExplain){
   if(!text)return null;
   const parts=text.split(/\.\s+(?=[A-Z\$\(])/).filter(Boolean);
   const isFormula=s=>/=/.test(s)&&/[\^\/\[\]\*]/.test(s)&&/\d/.test(s);
   if(!parts.some(isFormula))return <span>{text}</span>;
-  return(<>{parts.map((s,i)=>{const trimmed=s.trim();const last=i===parts.length-1;if(isFormula(trimmed)){return(<div key={i} style={{fontFamily:"'Courier New',monospace",fontSize:12,background:`${C.accent}12`,border:`1px solid ${C.accent}33`,borderLeft:`3px solid ${C.accentLight}`,borderRadius:"0 8px 8px 0",padding:"9px 12px",margin:"7px 0",color:C.accentLight,wordBreak:"break-word",lineHeight:1.9}}>{trimmed}</div>);}return <span key={i}>{trimmed}{!last?". ":""}</span>;})}</>);
+  return(<>{parts.map((s,i)=>{const trimmed=s.trim();const last=i===parts.length-1;if(isFormula(trimmed)){return <FormulaBlock key={i} text={trimmed} C={C} onExplain={onExplain}/>;}return <span key={i}>{trimmed}{!last?". ":""}</span>;})}</>);
 }
 
 function parseRefresherReveal(text){
@@ -9019,7 +9044,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {showExp&&mode==="guided"&&answered&&(
         <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:"#a0a0c0",lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>Explanation</div>
-          {renderExplanation(q.explanation,C)}
+          {renderExplanation(q.explanation,C,authUser?.id?async(formulaText)=>{
+            const prompt=`CFA exam tutor. A student wants to understand this formula:\n\n"${formulaText}"\n\nContext: topic "${topic}", concept "${q.concept||q.los_tested||""}"\n\nExplain in plain English using exactly this format:\n• [variable] = [what it means] (use the actual number from the formula if present)\nRepeat for each variable/component, then one final bullet:\n• Formula calculates: [one sentence on what the result represents]\n\nNo preamble. Under 100 words total.`;
+            const r=await callClaude(prompt,250,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"formula_explain"});
+            return typeof r==="string"?r:"Formula breakdown unavailable.";
+          }:null)}
           {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:"#6060a0"}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
           {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:"#60508a"}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
         </div>
