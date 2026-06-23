@@ -8336,20 +8336,21 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     {/* More actions — sorted by usage frequency, collapsed by default */}
     {(()=>{
+      const gridStyle={background:C.surface,border:`1px solid ${C.border}`,color:C.textMid};
       const moreItems=[
-        {key:"mix",label:"⚡ Weak Spots",style:{background:C.accent+"12",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
-        {key:"vignette",label:"📖 Vignette",style:{background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight},action:()=>{trackUsage("vignette");setVignetteMode(true);setScreen("setup");}},
-        {key:"full_exam",label:"🎓 Full Exam",style:{background:C.surfaceHigh,border:`1px solid ${C.accentLight}33`,color:C.accentLight},action:()=>{trackUsage("full_exam");startFullExam();}},
-        {key:"ethics",label:"⚖️ Ethics",style:{background:C.surface,border:`1px solid ${C.hard}`,color:C.hard},action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
-        {key:"dashboard",label:"📈 Dashboard",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
-        {key:"revise",label:"📝 Notes",style:{background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
-        {key:"formulas",label:"🔢 Formulas",style:{background:C.reward+"15",border:`1px solid ${C.reward}44`,color:C.rewardLight},action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
-        {key:"week_plan",label:"🗓 Week Plan",proTag:true,style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
-        {key:"calc_trainer",label:"🧮 Calc Trainer",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
-        {key:"los_coverage",label:"📍 LOS Map",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
-        {key:"mastery_grid",label:"🏆 Mastery Grid",style:{background:C.surface,border:`1px solid ${C.border}`,color:C.textMid},action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
-        {key:"interleaved",label:"🔀 Mixed Topics",style:{background:C.accent+"12",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
-        {key:"study_path",label:"🎓 Study Path",style:{background:C.accent+"12",border:`1px solid ${C.accent}44`,color:C.accentLight},action:()=>{trackUsage("study_path");setScreen("studyPath");}},
+        {key:"mix",label:"⚡ Weak Spots",style:gridStyle,action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
+        {key:"vignette",label:"📖 Vignette",style:gridStyle,action:()=>{trackUsage("vignette");setVignetteMode(true);setScreen("setup");}},
+        {key:"full_exam",label:"🎓 Full Exam",style:gridStyle,action:()=>{trackUsage("full_exam");startFullExam();}},
+        {key:"ethics",label:"⚖️ Ethics",style:gridStyle,action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
+        {key:"dashboard",label:"📈 Dashboard",style:gridStyle,action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
+        {key:"revise",label:"📝 Notes",style:gridStyle,action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
+        {key:"formulas",label:"🔢 Formulas",style:gridStyle,action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
+        {key:"week_plan",label:"🗓 Week Plan",proTag:true,style:gridStyle,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
+        {key:"calc_trainer",label:"🧮 Calc Trainer",style:gridStyle,action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
+        {key:"los_coverage",label:"📍 LOS Map",style:gridStyle,action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
+        {key:"mastery_grid",label:"🏆 Mastery Grid",style:gridStyle,action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
+        {key:"interleaved",label:"🔀 Mixed Topics",style:gridStyle,action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
+        {key:"study_path",label:"🎓 Study Path",style:gridStyle,action:()=>{trackUsage("study_path");setScreen("studyPath");}},
       ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
       return(<>
         <button onClick={()=>{trackUsage("more_toggle");setShowMoreActions(v=>!v);}} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:11,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",marginBottom:showMoreActions?8:0,fontSize:12,fontWeight:600}}>
