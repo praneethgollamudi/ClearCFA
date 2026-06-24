@@ -2927,6 +2927,7 @@ function _applyTheme(t){
   diffC.Easy=C.easy;diffC.Medium=C.medium;diffC.Hard=C.hard;
   urgencyColor.high=C.hard;urgencyColor.medium=C.medium;urgencyColor.low=C.easy;
   try{document.body.style.background=C.bg;document.documentElement.style.setProperty('--app-bg',C.bg);}catch{}
+  try{window.dispatchEvent(new CustomEvent('cfa_theme',{detail:t}));}catch{}
 }
 
 // ── Freemium tier ─────────────────────────────────────────────────────────────
@@ -5203,7 +5204,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
               <input value={aiInput} onChange={e=>setAiInput(e.target.value)}
                 onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendAI();}}}
                 placeholder="Ask a follow-up question…"
-                style={{flex:1,padding:"10px 13px",borderRadius:10,background:"#0a0a1a",border:`1px solid ${C.accent}33`,color:C.text,fontSize:13,outline:"none"}}
+                style={{flex:1,padding:"10px 13px",borderRadius:10,background:C.surface,border:`1px solid ${C.accent}33`,color:C.text,fontSize:13,outline:"none"}}
               />
               <button onClick={sendAI} disabled={aiLoading||!aiInput.trim()}
                 style={{padding:"10px 16px",borderRadius:10,fontSize:13,fontWeight:700,background:aiLoading||!aiInput.trim()?C.dim:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:aiLoading||!aiInput.trim()?C.muted:"#fff",border:"none",cursor:aiLoading||!aiInput.trim()?"not-allowed":"pointer",flexShrink:0}}>
@@ -6588,6 +6589,7 @@ function LofiPlayer(){
   const [isPlaying,setIsPlaying]=useState(false);
   const [vol,setVol]=useState(()=>{try{return parseFloat(localStorage.getItem('cfa_lofi_vol')||'0.35');}catch{return 0.35;}});
   const [showPanel,setShowPanel]=useState(false);
+  const [lTheme,setLTheme]=useState(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}});
   const ctxRef=useRef(null);
   const masterRef=useRef(null);
   const sched=useRef(null); // {nextBeat, beatCount, chordIdx, active}
@@ -7985,7 +7987,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <input value={reviewAiInput} onChange={e=>setReviewAiInput(e.target.value)}
             onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendReviewAI();}}}
             placeholder="Ask a follow-up question…"
-            style={{flex:1,padding:"10px 13px",borderRadius:10,background:"#0a0a1a",border:`1px solid ${C.accent}33`,color:C.text,fontSize:13,outline:"none"}}
+            style={{flex:1,padding:"10px 13px",borderRadius:10,background:C.surface,border:`1px solid ${C.accent}33`,color:C.text,fontSize:13,outline:"none"}}
           />
           <button onClick={sendReviewAI} disabled={reviewAiLoading||!reviewAiInput.trim()}
             style={{padding:"10px 16px",borderRadius:10,fontSize:13,fontWeight:700,background:reviewAiLoading||!reviewAiInput.trim()?C.dim:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:reviewAiLoading||!reviewAiInput.trim()?C.muted:"#fff",border:"none",cursor:reviewAiLoading||!reviewAiInput.trim()?"not-allowed":"pointer",flexShrink:0}}>→</button>
@@ -8084,8 +8086,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
       const untouched=moduleReadiness.filter(m=>m.sessions===0).length;
       return(
-        <div style={{background:"#080818",border:`1px solid #22d3ee22`,borderRadius:11,padding:"12px 14px",marginBottom:14,fontSize:11,color:C.muted}}>
-          <span style={{color:"#22d3ee",fontWeight:700}}>Context loaded: </span>
+        <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"12px 14px",marginBottom:14,fontSize:11,color:C.muted}}>
+          <span style={{color:C.accentLight,fontWeight:700}}>Context loaded: </span>
           {history.length} sessions · {daysLeft} days to exam ·
           {topWeak.length>0?` Weakest: ${topWeak[0].topic.split(" ")[0]} (${topWeak[0].accuracy}%) ·`:""}
           {untouched>0?` ${untouched} untouched modules`:""}
@@ -9788,7 +9790,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
             {Object.entries(card.options).map(([key,val])=>{const isCorrect=key===card.answer,wasPicked=key===srAnswer;return(<div key={key} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 15px",borderRadius:10,background:isCorrect?"#041a0e":wasPicked&&!isCorrect?"#1a0407":C.surface,border:`1.5px solid ${isCorrect?"#22a05a":wasPicked&&!isCorrect?C.hard:C.border}`,fontSize:13,lineHeight:1.65,color:isCorrect?"#4ade80":wasPicked&&!isCorrect?"#fca5a5":C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?"#22a05a":wasPicked&&!isCorrect?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
           </div>
-          <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"14px",marginBottom:6,fontSize:13,color:"#a0a0c0",lineHeight:1.75}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"14px",marginBottom:6,fontSize:13,color:C.textMid,lineHeight:1.75}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
               <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Explanation</div>
               <button onClick={()=>openReviewAI(`${card.concept||card.subtopic||"SR Card"} · ${card.topic}`,`CFA Level 1 — I just answered a spaced repetition card.\n\nConcept: "${card.concept||card.subtopic}"\nTopic: ${card.topic}\n\nExplanation given: "${card.explanation}"\n${card.los_tested?`LOS: ${card.los_tested}`:""}${card.misconception_targeted?`\nCommon error: ${card.misconception_targeted}`:""}\n\nHelp me understand this deeply with a worked example and the key exam nuance I must not miss.`)}
@@ -9799,7 +9801,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             {card.explanation}
           </div>
           {card.los_tested&&<div style={{background:C.dim,borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:11,color:C.muted}}><span style={{fontWeight:700,color:C.accentLight}}>LOS: </span>{card.los_tested}</div>}
-          {card.misconception_targeted&&<div style={{background:"#0a0518",borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:11,color:"#8060c0"}}><span style={{fontWeight:700}}>Common error tested: </span>{card.misconception_targeted}</div>}
+          {card.misconception_targeted&&<div style={{background:C.surface,borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Common error tested: </span>{card.misconception_targeted}</div>}
           <div style={{background:srAnswer===card.answer?"#041a0e":"#1a0407",border:`1px solid ${srAnswer===card.answer?"#22a05a44":C.hard+"44"}`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:srAnswer===card.answer?C.easy:C.hard,fontWeight:600}}>
             {srAnswer===card.answer?`✓ Correct — next review in ${sm2Update(card,true).interval} days`:`✗ Incorrect — review again tomorrow${isLeech?" · Consider re-reading this LOS in your curriculum":""}` }
           </div>
@@ -9921,10 +9923,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
           })}
         </div>
         {subtopic&&activeLOS[topic]?.modules[subtopic]&&(
-          <div style={{marginTop:12,background:"#0a0a18",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px"}}>
+          <div style={{marginTop:12,background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px"}}>
             <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>LOS for this module ({activeLOS[topic].modules[subtopic].length} statements)</div>
             {activeLOS[topic].modules[subtopic].map((l,i)=>(
-              <div key={i} style={{fontSize:11,color:"#7070a0",lineHeight:1.6,marginBottom:4,display:"flex",gap:6}}>
+              <div key={i} style={{fontSize:11,color:C.muted,lineHeight:1.6,marginBottom:4,display:"flex",gap:6}}>
                 <span style={{color:C.accent,flexShrink:0,fontWeight:700}}>·</span><span>…{l}</span>
               </div>
             ))}
@@ -10118,15 +10120,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       )}
       {showExp&&mode==="guided"&&answered&&(
-        <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:"#a0a0c0",lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:C.textMid,lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>Explanation</div>
           {renderExplanation(q.explanation,C,authUser?.id?async(formulaText)=>{
             const prompt=`CFA exam tutor. A student sees this formula in an exam explanation and doesn't know what it is:\n\n"${formulaText}"\n\nContext: topic "${topic}", concept "${q.concept||q.los_tested||""}"\n\nRespond in EXACTLY this format (no preamble, no extra text):\n📐 [Official CFA/finance name for this formula, e.g. "Bond Pricing Formula" or "Macaulay Duration"]\nStandard form: [compact textbook version, e.g. P = Σ C/(1+y)ᵗ + FV/(1+y)ⁿ]\n\n• [symbol from formula] = [plain-English meaning] (= [actual value if present in formula])\n[one bullet per variable/component]\n\nCalculates: [one sentence — what does solving this formula give you?]\n\nUnder 120 words total.`;
             const r=await callClaude(prompt,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"formula_explain"});
             return typeof r==="string"?r:"Formula breakdown unavailable.";
           }:null,q.concept||q.los_tested||"")}
-          {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:"#6060a0"}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
-          {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:"#60508a"}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
+          {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.muted}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
+          {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
         </div>
       )}
       {!answered&&mode!=="speed_drill"&&(
@@ -10174,13 +10176,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 setExplainThisText(typeof result==="string"?result:q.explanation||"");
               }catch(e){setExplainThisText("Could not load explanation.");}
               setExplainThisLoading(false);
-            }} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:600,background:"#09091a",border:`1px solid #22d3ee22`,color:"#22d3ee",cursor:"pointer"}}>
+            }} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.accent}33`,color:C.accentLight,cursor:"pointer"}}>
               💡 Explain This
             </button>
           )}
-          {explainThisLoading&&<div style={{background:"#09091a",border:`1px solid #22d3ee22`,borderRadius:9,padding:"12px 14px",fontSize:12,color:C.muted}}>Thinking…</div>}
+          {explainThisLoading&&<div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:9,padding:"12px 14px",fontSize:12,color:C.muted}}>Thinking…</div>}
           {explainThisText&&(
-            <div style={{background:"#09091a",border:`1px solid #22d3ee22`,borderRadius:9,padding:"12px 14px",fontSize:12,color:"#a0d8e8",lineHeight:1.7,animation:"fadeIn 0.2s ease"}}>
+            <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:9,padding:"12px 14px",fontSize:12,color:C.textMid,lineHeight:1.7,animation:"fadeIn 0.2s ease"}}>
               💡 {explainThisText}
             </div>
           )}
@@ -10314,14 +10316,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       )}
 
-      {wrongs.length>0&&<div style={{background:"#0a0a1f",border:`1px solid ${C.accent}33`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:C.muted}}>📋 {wrongs.length} wrong answer{wrongs.length!==1?"s":""} added to SR deck with LOS tags + misconception flags.</div>}
+      {wrongs.length>0&&<div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:C.muted}}>📋 {wrongs.length} wrong answer{wrongs.length!==1?"s":""} added to SR deck with LOS tags + misconception flags.</div>}
 
       {/* AI Session Debrief */}
       {authUser?.id&&wrongs.length>0&&(
-        <div style={{background:"#080818",border:`1px solid #22d3ee33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+        <div style={{background:C.surface,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#22d3ee"}}>🤖 AI Debrief</div>
-            {aiDebriefLoading&&<span style={{fontSize:11,color:"#22d3ee66",fontStyle:"italic"}}>Analysing session…</span>}
+            <div style={{fontSize:12,fontWeight:700,color:C.accentLight}}>🤖 AI Debrief</div>
+            {aiDebriefLoading&&<span style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>Analysing session…</span>}
           </div>
           {aiDebriefLoading&&<Skeleton height={80} radius={6}/>}
           {aiDebrief&&(()=>{
@@ -10329,8 +10331,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
             return(
               <div>
                 {d.pattern&&(
-                  <div style={{background:"#22d3ee0d",borderLeft:"3px solid #22d3ee44",borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:9,fontSize:12,color:"#a0d8e8",lineHeight:1.65}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#22d3ee77",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>⚠ Root pattern</div>
+                  <div style={{background:C.accent+"0d",borderLeft:`3px solid ${C.accent}44`,borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:9,fontSize:12,color:C.textMid,lineHeight:1.65}}>
+                    <div style={{fontSize:10,fontWeight:700,color:C.accentLight,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>⚠ Root pattern</div>
                     {d.pattern}
                   </div>
                 )}
@@ -10342,15 +10344,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 )}
                 {(d.priority||d.time)&&(
                   <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:10}}>
-                    {d.priority&&<span style={{fontSize:11,color:"#a0d8e8"}}>Focus: <b style={{color:"#22d3ee"}}>{d.priority}</b></span>}
-                    {d.time&&<span style={{fontSize:11,background:"#22d3ee15",border:"1px solid #22d3ee33",borderRadius:20,padding:"2px 10px",color:"#22d3ee",flexShrink:0}}>⏱ {d.time}</span>}
+                    {d.priority&&<span style={{fontSize:11,color:C.textMid}}>Focus: <b style={{color:C.accentLight}}>{d.priority}</b></span>}
+                    {d.time&&<span style={{fontSize:11,background:C.accent+"15",border:`1px solid ${C.accent}33`,borderRadius:20,padding:"2px 10px",color:C.accentLight,flexShrink:0}}>⏱ {d.time}</span>}
                   </div>
                 )}
                 <button onClick={()=>generateQuestions(topic,subtopic,difficulty,5,"guided")}
-                  style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:"#22d3ee22",border:"1px solid #22d3ee44",color:"#22d3ee",cursor:"pointer",marginBottom:d.coach?10:0}}>
+                  style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",marginBottom:d.coach?10:0}}>
                   🔁 Drill weak concepts now — 5 questions
                 </button>
-                {d.coach&&<div style={{fontSize:11,color:"#6a8a9a",lineHeight:1.6,fontStyle:"italic",textAlign:"center"}}>"{d.coach}"</div>}
+                {d.coach&&<div style={{fontSize:11,color:C.muted,lineHeight:1.6,fontStyle:"italic",textAlign:"center"}}>"{d.coach}"</div>}
               </div>
             );
           })()}
@@ -10362,12 +10364,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10}}>Missed ({wrongs.length})</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {wrongs.map(q=>(
-              <div key={q.id} style={{background:C.surface,border:`1px solid #2a1018`,borderRadius:10,padding:"14px"}}>
+              <div key={q.id} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"14px"}}>
                 <div style={{fontSize:13,color:C.text,lineHeight:1.6,marginBottom:8}}>{q.question}</div>
                 <div style={{fontSize:12,color:C.muted}}>Your: <span style={{color:"#f87171"}}>{answers[q.id]||"–"}</span> · Correct: <span style={{color:C.easy}}>{q.answer}</span></div>
-                <div style={{fontSize:12,color:"#6a6a8a",marginTop:8,lineHeight:1.65,borderTop:`1px solid ${C.border}`,paddingTop:8}}>{renderExplanation(q.explanation,C)}</div>
-                {q.los_tested&&<div style={{fontSize:11,color:"#5050a0",marginTop:6}}><span style={{fontWeight:700}}>LOS: </span>{q.los_tested}</div>}
-                {q.misconception_targeted&&<div style={{fontSize:11,color:"#60508a",marginTop:4}}><span style={{fontWeight:700}}>Error pattern: </span>{q.misconception_targeted}</div>}
+                <div style={{fontSize:12,color:C.muted,marginTop:8,lineHeight:1.65,borderTop:`1px solid ${C.border}`,paddingTop:8}}>{renderExplanation(q.explanation,C)}</div>
+                {q.los_tested&&<div style={{fontSize:11,color:C.muted,marginTop:6}}><span style={{fontWeight:700}}>LOS: </span>{q.los_tested}</div>}
+                {q.misconception_targeted&&<div style={{fontSize:11,color:C.muted,marginTop:4}}><span style={{fontWeight:700}}>Error pattern: </span>{q.misconception_targeted}</div>}
                 <button onClick={()=>{setRevisionTopic(q._topic||topic);setRevisionTab("notes");setRevisionConcept(q.concept||q.los_tested||null);setScreen("revision");}}
                   style={{marginTop:10,fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:7,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                   📚 Review in Power Notes →
@@ -11057,7 +11059,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
         {Object.entries(w.options).map(([key,val])=>{const isCorrect=key===w.answer,wasWrong=key===w.userAnswer&&!isCorrect;return(<div key={key} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 14px",borderRadius:10,background:isCorrect?"#041a0e":wasWrong?"#1a0407":C.surface,border:`1.5px solid ${isCorrect?"#22a05a":wasWrong?C.hard:C.border}`,fontSize:13,lineHeight:1.6,color:isCorrect?"#4ade80":wasWrong?"#fca5a5":C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?"#22a05a":wasWrong?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
       </div>
-      <div style={{background:"#08081a",border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:6,fontSize:13,color:"#9090b8",lineHeight:1.75}}>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:6,fontSize:13,color:C.textMid,lineHeight:1.75}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Why you missed this</div>
           <button onClick={()=>openReviewAI(`${w.concept||w.subtopic||"Question"} · ${w.topic||""}`,`CFA Level 1 — I got this wrong in a practice session.\n\nConcept: "${w.concept||w.subtopic}"\n${w.topic?`Topic: ${w.topic}\n`:""}\nExplanation: "${w.explanation}"\n${w.los_tested?`LOS: ${w.los_tested}`:""}${w.misconception_targeted?`\nError pattern: ${w.misconception_targeted}`:""}\n\nHelp me truly understand why I missed this and what I must remember for the exam.`)}
@@ -11068,7 +11070,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {renderExplanation(w.explanation,C)}
       </div>
       {w.los_tested&&<div style={{background:C.dim,borderRadius:8,padding:"8px 12px",marginBottom:8,fontSize:11,color:C.muted}}><span style={{fontWeight:700,color:C.accentLight}}>LOS: </span>{w.los_tested}</div>}
-      {w.misconception_targeted&&<div style={{background:"#0a0518",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:11,color:"#8060c0"}}><span style={{fontWeight:700}}>Error pattern: </span>{w.misconception_targeted}</div>}
+      {w.misconception_targeted&&<div style={{background:C.surface,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Error pattern: </span>{w.misconception_targeted}</div>}
       <div style={{display:"flex",gap:9}}>
         {reviewIdx>0&&<button onClick={()=>{setReviewIdx(i=>i-1);setReviewAiPanel(null);}} style={{flex:1,padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>← Prev</button>}
         {reviewIdx<reviewList.length-1?<button onClick={()=>{setReviewIdx(i=>i+1);setReviewAiPanel(null);}} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Next →</button>:<button onClick={()=>setScreen("home")} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.easy},#16c98a)`,color:"#fff",border:"none",cursor:"pointer"}}>Done ✓</button>}
