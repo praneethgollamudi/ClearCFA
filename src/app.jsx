@@ -2939,8 +2939,8 @@ function _applyTheme(t){
 const FREE_DAILY_AI_LIMIT=5;
 const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
 // ── Payment config (update these to change payment details) ───────────────────
-const PAYMENT_UPI_ID='clearcfa@upi';
-const PAYMENT_CONTACT_EMAIL='sai.praneeth557@gmail.com';
+const PAYMENT_UPI_ID='9493413121@upi';
+const PAYMENT_CONTACT_EMAIL='gspbuilds@gmail.com';
 const PAYMENT_WHATSAPP=''; // e.g. '+919876543210' — leave empty to hide WhatsApp option
 // Pro status is validated server-side against the subscriptions table.
 // getCachedProStatus / setCachedProStatus cache the server response for 4 hours.
