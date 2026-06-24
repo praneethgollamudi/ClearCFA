@@ -2990,6 +2990,50 @@ async function checkProFromServer(cfg,userId,email){
     return{isPro,validUntil};
   }catch{return{isPro:false,validUntil:null};}
 }
+// ── Referral system ───────────────────────────────────────────────────────────
+const REFERRAL_THRESHOLD=2; // friends needed per free Pro month
+function getReferralLink(userId){
+  try{const u=new URL(window.location.href);u.search="";u.searchParams.set('ref',userId);return u.toString();}
+  catch{return window.location.origin+window.location.pathname+'?ref='+userId;}
+}
+async function getReferralCount(cfg,referrerId){
+  try{
+    const res=await fetch(`${cfg.url}/rest/v1/referrals?referrer_id=eq.${encodeURIComponent(referrerId)}&select=referee_id`,{
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Prefer":"count=exact"}
+    });
+    const range=res.headers.get('content-range')||'';
+    return parseInt(range.split('/')[1]||'0',10)||0;
+  }catch{return 0;}
+}
+async function grantReferralPro(cfg,referrerId){
+  try{
+    // Fetch current valid_until so we extend from it if still future
+    const res=await fetch(`${cfg.url}/rest/v1/subscriptions?user_id=eq.${encodeURIComponent(referrerId)}&select=valid_until&limit=1`,{
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
+    });
+    const rows=res.ok?await res.json():[];
+    const current=rows[0]?.valid_until;
+    const base=(current&&new Date(current)>new Date())?new Date(current):new Date();
+    base.setDate(base.getDate()+30);
+    await fetch(`${cfg.url}/rest/v1/subscriptions`,{
+      method:'POST',
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},
+      body:JSON.stringify({user_id:referrerId,active:true,valid_until:base.toISOString()})
+    });
+  }catch{}
+}
+async function recordReferral(cfg,referrerId,refereeId){
+  if(!referrerId||!refereeId||referrerId===refereeId)return;
+  try{
+    await fetch(`${cfg.url}/rest/v1/referrals`,{
+      method:'POST',
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Content-Type":"application/json","Prefer":"return=minimal,resolution=ignore-duplicates"},
+      body:JSON.stringify({referrer_id:referrerId,referee_id:refereeId})
+    });
+    const count=await getReferralCount(cfg,referrerId);
+    if(count>0&&count%REFERRAL_THRESHOLD===0) await grantReferralPro(cfg,referrerId);
+  }catch{}
+}
 function getDailyAIUsage(){
   try{
     const d=JSON.parse(localStorage.getItem('cfa_daily_ai')||'null');
@@ -6926,6 +6970,55 @@ function LofiPlayer(){
     </>
   );
 }
+function ReferralCard({userId,cfg,setUpgradeModal}){
+  const [count,setCount]=useState(null);
+  const [copied,setCopied]=useState(false);
+  const link=getReferralLink(userId);
+  const progress=count!==null?count%REFERRAL_THRESHOLD:0;
+  const earned=count!==null?Math.floor(count/REFERRAL_THRESHOLD):0;
+
+  useEffect(()=>{getReferralCount(cfg,userId).then(setCount);},[]);
+
+  const copy=()=>{
+    try{navigator.clipboard.writeText(link);}catch{}
+    setCopied(true);setTimeout(()=>setCopied(false),2000);
+  };
+  const share=()=>{
+    if(navigator.share){navigator.share({title:'ClearCFA — AI-powered CFA prep',text:'Free AI-powered CFA practice tool. Adapts to your weak spots.',url:link}).catch(()=>{});}
+    else copy();
+  };
+
+  return(
+    <div style={{background:`linear-gradient(135deg,${C.accent}12,${C.accent}06)`,border:`1px solid ${C.accent}33`,borderRadius:14,padding:"14px 16px",marginBottom:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+        <div style={{fontSize:13,fontWeight:800,color:C.text}}>🎁 Invite friends · earn Pro</div>
+        {earned>0&&<span style={{fontSize:10,fontWeight:700,background:C.easy+"22",color:C.easy,padding:"2px 8px",borderRadius:20,border:`1px solid ${C.easy}33`}}>{earned} month{earned!==1?"s":""} earned</span>}
+      </div>
+      <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.5}}>Get <strong style={{color:C.accentLight}}>1 month Pro free</strong> for every {REFERRAL_THRESHOLD} friends who sign up.</div>
+      {count!==null&&(
+        <div style={{marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+            <span style={{fontSize:10,color:C.muted}}>{progress}/{REFERRAL_THRESHOLD} friends joined</span>
+            {progress>0&&<span style={{fontSize:10,color:C.accentLight}}>{REFERRAL_THRESHOLD-progress} more for next free month</span>}
+          </div>
+          <div style={{height:5,background:C.border,borderRadius:3,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${Math.round((progress/REFERRAL_THRESHOLD)*100)}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s"}}/>
+          </div>
+        </div>
+      )}
+      <div style={{display:"flex",gap:8}}>
+        <div style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 10px",fontSize:11,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{link}</div>
+        <button onClick={copy} style={{padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:700,background:copied?C.easy+"22":`${C.accent}22`,border:`1px solid ${copied?C.easy:C.accent}44`,color:copied?C.easy:C.accentLight,cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>
+          {copied?"✓":"Copy"}
+        </button>
+        <button onClick={share} style={{padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:700,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>
+          Share
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CFAMock(){
   const [screen,setScreen]=useState("home");
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
@@ -8464,7 +8557,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
         setAuthUser(auth);
         authUserRef.current=auth;
         try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:true}));}catch{}
-        if(isSignup) setShowOnboarding(true);
+        if(isSignup){
+          setShowOnboarding(true);
+          try{const ref=sessionStorage.getItem('cfa_ref');if(ref&&ref!==auth.id){recordReferral(SB_CFG,ref,auth.id);sessionStorage.removeItem('cfa_ref');}}catch{}
+        }
       }catch{
         setAuthError("Something went wrong. Please try again.");
       }
@@ -9663,6 +9759,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </button>
       <button onClick={()=>{trackUsage("ai_coach");setAiCoachScreen(true);}} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 Coach</button>
     </div>
+    {/* Referral card */}
+    {authUser&&<ReferralCard userId={authUser.id} cfg={SB_CFG} setUpgradeModal={setUpgradeModal}/>}
+
     {/* Lucky Dip */}
     <button onClick={()=>{
       if(luckyDipSpinning) return;
@@ -11502,6 +11601,9 @@ function ToastManager(){
     )
   ));
 }
+
+// Capture referral code from URL before React boots
+try{const ref=new URLSearchParams(window.location.search).get('ref');if(ref){sessionStorage.setItem('cfa_ref',ref);}}catch{}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CFAMock));
