@@ -3593,6 +3593,7 @@ function FormulaSheet({topic, level="1"}){
 
 function PowerNotesSheet({topic, level="1"}){
   const [open,setOpen]=useState(false);
+  const [openMod,setOpenMod]=useState(null);
   const notes=getActivePowerNotes(level)[topic];
   if(!notes||!notes.topics||!notes.topics.length)return null;
   const totalRules=notes.topics.reduce((s,t)=>s+(t.rules||[]).length+(t.traps||[]).length,0);
@@ -3600,27 +3601,39 @@ function PowerNotesSheet({topic, level="1"}){
     <div style={{marginBottom:12}}>
       <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.easy}33`,color:C.easy,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
         <span>📝 Power Notes — {topic.split(" ")[0]}</span>
-        <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {totalRules} bullets</span>
+        <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {totalRules} bullets · {notes.topics.length} topics</span>
       </button>
       {open&&(
-        <div style={{background:C.bg,border:`1px solid ${C.easy}22`,borderRadius:"0 0 10px 10px",padding:"10px 14px",display:"flex",flexDirection:"column",gap:10}}>
-          {notes.topics.map((t,ti)=>(
-            <div key={ti}>
-              <div style={{fontSize:10,fontWeight:700,color:C.easy,marginBottom:5,textTransform:"uppercase",letterSpacing:0.5}}>{t.module}</div>
-              {(t.rules||[]).map((r,i)=>(
-                <div key={i} style={{fontSize:11,color:C.text,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.easy}44`,marginBottom:3}}>{r}</div>
-              ))}
-              {(t.traps||[]).length>0&&(
-                <div style={{marginTop:5}}>
-                  <div style={{fontSize:9,color:C.hard,fontWeight:700,marginBottom:3,letterSpacing:0.5}}>⚠ TRAPS</div>
-                  {t.traps.map((r,i)=>(
-                    <div key={i} style={{fontSize:11,color:C.hard,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.hard}66`,marginBottom:3}}>{r}</div>
-                  ))}
-                </div>
-              )}
-              {t.mnemonic&&<div style={{fontSize:10,color:C.accentLight,fontStyle:"italic",marginTop:4,padding:"4px 8px",background:C.dim,borderRadius:6}}>💡 {t.mnemonic}</div>}
-            </div>
-          ))}
+        <div style={{background:C.bg,border:`1px solid ${C.easy}22`,borderRadius:"0 0 10px 10px",overflow:"hidden"}}>
+          {notes.topics.map((t,ti)=>{
+            const isModOpen=openMod===t.module;
+            const count=(t.rules||[]).length+(t.traps||[]).length;
+            return(
+              <div key={ti} style={{borderBottom:ti<notes.topics.length-1?`1px solid ${C.border}`:"none"}}>
+                <button onClick={()=>setOpenMod(isModOpen?null:t.module)}
+                  style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 14px",background:isModOpen?C.easy+"0a":"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
+                  <span style={{fontSize:11,fontWeight:700,color:isModOpen?C.easy:C.muted,textTransform:"uppercase",letterSpacing:0.4}}>{t.module}</span>
+                  <span style={{fontSize:10,color:C.muted}}>{count} · {isModOpen?"▲":"▼"}</span>
+                </button>
+                {isModOpen&&(
+                  <div style={{padding:"4px 14px 12px",display:"flex",flexDirection:"column",gap:3}}>
+                    {(t.rules||[]).map((r,i)=>(
+                      <div key={i} style={{fontSize:11,color:C.text,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.easy}44`,marginBottom:2}}>{r}</div>
+                    ))}
+                    {(t.traps||[]).length>0&&(
+                      <div style={{marginTop:6}}>
+                        <div style={{fontSize:9,color:C.hard,fontWeight:700,marginBottom:4,letterSpacing:0.5}}>⚠ TRAPS</div>
+                        {t.traps.map((r,i)=>(
+                          <div key={i} style={{fontSize:11,color:C.hard,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.hard}66`,marginBottom:2}}>{r}</div>
+                        ))}
+                      </div>
+                    )}
+                    {t.mnemonic&&<div style={{fontSize:10,color:C.accentLight,fontStyle:"italic",marginTop:6,padding:"4px 8px",background:C.dim,borderRadius:6}}>💡 {t.mnemonic}</div>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
