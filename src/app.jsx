@@ -9052,68 +9052,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
       );
     })()}
 
-    {/* Quick Start — 1-tap topic launch */}
-    <div style={{marginBottom:12}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <span style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>Quick Start</span>
-        <button onClick={()=>{trackUsage("setup");setScreen("setup");}} style={{fontSize:11,fontWeight:700,color:C.accentLight,background:"none",border:"none",cursor:"pointer",padding:0}}>Custom →</button>
-      </div>
-      <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none",msOverflowStyle:"none"}}>
-        {(()=>{
-          const sortedTopics=Object.entries(activeTopicMap).map(([t,{weight}])=>{const mr=moduleReadiness.find(m=>m.topic===t);return{t,weight,mr,priority:mr?computeTopicPriority(mr,daysLeft):weight/15};}).sort((a,b)=>b.priority-a.priority);
-          return sortedTopics.map(({t,weight,mr},idx)=>{
-            const notStarted=!mr||mr.sessions===0;
-            const acc=mr?.accuracy??null;
-            const isRec=idx===0;
-            const col=isRec?C.accentLight:notStarted?C.muted:acc>=70?C.easy:acc>=50?C.medium:C.hard;
-            const bg=isRec?C.accent+"22":notStarted?C.surface:acc>=70?C.easy+"15":acc>=50?C.medium+"15":C.hard+"12";
-            const border=isRec?C.accent+"77":notStarted?C.border:acc>=70?C.easy+"44":acc>=50?C.medium+"44":C.hard+"44";
-            const short=({"Quantitative Methods":"Quant","Financial Statement Analysis":"FSA","Corporate Issuers":"Corp","Equity Investments":"Equity","Fixed Income":"Fixed Inc","Derivatives":"Deriv","Alternative Investments":"Alts","Portfolio Management":"Portfolio","Ethics and Professional Standards":"Ethics","Economics":"Econ"})[t]||t.split(" ")[0];
-            const worstMod=(()=>{const e=Object.entries(mr?.moduleStats||{}).filter(([,v])=>v!==null).sort(([,a],[,b])=>(a.pct??100)-(b.pct??100));return e[0]?.[0];})();
-            const mod=mr?.untouchedModules?.[0]||worstMod||mr?.modules?.[0]||Object.keys(activeLOS[t]?.modules||{})[0];
-            const modPct=mr?.moduleStats?.[mod]?.pct??null;
-            const diff=modPct===null?"Medium":modPct>=80?"Hard":modPct<50?"Easy":"Medium";
-            return(
-              <button key={t} onClick={()=>{
-                trackUsage("quick_start");
-                if(!mod){setTopic(t);setScreen("setup");return;}
-                generateQuestions(t,mod,diff,10,"guided");
-              }} style={{flexShrink:0,padding:"8px 13px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",background:bg,border:`1.5px solid ${border}`,color:col,display:"flex",flexDirection:"column",alignItems:"center",gap:1,minWidth:72,transition:"all 0.15s"}}>
-                {isRec&&<span style={{fontSize:8,fontWeight:800,color:C.accentLight,lineHeight:1,marginBottom:1,letterSpacing:"0.04em"}}>⚡ TOP</span>}
-                <span>{short}</span>
-                <span style={{fontSize:9,fontWeight:600,opacity:0.8}}>{notStarted?"New":`${acc??0}%`}</span>
-              </button>
-            );
-          });
-        })()}
-      </div>
-    </div>
-
-    {/* Saved Presets */}
-    {presets.length>0&&(
-      <div style={{marginBottom:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>My Presets</span>
-          <button onClick={()=>{setScreen("setup");}} style={{fontSize:11,fontWeight:700,color:C.accentLight,background:"none",border:"none",cursor:"pointer",padding:0}}>+ New →</button>
-        </div>
-        <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none",msOverflowStyle:"none"}}>
-          {presets.map(p=>(
-            <div key={p.id} style={{flexShrink:0,position:"relative"}}>
-              <button onClick={()=>{
-                trackUsage("preset");
-                if(p.mode==="interleaved"){generateInterleavedSession(p.difficulty,p.count);}
-                else{generateQuestions(p.topic,p.subtopic,p.difficulty,p.warmupEnabled?p.count+3:p.count,p.mode);}
-              }} style={{padding:"8px 22px 8px 12px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",background:C.accent+"15",border:`1.5px solid ${C.accent}44`,color:C.accentLight,display:"flex",flexDirection:"column",alignItems:"flex-start",gap:2,minWidth:80,maxWidth:120,transition:"all 0.15s"}}>
-                <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{p.name}</span>
-                <span style={{fontSize:9,fontWeight:600,color:C.muted}}>{p.mode==="interleaved"?"🔀 Mix":p.topic?.split(" ")[0]} · {p.count}Q · {p.difficulty[0]}</span>
-              </button>
-              <button onClick={()=>{const u=presets.filter(x=>x.id!==p.id);setPresets(u);try{localStorage.setItem(PRESETS_KEY,JSON.stringify(u));}catch{};}} style={{position:"absolute",top:3,right:3,width:15,height:15,borderRadius:3,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>✕</button>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-
     {/* SR due */}
     {dueCards.length>0&&(
       <div onClick={()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}} style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",animation:"glow 3s ease infinite"}}>
@@ -9310,6 +9248,68 @@ Return ONLY a JSON array — no prose, no markdown fences:
         );
       })()}
     </div>
+
+    {/* Quick Start — 1-tap topic launch */}
+    <div style={{marginBottom:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <span style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>Quick Start</span>
+        <button onClick={()=>{trackUsage("setup");setScreen("setup");}} style={{fontSize:11,fontWeight:700,color:C.accentLight,background:"none",border:"none",cursor:"pointer",padding:0}}>Custom →</button>
+      </div>
+      <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none",msOverflowStyle:"none"}}>
+        {(()=>{
+          const sortedTopics=Object.entries(activeTopicMap).map(([t,{weight}])=>{const mr=moduleReadiness.find(m=>m.topic===t);return{t,weight,mr,priority:mr?computeTopicPriority(mr,daysLeft):weight/15};}).sort((a,b)=>b.priority-a.priority);
+          return sortedTopics.map(({t,weight,mr},idx)=>{
+            const notStarted=!mr||mr.sessions===0;
+            const acc=mr?.accuracy??null;
+            const isRec=idx===0;
+            const col=isRec?C.accentLight:notStarted?C.muted:acc>=70?C.easy:acc>=50?C.medium:C.hard;
+            const bg=isRec?C.accent+"22":notStarted?C.surface:acc>=70?C.easy+"15":acc>=50?C.medium+"15":C.hard+"12";
+            const border=isRec?C.accent+"77":notStarted?C.border:acc>=70?C.easy+"44":acc>=50?C.medium+"44":C.hard+"44";
+            const short=({"Quantitative Methods":"Quant","Financial Statement Analysis":"FSA","Corporate Issuers":"Corp","Equity Investments":"Equity","Fixed Income":"Fixed Inc","Derivatives":"Deriv","Alternative Investments":"Alts","Portfolio Management":"Portfolio","Ethics and Professional Standards":"Ethics","Economics":"Econ"})[t]||t.split(" ")[0];
+            const worstMod=(()=>{const e=Object.entries(mr?.moduleStats||{}).filter(([,v])=>v!==null).sort(([,a],[,b])=>(a.pct??100)-(b.pct??100));return e[0]?.[0];})();
+            const mod=mr?.untouchedModules?.[0]||worstMod||mr?.modules?.[0]||Object.keys(activeLOS[t]?.modules||{})[0];
+            const modPct=mr?.moduleStats?.[mod]?.pct??null;
+            const diff=modPct===null?"Medium":modPct>=80?"Hard":modPct<50?"Easy":"Medium";
+            return(
+              <button key={t} onClick={()=>{
+                trackUsage("quick_start");
+                if(!mod){setTopic(t);setScreen("setup");return;}
+                generateQuestions(t,mod,diff,10,"guided");
+              }} style={{flexShrink:0,padding:"8px 13px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",background:bg,border:`1.5px solid ${border}`,color:col,display:"flex",flexDirection:"column",alignItems:"center",gap:1,minWidth:72,transition:"all 0.15s"}}>
+                {isRec&&<span style={{fontSize:8,fontWeight:800,color:C.accentLight,lineHeight:1,marginBottom:1,letterSpacing:"0.04em"}}>⚡ TOP</span>}
+                <span>{short}</span>
+                <span style={{fontSize:9,fontWeight:600,opacity:0.8}}>{notStarted?"New":`${acc??0}%`}</span>
+              </button>
+            );
+          });
+        })()}
+      </div>
+    </div>
+
+    {/* Saved Presets */}
+    {presets.length>0&&(
+      <div style={{marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>My Presets</span>
+          <button onClick={()=>{setScreen("setup");}} style={{fontSize:11,fontWeight:700,color:C.accentLight,background:"none",border:"none",cursor:"pointer",padding:0}}>+ New →</button>
+        </div>
+        <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none",msOverflowStyle:"none"}}>
+          {presets.map(p=>(
+            <div key={p.id} style={{flexShrink:0,position:"relative"}}>
+              <button onClick={()=>{
+                trackUsage("preset");
+                if(p.mode==="interleaved"){generateInterleavedSession(p.difficulty,p.count);}
+                else{generateQuestions(p.topic,p.subtopic,p.difficulty,p.warmupEnabled?p.count+3:p.count,p.mode);}
+              }} style={{padding:"8px 22px 8px 12px",borderRadius:9,fontSize:12,fontWeight:700,cursor:"pointer",background:C.accent+"15",border:`1.5px solid ${C.accent}44`,color:C.accentLight,display:"flex",flexDirection:"column",alignItems:"flex-start",gap:2,minWidth:80,maxWidth:120,transition:"all 0.15s"}}>
+                <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{p.name}</span>
+                <span style={{fontSize:9,fontWeight:600,color:C.muted}}>{p.mode==="interleaved"?"🔀 Mix":p.topic?.split(" ")[0]} · {p.count}Q · {p.difficulty[0]}</span>
+              </button>
+              <button onClick={()=>{const u=presets.filter(x=>x.id!==p.id);setPresets(u);try{localStorage.setItem(PRESETS_KEY,JSON.stringify(u));}catch{};}} style={{position:"absolute",top:3,right:3,width:15,height:15,borderRadius:3,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>✕</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
 
     {/* Daily target tracker */}
     {(()=>{
