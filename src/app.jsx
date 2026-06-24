@@ -3140,7 +3140,7 @@ function XPBar({ level, progress, label, xp, nextXP }) {
                     <span style={{ fontSize:10, color:C.muted }}>{thresholds[i].toLocaleString()} XP</span>
                   </div>
                   <div style={{ height:3, background:C.dim, borderRadius:2, overflow:"hidden" }}>
-                    <div style={{ height:"100%", width:`${pct}%`, background:current?`linear-gradient(90deg,${C.reward},${C.rewardLight})`:reached?"#4ade8066":"transparent", borderRadius:2 }} />
+                    <div style={{ height:"100%", width:`${pct}%`, background:current?`linear-gradient(90deg,${C.reward},${C.rewardLight})`:reached?C.easy+"66":"transparent", borderRadius:2 }} />
                   </div>
                 </div>
               </div>
@@ -9632,9 +9632,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const canRetry=lastGenParamsRef.current&&error.includes("retry");
       return(
         <div onClick={canRetry?()=>{const p=lastGenParamsRef.current;setError("");generateQuestionsRef.current&&generateQuestionsRef.current(p.t,p.st,p.diff,p.cnt,p.m,p.isVignette,p.st2);}:()=>setError("")}
-          style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease",cursor:canRetry?"pointer":"default",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease",cursor:canRetry?"pointer":"default",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span>{error}</span>
-          {canRetry?<span style={{fontSize:11,fontWeight:700,color:"#fca5a5",marginLeft:12,flexShrink:0}}>↺</span>:<span style={{fontSize:11,color:"#fca5a5",opacity:0.6,marginLeft:12,flexShrink:0}}>✕</span>}
+          {canRetry?<span style={{fontSize:11,fontWeight:700,color:C.hard,marginLeft:12,flexShrink:0}}>↺</span>:<span style={{fontSize:11,color:C.hard,opacity:0.6,marginLeft:12,flexShrink:0}}>✕</span>}
         </div>
       );
     })()}
@@ -9839,7 +9839,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       ):(
         <>
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
-            {Object.entries(card.options).map(([key,val])=>{const isCorrect=key===card.answer,wasPicked=key===srAnswer;return(<div key={key} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 15px",borderRadius:10,background:isCorrect?"#041a0e":wasPicked&&!isCorrect?"#1a0407":C.surface,border:`1.5px solid ${isCorrect?"#22a05a":wasPicked&&!isCorrect?C.hard:C.border}`,fontSize:13,lineHeight:1.65,color:isCorrect?"#4ade80":wasPicked&&!isCorrect?"#fca5a5":C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?"#22a05a":wasPicked&&!isCorrect?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
+            {Object.entries(card.options).map(([key,val])=>{const isCorrect=key===card.answer,wasPicked=key===srAnswer;return(<div key={key} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 15px",borderRadius:10,background:isCorrect?C.easy+"22":wasPicked&&!isCorrect?C.hard+"18":C.surface,border:`1.5px solid ${isCorrect?C.easy:wasPicked&&!isCorrect?C.hard:C.border}`,fontSize:13,lineHeight:1.65,color:isCorrect?C.easy:wasPicked&&!isCorrect?C.hard:C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?C.easy:wasPicked&&!isCorrect?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
           </div>
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"14px",marginBottom:6,fontSize:13,color:C.textMid,lineHeight:1.75}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
@@ -9853,7 +9853,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {card.los_tested&&<div style={{background:C.dim,borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:11,color:C.muted}}><span style={{fontWeight:700,color:C.accentLight}}>LOS: </span>{card.los_tested}</div>}
           {card.misconception_targeted&&<div style={{background:C.surface,borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Common error tested: </span>{card.misconception_targeted}</div>}
-          <div style={{background:srAnswer===card.answer?"#041a0e":"#1a0407",border:`1px solid ${srAnswer===card.answer?"#22a05a44":C.hard+"44"}`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:srAnswer===card.answer?C.easy:C.hard,fontWeight:600}}>
+          <div style={{background:srAnswer===card.answer?C.easy+"22":C.hard+"18",border:`1px solid ${srAnswer===card.answer?C.easy+"44":C.hard+"44"}`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:srAnswer===card.answer?C.easy:C.hard,fontWeight:600}}>
             {srAnswer===card.answer?`✓ Correct — next review in ${sm2Update(card,true).interval} days`:`✗ Incorrect — review again tomorrow${isLeech?" · Consider re-reading this LOS in your curriculum":""}` }
           </div>
           <button onClick={()=>{
@@ -10027,7 +10027,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     </div>
 
-    {error&&<div style={{background:"#180808",border:`1px solid #5a1a1a`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:14}}>{error}</div>}
+    {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:14}}>{error}</div>}
     <button onClick={()=>{
       if(mode==="interleaved"){generateInterleavedSession(difficulty,count);return;}
       generateQuestions(topic,subtopic,difficulty,warmupEnabled?count+3:count,mode,vignetteMode);
@@ -10155,9 +10155,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {Object.entries(q.options).map(([key,val])=>{
           const sel=answered===key,correct=key===q.answer,reveal=!!answered&&(mode==="guided"||mode==="speed_drill");
           let bg=C.surface,border=C.border,col=C.text;
-          if(reveal&&correct){bg="#041a0e";border="#22a05a";col="#4ade80";}
-          else if(reveal&&sel&&!correct){bg="#1a0407";border=C.hard;col="#fca5a5";}
-          return(<button key={key} onClick={()=>handleAnswer(q.id,key)} disabled={!!answered} style={{display:"flex",alignItems:"flex-start",gap:13,padding:"13px 15px",borderRadius:10,textAlign:"left",background:bg,border:`1.5px solid ${border}`,color:col,cursor:answered?"default":"pointer",fontSize:13,lineHeight:1.65,transition:"all 0.15s"}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:reveal&&correct?"#22a05a":reveal&&sel?C.hard:sel?C.accent:C.dim,color:(reveal||sel)?"#fff":C.muted,transition:"all 0.15s"}}>{key}</span><span>{val}</span></button>);
+          if(reveal&&correct){bg=C.easy+"22";border=C.easy;col=C.easy;}
+          else if(reveal&&sel&&!correct){bg=C.hard+"18";border=C.hard;col=C.hard;}
+          return(<button key={key} onClick={()=>handleAnswer(q.id,key)} disabled={!!answered} style={{display:"flex",alignItems:"flex-start",gap:13,padding:"13px 15px",borderRadius:10,textAlign:"left",background:bg,border:`1.5px solid ${border}`,color:col,cursor:answered?"default":"pointer",fontSize:13,lineHeight:1.65,transition:"all 0.15s"}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:reveal&&correct?C.easy:reveal&&sel?C.hard:sel?C.accent:C.dim,color:(reveal||sel)?"#fff":C.muted,transition:"all 0.15s"}}>{key}</span><span>{val}</span></button>);
         })}
       </div>
       {consecutiveWrong>=3&&mode==="guided"&&!answered&&(
@@ -10463,8 +10463,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {(()=>{
       const displayScore=predicted?.score??passProbability?.probability??0;
       const isPassing=displayScore>=70;
-      const bg=displayScore>0?(isPassing?"#041a0e":"#1a0407"):C.surface;
-      const borderCol=displayScore>0?(isPassing?"#22a05a44":C.hard+"44"):C.border;
+      const bg=displayScore>0?(isPassing?C.easy+"22":C.hard+"18"):C.surface;
+      const borderCol=displayScore>0?(isPassing?C.easy+"44":C.hard+"44"):C.border;
       return(
         <div style={{background:bg,border:`1px solid ${borderCol}`,borderRadius:13,padding:"18px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:18}}>
           <ScoreRing pct={displayScore} size={84}/>
@@ -10637,7 +10637,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 const stats=m.moduleStats[mod];
                 const los=m.losStats[mod];
                 return(
-                  <span key={mod} title={`${los?.total||0} LOS · ${los?.untested||0} untested`} style={{fontSize:10,padding:"3px 8px",borderRadius:5,fontWeight:600,background:stats?(stats.pct>=70?"#041a0e":stats.pct>=50?"#1a1200":"#1a0407"):C.dim,color:stats?(stats.pct>=70?C.easy:stats.pct>=50?C.medium:C.hard):C.muted,border:`1px solid ${stats?(stats.pct>=70?"#22a05a33":stats.pct>=50?C.medium+"33":C.hard+"33"):C.border}`}}>
+                  <span key={mod} title={`${los?.total||0} LOS · ${los?.untested||0} untested`} style={{fontSize:10,padding:"3px 8px",borderRadius:5,fontWeight:600,background:stats?(stats.pct>=70?C.easy+"22":stats.pct>=50?C.medium+"22":C.hard+"18"):C.dim,color:stats?(stats.pct>=70?C.easy:stats.pct>=50?C.medium:C.hard):C.muted,border:`1px solid ${stats?(stats.pct>=70?C.easy+"33":stats.pct>=50?C.medium+"33":C.hard+"33"):C.border}`}}>
                     {mod.length>18?mod.slice(0,18)+"…":mod}{stats?` ${stats.pct}%`:""}<span style={{opacity:0.45}}> {los?.total}LOS</span>
                   </span>
                 );
@@ -11078,7 +11078,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               const mAcc=mSessions.length?Math.round(mSessions.reduce((s,h)=>s+(h.pct||0),0)/mSessions.length):null;
               const losM=getLOSMastery(history,t,m);
               const tested=mSessions.length>0;
-              const bg=!tested?C.dim:mAcc>=70?"#041a0e":mAcc>=50?"#0a0a04":"#1a0407";
+              const bg=!tested?C.dim:mAcc>=70?C.easy+"22":mAcc>=50?C.medium+"22":C.hard+"18";
               const border=!tested?C.border:mAcc>=70?C.easy+"44":mAcc>=50?C.medium+"44":C.hard+"44";
               const col=!tested?C.muted:mAcc>=70?C.easy:mAcc>=50?C.medium:C.hard;
               return(
@@ -11108,7 +11108,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {w.concept&&<div style={{marginBottom:10}}><Badge color={C.muted}>{w.concept}</Badge></div>}
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"20px",marginBottom:14,fontSize:14,lineHeight:1.78}}>{w.question}</div>
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
-        {Object.entries(w.options).map(([key,val])=>{const isCorrect=key===w.answer,wasWrong=key===w.userAnswer&&!isCorrect;return(<div key={key} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 14px",borderRadius:10,background:isCorrect?"#041a0e":wasWrong?"#1a0407":C.surface,border:`1.5px solid ${isCorrect?"#22a05a":wasWrong?C.hard:C.border}`,fontSize:13,lineHeight:1.6,color:isCorrect?"#4ade80":wasWrong?"#fca5a5":C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?"#22a05a":wasWrong?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
+        {Object.entries(w.options).map(([key,val])=>{const isCorrect=key===w.answer,wasWrong=key===w.userAnswer&&!isCorrect;return(<div key={key} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 14px",borderRadius:10,background:isCorrect?C.easy+"22":wasWrong?C.hard+"18":C.surface,border:`1.5px solid ${isCorrect?C.easy:wasWrong?C.hard:C.border}`,fontSize:13,lineHeight:1.6,color:isCorrect?C.easy:wasWrong?C.hard:C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?C.easy:wasWrong?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
       </div>
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:6,fontSize:13,color:C.textMid,lineHeight:1.75}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
@@ -11225,7 +11225,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               ))}
             </div>
           </div>
-          {calcError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:12}}>{calcError}</div>}
+          {calcError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:12}}>{calcError}</div>}
           <button onClick={generateCalcProblem} disabled={calcLoading} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:calcLoading?C.dim:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:calcLoading?C.muted:"#fff",border:"none",cursor:calcLoading?"not-allowed":"pointer"}}>
             {calcLoading?"Generating problem…":"Generate Problem →"}
           </button>
@@ -11258,7 +11258,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 )}
               </div>
               {calcChecked[idx]&&(
-                <div style={{marginTop:8,padding:"8px 10px",borderRadius:8,background:calcChecked[idx]==="correct"?C.successBg:C.errorBg,fontSize:12,color:calcChecked[idx]==="correct"?C.easy:"#fca5a5",lineHeight:1.5}}>
+                <div style={{marginTop:8,padding:"8px 10px",borderRadius:8,background:calcChecked[idx]==="correct"?C.successBg:C.errorBg,fontSize:12,color:calcChecked[idx]==="correct"?C.easy:C.hard,lineHeight:1.5}}>
                   {calcChecked[idx]==="correct"?"✓ Correct! ":"✗ Answer: "+step.answer+" | "}{step.explanation}
                 </div>
               )}
@@ -11303,7 +11303,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           ))}
         </div>
       </div>
-      {walkthroughError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:12}}>{walkthroughError}</div>}
+      {walkthroughError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:12}}>{walkthroughError}</div>}
       {!walkthroughText&&!walkthroughLoading&&(
         <button onClick={async()=>{
           if(!authUser?.id){setWalkthroughError("Sign in to use Concept Walkthrough.");return;}
