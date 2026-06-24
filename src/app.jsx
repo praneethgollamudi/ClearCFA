@@ -3496,12 +3496,12 @@ function FormulaSheet({topic, level="1"}){
   const singleGroup=modOrder.length<=1;
   return(
     <div style={{marginBottom:12}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:"#0a0a20",border:`1px solid ${C.accentLight}33`,color:C.accentLight,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accentLight}33`,color:C.accentLight,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
         <span>📐 Formula Sheet — {topic.split(" ")[0]}</span>
         <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {formulas.length} formulas · {modOrder.length} topics</span>
       </button>
       {open&&(
-        <div style={{background:"#08081a",border:`1px solid ${C.accentLight}22`,borderRadius:"0 0 10px 10px",overflow:"hidden"}}>
+        <div style={{background:C.bg,border:`1px solid ${C.accentLight}22`,borderRadius:"0 0 10px 10px",overflow:"hidden"}}>
           {singleGroup?(
             <div style={{padding:"10px 14px",display:"flex",flexDirection:"column",gap:6}}>
               {formulas.map((f,i)=>(
@@ -3516,11 +3516,11 @@ function FormulaSheet({topic, level="1"}){
               const isModOpen=openMod===mod;
               const mFs=modMap[mod];
               return(
-                <div key={mod} style={{borderBottom:mi<modOrder.length-1?`1px solid ${C.accentLight}11`:"none"}}>
+                <div key={mod} style={{borderBottom:mi<modOrder.length-1?`1px solid ${C.border}`:"none"}}>
                   <button onClick={()=>setOpenMod(isModOpen?null:mod)}
-                    style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 14px",background:isModOpen?`${C.accentLight}08`:"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
-                    <span style={{fontSize:11,fontWeight:700,color:isModOpen?C.accentLight:"#7080b0"}}>{mod}</span>
-                    <span style={{fontSize:10,color:"#4a5080"}}>{mFs.length} · {isModOpen?"▲":"▼"}</span>
+                    style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 14px",background:isModOpen?C.accent+"0a":"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
+                    <span style={{fontSize:11,fontWeight:700,color:isModOpen?C.accentLight:C.muted}}>{mod}</span>
+                    <span style={{fontSize:10,color:C.muted}}>{mFs.length} · {isModOpen?"▲":"▼"}</span>
                   </button>
                   {isModOpen&&(
                     <div style={{padding:"4px 14px 10px",display:"flex",flexDirection:"column",gap:6}}>
@@ -3549,12 +3549,12 @@ function PowerNotesSheet({topic, level="1"}){
   const totalRules=notes.topics.reduce((s,t)=>s+(t.rules||[]).length+(t.traps||[]).length,0);
   return(
     <div style={{marginBottom:12}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:"#0a1a0a",border:`1px solid ${C.easy}33`,color:C.easy,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.easy}33`,color:C.easy,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
         <span>📝 Power Notes — {topic.split(" ")[0]}</span>
         <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {totalRules} bullets</span>
       </button>
       {open&&(
-        <div style={{background:"#08120a",border:`1px solid ${C.easy}22`,borderRadius:"0 0 10px 10px",padding:"10px 14px",display:"flex",flexDirection:"column",gap:10}}>
+        <div style={{background:C.bg,border:`1px solid ${C.easy}22`,borderRadius:"0 0 10px 10px",padding:"10px 14px",display:"flex",flexDirection:"column",gap:10}}>
           {notes.topics.map((t,ti)=>(
             <div key={ti}>
               <div style={{fontSize:10,fontWeight:700,color:C.easy,marginBottom:5,textTransform:"uppercase",letterSpacing:0.5}}>{t.module}</div>
@@ -3565,7 +3565,7 @@ function PowerNotesSheet({topic, level="1"}){
                 <div style={{marginTop:5}}>
                   <div style={{fontSize:9,color:C.hard,fontWeight:700,marginBottom:3,letterSpacing:0.5}}>⚠ TRAPS</div>
                   {t.traps.map((r,i)=>(
-                    <div key={i} style={{fontSize:11,color:"#fca5a5",lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.hard}66`,marginBottom:3}}>{r}</div>
+                    <div key={i} style={{fontSize:11,color:C.hard,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.hard}66`,marginBottom:3}}>{r}</div>
                   ))}
                 </div>
               )}
