@@ -2219,22 +2219,27 @@ function getForgettingCurve(srDeck){
 }
 
 // ─── QUESTION DEDUPLICATION ──────────────────────────────────────────────────
+const QDB_FRESHNESS_MS = 7 * 24 * 60 * 60 * 1000; // repeat allowed after 7 days
 function hashQuestion(q){
-  // Simple hash: first 60 chars of question text normalised
-  return q.question.slice(0,60).toLowerCase().replace(/\s+/g," ").trim();
+  return q.question.slice(0,120).toLowerCase().replace(/\s+/g," ").trim();
 }
 function filterNewQuestions(questions,qdb){
-  return questions.filter(q=>{const h=hashQuestion(q);return !qdb[h];});
+  const now=Date.now();
+  return questions.filter(q=>{
+    const h=hashQuestion(q);
+    if(!qdb[h]) return true;
+    return (now-qdb[h].seen)>QDB_FRESHNESS_MS; // seen >7 days ago → allow repeat
+  });
 }
 function addToQDB(questions,qdb){
   const updated={...qdb};
   questions.forEach(q=>{const h=hashQuestion(q);updated[h]={seen:Date.now(),topic:q._topic,subtopic:q._subtopic};});
-  // Cap at 400 entries — prune oldest to prevent unbounded growth
+  // Cap at 2000 entries — prune oldest to prevent unbounded growth
   const entries=Object.entries(updated);
-  if(entries.length>400){
+  if(entries.length>2000){
     entries.sort((a,b)=>a[1].seen-b[1].seen);
     const pruned={};
-    entries.slice(-400).forEach(([k,v])=>{pruned[k]=v;});
+    entries.slice(-2000).forEach(([k,v])=>{pruned[k]=v;});
     return pruned;
   }
   return updated;
@@ -7695,7 +7700,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(hit){
         const cachedQs=hit.qs.slice(0,cnt);
         const fresh=filterNewQuestions(cachedQs,qdb);
-        const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:cachedQs;
+        // Only use cache if ≥70% are genuinely unseen — otherwise fall through to AI for fresh questions
+        const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:[];
         if(finalQs.length>=Math.ceil(cnt*0.7)){
           qCacheRef.current=qcMarkUsed(qCacheRef.current,t,st,diff,hit.ts);
           storageSet(QCACHE_KEY,qCacheRef.current);
@@ -7775,7 +7781,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
       });
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
       const fresh=filterNewQuestions(parsed_clean,qdb);
-      const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:parsed_clean;
+      // Prefer unseen questions; if not enough, take least-recently-seen to minimise repeats
+      const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:(()=>{
+        const sorted=[...parsed_clean].sort((a,b)=>(qdb[hashQuestion(a)]?.seen||0)-(qdb[hashQuestion(b)]?.seen||0));
+        return sorted.slice(0,cnt);
+      })();
       // Cache successful non-vignette sets for reuse
       if(!isVignette&&parsed_clean.length>=5){
         qCacheRef.current=qcAdd(qCacheRef.current,t,st,diff,parsed_clean);
