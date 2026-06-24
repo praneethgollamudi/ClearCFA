@@ -8748,7 +8748,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Free</div>
               <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>$0</div>
               <div style={{fontSize:10,color:C.muted,marginBottom:14}}>always</div>
-              {[["5 AI Qs/day",true],["Spaced repetition",true],["Pass probability",true],["CFA Level 1 only",true],["AI Coach",false],["L2 + L3",false],["Unlimited Qs",false]].map(([f,incl])=>(
+              {[["10 AI Qs/day",true],["Spaced repetition",true],["Pass probability",true],["CFA Level 1 only",true],["AI Coach",false],["L2 + L3",false],["Unlimited Qs",false]].map(([f,incl])=>(
                 <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:incl?C.textMid:C.muted,marginBottom:5,opacity:incl?1:0.5}}>
                   <span style={{color:incl?C.easy:C.muted,fontWeight:700,flexShrink:0,fontSize:10}}>{incl?"✓":"✗"}</span>{f}
                 </div>
@@ -8762,8 +8762,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{flex:1,background:`linear-gradient(160deg,${C.accent}14,${C.accent}06)`,border:`1.5px solid ${C.accent}55`,borderRadius:14,padding:"16px 14px",position:"relative"}}>
               <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 10px",borderRadius:20,letterSpacing:"0.06em",whiteSpace:"nowrap"}}>MOST POPULAR</div>
               <div style={{fontSize:11,fontWeight:700,color:C.accentLight,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Pro</div>
-              <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>$19<span style={{fontSize:13,fontWeight:600,color:C.muted}}>/mo</span></div>
-              <div style={{fontSize:10,color:C.muted,marginBottom:14}}>or $99/year · save 56%</div>
+              <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>₹499<span style={{fontSize:13,fontWeight:600,color:C.muted}}>/mo</span></div>
+              <div style={{fontSize:10,color:C.muted,marginBottom:14}}>cancel anytime · all levels</div>
               {[["Unlimited AI questions",true],["CFA L1 + L2 + L3",true],["AI Coach (unlimited)",true],["Weekly study plans",true],["Advanced analytics",true],["Spaced repetition",true],["Priority support",true]].map(([f])=>(
                 <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:C.textMid,marginBottom:5}}>
                   <span style={{color:C.easy,fontWeight:700,flexShrink:0,fontSize:10}}>✓</span>{f}
@@ -9152,7 +9152,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <span style={{fontSize:18}}>🚀</span>
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700}}>Upgrade to Pro</div>
-                <div style={{fontSize:11,color:C.muted,marginTop:1}}>Unlimited AI Qs · L2 & L3 · AI Coach · $19/mo</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:1}}>Unlimited AI Qs · L2 & L3 · AI Coach · ₹499/mo</div>
               </div>
               <span style={{fontSize:11,color:C.accentLight,fontWeight:700}}>→</span>
             </button>
