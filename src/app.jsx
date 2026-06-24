@@ -2949,36 +2949,46 @@ function getCachedProStatus(userId){
     const c=JSON.parse(localStorage.getItem('cfa_pro_cache')||'null');
     if(!c||c.userId!==userId)return null;
     if((Date.now()-new Date(c.at).getTime())>4*3600*1000)return null;
-    return c.isPro===true;
+    return c.isPro===true?{isPro:true,validUntil:c.validUntil||null}:{isPro:false,validUntil:null};
   }catch{return null;}
 }
-function setCachedProStatus(userId,isPro){
-  try{localStorage.setItem('cfa_pro_cache',JSON.stringify({userId,isPro,at:new Date().toISOString()}));}catch{}
+function setCachedProStatus(userId,isPro,validUntil=null){
+  try{localStorage.setItem('cfa_pro_cache',JSON.stringify({userId,isPro,validUntil,at:new Date().toISOString()}));}catch{}
 }
 // Sync fallback — checks owner email + cache (used for initial useState)
 function getProStatus(){
   try{
     const auth=JSON.parse(localStorage.getItem('cfa_auth')||'null');
     if(auth?.email&&OWNER_EMAILS.includes(auth.email.toLowerCase()))return true;
-    if(auth?.id){const c=getCachedProStatus(auth.id);if(c===true)return true;}
+    if(auth?.id){const c=getCachedProStatus(auth.id);if(c?.isPro===true)return true;}
   }catch{}
   return false;
 }
-// Async server check — verifies against Supabase subscriptions table
+function getProValidUntil(){
+  try{
+    const auth=JSON.parse(localStorage.getItem('cfa_auth')||'null');
+    if(auth?.email&&OWNER_EMAILS.includes(auth.email.toLowerCase()))return null; // owner never expires
+    if(auth?.id){const c=getCachedProStatus(auth.id);return c?.validUntil||null;}
+  }catch{}
+  return null;
+}
+// Async server check — verifies against Supabase subscriptions table, respects valid_until
 async function checkProFromServer(cfg,userId,email){
-  if(email&&OWNER_EMAILS.includes(email.toLowerCase()))return true;
+  if(email&&OWNER_EMAILS.includes(email.toLowerCase()))return{isPro:true,validUntil:null};
   const cached=getCachedProStatus(userId);
   if(cached!==null)return cached;
   try{
-    const res=await fetch(`${cfg.url}/rest/v1/subscriptions?user_id=eq.${encodeURIComponent(userId)}&active=eq.true&select=user_id&limit=1`,{
+    const now=new Date().toISOString();
+    const res=await fetch(`${cfg.url}/rest/v1/subscriptions?user_id=eq.${encodeURIComponent(userId)}&active=eq.true&valid_until=gte.${encodeURIComponent(now)}&select=user_id,valid_until&limit=1`,{
       headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
     });
-    if(!res.ok){setCachedProStatus(userId,false);return false;}
+    if(!res.ok){setCachedProStatus(userId,false);return{isPro:false,validUntil:null};}
     const rows=await res.json();
     const isPro=Array.isArray(rows)&&rows.length>0;
-    setCachedProStatus(userId,isPro);
-    return isPro;
-  }catch{return false;}
+    const validUntil=isPro?(rows[0].valid_until||null):null;
+    setCachedProStatus(userId,isPro,validUntil);
+    return{isPro,validUntil};
+  }catch{return{isPro:false,validUntil:null};}
 }
 function getDailyAIUsage(){
   try{
@@ -6989,6 +6999,7 @@ function CFAMock(){
   const [theme,setTheme]=useState(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}});
   const toggleTheme=()=>{const t=theme==='dark'?'light':'dark';_applyTheme(t);try{localStorage.setItem('cfa_theme',t);}catch{};setTheme(t);};
   const [proStatus,setProStatus]=useState(getProStatus);
+  const [proValidUntil,setProValidUntil]=useState(getProValidUntil);
   const [dailyAIUsage,setDailyAIUsage]=useState(getDailyAIUsage);
   const [upgradeModal,setUpgradeModal]=useState(null); // null | {reason:string}
   const [feedbackOpen,setFeedbackOpen]=useState(false);
@@ -7069,7 +7080,7 @@ function CFAMock(){
   // Re-evaluate Pro status when auth changes (owner email always gets Pro)
   useEffect(()=>{
     if(authUser?.id){
-      checkProFromServer(SB_CFG,authUser.id,authUser.email).then(isPro=>setProStatus(isPro));
+      checkProFromServer(SB_CFG,authUser.id,authUser.email).then(({isPro,validUntil})=>{setProStatus(isPro);setProValidUntil(validUntil||null);});
     }else{
       setProStatus(false);
     }
@@ -8942,7 +8953,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
     {/* Settings drawer overlay */}
-    {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""} onCheckAccess={async()=>{const isPro=await checkProFromServer(SB_CFG,authUser?.id||"",authUser?.email||"");if(isPro)setProStatus(true);return isPro;}}/>}
+    {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""} onCheckAccess={async()=>{const{isPro,validUntil}=await checkProFromServer(SB_CFG,authUser?.id||"",authUser?.email||"");if(isPro){setProStatus(true);setProValidUntil(validUntil||null);}return isPro;}}/>}
     {feedbackOpen&&<FeedbackModal onClose={()=>setFeedbackOpen(false)} userId={authUser?.id||"anon"} onSubmit={(data)=>submitFeedback(SB_CFG,data)}/>}
     {settingsOpen&&(
       <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
@@ -9111,6 +9122,24 @@ Return ONLY a JSON array — no prose, no markdown fences:
               </button>
               <button onClick={()=>{try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}setSessionDraft(null);}} style={{padding:"7px 10px",borderRadius:9,fontSize:12,color:C.muted,background:"none",border:`1px solid ${C.border}`,cursor:"pointer"}}>✕</button>
             </div>
+          </div>
+        );
+      })()}
+      {/* Pro renewal reminder — shown when < 5 days remaining */}
+      {proStatus&&proValidUntil&&(()=>{
+        const daysLeft=Math.ceil((new Date(proValidUntil)-Date.now())/(1000*60*60*24));
+        if(daysLeft>5)return null;
+        const urgent=daysLeft<=2;
+        return(
+          <div style={{background:urgent?C.hard+"18":C.medium+"15",border:`1px solid ${urgent?C.hard:C.medium}44`,borderRadius:11,padding:"11px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:18}}>{urgent?"⚠️":"🔔"}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:700,color:urgent?C.hard:C.medium}}>
+                {daysLeft<=0?"Pro access expired":"Pro access expires in "+daysLeft+" day"+(daysLeft!==1?"s":"")}
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Pay ₹499 to {PAYMENT_UPI_ID} and email {PAYMENT_CONTACT_EMAIL} to renew.</div>
+            </div>
+            <button onClick={()=>setUpgradeModal({reason:"default"})} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:8,background:urgent?C.hard+"22":C.medium+"22",border:`1px solid ${urgent?C.hard:C.medium}44`,color:urgent?C.hard:C.medium,cursor:"pointer",flexShrink:0}}>Renew</button>
           </div>
         );
       })()}
