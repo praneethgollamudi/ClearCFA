@@ -2332,7 +2332,7 @@ Return ONLY a JSON array, no markdown:
 Rules:
 - 3 options only (A,B,C). Each wrong option exploits a misconception. Spread questions across different LOS.
 - CRITICAL for numerical questions: FIRST compute the exact correct answer (show full precision), THEN include that exact value as one of the options. NEVER describe any option as "closest", "nearest", "best approximation", or "closest when accounting for rounding" — if you use such language in the explanation, the question will be discarded. If rounding is needed for a clean option, round the answer FIRST, then build all three options around that rounded figure. The correct computed result must appear verbatim as exactly one of A, B, or C — no approximations. Wrong options must use recognisable formula errors (wrong rate, wrong periods, missing compounding step).
-- The "answer" field must match the letter whose option text equals the correct computed result. The explanation MUST begin with "Correct: [letter]. " (e.g. "Correct: B. Sample variance = 30/4 = 7.5") — questions whose explanation does not start with "Correct: A/B/C" will be discarded.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
+- The "answer" field must match the letter whose option text equals the correct computed result. The explanation MUST begin with "Correct: [letter]. " (e.g. "Correct: B. Sample variance = 30/4 = 7.5") — questions whose explanation does not start with "Correct: A/B/C" will be discarded. The explanation must be a single clean final solution — NO chain-of-thought, NO intermediate recalculations, NO self-corrections, NO alternative attempts, NO phrases like "recalc needed", "revising", "reinspecting" or "incorrect" near the correct answer value.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
 }
 
 // Expand compact JSON keys returned by optimised prompt
@@ -7650,8 +7650,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
         if(!q.options[q.answer])return false; // answer key points to nonexistent option
         const exp=(q.explanation||"").toLowerCase();
         if(/nearest available|closest answer|so [a-c] is nearest|approximate(ly)?|not exactly|so [a-c] is the best|\bis closest\b|\bthe closest\b|closest when|closest option|closest to the|best approximat|due to rounding.*clos|clos.*due to rounding/i.test(exp))return false;
+        // Reject scratchpad/chain-of-thought leaking into explanation
+        if(/recalc needed|indicates recalc|reinspecting:|revising for clean|setting [a-c]\s*=.*as correct|recalculating:/i.test(exp))return false;
         const qAns=(q.answer||"").toUpperCase();
         const expU=(q.explanation||"").toUpperCase();
+        // Reject if explanation labels the correct answer's own value as "incorrect"
+        const ansOptText=(q.options[q.answer]||"").replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+        if(ansOptText&&new RegExp(ansOptText+'.{0,25}incorrect','i').test(q.explanation))return false;
         // Check new "Correct: X." prefix that the prompt now requires
         const prefixMatch=expU.match(/^CORRECT:\s*([A-C])\b/);
         if(prefixMatch&&prefixMatch[1]!==qAns)return false;
