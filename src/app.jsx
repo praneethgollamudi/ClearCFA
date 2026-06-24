@@ -6714,25 +6714,27 @@ function LofiPlayer(){
     if(masterRef.current&&ctxRef.current) masterRef.current.gain.setTargetAtTime(v,ctxRef.current.currentTime,0.05);
   };
   useEffect(()=>()=>{stopAudio();try{ctxRef.current?.close();}catch{};},[]);
+  useEffect(()=>{const h=(e)=>setLTheme(e.detail||'dark');window.addEventListener('cfa_theme',h);return()=>window.removeEventListener('cfa_theme',h);},[]);
+  const isLight=lTheme==='light';
   return (
     <>
       <button onClick={()=>setShowPanel(s=>!s)} title="Lofi study music"
         style={{position:"fixed",bottom:22,left:16,zIndex:200,width:46,height:46,borderRadius:"50%",
-          background:isPlaying?"linear-gradient(135deg,#1a3a2a,#1e5c3a)":"linear-gradient(135deg,#1a1a2e,#1e1e38)",
-          border:isPlaying?"1px solid #22c55e55":"1px solid #6366f133",
-          color:isPlaying?"#86efac":"#a5b4fc",fontSize:20,cursor:"pointer",
-          boxShadow:isPlaying?"0 4px 16px #22c55e33":"0 4px 16px #0008",
+          background:isPlaying?"linear-gradient(135deg,#1a3a2a,#1e5c3a)":isLight?"linear-gradient(135deg,#e8e8f4,#f4f4fb)":"linear-gradient(135deg,#1a1a2e,#1e1e38)",
+          border:isPlaying?"1px solid #22c55e55":isLight?"1px solid #6366f155":"1px solid #6366f133",
+          color:isPlaying?"#86efac":isLight?"#4f46e5":"#a5b4fc",fontSize:20,cursor:"pointer",
+          boxShadow:isPlaying?"0 4px 16px #22c55e33":isLight?"0 4px 16px #0002":"0 4px 16px #0008",
           display:"flex",alignItems:"center",justifyContent:"center",
           touchAction:"manipulation",transition:"all 0.2s"}}>
         🎵
       </button>
       {showPanel&&(
-        <div style={{position:"fixed",bottom:76,left:16,zIndex:200,background:"#1a1a38",
-          border:"1px solid #6366f144",borderRadius:16,padding:"16px",
-          boxShadow:"0 8px 32px #00000099",minWidth:210,animation:"fadeIn 0.15s ease"}}>
+        <div style={{position:"fixed",bottom:76,left:16,zIndex:200,background:isLight?"#ffffff":"#1a1a38",
+          border:isLight?"1px solid #6366f144":"1px solid #6366f144",borderRadius:16,padding:"16px",
+          boxShadow:isLight?"0 8px 32px #0001":"0 8px 32px #00000099",minWidth:210,animation:"fadeIn 0.15s ease"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#a5b4fc",letterSpacing:"0.05em"}}>🎵 LOFI STUDY</div>
-            <button onClick={()=>setShowPanel(false)} style={{fontSize:14,color:"#7c7a9e",background:"none",border:"none",cursor:"pointer",lineHeight:1,padding:"2px 6px"}}>✕</button>
+            <div style={{fontSize:12,fontWeight:700,color:isLight?"#4f46e5":"#a5b4fc",letterSpacing:"0.05em"}}>🎵 LOFI STUDY</div>
+            <button onClick={()=>setShowPanel(false)} style={{fontSize:14,color:isLight?"#8b89a8":"#7c7a9e",background:"none",border:"none",cursor:"pointer",lineHeight:1,padding:"2px 6px"}}>✕</button>
           </div>
           <button onClick={toggle} style={{width:"100%",padding:"10px",borderRadius:10,marginBottom:12,
             fontSize:13,fontWeight:700,
@@ -6747,7 +6749,7 @@ function LofiPlayer(){
               style={{flex:1,accentColor:"#6366f1",cursor:"pointer"}}/>
             <span style={{fontSize:14}}>🔊</span>
           </div>
-          <div style={{fontSize:10,color:"#4a4869",textAlign:"center",marginTop:10}}>lofi jazz · 82 BPM · study focus</div>
+          <div style={{fontSize:10,color:isLight?"#8b89a8":"#4a4869",textAlign:"center",marginTop:10}}>lofi jazz · 82 BPM · study focus</div>
         </div>
       )}
     </>
