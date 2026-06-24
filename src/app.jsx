@@ -8477,7 +8477,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {/* Stats strip */}
           <div style={{display:"flex",justifyContent:"center",gap:0,background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 0",maxWidth:340,margin:"0 auto"}}>
-            {[["AI-generated","Questions","🎯"],["L1 / L2 / L3","All Levels","📚"],["Free tier","5 Qs/day","⚡"]].map(([val,label,ico],i,arr)=>(
+            {[["AI-generated","Questions","🎯"],["L1 / L2 / L3","All Levels","📚"],["Free tier","10 Qs/day","⚡"]].map(([val,label,ico],i,arr)=>(
               <div key={label} style={{flex:1,textAlign:"center",borderRight:i<arr.length-1?`1px solid ${C.border}`:"none",padding:"0 8px"}}>
                 <div style={{fontSize:15,fontWeight:800,color:C.text}}>{ico} {val}</div>
                 <div style={{fontSize:10,color:C.muted,marginTop:2}}>{label}</div>
