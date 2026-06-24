@@ -2938,6 +2938,10 @@ function _applyTheme(t){
 // ── Freemium tier ─────────────────────────────────────────────────────────────
 const FREE_DAILY_AI_LIMIT=5;
 const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
+// ── Payment config (update these to change payment details) ───────────────────
+const PAYMENT_UPI_ID='clearcfa@upi';
+const PAYMENT_CONTACT_EMAIL='sai.praneeth557@gmail.com';
+const PAYMENT_WHATSAPP=''; // e.g. '+919876543210' — leave empty to hide WhatsApp option
 // Pro status is validated server-side against the subscriptions table.
 // getCachedProStatus / setCachedProStatus cache the server response for 4 hours.
 function getCachedProStatus(userId){
@@ -4430,70 +4434,142 @@ function FeedbackModal({onClose, userId="", onSubmit}){
   );
 }
 
-function UpgradeModal({reason, onClose, userEmail=""}){
-  const [joined,setJoined]=useState(false);
+function UpgradeModal({reason, onClose, userEmail="", onCheckAccess}){
+  const [step,setStep]=useState("info"); // "info" | "pay" | "checking" | "granted" | "notyet"
+  const [copied,setCopied]=useState(false);
   const hoursLeft=()=>{const now=new Date();const midnight=new Date(now);midnight.setHours(24,0,0,0);return Math.max(1,Math.ceil((midnight-now)/(1000*60*60)));};
   const headers={
-    limit:{icon:"⚡",title:"Daily limit reached",sub:`You've used your ${FREE_DAILY_AI_LIMIT} free AI questions today. Resets in ${hoursLeft()} hour${hoursLeft()!==1?"s":""}.`},
-    coach:{icon:"🤖",title:"Pro feature",sub:"AI Coach is unlimited on the Pro plan."},
+    limit:{icon:"⚡",title:"Daily limit reached",sub:`You've used your ${FREE_DAILY_AI_LIMIT} free questions today. Resets in ${hoursLeft()} hr${hoursLeft()!==1?"s":""}.`},
+    coach:{icon:"🤖",title:"Pro feature",sub:"AI Coach is available on the Pro plan."},
     plan:{icon:"🗓",title:"Pro feature",sub:"Weekly AI study plans are available on Pro."},
     l2l3:{icon:"📚",title:"Pro feature",sub:"Full CFA L2 & L3 support is available on Pro."},
     learn:{icon:"🎓",title:"Pro feature",sub:"AI Topic Lessons are available on Pro."},
     default:{icon:"🚀",title:"Upgrade to Pro",sub:"Get unlimited access to every ClearCFA feature."},
   };
   const {icon,title,sub}=headers[reason]||headers.default;
+
+  const copyUPI=()=>{
+    try{navigator.clipboard.writeText(PAYMENT_UPI_ID);}catch{}
+    setCopied(true);setTimeout(()=>setCopied(false),2000);
+  };
+
+  const checkAccess=async()=>{
+    setStep("checking");
+    const isPro=await (onCheckAccess?.()??Promise.resolve(false));
+    setStep(isPro?"granted":"notyet");
+  };
+
   return(
     <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:"20px 20px 0 0",padding:"22px 20px 40px",border:`1px solid ${C.border}`,borderBottom:"none",maxHeight:"90vh",overflowY:"auto"}}>
         <div style={{width:36,height:4,borderRadius:2,background:C.border,margin:"0 auto 20px"}}/>
-        <div style={{textAlign:"center",marginBottom:20}}>
-          <div style={{fontSize:36,marginBottom:8}}>{icon}</div>
-          <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:6}}>{title}</div>
-          <div style={{fontSize:13,color:C.muted,lineHeight:1.55,maxWidth:280,margin:"0 auto"}}>{sub}</div>
-        </div>
-        <div style={{display:"flex",gap:10,marginBottom:16}}>
-          <div style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 11px"}}>
-            <div style={{fontSize:9,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Free</div>
-            <div style={{fontSize:22,fontWeight:900,color:C.text,lineHeight:1}}>$0<span style={{fontSize:10,color:C.muted,fontWeight:400}}> always</span></div>
-            <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
-              {[["5 AI Qs/day",true],["Spaced repetition",true],["Pass probability",true],["CFA Level 1",true],["AI Coach",false],["L2 + L3",false],["Unlimited Qs",false]].map(([f,incl])=>(
-                <div key={f} style={{fontSize:10,color:incl?C.textMid:C.muted,opacity:incl?1:0.5,display:"flex",gap:5,alignItems:"center"}}>
-                  <span style={{color:incl?C.easy:C.muted,fontWeight:700}}>{incl?"✓":"✗"}</span>{f}
-                </div>
-              ))}
-            </div>
+
+        {step==="granted"&&(
+          <div style={{textAlign:"center",padding:"24px 16px"}}>
+            <div style={{fontSize:40,marginBottom:12}}>🎉</div>
+            <div style={{fontSize:17,fontWeight:800,color:C.easy,marginBottom:8}}>Pro access granted!</div>
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.6,marginBottom:20}}>Welcome to ClearCFA Pro. Enjoy unlimited AI questions across L1, L2 & L3.</div>
+            <button onClick={onClose} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.easy},${C.easyLight||C.easy})`,color:"#fff",border:"none",cursor:"pointer"}}>Start studying →</button>
           </div>
-          <div style={{flex:1,background:`linear-gradient(160deg,${C.accent}18,${C.accent}06)`,border:`1.5px solid ${C.accent}55`,borderRadius:12,padding:"13px 11px",position:"relative"}}>
-            <div style={{position:"absolute",top:-9,right:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 8px",borderRadius:20,letterSpacing:"0.06em"}}>MOST POPULAR</div>
-            <div style={{fontSize:9,fontWeight:700,color:C.accentLight,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Pro</div>
-            <div style={{fontSize:22,fontWeight:900,color:C.text,lineHeight:1}}>$19<span style={{fontSize:10,color:C.muted,fontWeight:400}}>/mo</span></div>
-            <div style={{fontSize:9,color:C.muted,marginBottom:10}}>or $99/yr · save 56%</div>
-            <div style={{display:"flex",flexDirection:"column",gap:4}}>
-              {["Unlimited AI questions","CFA L1 + L2 + L3","AI Coach (unlimited)","Weekly study plans","Advanced analytics"].map(f=>(
-                <div key={f} style={{fontSize:10,color:C.textMid,display:"flex",gap:5,alignItems:"center"}}>
-                  <span style={{color:C.easy,fontWeight:700}}>✓</span>{f}
-                </div>
-              ))}
-            </div>
+        )}
+
+        {step==="notyet"&&(
+          <div style={{textAlign:"center",padding:"20px 16px"}}>
+            <div style={{fontSize:32,marginBottom:10}}>⏳</div>
+            <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:8}}>Not found yet</div>
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:16}}>Payment confirmation usually takes a few hours. If you've already paid, reply to the confirmation email and we'll verify manually.</div>
+            <button onClick={()=>setStep("pay")} style={{width:"100%",padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",marginBottom:8}}>↺ Try again</button>
+            <button onClick={onClose} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Continue on free</button>
           </div>
-        </div>
-        {!joined?(
+        )}
+
+        {step==="checking"&&(
+          <div style={{textAlign:"center",padding:"40px 16px"}}>
+            <div style={{fontSize:28,marginBottom:12,animation:"pulse 1s ease-in-out infinite"}}>🔍</div>
+            <div style={{fontSize:14,color:C.muted}}>Checking your access…</div>
+          </div>
+        )}
+
+        {step==="info"&&(
           <>
-            <button onClick={()=>{try{localStorage.setItem('cfa_pro_waitlist',JSON.stringify({email:userEmail,ts:Date.now()}));}catch{}setJoined(true);}}
+            <div style={{textAlign:"center",marginBottom:18}}>
+              <div style={{fontSize:34,marginBottom:8}}>{icon}</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:5}}>{title}</div>
+              <div style={{fontSize:13,color:C.muted,lineHeight:1.55,maxWidth:280,margin:"0 auto"}}>{sub}</div>
+            </div>
+            <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1.5px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,color:C.accentLight,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>ClearCFA Pro</div>
+                  <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>₹999<span style={{fontSize:11,color:C.muted,fontWeight:400}}> one-time</span></div>
+                  <div style={{fontSize:10,color:C.muted,marginTop:2}}>Lifetime access · all levels</div>
+                </div>
+                <div style={{background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 9px",borderRadius:20}}>EARLY ACCESS</div>
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"6px 12px"}}>
+                {["Unlimited AI questions","CFA L1 + L2 + L3","AI Coach","Weekly study plans","Power Notes + Formulas","Spaced repetition"].map(f=>(
+                  <div key={f} style={{fontSize:11,color:C.textMid,display:"flex",gap:4,alignItems:"center"}}>
+                    <span style={{color:C.easy,fontWeight:700,fontSize:10}}>✓</span>{f}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button onClick={()=>setStep("pay")}
               style={{width:"100%",padding:"14px",borderRadius:11,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 18px ${C.accent}44`,marginBottom:10}}>
-              🚀 Join Pro waitlist
+              💳 Get Pro — ₹999 one-time
             </button>
             <button onClick={onClose} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
-              {reason==="limit"?"Wait for reset — keep studying":"Continue on free"}
+              {reason==="limit"?`Continue on free · resets in ${hoursLeft()} hr`:"Continue on free"}
             </button>
           </>
-        ):(
-          <div style={{textAlign:"center",padding:"18px 16px",background:C.successBg,border:`1px solid ${C.easy}33`,borderRadius:12}}>
-            <div style={{fontSize:26,marginBottom:8}}>🎉</div>
-            <div style={{fontSize:14,fontWeight:800,color:C.easy,marginBottom:6}}>You're on the list!</div>
-            <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>{userEmail?`We'll email ${userEmail} when Pro launches.`:"We'll notify you when Pro launches."} Keep practising on the free tier in the meantime.</div>
-            <button onClick={onClose} style={{marginTop:14,padding:"10px 24px",borderRadius:9,fontSize:13,fontWeight:700,background:C.easy+"20",border:`1px solid ${C.easy}44`,color:C.easy,cursor:"pointer"}}>Continue studying →</button>
-          </div>
+        )}
+
+        {step==="pay"&&(
+          <>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>Pay via UPI</div>
+              <div style={{fontSize:12,color:C.muted}}>Any UPI app — GPay, PhonePe, Paytm, BHIM</div>
+            </div>
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>UPI ID</div>
+              <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                <div style={{flex:1,fontSize:16,fontWeight:800,color:C.text,letterSpacing:"0.02em"}}>{PAYMENT_UPI_ID}</div>
+                <button onClick={copyUPI} style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:700,background:copied?C.easy+"22":`${C.accent}22`,border:`1px solid ${copied?C.easy:C.accent}44`,color:copied?C.easy:C.accentLight,cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>
+                  {copied?"✓ Copied":"Copy"}
+                </button>
+              </div>
+              <div style={{marginTop:10,padding:"8px 10px",borderRadius:8,background:C.accent+"12",border:`1px solid ${C.accent}22`}}>
+                <span style={{fontSize:12,fontWeight:800,color:C.accent}}>Amount: </span>
+                <span style={{fontSize:14,fontWeight:900,color:C.text}}>₹999</span>
+              </div>
+            </div>
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>After payment</div>
+              {[
+                ["1","Pay ₹999 to the UPI ID above"],
+                ["2",`Email your payment screenshot to ${PAYMENT_CONTACT_EMAIL}`],
+                ["3","Include your registered email in the message"],
+                ["4","Get Pro access confirmed within 24 hours"],
+              ].map(([n,text])=>(
+                <div key={n} style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:8}}>
+                  <span style={{minWidth:20,height:20,borderRadius:"50%",background:C.accent+"33",color:C.accentLight,fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{n}</span>
+                  <span style={{fontSize:12,color:C.textMid,lineHeight:1.5}}>{text}</span>
+                </div>
+              ))}
+              {PAYMENT_WHATSAPP&&(
+                <div style={{marginTop:8,padding:"8px 10px",borderRadius:8,background:C.easy+"12",border:`1px solid ${C.easy}22`,fontSize:11,color:C.muted}}>
+                  Or WhatsApp screenshot to <span style={{fontWeight:700,color:C.easy}}>{PAYMENT_WHATSAPP}</span>
+                </div>
+              )}
+            </div>
+            <button onClick={checkAccess}
+              style={{width:"100%",padding:"13px",borderRadius:11,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}55`,color:C.accentLight,cursor:"pointer",marginBottom:10}}>
+              ✓ Already paid — check my access
+            </button>
+            <button onClick={()=>setStep("info")} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+              ← Back
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -8865,7 +8941,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
     {/* Settings drawer overlay */}
-    {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""}/>}
+    {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""} onCheckAccess={async()=>{const isPro=await checkProFromServer(SB_CFG,authUser?.id||"",authUser?.email||"");if(isPro)setProStatus(true);return isPro;}}/>}
     {feedbackOpen&&<FeedbackModal onClose={()=>setFeedbackOpen(false)} userId={authUser?.id||"anon"} onSubmit={(data)=>submitFeedback(SB_CFG,data)}/>}
     {settingsOpen&&(
       <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
