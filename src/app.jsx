@@ -3146,6 +3146,49 @@ function XPBar({ level, progress, label, xp, nextXP }) {
     </div>
   );
 }
+function StudyTimeStrip({ todayStudySecs, weekStudySecs, weeklyStudyDays }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const maxS = Math.max(...weeklyStudyDays.map(x => x.secs), 1);
+  return (
+    <div onClick={() => setExpanded(v => !v)}
+      style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:11, padding:"9px 14px", marginBottom:12, cursor:"pointer" }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ fontSize:16 }}>📖</span>
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{fmtStudyTime(todayStudySecs)} studied today</div>
+            <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>This week: {fmtStudyTime(weekStudySecs)}</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"flex-end", gap:3, height:24 }}>
+            {weeklyStudyDays.map(d => {
+              const h = d.secs > 0 ? Math.max(4, Math.round((d.secs / maxS) * 24)) : 2;
+              return <div key={d.key} style={{ width:6, height:h, borderRadius:2, background:d.isToday?C.accent:d.secs>0?C.accent+"66":C.dim, alignSelf:"flex-end" }}/>;
+            })}
+          </div>
+          <div style={{ fontSize:10, color:C.muted, transition:"transform 0.2s", transform:expanded?"rotate(180deg)":"none" }}>▾</div>
+        </div>
+      </div>
+      {expanded && (
+        <div style={{ marginTop:12, animation:"fadeIn 0.15s ease" }}>
+          <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8 }}>This week</div>
+          {weeklyStudyDays.map(d => (
+            <div key={d.key} style={{ display:"flex", alignItems:"center", gap:9, marginBottom:6 }}>
+              <div style={{ fontSize:11, color:d.isToday?C.accentLight:C.muted, fontWeight:d.isToday?700:400, width:26, flexShrink:0 }}>{d.label}</div>
+              <div style={{ flex:1, height:5, background:C.dim, borderRadius:3, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${d.secs>0?Math.max(2,Math.round(d.secs/maxS*100)):0}%`, background:d.isToday?C.accent:C.accent+"66", borderRadius:3, transition:"width 0.4s" }}/>
+              </div>
+              <div style={{ fontSize:11, color:d.secs>0?(d.isToday?C.text:C.textMid):C.muted, fontWeight:d.isToday?700:400, textAlign:"right", width:42, flexShrink:0 }}>
+                {d.secs > 0 ? fmtStudyTime(d.secs) : "—"}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 function StatCard({ label, value, color, sub, onClick, icon }) {
   return (
     <div onClick={onClick} style={{ background:C.surface, border:`1px solid ${C.border}`, borderLeft:`3px solid ${color||C.accent}`, borderRadius:11, padding:"12px 13px", cursor:onClick?"pointer":"default", transition:"border-color 0.15s", position:"relative", overflow:"hidden" }}>
@@ -9337,24 +9380,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     })()}
 
     {/* Study time strip */}
-    {todayStudySecs>0&&(
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"9px 14px",marginBottom:12}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:16}}>📖</span>
-          <div>
-            <div style={{fontSize:13,fontWeight:700,color:C.text}}>{fmtStudyTime(todayStudySecs)} studied today</div>
-            <div style={{fontSize:11,color:C.muted,marginTop:1}}>This week: {fmtStudyTime(weekStudySecs)}</div>
-          </div>
-        </div>
-        <div style={{display:"flex",alignItems:"flex-end",gap:3,height:24}}>
-          {weeklyStudyDays.map(d=>{
-            const maxS=Math.max(...weeklyStudyDays.map(x=>x.secs),1);
-            const h=d.secs>0?Math.max(4,Math.round((d.secs/maxS)*24)):2;
-            return<div key={d.key} style={{width:6,height:h,borderRadius:2,background:d.isToday?C.accent:d.secs>0?C.accent+"66":C.dim,alignSelf:"flex-end"}}/>;
-          })}
-        </div>
-      </div>
-    )}
+    {todayStudySecs>0&&<StudyTimeStrip todayStudySecs={todayStudySecs} weekStudySecs={weekStudySecs} weeklyStudyDays={weeklyStudyDays}/>}
 
     {/* Exam countdown phase banner */}
     {history.length>=3&&daysLeft>14&&(()=>{
