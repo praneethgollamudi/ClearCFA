@@ -6647,6 +6647,7 @@ function CFACalculator({onClose, onMinimize=null}){
 
 // ─── LOFI AMBIENT PLAYER ─────────────────────────────────────────────────────
 function LofiPlayer(){
+  const [loggedIn,setLoggedIn]=useState(()=>{try{return !!JSON.parse(localStorage.getItem('cfa_auth'));}catch{return false;}});
   const [isPlaying,setIsPlaying]=useState(false);
   const [pendingResume,setPendingResume]=useState(()=>{try{return localStorage.getItem('cfa_lofi_playing')==='1';}catch{return false;}});
   const [vol,setVol]=useState(()=>{try{return parseFloat(localStorage.getItem('cfa_lofi_vol')||'0.35');}catch{return 0.35;}});
@@ -6782,6 +6783,7 @@ function LofiPlayer(){
   };
   useEffect(()=>()=>{stopAudio();try{ctxRef.current?.close();}catch{};},[]);
   useEffect(()=>{const h=(e)=>setLTheme(e.detail||'dark');window.addEventListener('cfa_theme',h);return()=>window.removeEventListener('cfa_theme',h);},[]);
+  useEffect(()=>{const h=(e)=>{setLoggedIn(!!e.detail);if(!e.detail){stopAudio();setIsPlaying(false);setPendingResume(false);}};window.addEventListener('cfa_auth',h);return()=>window.removeEventListener('cfa_auth',h);},[]);
   // Auto-resume after refresh: start on first user interaction (browsers block autoplay otherwise)
   useEffect(()=>{
     if(!pendingResume) return;
@@ -6796,6 +6798,7 @@ function LofiPlayer(){
     };
   },[pendingResume]);
   const isLight=lTheme==='light';
+  if(!loggedIn) return null;
   return (
     <>
       <button onClick={()=>setShowPanel(s=>!s)} title={pendingResume?"Tap anywhere to resume music":"Lofi study music"}
@@ -8372,6 +8375,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         saveAuth(auth);
         setAuthUser(auth);
         authUserRef.current=auth;
+        try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:true}));}catch{}
         if(isSignup) setShowOnboarding(true);
       }catch{
         setAuthError("Something went wrong. Please try again.");
@@ -8960,7 +8964,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:11,color:C.muted,marginBottom:8,textAlign:"center"}}>
               Signed in as <strong style={{color:C.text}}>{authUser?.email}</strong>
             </div>
-            <button onClick={()=>{clearAuth();setAuthUser(null);authUserRef.current=null;setSettingsOpen(false);}}
+            <button onClick={()=>{clearAuth();setAuthUser(null);authUserRef.current=null;setSettingsOpen(false);try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:false}));}catch{}}}
               style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:"#200010",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
               Sign out
             </button>
