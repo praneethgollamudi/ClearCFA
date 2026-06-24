@@ -6648,6 +6648,7 @@ function CFACalculator({onClose, onMinimize=null}){
 // ─── LOFI AMBIENT PLAYER ─────────────────────────────────────────────────────
 function LofiPlayer(){
   const [isPlaying,setIsPlaying]=useState(false);
+  const [pendingResume,setPendingResume]=useState(()=>{try{return localStorage.getItem('cfa_lofi_playing')==='1';}catch{return false;}});
   const [vol,setVol]=useState(()=>{try{return parseFloat(localStorage.getItem('cfa_lofi_vol')||'0.35');}catch{return 0.35;}});
   const [showPanel,setShowPanel]=useState(false);
   const [lTheme,setLTheme]=useState(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}});
@@ -6766,8 +6767,13 @@ function LofiPlayer(){
     if(ctxRef.current?.state==='running') ctxRef.current.suspend();
   }
   const toggle=()=>{
-    if(isPlaying){stopAudio();setIsPlaying(false);}
-    else{startAudio();setIsPlaying(true);}
+    if(isPlaying){
+      stopAudio();setIsPlaying(false);setPendingResume(false);
+      try{localStorage.setItem('cfa_lofi_playing','0');}catch{}
+    } else {
+      startAudio();setIsPlaying(true);setPendingResume(false);
+      try{localStorage.setItem('cfa_lofi_playing','1');}catch{}
+    }
   };
   const onVol=v=>{
     setVol(v);
@@ -6776,17 +6782,31 @@ function LofiPlayer(){
   };
   useEffect(()=>()=>{stopAudio();try{ctxRef.current?.close();}catch{};},[]);
   useEffect(()=>{const h=(e)=>setLTheme(e.detail||'dark');window.addEventListener('cfa_theme',h);return()=>window.removeEventListener('cfa_theme',h);},[]);
+  // Auto-resume after refresh: start on first user interaction (browsers block autoplay otherwise)
+  useEffect(()=>{
+    if(!pendingResume) return;
+    const resume=()=>{
+      startAudio();setIsPlaying(true);setPendingResume(false);
+    };
+    document.addEventListener('click',resume,{once:true});
+    document.addEventListener('keydown',resume,{once:true});
+    return()=>{
+      document.removeEventListener('click',resume);
+      document.removeEventListener('keydown',resume);
+    };
+  },[pendingResume]);
   const isLight=lTheme==='light';
   return (
     <>
-      <button onClick={()=>setShowPanel(s=>!s)} title="Lofi study music"
+      <button onClick={()=>setShowPanel(s=>!s)} title={pendingResume?"Tap anywhere to resume music":"Lofi study music"}
         style={{position:"fixed",bottom:22,left:16,zIndex:200,width:46,height:46,borderRadius:"50%",
-          background:isPlaying?"linear-gradient(135deg,#1a3a2a,#1e5c3a)":isLight?"linear-gradient(135deg,#e8e8f4,#f4f4fb)":"linear-gradient(135deg,#1a1a2e,#1e1e38)",
-          border:isPlaying?"1px solid #22c55e55":isLight?"1px solid #6366f155":"1px solid #6366f133",
-          color:isPlaying?"#86efac":isLight?"#4f46e5":"#a5b4fc",fontSize:20,cursor:"pointer",
-          boxShadow:isPlaying?"0 4px 16px #22c55e33":isLight?"0 4px 16px #0002":"0 4px 16px #0008",
+          background:isPlaying?"linear-gradient(135deg,#1a3a2a,#1e5c3a)":pendingResume?"linear-gradient(135deg,#1a2e3a,#1e3a5c)":isLight?"linear-gradient(135deg,#e8e8f4,#f4f4fb)":"linear-gradient(135deg,#1a1a2e,#1e1e38)",
+          border:isPlaying?"1px solid #22c55e55":pendingResume?"1px solid #60a5fa88":isLight?"1px solid #6366f155":"1px solid #6366f133",
+          color:isPlaying?"#86efac":pendingResume?"#93c5fd":isLight?"#4f46e5":"#a5b4fc",fontSize:20,cursor:"pointer",
+          boxShadow:isPlaying?"0 4px 16px #22c55e33":pendingResume?"0 4px 16px #60a5fa44":isLight?"0 4px 16px #0002":"0 4px 16px #0008",
           display:"flex",alignItems:"center",justifyContent:"center",
-          touchAction:"manipulation",transition:"all 0.2s"}}>
+          touchAction:"manipulation",transition:"all 0.2s",
+          animation:pendingResume?"pulse 1.6s ease-in-out infinite":undefined}}>
         🎵
       </button>
       {showPanel&&(
