@@ -2942,6 +2942,8 @@ const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
 const PAYMENT_UPI_ID='9493413121@upi';
 const PAYMENT_CONTACT_EMAIL='gspbuilds@gmail.com';
 const PAYMENT_WHATSAPP=''; // e.g. '+919876543210' — leave empty to hide WhatsApp option
+const EARLY_ADOPTER_SPOTS=50;
+const EARLY_ADOPTER_TAKEN=23; // update manually as subscribers join
 // Pro status is validated server-side against the subscriptions table.
 // getCachedProStatus / setCachedProStatus cache the server response for 4 hours.
 function getCachedProStatus(userId){
@@ -4488,7 +4490,7 @@ function FeedbackModal({onClose, userId="", onSubmit}){
   );
 }
 
-function UpgradeModal({reason, onClose, userEmail="", onCheckAccess}){
+function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=null, weakCount=0, streakDays=0}){
   const [step,setStep]=useState("info"); // "info" | "pay" | "checking" | "granted" | "notyet"
   const [copied,setCopied]=useState(false);
   const hoursLeft=()=>{const now=new Date();const midnight=new Date(now);midnight.setHours(24,0,0,0);return Math.max(1,Math.ceil((midnight-now)/(1000*60*60)));};
@@ -4551,7 +4553,48 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess}){
               <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:5}}>{title}</div>
               <div style={{fontSize:13,color:C.muted,lineHeight:1.55,maxWidth:280,margin:"0 auto"}}>{sub}</div>
             </div>
-            <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1.5px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+
+            {/* #2 — Loss-framing panel for daily limit */}
+            {reason==="limit"&&(passProb!==null||weakCount>0||streakDays>0)&&(
+              <div style={{background:C.hard+"14",border:`1px solid ${C.hard}33`,borderRadius:12,padding:"13px 16px",marginBottom:14}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.hard,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>What you're leaving on the table today</div>
+                {passProb!==null&&(
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:passProb>=70?C.easy+"22":C.hard+"22",border:`2px solid ${passProb>=70?C.easy:C.hard}55`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{fontSize:11,fontWeight:800,color:passProb>=70?C.easy:C.hard}}>{passProb}%</span>
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:C.text}}>Pass probability: {passProb}%</div>
+                      <div style={{fontSize:11,color:C.muted}}>{passProb>=70?"On track — keep the momentum":"Every session gap widens this gap"}</div>
+                    </div>
+                  </div>
+                )}
+                {weakCount>0&&(
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:C.medium+"22",border:`2px solid ${C.medium}55`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{fontSize:13,fontWeight:800,color:C.medium}}>{weakCount}</span>
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:C.text}}>{weakCount} topic{weakCount!==1?"s":""} below 60% accuracy</div>
+                      <div style={{fontSize:11,color:C.muted}}>Untrained areas examiners love to test</div>
+                    </div>
+                  </div>
+                )}
+                {streakDays>0&&(
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:C.reward+"22",border:`2px solid ${C.reward}55`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{fontSize:13,fontWeight:800,color:C.rewardLight}}>{streakDays}🔥</span>
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:C.text}}>{streakDays}-day streak at risk</div>
+                      <div style={{fontSize:11,color:C.muted}}>Stop now and the chain breaks</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1.5px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                 <div>
                   <div style={{fontSize:11,fontWeight:700,color:C.accentLight,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>ClearCFA Pro</div>
@@ -4568,6 +4611,21 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess}){
                 ))}
               </div>
             </div>
+
+            {/* #3 — Early adopter urgency counter */}
+            <div style={{background:C.reward+"12",border:`1px solid ${C.reward}33`,borderRadius:9,padding:"8px 12px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.rewardLight}}>Early adopter price — lock it in forever</div>
+                <div style={{marginTop:4,height:4,background:C.border,borderRadius:2}}>
+                  <div style={{height:"100%",width:`${Math.round((EARLY_ADOPTER_TAKEN/EARLY_ADOPTER_SPOTS)*100)}%`,background:`linear-gradient(90deg,${C.reward},${C.rewardLight})`,borderRadius:2}}/>
+                </div>
+              </div>
+              <div style={{textAlign:"right",flexShrink:0}}>
+                <div style={{fontSize:13,fontWeight:900,color:C.rewardLight}}>{EARLY_ADOPTER_TAKEN}/{EARLY_ADOPTER_SPOTS}</div>
+                <div style={{fontSize:10,color:C.muted}}>spots claimed</div>
+              </div>
+            </div>
+
             <button onClick={()=>setStep("pay")}
               style={{width:"100%",padding:"14px",borderRadius:11,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 18px ${C.accent}44`,marginBottom:10}}>
               💳 Get Pro — ₹499/month
@@ -7891,7 +7949,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     if(!proStatus){
       const usage=getDailyAIUsage();
       if(usage.count>=FREE_DAILY_AI_LIMIT){
-        setUpgradeModal({reason:"limit"});
+        setUpgradeModal({reason:"limit",passProb:passProbability?.probability??null,weakCount:moduleReadiness.filter(m=>m.accuracy!==null&&m.accuracy<60).length,streakDays:streak});
         setLoading(false);setLoadingProgress(0);generatingRef.current=false;
         return;
       }
@@ -9049,7 +9107,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
     {/* Settings drawer overlay */}
-    {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""} onCheckAccess={async()=>{const{isPro,validUntil}=await checkProFromServer(SB_CFG,authUser?.id||"",authUser?.email||"");if(isPro){setProStatus(true);setProValidUntil(validUntil||null);}return isPro;}}/>}
+    {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} passProb={upgradeModal.passProb??null} weakCount={upgradeModal.weakCount??0} streakDays={upgradeModal.streakDays??0} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""} onCheckAccess={async()=>{const{isPro,validUntil}=await checkProFromServer(SB_CFG,authUser?.id||"",authUser?.email||"");if(isPro){setProStatus(true);setProValidUntil(validUntil||null);}return isPro;}}/>}
     {feedbackOpen&&<FeedbackModal onClose={()=>setFeedbackOpen(false)} userId={authUser?.id||"anon"} onSubmit={(data)=>submitFeedback(SB_CFG,data)}/>}
     {settingsOpen&&(
       <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
@@ -10531,6 +10589,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
           📤 Share Result
         </button>
       </div>
+
+      {/* #4 — Post-session upgrade nudge for free users who scored ≥70% */}
+      {!proStatus&&sessionPct>=70&&(
+        <div style={{background:`linear-gradient(135deg,${C.easy}14,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"16px 18px",marginBottom:14,display:"flex",gap:14,alignItems:"center"}}>
+          <div style={{fontSize:28,flexShrink:0}}>🚀</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:800,color:C.easy,marginBottom:3}}>You're improving — don't stop here</div>
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.5,marginBottom:10}}>Unlock unlimited AI practice and keep this momentum going every day.</div>
+            <button onClick={()=>setUpgradeModal({reason:"default"})} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+              Unlock unlimited →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* AM/PM break screen */}
       {fullExamMode&&examSession===1&&window._cfaExamPMQs?.length>0&&(
