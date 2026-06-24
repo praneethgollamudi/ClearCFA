@@ -8389,7 +8389,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <span style={{fontSize:10,fontWeight:700,color:C.accentLight,background:C.accent+"20",border:`1px solid ${C.accent}44`,borderRadius:20,padding:"2px 8px",marginLeft:2}}>Free to start</span>
           </div>
           <div style={{fontSize:30,fontWeight:900,color:C.text,lineHeight:1.15,marginBottom:10,letterSpacing:"-0.6px",maxWidth:320,margin:"0 auto 10px"}}>
-            Pass CFA Level 1.<br/>
+            Pass the CFA.<br/>
             <span style={{background:`linear-gradient(135deg,${C.accentLight},${C.easyLight})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>AI that adapts to you.</span>
           </div>
           <div style={{fontSize:13,color:C.muted,lineHeight:1.65,maxWidth:290,margin:"0 auto 24px"}}>
