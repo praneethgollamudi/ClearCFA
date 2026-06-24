@@ -3482,22 +3482,60 @@ function FracFormula({parts}){
 }
 function FormulaSheet({topic, level="1"}){
   const [open,setOpen]=useState(false);
+  const [openMod,setOpenMod]=useState(null);
   const formulas=getActiveFormulas(level)[topic]||[];
   if(!formulas.length)return null;
+  // Build subtopic groups
+  const modLookup=FORMULA_MODULES[topic]||{};
+  const modOrder=[],modMap={};
+  for(const f of formulas){
+    const m=f.module||modLookup[f.name]||"General";
+    if(!modMap[m]){modMap[m]=[];modOrder.push(m);}
+    modMap[m].push(f);
+  }
+  const singleGroup=modOrder.length<=1;
   return(
     <div style={{marginBottom:12}}>
       <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:"#0a0a20",border:`1px solid ${C.accentLight}33`,color:C.accentLight,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
         <span>📐 Formula Sheet — {topic.split(" ")[0]}</span>
-        <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {formulas.length} formulas</span>
+        <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {formulas.length} formulas · {modOrder.length} topics</span>
       </button>
       {open&&(
-        <div style={{background:"#08081a",border:`1px solid ${C.accentLight}22`,borderRadius:"0 0 10px 10px",padding:"10px 14px",display:"flex",flexDirection:"column",gap:6}}>
-          {formulas.map((f,i)=>(
-            <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",paddingBottom:6,borderBottom:i<formulas.length-1?`1px solid ${C.border}`:"none"}}>
-              <div style={{fontSize:10,color:C.muted,minWidth:110,flexShrink:0,paddingTop:2}}>{f.name}</div>
-              <div style={{fontSize:12,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.5,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
+        <div style={{background:"#08081a",border:`1px solid ${C.accentLight}22`,borderRadius:"0 0 10px 10px",overflow:"hidden"}}>
+          {singleGroup?(
+            <div style={{padding:"10px 14px",display:"flex",flexDirection:"column",gap:6}}>
+              {formulas.map((f,i)=>(
+                <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",paddingBottom:6,borderBottom:i<formulas.length-1?`1px solid ${C.border}`:"none"}}>
+                  <div style={{fontSize:10,color:C.muted,minWidth:110,flexShrink:0,paddingTop:2}}>{f.name}</div>
+                  <div style={{fontSize:12,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.5,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
+                </div>
+              ))}
             </div>
-          ))}
+          ):(
+            modOrder.map((mod,mi)=>{
+              const isModOpen=openMod===mod;
+              const mFs=modMap[mod];
+              return(
+                <div key={mod} style={{borderBottom:mi<modOrder.length-1?`1px solid ${C.accentLight}11`:"none"}}>
+                  <button onClick={()=>setOpenMod(isModOpen?null:mod)}
+                    style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 14px",background:isModOpen?`${C.accentLight}08`:"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
+                    <span style={{fontSize:11,fontWeight:700,color:isModOpen?C.accentLight:"#7080b0"}}>{mod}</span>
+                    <span style={{fontSize:10,color:"#4a5080"}}>{mFs.length} · {isModOpen?"▲":"▼"}</span>
+                  </button>
+                  {isModOpen&&(
+                    <div style={{padding:"4px 14px 10px",display:"flex",flexDirection:"column",gap:6}}>
+                      {mFs.map((f,i)=>(
+                        <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",paddingBottom:6,borderBottom:i<mFs.length-1?`1px solid ${C.border}`:"none"}}>
+                          <div style={{fontSize:10,color:C.muted,minWidth:100,flexShrink:0,paddingTop:2}}>{f.name}</div>
+                          <div style={{fontSize:12,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.5,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       )}
     </div>
