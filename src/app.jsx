@@ -9085,6 +9085,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700,color:C.text}}>ClearCFA Pro</div>
                 <div style={{fontSize:11,color:C.accentLight,marginTop:1}}>Unlimited AI questions · All levels · AI Coach</div>
+                {proValidUntil&&<div style={{fontSize:10,color:C.muted,marginTop:3}}>Active until {new Date(proValidUntil).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>}
               </div>
               <span style={{fontSize:11,color:C.accentLight,fontWeight:700}}>Active ✓</span>
             </div>
