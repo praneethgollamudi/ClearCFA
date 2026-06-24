@@ -7654,28 +7654,35 @@ Return ONLY a JSON array — no prose, no markdown fences:
         if(/recalc needed|indicates recalc|reinspecting:|revising for clean|setting [a-c]\s*=.*as correct|recalculating:/i.test(exp))return false;
         const qAns=(q.answer||"").toUpperCase();
         const expU=(q.explanation||"").toUpperCase();
-        // Reject if explanation labels the correct answer's own value as "incorrect"
+        // Require "Correct: X." prefix — AI-generated questions must have it
+        const prefixMatch=expU.match(/^CORRECT:\s*([A-C])\b/);
+        if(!prefixMatch)return false;
+        if(prefixMatch[1]!==qAns)return false;
+        // Reject if explanation labels the correct answer's own VALUE as "incorrect"
         const ansOptText=(q.options[q.answer]||"").replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
         if(ansOptText&&new RegExp(ansOptText+'.{0,25}incorrect','i').test(q.explanation))return false;
-        // Check new "Correct: X." prefix that the prompt now requires
-        const prefixMatch=expU.match(/^CORRECT:\s*([A-C])\b/);
-        if(prefixMatch&&prefixMatch[1]!==qAns)return false;
-        // Reject if explanation explicitly names a DIFFERENT correct-answer letter
-        const lm=expU.match(/CORRECT ANSWER IS\s+([A-C])\b/)||expU.match(/(?:THEREFORE|SO)[,\s]+(?:OPTION\s+)?([A-C])\s+IS(?:\s+THE)?\s+CORRECT\b/)||expU.match(/\bOPTION\s+([A-C])\s+IS(?:\s+THE)?\s+CORRECT\s+ANSWER\b/);
+        // Reject if explanation labels the correct answer LETTER as incorrect/wrong/distractor
+        if(new RegExp('\\b'+qAns+'\\b.{0,30}(INCORRECT|IS WRONG|IS FALSE|IS A DISTRACTOR|IS A TRAP|IS NOT CORRECT)','i').test(expU))return false;
+        if(new RegExp('(INCORRECT|WRONG).{0,10}\\b'+qAns+'\\b','i').test(expU))return false;
+        // Reject if explanation names a DIFFERENT letter as the correct one
+        const lm=expU.match(/CORRECT ANSWER IS\s+([A-C])\b/)||expU.match(/(?:THEREFORE|SO|THUS|HENCE)[,\s]+(?:OPTION\s+)?([A-C])\s+IS(?:\s+THE)?\s+CORRECT\b/)||expU.match(/\bOPTION\s+([A-C])\s+IS(?:\s+THE)?\s+CORRECT\s+ANSWER\b/)||expU.match(/\b(?:THUS|HENCE)[,\s]+([A-C])\s+IS\s+(?:THE\s+)?(?:CORRECT|RIGHT)\b/);
         if(lm&&lm[1]!==qAns)return false;
         // Reject if explanation says "correct answer is [value]" that doesn't match options[answer]
         const vm=(q.explanation||"").match(/correct answer is\s+([^\.\n]{2,40})/i);
         if(vm){const norm=s=>s.toLowerCase().replace(/\s+/g,"").replace(/[^0-9a-z.%]/g,"");const stated=norm(vm[1]);const ansOpt=norm(q.options[q.answer]||"");if(stated.length>1&&ansOpt.length>1&&stated!==ansOpt&&!ansOpt.includes(stated)&&!stated.includes(ansOpt))return false;}
-        // Numeric cross-check: scan all "= X.XX" results in explanation; if a result matches
-        // a non-answer option exactly, the answer key is wrong — reject the question
+        // Numeric cross-check: scan "= X.X[X]" and standalone "X.X[X]%" in explanation;
+        // if a result matches a non-answer option, the answer key is wrong — reject
         const optVals=Object.entries(q.options).map(([k,v])=>({k,v:parseFloat(String(v).replace(/[^0-9.-]/g,""))})).filter(o=>!isNaN(o.v));
         if(optVals.length>=2){
           const ansVal=parseFloat(String(q.options[q.answer]||"").replace(/[^0-9.-]/g,""));
-          const eqNums=[...expU.matchAll(/=\s*([\d]+\.[\d]+)/g)].map(m=>parseFloat(m[1]));
+          const eqNums=[
+            ...[...expU.matchAll(/=\s*([\d]+\.[\d]+)/g)].map(m=>parseFloat(m[1])),
+            ...[...expU.matchAll(/([\d]+\.[\d]+)\s*%/g)].map(m=>parseFloat(m[1])),
+          ];
           for(const n of eqNums){
-            if(Math.abs(n-ansVal)>0.01){// computed value differs from stated answer
-              const matchesOther=optVals.find(o=>o.k!==qAns&&Math.abs(o.v-n)<0.01);
-              if(matchesOther)return false; // computed value matches a different option
+            if(!isNaN(n)&&Math.abs(n-ansVal)>0.02){
+              const matchesOther=optVals.find(o=>o.k!==qAns&&Math.abs(o.v-n)<0.02);
+              if(matchesOther)return false;
             }
           }
         }
