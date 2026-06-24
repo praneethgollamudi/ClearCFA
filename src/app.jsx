@@ -2942,8 +2942,22 @@ const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
 const PAYMENT_UPI_ID='9493413121@upi';
 const PAYMENT_CONTACT_EMAIL='gspbuilds@gmail.com';
 const PAYMENT_WHATSAPP='919493413121'; // WhatsApp number with country code, no +
-const EARLY_ADOPTER_SPOTS=50;
-const EARLY_ADOPTER_TAKEN=23; // update manually as subscribers join
+// ── Price ladder — update TIER_TAKEN as slots fill ────────────────────────────
+// Tier 1 → Tier 2 → Regular (price rises as spots fill)
+const PRICE_REGULAR=1199;   // regular price once all tiers fill
+const PRICE_TIER2=799;      // tier-2 price (shown crossed-out when tier 1 active)
+const PRICE_TIER1=499;      // tier-1 price — the current launch price
+const TIER1_SLOTS=10;       // number of tier-1 spots
+const TIER1_TAKEN=0;        // update manually as tier-1 subscribers join
+const TIER2_SLOTS=20;       // number of tier-2 spots
+const TIER2_TAKEN=0;        // update manually as tier-2 subscribers join
+// Derives active tier automatically — just update TIER1_TAKEN / TIER2_TAKEN
+const ACTIVE_TIER=TIER1_TAKEN<TIER1_SLOTS?1:TIER2_TAKEN<TIER2_SLOTS?2:0;
+const ACTIVE_PRICE=ACTIVE_TIER===1?PRICE_TIER1:ACTIVE_TIER===2?PRICE_TIER2:PRICE_REGULAR;
+const ACTIVE_WAS=ACTIVE_TIER===1?PRICE_TIER2:PRICE_REGULAR;
+const ACTIVE_SLOTS=ACTIVE_TIER===1?TIER1_SLOTS:TIER2_SLOTS;
+const ACTIVE_TAKEN=ACTIVE_TIER===1?TIER1_TAKEN:TIER2_TAKEN;
+const ACTIVE_LABEL=ACTIVE_TIER===1?"Early Bird":ACTIVE_TIER===2?"Founding Member":"Pro";
 // Pro status is validated server-side against the subscriptions table.
 // getCachedProStatus / setCachedProStatus cache the server response for 4 hours.
 function getCachedProStatus(userId){
@@ -4597,38 +4611,48 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
             <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1.5px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                 <div>
-                  <div style={{fontSize:11,fontWeight:700,color:C.accentLight,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>ClearCFA Pro</div>
-                  <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>₹499<span style={{fontSize:11,color:C.muted,fontWeight:400}}>/month</span></div>
-                  <div style={{fontSize:10,color:C.muted,marginTop:2}}>Cancel anytime · all levels</div>
+                  <div style={{fontSize:11,fontWeight:700,color:C.accentLight,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>ClearCFA Pro · {ACTIVE_LABEL}</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:8,lineHeight:1}}>
+                    <div style={{fontSize:28,fontWeight:900,color:C.text}}>₹{ACTIVE_PRICE}<span style={{fontSize:11,color:C.muted,fontWeight:400}}>/mo</span></div>
+                    <div style={{fontSize:13,color:C.muted,textDecoration:"line-through",fontWeight:600}}>₹{ACTIVE_WAS}</div>
+                  </div>
+                  <div style={{fontSize:10,color:C.easy,fontWeight:700,marginTop:3}}>Save ₹{ACTIVE_WAS-ACTIVE_PRICE}/month · locked in forever</div>
                 </div>
-                <div style={{background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 9px",borderRadius:20}}>EARLY ACCESS</div>
+                <div style={{background:`linear-gradient(135deg,${C.reward},${C.rewardLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 9px",borderRadius:20,whiteSpace:"nowrap"}}>{ACTIVE_LABEL.toUpperCase()}</div>
               </div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:"6px 12px"}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"6px 12px",marginBottom:12}}>
                 {["Unlimited AI questions","CFA L1 + L2 + L3","AI Coach","Weekly study plans","Power Notes + Formulas","Spaced repetition"].map(f=>(
                   <div key={f} style={{fontSize:11,color:C.textMid,display:"flex",gap:4,alignItems:"center"}}>
                     <span style={{color:C.easy,fontWeight:700,fontSize:10}}>✓</span>{f}
                   </div>
                 ))}
               </div>
+              {/* Slot counter inside the card */}
+              {ACTIVE_TIER>0&&(
+                <div style={{borderTop:`1px solid ${C.accent}22`,paddingTop:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                    <span style={{fontSize:11,color:C.rewardLight,fontWeight:700}}>{ACTIVE_SLOTS-ACTIVE_TAKEN} of {ACTIVE_SLOTS} {ACTIVE_LABEL} spots left</span>
+                    <span style={{fontSize:10,color:C.muted}}>price rises to ₹{ACTIVE_WAS} after</span>
+                  </div>
+                  <div style={{height:4,background:C.border,borderRadius:2}}>
+                    <div style={{height:"100%",width:`${Math.round((ACTIVE_TAKEN/ACTIVE_SLOTS)*100)}%`,background:`linear-gradient(90deg,${C.reward},${C.rewardLight})`,borderRadius:2,transition:"width 0.4s"}}/>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* #3 — Early adopter urgency counter */}
-            <div style={{background:C.reward+"12",border:`1px solid ${C.reward}33`,borderRadius:9,padding:"8px 12px",marginBottom:12,display:"flex",alignItems:"center",gap:10}}>
-              <div style={{flex:1}}>
-                <div style={{fontSize:11,fontWeight:700,color:C.rewardLight}}>Early adopter price — lock it in forever</div>
-                <div style={{marginTop:4,height:4,background:C.border,borderRadius:2}}>
-                  <div style={{height:"100%",width:`${Math.round((EARLY_ADOPTER_TAKEN/EARLY_ADOPTER_SPOTS)*100)}%`,background:`linear-gradient(90deg,${C.reward},${C.rewardLight})`,borderRadius:2}}/>
+            {/* What happens after this tier fills */}
+            {ACTIVE_TIER===1&&(
+              <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 12px",marginBottom:12}}>
+                <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>
+                  After these {ACTIVE_SLOTS} spots: price goes to <span style={{color:C.text,fontWeight:700}}>₹{PRICE_TIER2}/mo</span>, then <span style={{color:C.text,fontWeight:700}}>₹{PRICE_REGULAR}/mo</span> for everyone else. Your price is locked in forever once you join.
                 </div>
               </div>
-              <div style={{textAlign:"right",flexShrink:0}}>
-                <div style={{fontSize:13,fontWeight:900,color:C.rewardLight}}>{EARLY_ADOPTER_TAKEN}/{EARLY_ADOPTER_SPOTS}</div>
-                <div style={{fontSize:10,color:C.muted}}>spots claimed</div>
-              </div>
-            </div>
+            )}
 
             <button onClick={()=>setStep("pay")}
               style={{width:"100%",padding:"14px",borderRadius:11,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 18px ${C.accent}44`,marginBottom:10}}>
-              💳 Get Pro — ₹499/month
+              💳 Get {ACTIVE_LABEL} — ₹{ACTIVE_PRICE}/month
             </button>
             <button onClick={onClose} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
               {reason==="limit"?`Continue on free · resets in ${hoursLeft()} hr`:"Continue on free"}
@@ -4655,10 +4679,13 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
                   {copied?"✓ Copied":"Copy"}
                 </button>
               </div>
-              <div style={{marginTop:10,padding:"8px 10px",borderRadius:8,background:C.accent+"12",border:`1px solid ${C.accent}22`}}>
-                <span style={{fontSize:12,fontWeight:800,color:C.accent}}>Amount: </span>
-                <span style={{fontSize:14,fontWeight:900,color:C.text}}>₹499</span>
-                <span style={{fontSize:11,color:C.muted}}> /month</span>
+              <div style={{marginTop:10,padding:"8px 10px",borderRadius:8,background:C.accent+"12",border:`1px solid ${C.accent}22`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <span style={{fontSize:12,fontWeight:800,color:C.accent}}>Amount: </span>
+                  <span style={{fontSize:14,fontWeight:900,color:C.text}}>₹{ACTIVE_PRICE}</span>
+                  <span style={{fontSize:11,color:C.muted}}> /month</span>
+                </div>
+                <div style={{fontSize:11,color:C.muted,textDecoration:"line-through"}}>₹{ACTIVE_WAS}</div>
               </div>
             </div>
 
@@ -8759,8 +8786,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{flex:1,background:`linear-gradient(160deg,${C.accent}14,${C.accent}06)`,border:`1.5px solid ${C.accent}55`,borderRadius:14,padding:"16px 14px",position:"relative"}}>
               <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 10px",borderRadius:20,letterSpacing:"0.06em",whiteSpace:"nowrap"}}>MOST POPULAR</div>
               <div style={{fontSize:11,fontWeight:700,color:C.accentLight,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Pro</div>
-              <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>₹499<span style={{fontSize:13,fontWeight:600,color:C.muted}}>/mo</span></div>
-              <div style={{fontSize:10,color:C.muted,marginBottom:14}}>cancel anytime · all levels</div>
+              <div style={{display:"flex",alignItems:"baseline",gap:8,lineHeight:1,marginBottom:2}}>
+                <div style={{fontSize:26,fontWeight:900,color:C.text}}>₹{ACTIVE_PRICE}<span style={{fontSize:13,fontWeight:600,color:C.muted}}>/mo</span></div>
+                <div style={{fontSize:13,color:C.muted,textDecoration:"line-through"}}>₹{ACTIVE_WAS}</div>
+              </div>
+              <div style={{fontSize:10,color:C.easy,fontWeight:700,marginBottom:14}}>{ACTIVE_LABEL} · {ACTIVE_SLOTS-ACTIVE_TAKEN} spots left</div>
               {[["Unlimited AI questions",true],["CFA L1 + L2 + L3",true],["AI Coach (unlimited)",true],["Weekly study plans",true],["Advanced analytics",true],["Spaced repetition",true],["Priority support",true]].map(([f])=>(
                 <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:C.textMid,marginBottom:5}}>
                   <span style={{color:C.easy,fontWeight:700,flexShrink:0,fontSize:10}}>✓</span>{f}
@@ -9149,7 +9179,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <span style={{fontSize:18}}>🚀</span>
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700}}>Upgrade to Pro</div>
-                <div style={{fontSize:11,color:C.muted,marginTop:1}}>Unlimited AI Qs · L2 & L3 · AI Coach · ₹499/mo</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:1}}>Unlimited AI Qs · L2 & L3 · AI Coach · ₹{ACTIVE_PRICE}/mo</div>
               </div>
               <span style={{fontSize:11,color:C.accentLight,fontWeight:700}}>→</span>
             </button>
