@@ -2936,7 +2936,7 @@ function _applyTheme(t){
 }
 
 // ── Freemium tier ─────────────────────────────────────────────────────────────
-const FREE_DAILY_AI_LIMIT=5;
+const FREE_DAILY_AI_LIMIT=10;
 const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
 // ── Payment config (update these to change payment details) ───────────────────
 const PAYMENT_UPI_ID='9493413121@upi';
