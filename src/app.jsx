@@ -4501,8 +4501,8 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess}){
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                 <div>
                   <div style={{fontSize:11,fontWeight:700,color:C.accentLight,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>ClearCFA Pro</div>
-                  <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>₹999<span style={{fontSize:11,color:C.muted,fontWeight:400}}> one-time</span></div>
-                  <div style={{fontSize:10,color:C.muted,marginTop:2}}>Lifetime access · all levels</div>
+                  <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>₹499<span style={{fontSize:11,color:C.muted,fontWeight:400}}>/month</span></div>
+                  <div style={{fontSize:10,color:C.muted,marginTop:2}}>Cancel anytime · all levels</div>
                 </div>
                 <div style={{background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 9px",borderRadius:20}}>EARLY ACCESS</div>
               </div>
@@ -4516,7 +4516,7 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess}){
             </div>
             <button onClick={()=>setStep("pay")}
               style={{width:"100%",padding:"14px",borderRadius:11,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 18px ${C.accent}44`,marginBottom:10}}>
-              💳 Get Pro — ₹999 one-time
+              💳 Get Pro — ₹499/month
             </button>
             <button onClick={onClose} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
               {reason==="limit"?`Continue on free · resets in ${hoursLeft()} hr`:"Continue on free"}
@@ -4540,7 +4540,8 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess}){
               </div>
               <div style={{marginTop:10,padding:"8px 10px",borderRadius:8,background:C.accent+"12",border:`1px solid ${C.accent}22`}}>
                 <span style={{fontSize:12,fontWeight:800,color:C.accent}}>Amount: </span>
-                <span style={{fontSize:14,fontWeight:900,color:C.text}}>₹999</span>
+                <span style={{fontSize:14,fontWeight:900,color:C.text}}>₹499</span>
+                <span style={{fontSize:11,color:C.muted}}> /month</span>
               </div>
             </div>
             <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
