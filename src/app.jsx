@@ -4560,9 +4560,8 @@ function FeedbackModal({onClose, userId="", onSubmit}){
 function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=null, weakCount=0, streakDays=0}){
   const [step,setStep]=useState("info"); // "info" | "pay" | "checking" | "granted" | "notyet"
   const [copied,setCopied]=useState(false);
-  const hoursLeft=()=>{const now=new Date();const midnight=new Date(now);midnight.setHours(24,0,0,0);return Math.max(1,Math.ceil((midnight-now)/(1000*60*60)));};
   const headers={
-    limit:{icon:"⚡",title:"Daily limit reached",sub:`You've used your ${FREE_DAILY_AI_LIMIT} free questions today. Resets in ${hoursLeft()} hr${hoursLeft()!==1?"s":""}.`},
+    limit:{icon:"⚡",title:"Daily limit reached",sub:`You've used your ${FREE_DAILY_AI_LIMIT} free questions today. Resets at midnight.`},
     coach:{icon:"🤖",title:"Pro feature",sub:"AI Coach is available on the Pro plan."},
     plan:{icon:"🗓",title:"Pro feature",sub:"Weekly AI study plans are available on Pro."},
     l2l3:{icon:"📚",title:"Pro feature",sub:"Full CFA L2 & L3 support is available on Pro."},
@@ -4709,7 +4708,7 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
               💳 Get {ACTIVE_LABEL} — ₹{ACTIVE_PRICE}/month
             </button>
             <button onClick={onClose} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
-              {reason==="limit"?`Continue on free · resets in ${hoursLeft()} hr`:"Continue on free"}
+              {reason==="limit"?"Continue on free · resets at midnight":"Continue on free"}
             </button>
           </>
         )}
@@ -7707,7 +7706,7 @@ function CFAMock(){
             "cfa_"+STORAGE_KEY,"cfa_"+SR_KEY,"cfa_"+USAGE_KEY,
             "cfa_"+PASS_TREND_KEY,"cfa_"+PLAN_KEY,"cfa_"+API_LOG_KEY,
             "cfa_"+QCACHE_KEY,"cfa_cfa_focus_cache","cfa_cfa_diag_weak",
-            "cfa_cfa_exam_date","cfa_cfa_refresher_v1",
+            "cfa_cfa_exam_date","cfa_cfa_refresher_v1","cfa_daily_ai",
           ];
           SESSION_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch{}});
           setHistory([]);historyRef.current=[];
