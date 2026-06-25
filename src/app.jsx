@@ -8510,10 +8510,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const scored=moduleReadiness.map(m=>{
       const last=levelHistory.filter(h=>h.topic===m.topic).sort((a,b)=>(b.dateKey||"").localeCompare(a.dateKey||""))[0];
       const daysSince=last?Math.max(0,Math.floor((today-new Date(last.dateKey))/86400000)):30;
-      const urgency=(m.weight||1)*Math.min(daysSince,30)/Math.max(m.accuracy||0,15);
+      // Prioritise weak topics: weight × recency × how far below 100% accuracy
+      const weaknessFactor=m.sessions===0?60:Math.max(100-(m.accuracy??100),5);
+      const urgency=(m.weight||1)*Math.min(daysSince,30)*weaknessFactor;
       return{...m,daysSince,urgency};
     });
-    return scored.sort((a,b)=>b.urgency-a.urgency)[0]||null;
+    // Prefer topics with low accuracy; only show a refresher if everything is strong
+    const weak=scored.filter(m=>m.sessions>0&&m.accuracy!==null&&m.accuracy<80);
+    const pool=weak.length?weak:scored.filter(m=>m.sessions>0&&m.accuracy!==null);
+    return (pool.length?pool:scored).sort((a,b)=>b.urgency-a.urgency)[0]||null;
   },[moduleReadiness,levelHistory]);
 
   const [reviewAiPanel,setReviewAiPanel]=useState(null);
@@ -9738,16 +9743,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"0"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":`${Object.keys(srDeck).length>0?`${Object.keys(srDeck).length} total · none due`:"no cards yet"}`} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
-    {/* Score sparkline — last 15 session trend */}
+    {/* Score sparkline — last 15 session trend — tap to open session history */}
     {levelHistory.length>=3&&(
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
+      <div onClick={()=>{setScreen("dashboard");setDashTab("sessions");}} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:4}}>Last {Math.min(levelHistory.length,15)} sessions</div>
           <ScoreSparkline history={levelHistory}/>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
           <div style={{fontSize:20,fontWeight:800,color:levelHistory[0]?.pct>=70?C.easy:C.hard}}>{levelHistory[0]?.pct??0}%</div>
-          <div style={{fontSize:10,color:C.muted,marginTop:1}}>latest</div>
+          <div style={{fontSize:10,color:C.muted,marginTop:1}}>tap for history</div>
         </div>
       </div>
     )}
@@ -9755,7 +9760,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* Smart topic nudge — data-driven, replaces rotating tip */}
     {smartNudge&&levelHistory.length>=2&&(()=>{
       const {topic:nt,daysSince,accuracy,weight,sessions}=smartNudge;
-      const reason=sessions===0?`Never studied · ${weight}% of exam`:daysSince>6?`${daysSince}d since last session · ${weight}% exam weight`:`${accuracy}% accuracy · needs drilling`;
+      const reason=sessions===0?`Never studied · ${weight}% of exam`:accuracy!==null&&accuracy<80?`${accuracy}% accuracy · improve this`:daysSince>6?`${daysSince}d since last session · refresher due`:`${accuracy}% accuracy · ${daysSince}d ago`;
       const mods=Object.keys(activeLOS[nt]?.modules||{});
       return(
         <div style={{background:`${C.accent}10`,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"11px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
