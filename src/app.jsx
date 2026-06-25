@@ -825,6 +825,7 @@ const LESSONS_KEY          = "cfa_lessons_v1";
 const REFRESHER_KEY        = "cfa_refresher_v1";
 const REMINDER_TIME_KEY    = "cfa_reminder_time_v1";
 const OFFLINE_QS_KEY       = "cfa_offline_qs_v1";
+const OFFLINE_SEED_KEY     = "cfa_offline_seed_seeded_v1";
 const CALC_SNAP_KEY        = "cfa_calc_snap_v1";
 const CONFIDENCE_KEY       = "cfa_confidence_v1";
 const STUDY_GOAL_KEY       = "cfa_study_goal_v1";
@@ -841,6 +842,62 @@ const CHECKLIST_KEY        = "cfa_checklist_done";
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
+
+// ─── OFFLINE QUESTION SEED BANK ──────────────────────────────────────────────
+// Hardcoded fallback questions seeded into OFFLINE_QS_KEY on first load.
+// Lets non-signed-in users try the app immediately without API calls.
+const OFFLINE_SEED_QS = {
+  "Ethics": {"Code of Ethics & Standards": [
+    {id:"s_et_1",question:"A CFA candidate overhears material nonpublic information about a merger in an elevator and tips off a colleague. Which Standard is most likely violated?",options:{A:"Standard II-A: Material Nonpublic Information",B:"Standard VI-B: Priority of Transactions",C:"Standard I-C: Misrepresentation"},answer:"A",explanation:"Tipping someone about MNPI violates Standard II-A even if the tipper does not personally trade on the information."},
+    {id:"s_et_2",question:"When applicable law conflicts with the CFA Standards and provides less protection to clients, a member must:",options:{A:"Follow applicable law only",B:"Follow whichever standard provides greater protection to clients and the market",C:"Follow the CFA Standards only regardless of local law"},answer:"B",explanation:"Members must adhere to the stricter of applicable law and the Code and Standards — whichever offers greater protection to clients and market integrity."},
+    {id:"s_et_3",question:"Under Standard VI-B: Priority of Transactions, which trade must be executed first?",options:{A:"Employer proprietary account",B:"Client account",C:"Member's personal account"},answer:"B",explanation:"Client interests take priority over both employer proprietary accounts and the member's own personal transactions."},
+  ]},
+  "Quantitative Methods": {"Time Value of Money": [
+    {id:"s_qm_1",question:"If market interest rates rise, the present value of a fixed annuity will:",options:{A:"Increase, because higher rates reflect stronger cash flows",B:"Decrease, because future cash flows are discounted at a higher rate",C:"Remain unchanged, because the annuity payments are fixed"},answer:"B",explanation:"Present value is inversely related to the discount rate. Higher rates reduce the PV of fixed future cash flows."},
+    {id:"s_qm_2",question:"Which return measure best captures the compound growth rate of an investment over multiple periods?",options:{A:"Arithmetic mean return",B:"Geometric mean return",C:"Harmonic mean return"},answer:"B",explanation:"The geometric mean (time-weighted return) accounts for compounding and is the correct measure of multi-period investment growth."},
+    {id:"s_qm_3",question:"A zero-coupon bond matures at $1,000 in 5 years. At a 6% annual discount rate, its price is closest to:",options:{A:"$747",B:"$820",C:"$943"},answer:"A",explanation:"PV = 1000 / (1.06)^5 = 1000 / 1.3382 ≈ $747. Zero-coupon bonds trade at a deep discount because they pay no interim coupons."},
+  ]},
+  "Economics": {"Firm & Market Structures": [
+    {id:"s_ec_1",question:"In which market structure does the firm's demand curve coincide with the industry demand curve?",options:{A:"Monopolistic competition",B:"Oligopoly",C:"Pure monopoly"},answer:"C",explanation:"A pure monopolist is the only seller, so its demand curve IS the industry demand curve. In other structures, each firm faces only a portion of market demand."},
+    {id:"s_ec_2",question:"A Nash equilibrium in an oligopoly exists when:",options:{A:"Each firm maximizes profit without regard to competitors' actions",B:"No firm can improve its payoff by unilaterally changing its strategy",C:"All firms set price equal to marginal cost"},answer:"B",explanation:"Nash equilibrium requires that each player's strategy is optimal given the strategies of all other players — no single firm benefits from defecting."},
+    {id:"s_ec_3",question:"A firm in perfect competition will shut down in the short run if price falls below:",options:{A:"Average total cost (ATC)",B:"Average variable cost (AVC)",C:"Average fixed cost (AFC)"},answer:"B",explanation:"Fixed costs are sunk in the short run. A firm shuts down only when price < AVC because at that point every unit sold loses money beyond what's already spent on fixed costs."},
+  ]},
+  "Financial Statement Analysis": {"Income Statement Analysis": [
+    {id:"s_fsa_1",question:"Which of the following is most likely classified as a non-recurring item on the income statement?",options:{A:"Cost of goods sold",B:"Gain from discontinued operations",C:"Research and development expense"},answer:"B",explanation:"Discontinued operations are separately disclosed non-recurring items. COGS and R&D are recurring operating expenses."},
+    {id:"s_fsa_2",question:"Under the percentage-of-completion method, revenue is recognised:",options:{A:"Only when cash is collected from the customer",B:"Proportionally as the project progresses toward completion",C:"Only when the project is substantially complete"},answer:"B",explanation:"Percentage-of-completion spreads revenue recognition across the project life in proportion to costs incurred or milestones reached, matching revenues to the period in which work is performed."},
+    {id:"s_fsa_3",question:"Basic EPS is calculated using:",options:{A:"Diluted shares including all convertible instruments",B:"Weighted average basic shares outstanding",C:"Shares outstanding only at the fiscal year-end date"},answer:"B",explanation:"Basic EPS uses the weighted average number of common shares outstanding during the period — not year-end shares and not diluted shares."},
+  ]},
+  "Corporate Issuers": {"Capital Structure & Leverage": [
+    {id:"s_ci_1",question:"According to Modigliani-Miller Proposition I (no taxes), a firm's total value is:",options:{A:"Higher with more debt because of the interest tax shield",B:"Unaffected by its capital structure",C:"Lower with more debt because financial risk rises"},answer:"B",explanation:"Without taxes, MM Proposition I states that firm value depends only on operating cash flows and risk — not on how the firm is financed."},
+    {id:"s_ci_2",question:"Which of the following will most likely increase a firm's WACC?",options:{A:"A reduction in the corporate tax rate",B:"A decrease in the risk-free interest rate",C:"An increase in the firm's credit rating"},answer:"A",explanation:"Lower corporate tax rates reduce the tax shield on debt, increasing the after-tax cost of debt and thus WACC. Lower rf and better credit ratings reduce WACC."},
+    {id:"s_ci_3",question:"Degree of operating leverage (DOL) is highest for firms with:",options:{A:"High variable costs relative to fixed costs",B:"High fixed costs relative to variable costs",C:"Equal fixed and variable costs"},answer:"B",explanation:"DOL = (Revenue − Variable Costs) / EBIT. High fixed costs mean a small change in revenue causes a large change in operating income — higher sensitivity (higher DOL)."},
+  ]},
+  "Equity": {"Equity Valuation – DDM & Multiples": [
+    {id:"s_eq_1",question:"The Gordon Growth Model (constant-growth DDM) assumes dividends grow at:",options:{A:"A constant rate in perpetuity",B:"A high rate initially, then declining to a stable rate",C:"The same rate as the overall economy"},answer:"A",explanation:"The Gordon Growth Model (P = D1 / (r − g)) requires a single constant dividend growth rate forever. Multi-stage models are needed when growth varies over time."},
+    {id:"s_eq_2",question:"Enterprise Value / EBITDA is preferred over P/E when comparing companies that differ in:",options:{A:"Revenue growth rates",B:"Capital structures and depreciation policies",C:"Dividend payout ratios"},answer:"B",explanation:"EV/EBITDA is capital-structure neutral (EV includes debt; EBITDA excludes interest) and adds back depreciation, making it useful when D&A or leverage differs across peers."},
+    {id:"s_eq_3",question:"A stock with beta of 1.5 relative to the market will:",options:{A:"Move approximately 1.5 times as much as the market in percentage terms",B:"Have 1.5 times the total risk (standard deviation) of the market",C:"Always outperform the market over any holding period"},answer:"A",explanation:"Beta measures systematic (market) risk sensitivity. A beta of 1.5 implies the stock tends to move 1.5% for every 1% market move. Total risk also includes unsystematic risk."},
+  ]},
+  "Fixed Income": {"Bond Features & Pricing": [
+    {id:"s_fi_1",question:"The price of a bond and its yield-to-maturity have a:",options:{A:"Direct (positive) relationship — higher yield means higher price",B:"Inverse (negative) relationship — higher yield means lower price",C:"Variable relationship that depends on the coupon rate"},answer:"B",explanation:"When yields rise, the present value of future cash flows falls, so bond prices fall. This inverse price-yield relationship is fundamental to fixed income."},
+    {id:"s_fi_2",question:"A callable bond issued in the same market as an otherwise identical non-callable bond will typically have:",options:{A:"A lower yield to compensate for the call feature's value to the issuer",B:"A higher yield because investors demand compensation for call risk",C:"The same yield since the call option does not affect expected cash flows"},answer:"B",explanation:"Callable bonds give the issuer the right to redeem at a disadvantageous time for the investor (when rates fall). Investors require a higher yield as compensation for this reinvestment/call risk."},
+    {id:"s_fi_3",question:"A bond trading at a premium to par value has:",options:{A:"A coupon rate lower than its yield-to-maturity",B:"A coupon rate higher than its yield-to-maturity",C:"A coupon rate equal to its yield-to-maturity"},answer:"B",explanation:"Premium bonds have coupon rates above market yields (YTM). Investors pay more than par because they receive above-market coupon income. Discount bonds have coupons below YTM."},
+  ]},
+  "Derivatives": {"Derivative Features & Markets": [
+    {id:"s_de_1",question:"A long forward contract obligates the buyer to:",options:{A:"Purchase the underlying asset at the agreed forward price at expiration",B:"Purchase or sell depending on which outcome is more favourable",C:"Receive a cash payment equal to any price appreciation"},answer:"A",explanation:"Forward contracts are obligations, not rights. The long party must buy the underlying at the forward price at expiration regardless of the prevailing spot price."},
+    {id:"s_de_2",question:"Compared to exchange-traded derivatives, OTC derivatives generally have:",options:{A:"Greater counterparty risk but more flexibility in contract terms",B:"Less counterparty risk but less flexibility in terms",C:"The same counterparty risk with more standardised terms"},answer:"A",explanation:"OTC contracts are privately negotiated (more customisation) but lack exchange clearing, so counterparty default risk is higher. Exchange-traded derivatives use centralised clearing."},
+    {id:"s_de_3",question:"The maximum loss for the buyer of a call option is:",options:{A:"Unlimited, since the underlying price can fall indefinitely",B:"The premium paid for the option",C:"The strike price minus the underlying price at expiration"},answer:"B",explanation:"A call buyer's downside is limited to the premium paid. If the option expires worthless, the buyer loses only what they paid upfront."},
+  ]},
+  "Alternatives": {"Alternative Investment Features": [
+    {id:"s_al_1",question:"A '2 and 20' hedge fund fee structure most likely means:",options:{A:"2% of committed capital annually plus 20% of profits above a hurdle rate",B:"2% of net asset value annually plus 20% of profits above the high-water mark",C:"2% of NAV quarterly plus 20% of gross profits before expenses"},answer:"B",explanation:"The standard '2 and 20' structure charges a 2% management fee on AUM (NAV) annually and a 20% performance fee on net profits, often subject to a high-water mark provision."},
+    {id:"s_al_2",question:"The primary diversification benefit of adding alternative investments to a portfolio comes from:",options:{A:"Their higher expected returns relative to traditional assets",B:"Lower correlation with traditional equity and bond returns",C:"Greater transparency and liquidity compared to traditional assets"},answer:"B",explanation:"Alternatives may or may not have higher returns, and they are typically less liquid and transparent. Their diversification value comes from low correlation with stocks and bonds."},
+    {id:"s_al_3",question:"The 'J-curve' in private equity investing refers to:",options:{A:"Initial negative returns in early fund years followed by positive returns as investments mature",B:"Exponential growth in portfolio valuations once companies reach profitability",C:"Linear returns throughout the fund life that resemble a J shape on a log scale"},answer:"A",explanation:"Early in a PE fund's life, management fees are paid and investments are written down — returns are negative. As exits occur later, IRR turns positive, tracing a J shape over time."},
+  ]},
+  "Portfolio Management": {"Portfolio Risk & Return": [
+    {id:"s_pm_1",question:"Risk that cannot be eliminated through diversification is called:",options:{A:"Unsystematic (idiosyncratic) risk",B:"Systematic (market) risk",C:"Residual risk"},answer:"B",explanation:"Systematic risk (beta risk) is driven by economy-wide factors affecting all assets. It cannot be diversified away. Unsystematic risk is firm-specific and can be diversified to near zero."},
+    {id:"s_pm_2",question:"Adding an asset with zero correlation to an existing portfolio will:",options:{A:"Reduce portfolio standard deviation below the weighted average of individual standard deviations",B:"Have no effect on portfolio variance because correlation is neither positive nor negative",C:"Increase expected return without changing risk"},answer:"A",explanation:"Any correlation below +1 provides diversification benefits. Zero correlation means the covariance term is zero, so portfolio variance is less than the weighted average of individual variances."},
+    {id:"s_pm_3",question:"According to the Capital Asset Pricing Model (CAPM), the optimal risky portfolio that all investors combine with the risk-free asset is:",options:{A:"Different for each investor based on their risk aversion",B:"The market portfolio, the same for all investors",C:"The minimum-variance portfolio on the efficient frontier"},answer:"B",explanation:"Under CAPM assumptions, all investors hold the same risky portfolio (the market portfolio). They differ only in how much they allocate between the risk-free asset and this common risky portfolio."},
+  ]},
+};
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 // Psychological design principles applied:
@@ -5175,6 +5232,22 @@ function CFAMock(){
   // Backup written only at session end (not on every history change)
   // Storage health check on mount
   useEffect(()=>{storageHealth().then(ok=>setStorageOk(ok));},[]);
+  // Seed offline question cache on first load so non-signed-in users can try immediately
+  useEffect(()=>{
+    try{
+      if(localStorage.getItem(OFFLINE_SEED_KEY))return;
+      const existing=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
+      const merged={...existing};
+      Object.entries(OFFLINE_SEED_QS).forEach(([topic,mods])=>{
+        if(!merged[topic])merged[topic]={};
+        Object.entries(mods).forEach(([mod,qs])=>{
+          if(!(merged[topic][mod]?.length>=3))merged[topic][mod]=qs;
+        });
+      });
+      localStorage.setItem(OFFLINE_QS_KEY,JSON.stringify(merged));
+      localStorage.setItem(OFFLINE_SEED_KEY,"1");
+    }catch{}
+  },[]);
 
   const pendingSessionRef=useRef(null);
 
@@ -5513,10 +5586,15 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         clearTimeout(timeout);
         if(e.name==="AbortError"){lastError=new Error("Timed out — API is slow, try again.");continue;}
         // Don't retry non-rate-limit errors
-        if(!e.message?.includes("Rate limit")&&!e.message?.includes("rate limit")) throw e;
+        if(!e.message?.includes("Rate limit")&&!e.message?.includes("rate limit")){
+          const eEntry={ts:Date.now(),f:feature||"unknown",err:true,msg:e.message?.slice(0,200)||"unknown"};
+          const elog=[eEntry,...apiLogRef.current].slice(0,300);apiLogRef.current=elog;try{storageSet(API_LOG_KEY,elog);}catch{}
+          throw e;
+        }
         lastError=e;
       }
     }
+    {const eEntry={ts:Date.now(),f:feature||"unknown",err:true,msg:(lastError?.message||"retries exhausted").slice(0,200)};const elog=[eEntry,...apiLogRef.current].slice(0,300);apiLogRef.current=elog;try{storageSet(API_LOG_KEY,elog);}catch{}}
     throw lastError||new Error("All retries failed — please wait a minute and try again.");
   };
 
@@ -7564,19 +7642,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
         const pct=Math.min(100,Math.round((used/FREE_DAILY_AI_LIMIT)*100));
         const remaining=Math.max(0,FREE_DAILY_AI_LIMIT-used);
         return(
-          <div style={{marginTop:8,display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:9,background:C.surfaceHigh,border:`1px solid ${C.border}`}}>
-            <div style={{flex:1}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                <span style={{fontSize:10,color:C.muted,fontWeight:600}}>⚡ Free AI questions</span>
-                <span style={{fontSize:10,color:remaining===0?C.hard:C.muted,fontWeight:700}}>{remaining} left today</span>
+          <div>
+            <div style={{marginTop:8,display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:9,background:C.surfaceHigh,border:`1px solid ${C.border}`}}>
+              <div style={{flex:1}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{fontSize:10,color:C.muted,fontWeight:600}}>⚡ Free AI questions</span>
+                  <span style={{fontSize:10,color:remaining===0?C.hard:C.muted,fontWeight:700}}>{remaining} left today</span>
+                </div>
+                <div style={{height:4,borderRadius:2,background:C.border,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${pct}%`,borderRadius:2,background:remaining===0?C.hard:remaining<=1?C.medium:C.accent,transition:"width 0.3s"}}/>
+                </div>
               </div>
-              <div style={{height:4,borderRadius:2,background:C.border,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${pct}%`,borderRadius:2,background:remaining===0?C.hard:remaining<=1?C.medium:C.accent,transition:"width 0.3s"}}/>
-              </div>
+              <button onClick={()=>setUpgradeModal({reason:"limit",streakDays:streak})} style={{fontSize:10,fontWeight:700,color:C.accentLight,background:C.accent+"18",border:`1px solid ${C.accent}33`,borderRadius:7,padding:"4px 8px",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                {streak>=7?`🔥 ${streak}d`:"Go Pro"}
+              </button>
             </div>
-            <button onClick={()=>setUpgradeModal({reason:"limit"})} style={{fontSize:10,fontWeight:700,color:C.accentLight,background:C.accent+"18",border:`1px solid ${C.accent}33`,borderRadius:7,padding:"4px 8px",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-              Go Pro
-            </button>
+            {remaining===0&&streak>=7&&<div style={{fontSize:10,color:C.reward,fontWeight:700,textAlign:"center",marginTop:4,padding:"4px 8px",borderRadius:7,background:C.reward+"18",border:`1px solid ${C.reward}33`}}>🔥 Don't break your {streak}-day streak — Go Pro for unlimited AI questions</div>}
           </div>
         );
       })()}

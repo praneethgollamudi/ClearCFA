@@ -152,12 +152,43 @@ const useModel = "claude-haiku-4-5-20251001";
 STORAGE_KEY        = "cfa_mock_v7"        — session history
 SR_KEY             = "cfa_sr_v7"          — SR deck
 OFFLINE_QS_KEY     = "cfa_offline_qs_v1"  — cached questions (up to 30 per topic/module)
+OFFLINE_SEED_KEY   = "cfa_offline_seed_seeded_v1" — flag: OFFLINE_SEED_QS already seeded
 TOUR_KEY           = "cfa_tour_v1"        — feature tour dismissed
 WHATS_NEW_KEY      = "cfa_whats_new_v1"   — what's new version seen
 WHATS_NEW_VERSION  = "2026-06-25"         — bump this string each release
 PRO_TOUR_KEY       = "cfa_pro_tour_v1"    — pro tour dismissed
 SCREEN_ONBOARD_KEY = "cfa_screen_onboard_v1" — per-screen first-visit flags
 ```
+
+## Workflow Discipline
+
+### When to use plan mode
+
+Use `/plan` (plan mode) **before** any medium or large feature. Rule of thumb:
+
+- **Small** (< 20 lines changed, single function): dive in directly
+- **Medium** (new state, new component, or multi-screen change): enter plan mode first
+- **Large** (new screen, architectural change, data model change): always plan mode
+
+Plan mode costs nothing and prevents large context-wasting mistakes. Exit plan mode only after identifying exact file paths, line numbers, and insertion points.
+
+### Build before commit
+
+A pre-commit hook (`/.git/hooks/pre-commit`) runs `node build.js` automatically and stages the rebuilt `app.js`. If the build fails, the commit is aborted.
+
+To build manually: `node build.js`
+
+### Verify with screenshots
+
+The `run-cfa` skill (`.claude/skills/run-cfa.md`) builds, serves locally on port 5555, and screenshots key screens using Playwright. Use it to confirm UI changes actually render correctly.
+
+```
+/run run-cfa
+```
+
+### Error visibility
+
+API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` flag alongside success entries. Visible in the Settings → Debug panel. Check there first when diagnosing AI issues.
 
 ## Common Gotchas
 
