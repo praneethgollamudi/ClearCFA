@@ -10409,63 +10409,47 @@ Return ONLY a JSON array — no prose, no markdown fences:
       );
     })()}
 
-    {/* Secondary actions row */}
-    <div style={{display:"flex",gap:8,marginBottom:8}}>
-      <button onClick={()=>{trackUsage("custom_mock");setScreen("setup");}} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>Custom Mock</button>
-      <button onClick={()=>{
-        trackUsage("wrongs_review");
-        const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
-        if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
-        else{setError("No wrong answers in SR deck yet — complete a session first.");setTimeout(()=>setError(""),3000);}
-      }} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${srWrongCount>0?C.hard+"44":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
-        🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
-      </button>
-      <button onClick={()=>{trackUsage("ai_coach");setAiCoachScreen(true);}} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 Coach</button>
+    {/* Fixed bottom toolbar — quick actions + scrollable more tools */}
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:860,zIndex:200,background:C.bg,borderTop:`1px solid ${C.border}`}}>
+      <div style={{display:"flex",gap:0,padding:"6px 8px 2px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
+        {[
+          {key:"mix",icon:"⚡",label:"Weak Spots",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
+          {key:"full_exam",icon:"⏱",label:"Timed Mock",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
+          {key:"ethics",icon:"⚖️",label:"Ethics",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
+          {key:"dashboard",icon:"📈",label:"Dashboard",action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
+          {key:"revise",icon:"📝",label:"Notes",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
+          {key:"formulas",icon:"🔢",label:"Formulas",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
+          {key:"week_plan",icon:"🗓",label:"Week Plan",proTag:true,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
+          {key:"calc_trainer",icon:"🧮",label:"Calc",action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
+          {key:"los_coverage",icon:"📍",label:"LOS Map",action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
+          {key:"mastery_grid",icon:"🏆",label:"Mastery",action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
+          {key:"interleaved",icon:"🔀",label:"Mixed",action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
+          {key:"study_path",icon:"🎓",label:"Study Path",action:()=>{trackUsage("study_path");setScreen("studyPath");}},
+        ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0)).map(item=>(
+          <button key={item.key} onClick={item.action} style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"5px 10px 4px",borderRadius:8,fontSize:9,fontWeight:700,color:C.muted,background:"none",border:"none",cursor:"pointer",whiteSpace:"nowrap",position:"relative"}}>
+            {item.proTag&&!proStatus&&<span style={{position:"absolute",top:2,right:2,fontSize:6,fontWeight:800,color:C.accentLight,background:C.accent+"30",border:`1px solid ${C.accent}44`,borderRadius:3,padding:"1px 3px"}}>PRO</span>}
+            <span style={{fontSize:17,lineHeight:1}}>{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{display:"flex",gap:6,padding:"4px 10px",paddingBottom:"max(8px,env(safe-area-inset-bottom,8px))"}}>
+        <button onClick={()=>{trackUsage("custom_mock");setScreen("setup");}} style={{flex:1,padding:"9px 4px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>Custom Mock</button>
+        <button onClick={()=>{
+          trackUsage("wrongs_review");
+          const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
+          if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
+          else{setError("No wrong answers in SR deck yet — complete a session first.");setTimeout(()=>setError(""),3000);}
+        }} style={{flex:1,padding:"9px 4px",borderRadius:10,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${srWrongCount>0?C.hard+"44":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
+          🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
+        </button>
+        <button onClick={()=>{trackUsage("ai_coach");setAiCoachScreen(true);}} style={{flex:1,padding:"9px 4px",borderRadius:10,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 Coach</button>
+      </div>
     </div>
     {/* Referral card */}
     {authUser&&<ReferralCard userId={authUser.id} cfg={SB_CFG} setUpgradeModal={setUpgradeModal}/>}
 
 
-    {/* More actions — sorted by usage frequency, collapsed by default */}
-    {(()=>{
-      const gridStyle={background:C.surface,border:`1px solid ${C.border}`,color:C.textMid};
-      const moreItems=[
-        {key:"mix",label:"⚡ Weak Spots",style:gridStyle,action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
-        {key:"full_exam",label:"⏱ Timed Mock",proTag:true,style:gridStyle,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
-        {key:"ethics",label:"⚖️ Ethics",style:gridStyle,action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
-        {key:"dashboard",label:"📈 Dashboard",style:gridStyle,action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
-        {key:"revise",label:"📝 Notes",style:gridStyle,action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
-        {key:"formulas",label:"🔢 Formulas",style:gridStyle,action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
-        {key:"week_plan",label:"🗓 Week Plan",proTag:true,style:gridStyle,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
-        {key:"calc_trainer",label:"🧮 Calc Trainer",style:gridStyle,action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
-        {key:"los_coverage",label:"📍 LOS Map",style:gridStyle,action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
-        {key:"mastery_grid",label:"🏆 Mastery Grid",style:gridStyle,action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
-        {key:"interleaved",label:"🔀 Mixed Topics",style:gridStyle,action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
-        {key:"study_path",label:"🎓 Study Path",style:gridStyle,action:()=>{trackUsage("study_path");setScreen("studyPath");}},
-      ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
-      return(<>
-        <button onClick={()=>{trackUsage("more_toggle");setShowMoreActions(v=>!v);}} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:11,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",marginBottom:showMoreActions?8:0,fontSize:12,fontWeight:600}}>
-          <span>More{!showMoreActions&&usageStats&&Object.keys(usageStats).length>0?<span style={{fontSize:10,color:C.muted,marginLeft:6,fontWeight:400}}>· sorted by your usage</span>:""}</span>
-          <span style={{fontSize:10,transition:"transform 0.2s",display:"inline-block",transform:showMoreActions?"rotate(180deg)":"none"}}>▾</span>
-        </button>
-        {showMoreActions&&(
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8,marginBottom:9}}>
-            {moreItems.map(item=>{
-              const parts=item.label.match(/^([\p{Emoji}‍️]+)\s*(.+)$/u);
-              const icon=parts?parts[1]:item.label;
-              const text=parts?parts[2]:null;
-              return(
-                <button key={item.key} onClick={item.action} style={{padding:"11px 8px 10px",borderRadius:11,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,position:"relative",...item.style}}>
-                  {item.proTag&&!proStatus&&<span style={{position:"absolute",top:4,right:4,fontSize:7,fontWeight:800,color:C.accentLight,background:C.accent+"30",border:`1px solid ${C.accent}44`,borderRadius:4,padding:"1px 4px",letterSpacing:"0.05em"}}>PRO</span>}
-                  <span style={{fontSize:18,lineHeight:1}}>{icon}</span>
-                  {text&&<span style={{fontSize:10,fontWeight:700,lineHeight:1.2,textAlign:"center"}}>{text}</span>}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </>);
-    })()}
     {error&&(()=>{
       const canRetry=lastGenParamsRef.current&&error.includes("retry");
       return(
@@ -10542,6 +10526,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       </div>
     )}
+    <div style={{height:130}}/>
   </>);
 
   // ══ BACKUP / RESTORE SCREEN ════════════════════════════════════════════════
