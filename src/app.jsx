@@ -2235,7 +2235,7 @@ function getForgettingCurve(srDeck){
 }
 
 // ─── QUESTION DEDUPLICATION ──────────────────────────────────────────────────
-const QDB_FRESHNESS_MS = 7 * 24 * 60 * 60 * 1000; // repeat allowed after 7 days
+const QDB_FRESHNESS_MS = 21 * 24 * 60 * 60 * 1000; // repeat allowed after 21 days
 function hashQuestion(q){
   return q.question.slice(0,120).toLowerCase().replace(/\s+/g," ").trim();
 }
@@ -8344,11 +8344,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
     if(!isVignette){
       const hit=qcGet(qCacheRef.current,t,st,diff,cnt);
       if(hit){
-        const cachedQs=hit.qs.slice(0,cnt);
-        const fresh=filterNewQuestions(cachedQs,qdb);
-        // Only use cache if ≥70% are genuinely unseen — otherwise fall through to AI for fresh questions
-        const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:[];
-        if(finalQs.length>=Math.ceil(cnt*0.7)){
+        // Use full cached pool (shuffled) so different questions surface each session
+        const shuffled=[...hit.qs].sort(()=>Math.random()-0.5);
+        const fresh=filterNewQuestions(shuffled,qdb);
+        // Only use cache if we have enough genuinely unseen questions
+        if(fresh.length>=cnt){
+          const finalQs=fresh.slice(0,cnt);
           qCacheRef.current=qcMarkUsed(qCacheRef.current,t,st,diff,hit.ts);
           storageSet(QCACHE_KEY,qCacheRef.current);
           setLoadingProgress(100);setLoadingMsg("Questions ready!");
@@ -8357,6 +8358,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           setVignetteMode(false);
           setQuestions(finalQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
           setScreen("quiz");
+          // Mark as seen immediately so abandoning session doesn't cause repeats
+          setQdb(prev=>addToQDB(finalQs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
           clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
           return;
         }
@@ -8427,8 +8430,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       });
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
       const fresh=filterNewQuestions(parsed_clean,qdb);
-      // Prefer unseen questions; if not enough, take least-recently-seen to minimise repeats
-      const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:(()=>{
+      // Prefer unseen; if not enough, take least-recently-seen sorted (oldest first) to minimise repeats
+      const finalQs=fresh.length>=cnt?fresh.slice(0,cnt):(()=>{
         const sorted=[...parsed_clean].sort((a,b)=>(qdb[hashQuestion(a)]?.seen||0)-(qdb[hashQuestion(b)]?.seen||0));
         return sorted.slice(0,cnt);
       })();
@@ -8450,6 +8453,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       setVignetteMode(isVignette);
       setQuestions(finalQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
       setScreen("quiz");
+      // Mark as seen immediately — abandoning mid-session won't cause repeats
+      setQdb(prev=>addToQDB(finalQs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
       // Track AI usage for free tier
       if(!proStatus){const newUsage=bumpDailyAI(finalQs.length);setDailyAIUsage({...newUsage});}
     }catch(e){
