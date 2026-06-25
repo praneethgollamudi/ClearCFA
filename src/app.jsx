@@ -2882,6 +2882,7 @@ const QCACHE_MAX   = 25;  // max distinct combos to keep
 const API_LOG_KEY  = "cfa_api_log_v1";
 const PASS_TREND_KEY = "cfa_pass_trend_v1";
 const PLAN_KEY       = "cfa_week_plan_v1";
+const LAST_UID_KEY   = "cfa_last_uid";
 const STREAK_FREEZE_KEY="cfa_streak_freeze_v1";
 function getStreakFreezes(){try{return JSON.parse(localStorage.getItem(STREAK_FREEZE_KEY)||'{"held":0,"usedDates":[]}')}catch{return{held:0,usedDates:[]}}}
 function saveStreakFreezes(f){try{localStorage.setItem(STREAK_FREEZE_KEY,JSON.stringify(f));}catch{}}
@@ -7698,6 +7699,25 @@ function CFAMock(){
         return;
       }
 
+      // Detect account switch — purge previous user's local session data
+      {
+        const lastUid=localStorage.getItem(LAST_UID_KEY);
+        if(lastUid&&lastUid!==currentAuth.id){
+          const SESSION_KEYS=[
+            "cfa_"+STORAGE_KEY,"cfa_"+SR_KEY,"cfa_"+USAGE_KEY,
+            "cfa_"+PASS_TREND_KEY,"cfa_"+PLAN_KEY,"cfa_"+API_LOG_KEY,
+            "cfa_"+QCACHE_KEY,"cfa_cfa_focus_cache","cfa_cfa_diag_weak",
+            "cfa_cfa_exam_date","cfa_cfa_refresher_v1",
+          ];
+          SESSION_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch{}});
+          setHistory([]);historyRef.current=[];
+          setSrDeck({});srDeckRef.current={};
+          setWeeklyPlan(null);
+          setDiagWeak([]);
+        }
+        localStorage.setItem(LAST_UID_KEY,currentAuth.id);
+      }
+
       // STEP 2: Read only from the ONE primary key
       let bestHistory=[];
       let allAttempts=[];
@@ -9857,8 +9877,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
     })()}
 
     {settingsOpen&&(
-      <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
-        <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:"18px 18px 0 0",border:`1px solid ${C.border}`,borderBottom:"none",display:"flex",flexDirection:"column",maxHeight:"88vh"}}>
+      <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
+        <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:"18px 18px 0 0",border:`1px solid ${C.border}`,borderBottom:"none",display:"flex",flexDirection:"column",maxHeight:"92vh"}}>
           <div style={{padding:"20px 16px 0",flexShrink:0}}>
             <div style={{width:36,height:4,borderRadius:2,background:C.border,margin:"0 auto 18px"}}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -9866,7 +9886,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <button onClick={()=>setSettingsOpen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:22,lineHeight:1,padding:"0 4px"}}>×</button>
             </div>
           </div>
-          <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 16px 32px",flex:1}}>
+          <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"0 16px 40px",flex:1}}>
           {/* CFA Level Selector */}
           <div style={{width:"100%",padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,marginBottom:9}}>
             <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>🎓 CFA Level</div>
