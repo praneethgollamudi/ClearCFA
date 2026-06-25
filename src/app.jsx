@@ -11123,6 +11123,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
       <button onClick={async()=>{const ok=await storageHealth();setStorageOk(ok);}} style={{marginTop:10,fontSize:12,padding:"7px 14px",borderRadius:8,background:C.dim,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Re-check storage</button>
     </div>
+    <div style={{height:70}}/>
+    {navPortal}
   </>);
 
 
@@ -11203,6 +11205,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </>
       )}
       <ReviewAIChatPanel/>
+      <div style={{height:70}}/>
+      {navPortal}
     </>);
   }
 
@@ -12082,6 +12086,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
     <div style={{background:C.dim,borderRadius:10,padding:"12px 14px",fontSize:11,color:C.muted,lineHeight:1.6}}>
       ⚠ Directional estimate only — based on AI-generated questions, not validated CFA Institute content. Use it to guide focus, not as a definitive prediction.
     </div>
+    <div style={{height:70}}/>
+    {navPortal}
   </>,620);
 
   // ══ DASHBOARD ══════════════════════════════════════════════════════════════
@@ -12133,6 +12139,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           );
         })}
       </div>
+      <div style={{height:70}}/>
+      {navPortal}
     </>);
   }
 
@@ -12487,6 +12495,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{display:"flex",gap:9}}><button onClick={()=>setConfirmClear(false)} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Cancel</button><button onClick={()=>{setHistory([]);setSrDeck({});setQdb({});setConfirmClear(false);setScreen("home");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:"#400010",border:`1px solid ${C.hard}`,color:C.hard,cursor:"pointer"}}>Delete Everything</button></div>
         </div>
       }
+      <div style={{height:70}}/>
+      {navPortal}
     </>);
   }
 
@@ -12534,6 +12544,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       );
     })}
+    <div style={{height:70}}/>
+    {navPortal}
   </>);
 
   // ══ REVIEW WRONGS ══════════════════════════════════════════════════════════
@@ -12580,6 +12592,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {reviewIdx<reviewList.length-1?<button onClick={()=>{setReviewIdx(i=>i+1);setReviewAiPanel(null);}} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Next →</button>:<button onClick={()=>setScreen("home")} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.easy},#16c98a)`,color:"#fff",border:"none",cursor:"pointer"}}>Done ✓</button>}
       </div>
       <ReviewAIChatPanel/>
+      <div style={{height:70}}/>
+      {navPortal}
     </>);
   }
   // ══ API KEY SCREEN ══════════════════════════════════════════════════════════
@@ -12622,6 +12636,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         ))}
         {plan.length>30&&<div style={{textAlign:"center",fontSize:11,color:C.muted,padding:"8px"}}>+{plan.length-30} more days planned</div>}
       </div>
+      <div style={{height:70}}/>
+      {navPortal}
     </>);
   })());
 
@@ -12735,6 +12751,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </button>
         </div>
       )}
+      <div style={{height:70}}/>
+      {navPortal}
     </>);
   })());
 
@@ -12789,6 +12807,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
       )}
+      <div style={{height:70}}/>
+      {navPortal}
     </>);
   })());
 
