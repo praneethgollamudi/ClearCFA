@@ -7513,6 +7513,7 @@ function CFAMock(){
   const [officeModeActive,setOfficeModeActive]=useState(false); // 5-question blitz
   const [loadingProgress,setLoadingProgress]=useState(0);
   const [loadingETA,setLoadingETA]=useState(null);
+  const [loadingContext,setLoadingContext]=useState(null);
   const loadingStartRef=useRef(null);
   const [apiKey,setApiKey]=useState("BACKEND"); // placeholder — AI routed through proxy
   const [theme,setTheme]=useState(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}});
@@ -8140,7 +8141,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         await new Promise(r=>setTimeout(r,delay));
       }
       const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),90000);
+      const timeout=setTimeout(()=>controller.abort(),45000);
       try{
         const modelName=model;
         const userId=typeof authUser!=="undefined"&&authUser?.id?authUser.id:"";
@@ -8393,6 +8394,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setSessionDraft(null);
     srProcessedRef.current=new Set();
     setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
+    setLoadingContext({topic:t,subtopic:st,count:cnt,difficulty:diff,mode:m,isVignette:!!isVignette});
     loadingStartRef.current=Date.now();
 
     // ── No auth: use local templates as fallback ──
@@ -8462,18 +8464,26 @@ Return ONLY a JSON array — no prose, no markdown fences:
       }
     }
 
-    const estimatedMs=Math.max(5000,cnt*900);
+    const estimatedMs=Math.max(8000,cnt*1200);
     const msgs=isVignette
       ?["Writing scenario...","Building item set...","Engineering distractors...","Almost ready..."]
       :["Reading LOS statements...","Anchoring to 2026 curriculum...","Engineering distractors...","Checking for duplicates...","Almost ready..."];
     setLoadingMsg(msgs[0]);
     const progressInterval=setInterval(()=>{
       const elapsed=Date.now()-loadingStartRef.current;
-      const pct=Math.min(90,Math.round((elapsed/estimatedMs)*90));
+      let pct;
+      if(elapsed<estimatedMs){
+        // Phase 1: 0→90% over estimatedMs
+        pct=Math.min(90,Math.round((elapsed/estimatedMs)*90));
+        setLoadingETA(Math.ceil((estimatedMs-elapsed)/1000));
+      } else {
+        // Phase 2: 90→99% slowly over next 45s — shows it's still working
+        const overrun=elapsed-estimatedMs;
+        pct=Math.min(99,90+Math.round((overrun/45000)*9));
+        setLoadingETA(0);
+      }
       setLoadingProgress(pct);
-      const remainingMs=Math.max(0,estimatedMs-elapsed);
-      setLoadingETA(Math.ceil(remainingMs/1000));
-      const mi=Math.floor(elapsed/1800)%msgs.length;
+      const mi=Math.floor(elapsed/2000)%msgs.length;
       setLoadingMsg(msgs[mi]);
     },200);
     // ── Question cache check (skip for vignettes) ─────────────────────────────
@@ -8509,13 +8519,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(isVignette){
         const vignetteCount=Math.max(1,Math.ceil(cnt/3));
         const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null,activeLOS);
-        const rawVig=await callClaude(vigPrompt,3000,{retries:3,retryDelay:8000,model:useModel,feature:`vignette:${diff}`});
+        const rawVig=await callClaude(vigPrompt,3000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`});
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
         const tightMax={3:1600,5:2500,10:4500,15:6000,20:7000}[cnt]||(cnt*500);
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx),tightMax,{retries:3,retryDelay:8000,model:useModel,feature:`questions:${diff}`});
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
@@ -8912,9 +8922,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{position:"absolute",inset:-18,borderRadius:"50%",background:`${C.accent}18`,filter:"blur(16px)"}}/>
         <div style={{width:80,height:80,borderRadius:22,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,boxShadow:`0 8px 32px ${C.accent}55`,position:"relative"}}>⚡</div>
       </div>
-      <div style={{fontSize:24,fontWeight:800,marginBottom:6,letterSpacing:"-0.01em"}}>ClearCFA</div>
-      <div style={{fontSize:15,fontWeight:600,color:C.accentLight,marginBottom:4,textAlign:"center"}}>{loadingMsg}</div>
-      <div style={{fontSize:12,color:C.muted,marginBottom:20}}>{loadingETA>0?`~${loadingETA}s remaining`:"Finishing up…"}</div>
+      <div style={{fontSize:24,fontWeight:800,marginBottom:4,letterSpacing:"-0.01em"}}>ClearCFA</div>
+      {loadingContext&&(
+        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8,flexWrap:"wrap",justifyContent:"center"}}>
+          <span style={{fontSize:12,fontWeight:700,color:"#fff",background:loadingContext.difficulty==="Hard"?C.hard:loadingContext.difficulty==="Easy"?C.easy:C.medium,padding:"2px 8px",borderRadius:20}}>{loadingContext.difficulty}</span>
+          <span style={{fontSize:12,color:C.accentLight,fontWeight:600}}>{loadingContext.count} {loadingContext.isVignette?"vignette Qs":"questions"}</span>
+          <span style={{fontSize:12,color:C.muted}}>·</span>
+          <span style={{fontSize:12,color:C.text,fontWeight:600,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{loadingContext.topic}</span>
+          {loadingContext.subtopic&&loadingContext.subtopic!==loadingContext.topic&&(
+            <><span style={{fontSize:12,color:C.muted}}>›</span><span style={{fontSize:11,color:C.muted,maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{loadingContext.subtopic}</span></>
+          )}
+        </div>
+      )}
+      <div style={{fontSize:14,fontWeight:600,color:C.accentLight,marginBottom:4,textAlign:"center"}}>{loadingMsg}</div>
+      <div style={{fontSize:12,color:C.muted,marginBottom:20}}>
+        {loadingETA>0?`~${loadingETA}s remaining`:loadingProgress>=99?"Almost there — finalising…":"Finishing up…"}
+      </div>
       <div style={{width:"100%",maxWidth:420,marginBottom:16,display:"flex",flexDirection:"column",gap:7}}>
         {[1,2,3].map(i=>(
           <div key={i} style={{height:50,borderRadius:9,background:`linear-gradient(90deg,${C.surface} 25%,${C.dim} 50%,${C.surface} 75%)`,backgroundSize:"200% 100%",animation:`shimmer 1.6s ease-in-out infinite`,animationDelay:`${(i-1)*0.2}s`,border:`1px solid ${C.border}`}}/>
