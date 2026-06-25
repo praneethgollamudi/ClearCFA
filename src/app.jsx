@@ -7333,6 +7333,10 @@ function CFAMock(){
       ];
       for(const k of ALL_KNOWN_KEYS){try{await window.storage.delete(k);}catch{}}
 
+      // If no user is logged in, don't load any localStorage data — prevents showing a previous user's stats
+      const currentAuth=getStoredAuth();
+      if(!currentAuth){setHistoryLoaded(true);setSrLoaded(true);return;}
+
       // STEP 2: Read only from the ONE primary key
       let bestHistory=[];
       let allAttempts=[];
