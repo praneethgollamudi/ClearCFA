@@ -835,7 +835,7 @@ const SESSION_DRAFT_KEY    = "cfa_session_draft_v1";
 const PENDING_GEN_KEY      = "cfa_pending_gen_v1";
 const TOUR_KEY             = "cfa_tour_v1";
 const WHATS_NEW_KEY        = "cfa_whats_new_v1";
-const WHATS_NEW_VERSION    = "2026-06-25";
+const WHATS_NEW_VERSION    = "2026-06-26";
 const PRO_TOUR_KEY         = "cfa_pro_tour_v1";
 const SCREEN_ONBOARD_KEY   = "cfa_screen_onboard_v1";
 const CHECKLIST_KEY        = "cfa_checklist_done";
@@ -7307,9 +7307,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* What's New — shown once per release version */}
     {tourDismissed&&!whatsNewDismissed&&<SlideOverlay
       slides={[
-        {emoji:"🔄",color:C.accentLight,bg:C.accent,title:"Smarter Offline Mode",sub:"June 2026 update",desc:"If the network is slow or the API is busy, ClearCFA now automatically falls back to your saved questions — so your session never gets stuck at a loading spinner.",tip:"Your last 30 questions per topic are always cached. You can study even on a bad connection."},
-        {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Question Generation",sub:"AI speed boost",desc:"All questions now use our optimised AI model. Generation is 3× faster and costs less — meaning more of your subscription goes toward your study experience.",tip:"Hard questions are still as challenging — we've just made the engine more efficient."},
-        {emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator & Music Fixed",sub:"UI fixes",desc:"The calculator and music player buttons were hiding behind the bottom navigation bar. Both are now always visible and reachable at the bottom-right and bottom-left of the screen.",tip:"Tap 🧮 bottom-right to open the financial calculator. Tap 🎵 bottom-left for focus music."},
+        {emoji:"📦",color:C.easy,bg:C.easy,title:"Study Without Sign-In",sub:"Offline Mode · June 2026",desc:"ClearCFA now ships with 30 starter questions across all 10 CFA Level 1 topics — ready before you create an account. If the AI is busy or you're offline, your last 30 questions per topic are always available as an instant fallback.",tip:"Sign in to unlock AI-personalised questions and track your progress. The offline bank is just your starting point."},
+        {emoji:"🔥",color:C.reward,bg:C.reward,title:"Streak Protection Alerts",sub:"Motivation · June 2026",desc:"When you hit the daily free question limit, ClearCFA now shows exactly how many streak days you're protecting — and puts your streak count front and centre in the upgrade prompt. No vague sales pitch, just the truth about what's at stake.",tip:"Go Pro to remove the daily cap and never risk breaking your streak mid-session."},
+        {emoji:"✨",color:C.accentLight,bg:C.accent,title:"Pro Tour & What's New",sub:"Onboarding · June 2026",desc:"Upgrading to Pro now triggers a 3-slide walkthrough of AI Debrief, AI Coach, and all three CFA levels — so every feature is immediately usable. New users also get a Getting Started checklist to reach their first session in under a minute.",tip:"Missed the Pro tour? Open Settings → scroll down → tap 'Replay Pro Tour'."},
       ]}
       onDismiss={()=>{setWhatsNewDismissed(true);try{localStorage.setItem(WHATS_NEW_KEY,WHATS_NEW_VERSION);}catch{}}}
       skipLabel="Got it →"
