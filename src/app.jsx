@@ -2890,6 +2890,8 @@ const DYNAMIC_FORMULAS_KEY = "cfa_dynamic_formulas_v1";
 const RESOLVED_GAPS_KEY = "cfa_resolved_gaps_v1";
 const LESSONS_KEY          = "cfa_lessons_v1";
 const REFRESHER_KEY        = "cfa_refresher_v1";
+const REMINDER_TIME_KEY    = "cfa_reminder_time_v1";
+const OFFLINE_QS_KEY       = "cfa_offline_qs_v1";
 const CALC_SNAP_KEY        = "cfa_calc_snap_v1";
 const CONFIDENCE_KEY       = "cfa_confidence_v1";
 const STUDY_GOAL_KEY       = "cfa_study_goal_v1";
@@ -7266,6 +7268,9 @@ function CFAMock(){
   const apiLogRef=useRef([]);
   const [omMode,setOmMode]=useState(false); // true when current session was started via Office Mode
   const [omQCount,setOmQCount]=useState(()=>{try{return parseInt(localStorage.getItem("cfa_om_count")||"5");}catch{return 5;}});
+  const [reminderTime,setReminderTime]=useState(()=>localStorage.getItem(REMINDER_TIME_KEY)||"");
+  const [essayAnswers,setEssayAnswers]=useState({});
+  const [essayRevealed,setEssayRevealed]=useState({});
   const [weeklyPlan,setWeeklyPlan]=useState(()=>{try{const p=localStorage.getItem(PLAN_KEY);return p?JSON.parse(p):null;}catch{return null;}});
   const [todayStarted,setTodayStarted]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_today_started")||"{}");}catch{return {};}});
   const [weeklyPlanLoading,setWeeklyPlanLoading]=useState(false);
@@ -7677,6 +7682,32 @@ function CFAMock(){
     },1000);
     return()=>clearInterval(speedDrillRef.current);
   },[screen,mode,currentQ,endQuiz]);
+
+  // Daily study reminder — fires notification at user-set time
+  useEffect(()=>{
+    if(!reminderTime)return;
+    const check=()=>{
+      if(Notification.permission!=="granted")return;
+      const now=new Date();
+      const hh=String(now.getHours()).padStart(2,"0");
+      const mm=String(now.getMinutes()).padStart(2,"0");
+      if(`${hh}:${mm}`!==reminderTime)return;
+      const todayKey=`${localDateKey()}_${reminderTime}`;
+      const lastFired=localStorage.getItem("cfa_reminder_last")||"";
+      if(lastFired===todayKey)return;
+      localStorage.setItem("cfa_reminder_last",todayKey);
+      navigator.serviceWorker.ready.then(sw=>{
+        sw.showNotification("ClearCFA Study Reminder",{
+          body:dueCards.length>0?`${dueCards.length} SR cards due · Time to study!`:"Time for your daily CFA session!",
+          icon:"/ClearCFA/icon-192.png",
+          tag:"daily-reminder",
+        });
+      }).catch(()=>{});
+    };
+    check();
+    const id=setInterval(check,60000);
+    return()=>clearInterval(id);
+  },[reminderTime]);
 
   const sessionCommittedRef=useRef(false);
   const srProcessedRef=useRef(new Set()); // qIds already SR-updated in real-time
@@ -8135,6 +8166,26 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     // ── API path — always used when signed in ──
     if(!authUser?.id){
+      // Try offline cache before giving up
+      if(!isVignette){
+        try{
+          const offlineCache=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
+          const cached=(offlineCache[t]?.[st]||[]);
+          const fresh=filterNewQuestions(cached,qdb);
+          const pool=fresh.length>=Math.ceil(cnt*0.5)?fresh:cached;
+          if(pool.length>=Math.min(cnt,3)){
+            const offlineQs=pool.slice(0,cnt);
+            setLoadingProgress(100);setLoadingMsg(`${offlineQs.length} questions ready (offline cache)`);
+            await new Promise(r=>setTimeout(r,300));
+            setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
+            setVignetteMode(false);
+            setQuestions(offlineQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+            setScreen("quiz");
+            setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+            return;
+          }
+        }catch{}
+      }
       setError(isVignette?"Vignette mode requires a ClearCFA account. Please sign in.":"Sign in to generate AI-powered exam questions.");
       setLoading(false);setLoadingProgress(0);generatingRef.current=false;
       return;
@@ -8259,6 +8310,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(!isVignette&&parsed_clean.length>=5){
         qCacheRef.current=qcAdd(qCacheRef.current,t,st,diff,parsed_clean);
         storageSet(QCACHE_KEY,qCacheRef.current);
+        // Also store in offline cache (topic→module→questions) for use without internet
+        try{
+          const offlineCache=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
+          if(!offlineCache[t])offlineCache[t]={};
+          offlineCache[t][st]=(offlineCache[t][st]||[]).concat(parsed_clean).slice(-30);
+          localStorage.setItem(OFFLINE_QS_KEY,JSON.stringify(offlineCache));
+        }catch{}
       }
       setLoadingProgress(100);setLoadingMsg(isVignette?"Vignettes ready!":"Questions ready!");
       await new Promise(r=>setTimeout(r,350));
@@ -8333,7 +8391,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     if(qShownAtRef.current[qId]){
       qTimesRef.current[qId]=Math.round((Date.now()-qShownAtRef.current[qId])/1000);
     }
-    if(mode==="guided")setShowExp(true);
+    if(mode==="guided"||mode==="essay")setShowExp(true);
     const q=questions.find(q=>q.id===qId);
     if(q){
       const correct=opt===q.answer;
@@ -9455,30 +9513,42 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {/* Notifications */}
           {"Notification" in window&&(
-            <button onClick={async()=>{
-              if(Notification.permission==="granted"){
-                // Show a test notification
-                const sw=await navigator.serviceWorker.ready.catch(()=>null);
-                if(sw){sw.showNotification("ClearCFA",{body:`You have ${dueCards.length} SR cards due today`,icon:"/ClearCFA/icon-192.png",tag:"test"});}
-              }else{
-                const perm=await Notification.requestPermission();
-                if(perm==="granted"){
-                  const sw=await navigator.serviceWorker.ready.catch(()=>null);
-                  if(sw){sw.showNotification("ClearCFA",{body:"Notifications enabled! We'll remind you when SR cards are due.",icon:"/ClearCFA/icon-192.png",tag:"test"});}
-                }
-              }
-            }} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
-              <span style={{fontSize:18}}>🔔</span>
-              <div style={{flex:1}}>
-                <div style={{fontSize:13,fontWeight:600}}>Study Reminders</div>
-                <div style={{fontSize:11,color:C.muted,marginTop:1}}>
-                  {Notification.permission==="granted"?"Enabled — tap to test":"Tap to enable daily SR reminders"}
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 14px",marginBottom:9}}>
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:Notification.permission==="granted"?10:0}}>
+                <span style={{fontSize:18}}>🔔</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:600}}>Study Reminders</div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:1}}>
+                    {Notification.permission==="granted"?"Enabled — set daily reminder time":"Tap to enable daily reminders"}
+                  </div>
                 </div>
+                <button onClick={async()=>{
+                  if(Notification.permission==="granted"){
+                    const sw=await navigator.serviceWorker.ready.catch(()=>null);
+                    if(sw){sw.showNotification("ClearCFA",{body:`You have ${dueCards.length} SR cards due today`,icon:"/ClearCFA/icon-192.png",tag:"test"});}
+                  }else{
+                    const perm=await Notification.requestPermission();
+                    if(perm==="granted"){
+                      const sw=await navigator.serviceWorker.ready.catch(()=>null);
+                      if(sw){sw.showNotification("ClearCFA",{body:"Notifications enabled!",icon:"/ClearCFA/icon-192.png",tag:"test"});}
+                    }
+                  }
+                }} style={{fontSize:11,color:Notification.permission==="granted"?C.easy:C.muted,fontWeight:700,background:Notification.permission==="granted"?C.easy+"18":C.dim,border:"none",padding:"4px 10px",borderRadius:6,cursor:"pointer"}}>
+                  {Notification.permission==="granted"?"ON · Test":"Enable"}
+                </button>
               </div>
-              <span style={{fontSize:11,color:Notification.permission==="granted"?C.easy:C.muted,fontWeight:700}}>
-                {Notification.permission==="granted"?"ON":"OFF"}
-              </span>
-            </button>
+              {Notification.permission==="granted"&&(
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:12,color:C.muted,flexShrink:0}}>Daily reminder at:</span>
+                  <input type="time" value={reminderTime} onChange={e=>{
+                    const t=e.target.value;
+                    setReminderTime(t);
+                    try{if(t)localStorage.setItem(REMINDER_TIME_KEY,t);else localStorage.removeItem(REMINDER_TIME_KEY);}catch{}
+                  }} style={{flex:1,padding:"7px 10px",borderRadius:8,background:C.dim,border:`1px solid ${C.border}`,color:C.text,fontSize:13,outline:"none"}}/>
+                  {reminderTime&&<button onClick={()=>{setReminderTime("");try{localStorage.removeItem(REMINDER_TIME_KEY);}catch{}}} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",flexShrink:0}}>Clear</button>}
+                </div>
+              )}
+            </div>
           )}
           {/* Feedback */}
           <button onClick={()=>{setSettingsOpen(false);setFeedbackOpen(true);}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
@@ -10371,6 +10441,35 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     </div>
 
+    {/* Offline question bank */}
+    {(()=>{
+      let cacheCount=0;
+      try{const c=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");cacheCount=Object.values(c).flatMap(m=>Object.values(m)).flat().length;}catch{}
+      return(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:16}}>
+          <div style={{fontSize:13,fontWeight:700,marginBottom:4}}>📶 Offline question bank</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:12,lineHeight:1.5}}>
+            Questions you've already generated are cached automatically. Use them when offline or without signing in.
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:cacheCount>0?10:0}}>
+            <span style={{fontSize:12,color:cacheCount>0?C.easy:C.muted}}>{cacheCount>0?`${cacheCount} questions cached`:"No questions cached yet — start a session to build the bank"}</span>
+            {cacheCount>0&&<button onClick={()=>{try{localStorage.removeItem(OFFLINE_QS_KEY);}catch{}}} style={{fontSize:11,color:C.hard,background:"none",border:`1px solid ${C.hard}33`,padding:"4px 10px",borderRadius:6,cursor:"pointer"}}>Clear cache</button>}
+          </div>
+          {authUser?.id&&(
+            <button onClick={async()=>{
+              const topics=Object.entries(activeLOS).slice(0,5);
+              for(const [t,{modules}]of topics){
+                const mod=Object.keys(modules)[0];
+                if(mod)await generateQuestions(t,mod,"Medium",10,"guided").catch(()=>{});
+              }
+            }} style={{width:"100%",padding:"10px",borderRadius:9,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",textAlign:"center",boxSizing:"border-box"}}>
+              ⬇ Pre-download top 5 topics (50 questions)
+            </button>
+          )}
+        </div>
+      );
+    })()}
+
     {/* Import */}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:16}}>
       <div style={{fontSize:13,fontWeight:700,marginBottom:4}}>Restore from backup</div>
@@ -10550,7 +10649,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     <div style={{marginBottom:18}}>
       <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:10}}>Mode</label>
       <div style={{display:"flex",gap:9}}>
-        {[["guided","🧭 Guided","Explanation + LOS tag after each answer"],["exam","⚡ Exam Sim","No hints — results only at end"],["speed_drill","⏱ Speed Drill","100s/question — auto-advance on timeout"],["interleaved","🔀 Interleaved","Mix your 3 weakest topics — beats blocked practice for retention"]].map(([val,label,desc])=>(
+        {[["guided","🧭 Guided","Explanation + LOS tag after each answer"],["exam","⚡ Exam Sim","No hints — results only at end"],["speed_drill","⏱ Speed Drill","100s/question — auto-advance on timeout"],["interleaved","🔀 Interleaved","Mix your 3 weakest topics — beats blocked practice for retention"],...(cfaLevel==="3"?[["essay","📝 Essay","Write your answer, then compare to model answer"]]:[])].map(([val,label,desc])=>(
           <button key={val} onClick={()=>setMode(val)} style={{flex:1,padding:"12px",borderRadius:10,textAlign:"left",cursor:"pointer",border:mode===val?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:mode===val?C.accent+"18":C.surface,color:mode===val?C.accentLight:C.muted}}>
             <div style={{fontSize:13,fontWeight:700}}>{label}</div><div style={{fontSize:11,marginTop:3,opacity:0.65}}>{desc}</div>
           </button>
@@ -10776,9 +10875,30 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <FormulaSheet topic={topic} level={cfaLevel}/>
       <PowerNotesSheet topic={topic} level={cfaLevel}/>
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,padding:"20px 22px",marginBottom:14,fontSize:14,lineHeight:1.8}}>{q.question}</div>
-      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+      {mode==="essay"&&!essayRevealed[q.id]&&(
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Your written answer</div>
+          <textarea
+            value={essayAnswers[q.id]||""}
+            onChange={e=>setEssayAnswers(a=>({...a,[q.id]:e.target.value}))}
+            placeholder="Write your constructed response here — explain your reasoning as you would in the exam…"
+            style={{width:"100%",minHeight:120,background:C.dim,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",fontSize:13,color:C.text,resize:"vertical",outline:"none",lineHeight:1.7,boxSizing:"border-box",fontFamily:"inherit"}}
+          />
+          <button onClick={()=>setEssayRevealed(r=>({...r,[q.id]:true}))}
+            style={{marginTop:8,width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+            Compare with model answer →
+          </button>
+        </div>
+      )}
+      {mode==="essay"&&essayRevealed[q.id]&&essayAnswers[q.id]&&(
+        <div style={{background:C.surface,border:`1px solid ${C.accent}44`,borderRadius:11,padding:"14px 16px",marginBottom:12}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.accentLight,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Your answer</div>
+          <div style={{fontSize:12,color:C.textMid,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{essayAnswers[q.id]}</div>
+        </div>
+      )}
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16,...(mode==="essay"&&!essayRevealed[q.id]?{display:"none"}:{})}}>
         {Object.entries(q.options).map(([key,val])=>{
-          const sel=answered===key,correct=key===q.answer,reveal=!!answered&&(mode==="guided"||mode==="speed_drill");
+          const sel=answered===key,correct=key===q.answer,reveal=!!answered&&(mode==="guided"||mode==="speed_drill"||mode==="essay");
           let bg=C.surface,border=C.border,col=C.text;
           if(reveal&&correct){bg=C.easy+"22";border=C.easy;col=C.easy;}
           else if(reveal&&sel&&!correct){bg=C.hard+"18";border=C.hard;col=C.hard;}
@@ -10795,7 +10915,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
       )}
-      {showExp&&mode==="guided"&&answered&&(
+      {showExp&&(mode==="guided"||mode==="essay")&&answered&&(
         <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:C.textMid,lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>Explanation</div>
           {renderExplanation(q.explanation,C,authUser?.id?async(formulaText)=>{
@@ -11477,6 +11597,36 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:11,color:C.muted,textAlign:"center",lineHeight:1.6,padding:"4px 0 8px"}}>
               Effective time only — idle periods {'>'} 90s/question are excluded.
             </div>
+            {/* Time per topic */}
+            {(()=>{
+              const byTopic={};
+              levelHistory.forEach(h=>{
+                if(!h.topic||!h.avgSecsPerQ)return;
+                if(!byTopic[h.topic])byTopic[h.topic]={total:0,count:0};
+                byTopic[h.topic].total+=h.avgSecsPerQ;
+                byTopic[h.topic].count+=1;
+              });
+              const rows=Object.entries(byTopic).map(([t,{total,count}])=>({t,avg:Math.round(total/count)})).sort((a,b)=>b.avg-a.avg);
+              if(!rows.length)return null;
+              const maxAvg=Math.max(...rows.map(r=>r.avg),1);
+              return(
+                <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:12}}>⏱ Avg seconds per question by topic</div>
+                  {rows.map(({t,avg})=>(
+                    <div key={t} style={{marginBottom:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                        <span style={{fontSize:11,color:C.textMid,fontWeight:600}}>{t}</span>
+                        <span style={{fontSize:11,color:avg>90?C.hard:avg>60?C.medium:C.easy,fontWeight:700}}>{avg}s</span>
+                      </div>
+                      <div style={{height:5,background:C.dim,borderRadius:3}}>
+                        <div style={{height:"100%",width:`${Math.round((avg/maxAvg)*100)}%`,background:avg>90?C.hard:avg>60?C.medium:C.easy,borderRadius:3}}/>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{fontSize:10,color:C.muted,marginTop:4}}>CFA target: ~90s/question. Red = needs speed work.</div>
+                </div>
+              );
+            })()}
           </div>
         );
       })()}
