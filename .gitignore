@@ -1,7 +1,5 @@
 .claude/
 node_modules/
 *.log
-react.min.js
-react-dom.min.js
 test.html
 test_index.html
