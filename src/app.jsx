@@ -7284,32 +7284,86 @@ function ReferralCard({userId,cfg,setUpgradeModal}){
     else copy();
   };
 
+  const slots=Array.from({length:REFERRAL_THRESHOLD},(_,i)=>i<progress);
   return(
-    <div style={{background:`linear-gradient(135deg,${C.accent}12,${C.accent}06)`,border:`1px solid ${C.accent}33`,borderRadius:14,padding:"14px 16px",marginBottom:12}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-        <div style={{fontSize:13,fontWeight:800,color:C.text}}>🎁 Invite friends · earn Pro</div>
-        {earned>0&&<span style={{fontSize:10,fontWeight:700,background:C.easy+"22",color:C.easy,padding:"2px 8px",borderRadius:20,border:`1px solid ${C.easy}33`}}>{earned} month{earned!==1?"s":""} earned</span>}
-      </div>
-      <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.5}}>Get <strong style={{color:C.accentLight}}>1 month Pro free</strong> for every {REFERRAL_THRESHOLD} friends who sign up.</div>
-      {count!==null&&(
-        <div style={{marginBottom:10}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-            <span style={{fontSize:10,color:C.muted}}>{progress}/{REFERRAL_THRESHOLD} friends joined</span>
-            {progress>0&&<span style={{fontSize:10,color:C.accentLight}}>{REFERRAL_THRESHOLD-progress} more for next free month</span>}
+    <div style={{background:`linear-gradient(145deg,${C.accent}15,${C.surface})`,border:`1px solid ${C.accent}35`,borderRadius:16,overflow:"hidden",marginBottom:12}}>
+      {/* Hero banner */}
+      <div style={{background:`linear-gradient(135deg,#7c3aed,#6d28d9,#4c1d95)`,padding:"18px 18px 14px",position:"relative",overflow:"hidden"}}>
+        {/* decorative blobs */}
+        <div style={{position:"absolute",top:-18,right:-18,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,0.06)"}}/>
+        <div style={{position:"absolute",bottom:-24,right:30,width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",position:"relative"}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.6)",letterSpacing:"0.08em",marginBottom:4}}>REFERRAL REWARD</div>
+            <div style={{fontSize:17,fontWeight:900,color:"#fff",lineHeight:1.2,marginBottom:4}}>Study together,<br/>earn Pro free 🎁</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.75)",lineHeight:1.5}}>
+              Invite {REFERRAL_THRESHOLD} friends → get <strong style={{color:"#fbbf24"}}>1 month Pro</strong> free
+            </div>
           </div>
-          <div style={{height:5,background:C.border,borderRadius:3,overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${Math.round((progress/REFERRAL_THRESHOLD)*100)}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s"}}/>
-          </div>
+          {/* SVG illustration — connected avatars */}
+          <svg width="76" height="68" viewBox="0 0 76 68" fill="none" style={{flexShrink:0,marginLeft:8}}>
+            {/* You */}
+            <circle cx="18" cy="22" r="13" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
+            <circle cx="18" cy="17" r="5" fill="rgba(255,255,255,0.8)"/>
+            <path d="M8 34 Q18 27 28 34" fill="rgba(255,255,255,0.8)"/>
+            <circle cx="18" cy="22" r="13" fill="none" stroke="#fbbf24" strokeWidth="1.5" strokeDasharray="2,3"/>
+            {/* Lines to friends */}
+            <line x1="31" y1="18" x2="51" y2="10" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" strokeDasharray="3,3"/>
+            <line x1="31" y1="22" x2="51" y2="32" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" strokeDasharray="3,3"/>
+            {/* Friend 1 (joined = green tint) */}
+            <circle cx="60" cy="10" r="10" fill={slots[0]?"rgba(52,211,153,0.3)":"rgba(255,255,255,0.1)"} stroke={slots[0]?"#34d399":"rgba(255,255,255,0.25)"} strokeWidth="1.5"/>
+            <circle cx="60" cy="7" r="4" fill={slots[0]?"#34d399":"rgba(255,255,255,0.5)"}/>
+            <path d={`M52 18 Q60 13 68 18`} fill={slots[0]?"#34d399":"rgba(255,255,255,0.5)"} opacity="0.7"/>
+            {slots[0]&&<text x="60" y="12" textAnchor="middle" fontSize="8" fill="#fff" fontWeight="700">✓</text>}
+            {/* Friend 2 (joined = green tint) */}
+            <circle cx="60" cy="34" r="10" fill={slots[1]?"rgba(52,211,153,0.3)":"rgba(255,255,255,0.1)"} stroke={slots[1]?"#34d399":"rgba(255,255,255,0.25)"} strokeWidth="1.5"/>
+            <circle cx="60" cy="31" r="4" fill={slots[1]?"#34d399":"rgba(255,255,255,0.5)"}/>
+            <path d={`M52 42 Q60 37 68 42`} fill={slots[1]?"#34d399":"rgba(255,255,255,0.5)"} opacity="0.7"/>
+            {slots[1]&&<text x="60" y="35" textAnchor="middle" fontSize="8" fill="#fff" fontWeight="700">✓</text>}
+            {/* Friend 3 (pending — dashed outline only) */}
+            {REFERRAL_THRESHOLD>2&&(
+              <>
+              <line x1="31" y1="26" x2="51" y2="56" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" strokeDasharray="3,3"/>
+              <circle cx="60" cy="58" r="10" fill={slots[2]?"rgba(52,211,153,0.3)":"rgba(255,255,255,0.06)"} stroke={slots[2]?"#34d399":"rgba(255,255,255,0.2)"} strokeWidth="1.2" strokeDasharray={slots[2]?"none":"2,3"}/>
+              <circle cx="60" cy="55" r="4" fill={slots[2]?"#34d399":"rgba(255,255,255,0.2)"}/>
+              {slots[2]&&<text x="60" y="59" textAnchor="middle" fontSize="8" fill="#fff" fontWeight="700">✓</text>}
+              </>
+            )}
+          </svg>
         </div>
-      )}
-      <div style={{display:"flex",gap:8}}>
-        <div style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 10px",fontSize:11,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{link}</div>
-        <button onClick={copy} style={{padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:700,background:copied?C.easy+"22":`${C.accent}22`,border:`1px solid ${copied?C.easy:C.accent}44`,color:copied?C.easy:C.accentLight,cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>
-          {copied?"✓":"Copy"}
-        </button>
-        <button onClick={share} style={{padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:700,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>
-          Share
-        </button>
+        {earned>0&&(
+          <div style={{marginTop:10,display:"inline-flex",alignItems:"center",gap:6,background:"rgba(251,191,36,0.2)",border:"1px solid rgba(251,191,36,0.4)",borderRadius:20,padding:"4px 10px"}}>
+            <span style={{fontSize:13}}>⭐</span>
+            <span style={{fontSize:11,fontWeight:700,color:"#fbbf24"}}>{earned} month{earned!==1?"s":""} Pro earned!</span>
+          </div>
+        )}
+      </div>
+
+      {/* Progress + actions */}
+      <div style={{padding:"12px 16px"}}>
+        {count!==null&&(
+          <div style={{marginBottom:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <span style={{fontSize:11,fontWeight:600,color:C.text}}>{progress} of {REFERRAL_THRESHOLD} friends joined</span>
+              {progress<REFERRAL_THRESHOLD&&<span style={{fontSize:10,color:C.accentLight}}>{REFERRAL_THRESHOLD-progress} more → 1 month free</span>}
+              {progress>=REFERRAL_THRESHOLD&&<span style={{fontSize:10,color:C.easy,fontWeight:700}}>Reward unlocked 🎉</span>}
+            </div>
+            <div style={{display:"flex",gap:5}}>
+              {slots.map((filled,i)=>(
+                <div key={i} style={{flex:1,height:6,borderRadius:3,background:filled?`linear-gradient(90deg,${C.accent},${C.accentLight})`:C.border,transition:"background 0.4s"}}/>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{display:"flex",gap:8}}>
+          <div style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 10px",fontSize:10,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{link}</div>
+          <button onClick={copy} style={{padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:700,background:copied?C.easy+"22":`${C.accent}22`,border:`1px solid ${copied?C.easy:C.accent}44`,color:copied?C.easy:C.accentLight,cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>
+            {copied?"✓ Copied":"Copy"}
+          </button>
+          <button onClick={share} style={{padding:"8px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0}}>
+            Share →
+          </button>
+        </div>
       </div>
     </div>
   );
