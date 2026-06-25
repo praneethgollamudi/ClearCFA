@@ -8131,7 +8131,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
     }
   },[screen]);
 
-  const callClaude=async(prompt,maxTokens=8000,{retries=3,retryDelay=8000,model="claude-sonnet-4-6",feature=""}={})=>{
+  const callClaude=async(prompt,maxTokens=8000,{retries=2,retryDelay=8000,model="claude-haiku-4-5-20251001",feature=""}={})=>{
     if(!navigator.onLine) throw new Error("No internet — check your connection and retry.");
     let lastError;
     let currentMaxTokens=maxTokens;
@@ -8365,7 +8365,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const progressInterval=setInterval(()=>{setLoadingProgress(p=>Math.min(85,p+3));},300);
     try{
       if(!authUser?.id){setError("FSA Vignette requires a ClearCFA account. Please sign in.");setLoading(false);clearInterval(progressInterval);generatingRef.current=false;return;}
-      const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),2500,{retries:2,retryDelay:6000,model:"claude-sonnet-4-6",feature:"fsa_vignette"});
+      const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),2500,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"fsa_vignette"});
       clearInterval(progressInterval);
       if(!raw||!raw.questions)throw new Error("Invalid FSA vignette format");
       const stmtText=formatStatements(raw);
@@ -8519,19 +8519,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
     }
     // ──────────────────────────────────────────────────────────────────────────
     try{
-      // Haiku for Easy+Medium (structured MCQ output); Sonnet only for Hard (nuanced judgment)
-      const useModel=diff==="Hard"?"claude-sonnet-4-6":"claude-haiku-4-5-20251001";
+      // Haiku for all difficulties — Hard = complex question content, not a complex model
+      const useModel="claude-haiku-4-5-20251001";
       let parsed;
       if(isVignette){
         const vignetteCount=Math.max(1,Math.ceil(cnt/3));
         const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null,activeLOS);
-        const rawVig=await callClaude(vigPrompt,3000,{retries:3,retryDelay:4000,model:useModel,feature:`vignette:${diff}`});
+        const rawVig=await callClaude(vigPrompt,3000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`});
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
-        const tightMax={3:1800,5:2800,10:5500,15:8000,20:9500}[cnt]||(cnt*550);
+        const tightMax={3:1500,5:2200,10:4500,15:6500,20:8000}[cnt]||(cnt*450);
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx),tightMax,{retries:3,retryDelay:4000,model:useModel,feature:`questions:${diff}`});
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
