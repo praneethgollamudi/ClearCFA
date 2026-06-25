@@ -7264,7 +7264,6 @@ function CFAMock(){
   const [showMoreActions,setShowMoreActions]=useState(true);
   const [usageStats,setUsageStats]=useState({});
   const usageStatsRef=useRef({});
-  const [dismissedNudges,setDismissedNudges]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_dismissed_nudges")||"{}");}catch{return {};}});
   const apiLogRef=useRef([]);
   const [omMode,setOmMode]=useState(false); // true when current session was started via Office Mode
   const [omQCount,setOmQCount]=useState(()=>{try{return parseInt(localStorage.getItem("cfa_om_count")||"5");}catch{return 5;}});
@@ -7352,8 +7351,6 @@ function CFAMock(){
   const [crossVignetteModule1, setCrossVignetteModule1] = useState("");
   const [crossVignetteModule2, setCrossVignetteModule2] = useState("");
   const qCacheRef=React.useRef({});
-  const [luckyDipSpinning,setLuckyDipSpinning]=useState(false);
-  const [luckyDipLabel,setLuckyDipLabel]=useState("");
   const [streakFreezes,setStreakFreezes]=useState(()=>getStreakFreezes());
   const [personalBests,setPersonalBests]=useState(()=>{try{return JSON.parse(localStorage.getItem(BESTS_KEY)||"{}");}catch{return {};}});
   const [levelUpInfo,setLevelUpInfo]=useState(null);
