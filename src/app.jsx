@@ -6579,6 +6579,7 @@ function calcIRRValue(flows){
   return r0*100;
 }
 
+
 function CFACalculator({onClose, onMinimize=null}){
   const {useState:uS,useRef:uR}=React;
   const snap=(()=>{try{return JSON.parse(localStorage.getItem(CALC_SNAP_KEY)||"null");}catch{return null;}})();
@@ -6623,13 +6624,15 @@ function CFACalculator({onClose, onMinimize=null}){
   const effToNom=(eff,cy)=>cy*(Math.pow(1+eff/100,1/cy)-1)*100;
   const computeAmort=(p1,p2,tvmD,pY)=>{
     const pv=parseFloat(tvmD.PV),pmt=parseFloat(tvmD.PMT),iy=parseFloat(tvmD.IY);
-    if(isNaN(pv)||isNaN(pmt)||isNaN(iy)||p2<p1)return null;
+    if(isNaN(pv)||isNaN(pmt)||isNaN(iy)||isNaN(p1)||isNaN(p2)||p2<p1)return null;
     const r=(iy/100)/pY;
     let bal=pv,totalPRN=0,totalINT=0;
     for(let p=1;p<=p2;p++){
       const int_pay=bal*r;
+      const prn_disp=pmt+int_pay;
+      const int_disp=-int_pay;
       bal=bal+pmt+int_pay;
-      if(p>=p1){totalPRN+=pmt+int_pay;totalINT+=-int_pay;}
+      if(p>=p1){totalPRN+=prn_disp;totalINT+=int_disp;}
     }
     return{bal,prn:totalPRN,int:totalINT};
   };
@@ -6643,10 +6646,10 @@ function CFACalculator({onClose, onMinimize=null}){
       {name:'OLD',value:'0',ro:false},{name:'NEW',value:'0',ro:false},{name:'%CH',value:'---',ro:true}]};
     return null;
   };
-  const wsNav=(wsCur,dir)=>{
-    if(!wsCur)return;
-    const newIdx=Math.max(0,Math.min(wsCur.fields.length-1,wsCur.idx+dir));
-    const f=wsCur.fields[newIdx];
+  const wsNav=(dir)=>{
+    if(!ws)return;
+    const newIdx=Math.max(0,Math.min(ws.fields.length-1,ws.idx+dir));
+    const f=ws.fields[newIdx];
     setWs(w=>({...w,idx:newIdx}));
     setTvmLbl(f.name);setDisp(f.value==='---'?'0':f.value);setFresh(true);
   };
@@ -6654,42 +6657,43 @@ function CFACalculator({onClose, onMinimize=null}){
   const handleKey=(id)=>{
     const DIGITS=['0','1','2','3','4','5','6','7','8','9'];
 
-    // ── 2nd key (always works) ──
+    // ── 2nd key ──
     if(id==='2nd'){setIs2nd(s=>!s);return;}
 
     // ── Worksheet mode ──
     if(ws){
-      const i2=is2nd;if(is2nd)setIs2nd(false);
-      if(i2&&id==='cpt'){setWs(null);setTvmLbl("");setDisp("0");setFresh(true);return;}
+      const is2ndNow=is2nd;if(is2nd)setIs2nd(false);
+      if(is2ndNow&&id==='cpt'){setWs(null);setTvmLbl("");setDisp("0");setFresh(true);return;}
       const field=ws.fields[ws.idx];
-      if(id==='up'){wsNav(ws,-1);return;}
-      if(id==='down'||id==='enter'){wsNav(ws,1);return;}
+      if(id==='up'){wsNav(-1);return;}
+      if(id==='down'||id==='enter'){wsNav(1);return;}
       if(id==='ce'){
-        if(!field.ro){const nv='0';setDisp(nv);setFresh(true);setWs(w=>{const f=[...w.fields];f[w.idx]={...f[w.idx],value:nv};return{...w,fields:f};});}
-        else{setWs(null);setTvmLbl("");setDisp("0");setFresh(true);}
+        if(!field.ro){
+          const newV='0';setDisp(newV);setFresh(true);
+          setWs(w=>{const f=[...w.fields];f[w.idx]={...f[w.idx],value:newV};return{...w,fields:f};});
+        }else{setWs(null);setTvmLbl("");setDisp("0");setFresh(true);}
         return;
       }
       if(DIGITS.includes(id)&&!field.ro){
-        const nv=fresh?id:(disp==='0'?id:disp+id);
-        if(nv.replace('-','').replace('.','').length<=10){setDisp(nv);setFresh(false);setWs(w=>{const f=[...w.fields];f[w.idx]={...f[w.idx],value:nv};return{...w,fields:f};});}
+        const newV=fresh?id:(disp==='0'?id:disp+id);
+        if(newV.replace('-','').replace('.','').length<=10){setDisp(newV);setFresh(false);setWs(w=>{const f=[...w.fields];f[w.idx]={...f[w.idx],value:newV};return{...w,fields:f};});}
         return;
       }
       if(id==='dot'&&!field.ro){
-        if(!disp.includes('.')){const nv=(fresh?'0':disp)+'.';setDisp(nv);setFresh(false);setWs(w=>{const f=[...w.fields];f[w.idx]={...f[w.idx],value:nv};return{...w,fields:f};});}
+        if(!disp.includes('.')){const newV=(fresh?'0':disp)+'.';setDisp(newV);setFresh(false);setWs(w=>{const f=[...w.fields];f[w.idx]={...f[w.idx],value:newV};return{...w,fields:f};});}
         return;
       }
       if(id==='neg'&&!field.ro){
-        const nv=fmtD(-(parseFloat(disp)||0));setDisp(nv);setFresh(true);
-        setWs(w=>{const f=[...w.fields];f[w.idx]={...f[w.idx],value:nv};return{...w,fields:f};});return;
+        const v=parseFloat(disp)||0;const newV=fmtD(-v);setDisp(newV);setFresh(true);
+        setWs(w=>{const f=[...w.fields];f[w.idx]={...f[w.idx],value:newV};return{...w,fields:f};});return;
       }
       if(id==='cpt'){
         if(ws.type==='amort'){
           const p1=parseInt(ws.fields[0].value)||1,p2=parseInt(ws.fields[1].value)||p1;
           const r=computeAmort(p1,p2,tvm,py);
           if(r){
-            const bv=fmtD(r.bal),pv2=fmtD(r.prn),iv=fmtD(r.int);
-            setWs(w=>{const f=[...w.fields];f[2]={...f[2],value:bv};f[3]={...f[3],value:pv2};f[4]={...f[4],value:iv};return{...w,fields:f,idx:2};});
-            setTvmLbl("BAL");setDisp(bv);setFresh(true);showMsg("Computed");
+            setWs(w=>{const f=[...w.fields];f[2]={...f[2],value:fmtD(r.bal)};f[3]={...f[3],value:fmtD(r.prn)};f[4]={...f[4],value:fmtD(r.int)};return{...w,fields:f,idx:2};});
+            setTvmLbl("BAL");setDisp(fmtD(r.bal));setFresh(true);showMsg("Computed");
           }else showMsg("Set N I/Y PV PMT first");
         }else if(ws.type==='iconv'){
           const nom=parseFloat(ws.fields[0].value),cy=Math.max(1,parseFloat(ws.fields[1].value)||1),eff=parseFloat(ws.fields[2].value);
@@ -6697,8 +6701,8 @@ function CFACalculator({onClose, onMinimize=null}){
           else if(ws.idx===0&&!isNaN(eff)){const n=effToNom(eff,cy);const nv=fmtD(n);setWs(w=>{const f=[...w.fields];f[0]={...f[0],value:nv};return{...w,fields:f};});setDisp(nv);setFresh(true);showMsg("NOM computed");}
           else showMsg("Navigate to field then CPT");
         }else if(ws.type==='delta'){
-          const o=parseFloat(ws.fields[0].value),n2=parseFloat(ws.fields[1].value);
-          if(!isNaN(o)&&!isNaN(n2)&&o!==0){const pch=(n2-o)/Math.abs(o)*100;const nv=fmtD(pch);setWs(w=>{const f=[...w.fields];f[2]={...f[2],value:nv};return{...w,fields:f,idx:2};});setTvmLbl("%CH");setDisp(nv);setFresh(true);}
+          const o=parseFloat(ws.fields[0].value),n=parseFloat(ws.fields[1].value);
+          if(!isNaN(o)&&!isNaN(n)&&o!==0){const pch=(n-o)/Math.abs(o)*100;const nv=fmtD(pch);setWs(w=>{const f=[...w.fields];f[2]={...f[2],value:nv};return{...w,fields:f,idx:2};});setTvmLbl("%CH");setDisp(nv);setFresh(true);}
           else showMsg("OLD cannot be zero");
         }
         return;
@@ -6719,6 +6723,7 @@ function CFACalculator({onClose, onMinimize=null}){
       if(id==='PV'){const w=makeWs('amort');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
       if(id==='5'){const w=makeWs('iconv');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
       if(id==='8'){const w=makeWs('delta');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
+      if(id==='cpt'){return;}
       if(id==='npv'&&cfFlows.length>0){setCfNPVMode(true);setCfFlowsForNPV([...cfFlows]);setDisp("0");setFresh(true);setTvmLbl("I =");return;}
       return;
     }
@@ -6762,7 +6767,7 @@ function CFACalculator({onClose, onMinimize=null}){
       if(id==='ce'){if(!fresh){setDisp("0");setFresh(true);}else{setCfMode(false);setCfFlows([]);setTvmLbl("");showMsg("CF cleared");}return;}
     }
 
-    // ── Main calculator ──
+    // ── Main calc ──
     switch(id){
       case '0':case '1':case '2':case '3':case '4':
       case '5':case '6':case '7':case '8':case '9':
@@ -6774,12 +6779,12 @@ function CFACalculator({onClose, onMinimize=null}){
       case 'neg':{const n=getN();setDisp(isNaN(n)?disp:fmtD(-n));}break;
       case 'pct':setDisp(fmtD(getN()/100));setFresh(true);break;
       case 'sqrt':{const n=getN();setDisp(n<0?"Error":fmtD(Math.sqrt(n)));setFresh(true);}break;
-      case 'sq':{setDisp(fmtD(Math.pow(getN(),2)));setFresh(true);setTvmLbl("x²");}break;
+      case 'sq':{const n=getN();setDisp(fmtD(n*n));setFresh(true);setTvmLbl("x²");}break;
       case 'inv':{const n=getN();setDisp(n===0?"Error":fmtD(1/n));setFresh(true);}break;
-      case 'xmy':{setDisp(fmtD(Math.exp(getN())));setFresh(true);setTvmLbl("eˣ");}break;
+      case 'xmy':{const n=getN();setDisp(fmtD(Math.exp(n)));setFresh(true);setTvmLbl("eˣ");}break;
       case 'ln':{const n=getN();setDisp(n<=0?"Error":fmtD(Math.log(n)));setFresh(true);}break;
       case 'ans':setDisp(fmtD(lastAns));setFresh(true);setTvmLbl("ANS");break;
-      case 'sto':setMem(getN());showMsg(`M→${fmtD(getN())}`);break;
+      case 'sto':setMem(getN());showMsg(`M→ ${fmtD(getN())}`);break;
       case 'rcl':setDisp(fmtD(mem));setFresh(true);setTvmLbl("RCL");break;
       case 'ce':
         if(!fresh){setDisp("0");setFresh(true);}
@@ -6794,10 +6799,10 @@ function CFACalculator({onClose, onMinimize=null}){
         if(parenStack.length===0)break;
         const innerResult=(pendingOp!==null&&!fresh)?doOp(prevVal??0,getN(),pendingOp):(pendingOp!==null)?doOp(prevVal??0,lastB??0,pendingOp):getN();
         const outerCtx=parenStack[parenStack.length-1];
-        const newStk=parenStack.slice(0,-1);
-        setParenStack(newStk);setPendingOp(outerCtx.pendingOp);setPrevVal(outerCtx.prevVal);
+        const newStack=parenStack.slice(0,-1);
+        setParenStack(newStack);setPendingOp(outerCtx.pendingOp);setPrevVal(outerCtx.prevVal);
         setDisp(fmtD(innerResult));setFresh(false);setLastAns(innerResult);
-        setTvmLbl(newStk.length>0?`(`.repeat(newStk.length):"");break;
+        setTvmLbl(newStack.length>0?`(`.repeat(newStack.length):"");break;
       }
       case 'add':case 'sub':case 'mul':case 'div':case 'yx':{
         const opS={add:'+',sub:'-',mul:'×',div:'÷',yx:'y^x'}[id];
@@ -6844,46 +6849,55 @@ function CFACalculator({onClose, onMinimize=null}){
   };
 
   const BTNS=[
+    // Row 1
     {id:'cpt',  main:'CPT',   sub:'QUIT',    t:'cpt'},
     {id:'enter',main:'ENTER', sub:'SET',     t:'enter'},
     {id:'up',   main:'↑',     sub:'DEL',     t:'nav'},
     {id:'down', main:'↓',     sub:'INS',     t:'nav'},
     {id:'off',  main:'ON/OFF',sub:'',        t:'onoff'},
+    // Row 2
     {id:'2nd',  main:'2nd',   sub:'',        t:'k2nd'},
     {id:'cf',   main:'CF',    sub:'',        t:'ws'},
     {id:'npv',  main:'NPV',   sub:'I',       t:'ws'},
     {id:'irr',  main:'IRR',   sub:'',        t:'ws'},
     {id:'arr',  main:'→',     sub:'CLR TVM', t:'nav'},
+    // Row 3
     {id:'N',    main:'N',     sub:'xP/Y',   t:'tvm'},
     {id:'IY',   main:'I/Y',   sub:'P/Y',    t:'tvm'},
     {id:'PV',   main:'PV',    sub:'AMORT',  t:'tvm'},
     {id:'PMT',  main:'PMT',   sub:'BGN',    t:'tvm'},
     {id:'FV',   main:'FV',    sub:'CLR TVM',t:'tvm'},
+    // Row 4
     {id:'pct',  main:'%',     sub:'',       t:'fn'},
     {id:'sqrt', main:'√x',    sub:'',       t:'fn'},
     {id:'sq',   main:'x²',    sub:'',       t:'fn'},
     {id:'inv',  main:'1/x',   sub:'',       t:'fn'},
     {id:'div',  main:'÷',     sub:'',       t:'op'},
+    // Row 5
     {id:'xmy',  main:'INV',   sub:'eˣ',     t:'fn'},
     {id:'lp',   main:'(',     sub:'DATA',   t:'fn'},
     {id:'rp',   main:')',     sub:'STAT',   t:'fn'},
     {id:'yx',   main:'yˣ',    sub:'BOND',   t:'fn'},
     {id:'mul',  main:'×',     sub:'',       t:'op'},
+    // Row 6
     {id:'ln',   main:'LN',    sub:'eˣ',     t:'fn'},
     {id:'7',    main:'7',     sub:'DEPR',   t:'d'},
     {id:'8',    main:'8',     sub:'Δ%',     t:'d'},
     {id:'9',    main:'9',     sub:'BRKEVN', t:'d'},
     {id:'sub',  main:'−',     sub:'',       t:'op'},
+    // Row 7
     {id:'sto',  main:'STO',   sub:'',       t:'mem'},
     {id:'4',    main:'4',     sub:'DATE',   t:'d'},
     {id:'5',    main:'5',     sub:'ICONV',  t:'d'},
     {id:'6',    main:'6',     sub:'PROFIT', t:'d'},
     {id:'add',  main:'+',     sub:'',       t:'op'},
+    // Row 8
     {id:'rcl',  main:'RCL',   sub:'CLR WRK',t:'mem'},
     {id:'1',    main:'1',     sub:'MEM',    t:'d'},
     {id:'2',    main:'2',     sub:'FORMAT', t:'d'},
     {id:'3',    main:'3',     sub:'RESET',  t:'d'},
     {id:'ans',  main:'ANS',   sub:'',       t:'ans'},
+    // Row 9
     {id:'ce',   main:'CE|C',  sub:'CLR WRK',t:'clr'},
     {id:'0',    main:'0',     sub:'',       t:'d'},
     {id:'dot',  main:'.',     sub:'',       t:'d'},
@@ -6897,6 +6911,7 @@ function CFACalculator({onClose, onMinimize=null}){
 
   return(
     <div style={{position:"fixed",inset:0,zIndex:9500,background:"#080810",display:"flex",flexDirection:"column",fontFamily:"'SF Pro Display','Helvetica Neue',sans-serif",overflow:"hidden"}}>
+      {/* Header bar */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 13px",background:"linear-gradient(180deg,#080810,#0c0c1a)",borderBottom:"1px solid #1a1a30",flexShrink:0}}>
         <div style={{display:"flex",flexDirection:"column"}}>
           <span style={{fontSize:13,fontWeight:900,color:"#7dd3fc",letterSpacing:"0.08em"}}>BA II PLUS™</span>
@@ -6917,6 +6932,7 @@ function CFACalculator({onClose, onMinimize=null}){
         </div>
       </div>
 
+      {/* LCD screen */}
       <div style={{background:"linear-gradient(180deg,#030c03,#050f05)",padding:"8px 14px 6px",borderBottom:"2px solid #030810",flexShrink:0}}>
         <div style={{minHeight:16,marginBottom:2,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{fontSize:9,fontWeight:700,color:msg?"#fbbf24":"#3aba3a",letterSpacing:"0.05em",transition:"color 0.2s"}}>{msg||(ws?`${ws.type.toUpperCase()}: ${tvmLbl}`:tvmLbl)||" "}</div>
@@ -6925,20 +6941,22 @@ function CFACalculator({onClose, onMinimize=null}){
         <div style={{fontSize:40,fontWeight:300,color:disp==="Error"?"#f87171":"#b6f066",fontFamily:"'Courier New',Courier,monospace",textAlign:"right",letterSpacing:"0.02em",lineHeight:1.1,minHeight:46,display:"flex",alignItems:"center",justifyContent:"flex-end",overflow:"hidden",whiteSpace:"nowrap"}}>
           {disp}
         </div>
+        {/* Worksheet nav arrows in LCD */}
         {ws&&(
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:3}}>
-            <div style={{display:"flex",gap:3}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:3}}>
+            <div style={{display:"flex",gap:4}}>
               {ws.fields.map((f,i)=>(
                 <div key={f.name} style={{fontSize:7,color:i===ws.idx?"#4ade80":"#1c3c1c",fontWeight:i===ws.idx?800:400,padding:"1px 4px",borderRadius:3,background:i===ws.idx?"#0a200a":"transparent",border:i===ws.idx?"1px solid #1a4a1a":"1px solid transparent"}}>
                   {f.name}
                 </div>
               ))}
             </div>
-            <div style={{fontSize:7,color:"#1c3c1c"}}>↑↓·CPT</div>
+            <div style={{fontSize:7,color:"#1c3c1c"}}>↑↓ nav · CPT=calc</div>
           </div>
         )}
       </div>
 
+      {/* TVM register strip */}
       {!ws&&(
         <div style={{background:"#050510",padding:"3px 4px",display:"flex",gap:2,borderBottom:"1px solid #0d0d1e",flexShrink:0}}>
           {[['N','N'],['IY','I/Y'],['PV','PV'],['PMT','PMT'],['FV','FV']].map(([k,lbl])=>(
@@ -6953,6 +6971,7 @@ function CFACalculator({onClose, onMinimize=null}){
         </div>
       )}
 
+      {/* CF flows */}
       {cfMode&&cfFlows.length>0&&(
         <div style={{background:"#050510",padding:"2px 8px",borderBottom:"1px solid #0d0d1e",flexShrink:0,overflowX:"auto"}}>
           <div style={{display:"flex",gap:3,alignItems:"center",whiteSpace:"nowrap"}}>
@@ -6965,6 +6984,7 @@ function CFACalculator({onClose, onMinimize=null}){
         </div>
       )}
 
+      {/* Button grid — 9 rows × 5 cols */}
       <div style={{flex:1,minHeight:0,padding:"3px 3px 2px",display:"grid",gridTemplateColumns:"repeat(5,1fr)",gridTemplateRows:"repeat(9,1fr)",gap:2}}>
         {BTNS.map(btn=>(
           <button key={btn.id} onClick={()=>handleKey(btn.id)}
@@ -6982,14 +7002,15 @@ function CFACalculator({onClose, onMinimize=null}){
             onPointerDown={e=>{e.currentTarget.style.filter="brightness(1.9)";e.currentTarget.style.transform="scale(0.92)";}}
             onPointerUp={e=>{e.currentTarget.style.filter="";e.currentTarget.style.transform="";}}
             onPointerLeave={e=>{e.currentTarget.style.filter="";e.currentTarget.style.transform="";}}>
-            {btn.sub&&<span style={{fontSize:5.5,color:"#e07b10",position:"absolute",top:2,left:0,right:0,textAlign:"center",fontWeight:800,lineHeight:1}}>{btn.sub}</span>}
+            {btn.sub&&<span style={{fontSize:5.5,color:"#e07b10",position:"absolute",top:2,left:0,right:0,textAlign:"center",fontWeight:800,lineHeight:1,letterSpacing:"0.01em"}}>{btn.sub}</span>}
             <span style={{marginTop:btn.sub?4:0,lineHeight:1}}>{btn.main}</span>
           </button>
         ))}
       </div>
 
+      {/* Quick reference */}
       <div style={{background:"#040410",borderTop:"1px solid #0d0d1e",padding:"2px 10px",flexShrink:0,display:"flex",gap:8,overflowX:"auto",whiteSpace:"nowrap",alignItems:"center"}}>
-        <span style={{fontSize:7,color:"#1c1c30"}}>TVM: 4 vars→CPT+key</span>
+        <span style={{fontSize:7,color:"#1c1c30"}}>TVM: 4 vars → CPT+key</span>
         <span style={{fontSize:7,color:"#111120"}}>·</span>
         <span style={{fontSize:7,color:"#1c1c30"}}>2nd+PV=AMORT</span>
         <span style={{fontSize:7,color:"#111120"}}>·</span>
@@ -6997,7 +7018,7 @@ function CFACalculator({onClose, onMinimize=null}){
         <span style={{fontSize:7,color:"#111120"}}>·</span>
         <span style={{fontSize:7,color:"#1c1c30"}}>2nd+8=Δ%</span>
         <span style={{fontSize:7,color:"#111120"}}>·</span>
-        <span style={{fontSize:7,color:"#1c1c30"}}>yˣ·INV=eˣ</span>
+        <span style={{fontSize:7,color:"#1c1c30"}}>yˣ=power · INV=eˣ</span>
       </div>
     </div>
   );
