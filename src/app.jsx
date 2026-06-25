@@ -7489,6 +7489,7 @@ function CFAMock(){
   const [showDiagnostic,setShowDiagnostic]=useState(false);
   const [diagQ,setDiagQ]=useState(0);
   const [diagAnswers,setDiagAnswers]=useState({});
+  const [diagWeak,setDiagWeak]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_cfa_diag_weak")||"[]");}catch{return [];}});
   const [demoMode,setDemoMode]=useState(false);
   const [demoQ,setDemoQ]=useState(0);
   const [demoAnswers,setDemoAnswers]=useState({});
@@ -9433,8 +9434,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
               })()}
             </div>
           )}
-          <button onClick={()=>{setShowDiagnostic(false);}} style={{width:"100%",padding:"14px",borderRadius:12,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 20px ${C.accent}44`}}>
-            Start studying →
+          <button onClick={()=>{
+            setDiagWeak(weakest);
+            try{localStorage.setItem("cfa_cfa_diag_weak",JSON.stringify(weakest));}catch{}
+            const t=weakest[0];
+            const mods=Object.keys(getActiveLOS(cfaLevel)[t]?.modules||{});
+            setShowDiagnostic(false);
+            if(t&&mods.length){setTimeout(()=>generateQuestions(t,mods[0],"Easy",10,"guided"),100);}
+          }} style={{width:"100%",padding:"14px",borderRadius:12,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 20px ${C.accent}44`}}>
+            🚀 Drill your weakest topic: {weakest[0]} →
+          </button>
+          <button onClick={()=>{
+            setDiagWeak(weakest);
+            try{localStorage.setItem("cfa_cfa_diag_weak",JSON.stringify(weakest));}catch{}
+            setShowDiagnostic(false);
+          }} style={{fontSize:12,color:C.muted,background:"none",border:"none",cursor:"pointer",marginTop:12,display:"block",width:"100%",textAlign:"center"}}>
+            Explore home first →
           </button>
         </div>
       );
@@ -10034,14 +10049,41 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* XP Level bar */}
     {history.length>0&&<div style={{marginBottom:14}}><XPBar level={levelInfo.level} progress={levelInfo.progress} label={levelInfo.label} xp={levelInfo.xp} nextXP={levelInfo.nextXP}/></div>}
 
+    {/* New user — Getting started card */}
+    {historyLoaded&&history.length===0&&(
+      <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"18px 18px",marginBottom:14}}>
+        <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:6}}>👋 Ready for your first session?</div>
+        <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:14}}>
+          {diagWeak.length>0
+            ?<>Your diagnostic flagged <strong style={{color:C.text}}>{diagWeak[0]}</strong> as your weakest area — drill it first.</>
+            :"Pick any CFA topic below or tap Start to jump straight in."}
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>{
+            const t=diagWeak[0]||Object.keys(activeLOS)[0];
+            const mods=Object.keys(activeLOS[t]?.modules||{});
+            generateQuestions(t,mods[0]||t,"Easy",10,"guided");
+          }} style={{flex:2,padding:"12px",borderRadius:10,fontSize:13,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
+            {diagWeak.length>0?`Start ${diagWeak[0].split(" ")[0]} →`:"Start first session →"}
+          </button>
+          <button onClick={()=>setScreen("setup")} style={{flex:1,padding:"12px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+            Custom
+          </button>
+        </div>
+      </div>
+    )}
+
     {/* Stats strip */}
     {!historyLoaded?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>{[0,1,2,3].map(i=><Skeleton key={i} height={68} radius={11}/>)}</div>:(
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
+      <>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:history.length===0?6:14}}>
         <StatCard label="Sessions" value={history.length||"–"} icon="📚" onClick={history.length>0?()=>{trackUsage("dashboard");setScreen("dashboard");}:undefined}/>
         <StatCard label="Avg Score" value={overallPct?`${overallPct}%`:"–"} color={overallPct?(overallPct>=70?C.easy:C.hard):C.muted} icon="🎯" onClick={overallPct?()=>{trackUsage("dashboard");setScreen("dashboard");}:undefined}/>
         <StatCard label="Pass Prob" value={passProbability?`${passProbability.probability}%`:"–"} color={passProbability?passProbability.color:C.muted} sub={passProbability?passProbability.label:history.length>=1?"more data needed":"do 3+ sessions"} onClick={()=>setScreen("readiness")} icon="📈"/>
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"0"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":`${Object.keys(srDeck).length>0?`${Object.keys(srDeck).length} total · none due`:"no cards yet"}`} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
+      {history.length===0&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:14,opacity:0.7}}>Stats unlock after your first session</div>}
+      </>
     )}
     {/* Office Mode — primary CTA */}
     {(()=>{
@@ -10057,8 +10099,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 {omStreak>1&&<span style={{fontSize:10,background:C.reward+"22",color:C.rewardLight,padding:"2px 7px",borderRadius:5,fontWeight:700}}>🔥 {omStreak}d streak</span>}
               </div>
               <div style={{fontSize:11,color:C.muted,marginTop:3}}>
-                AI picks your weakest topic · {omQCount} Qs · ~{omQCount*1.5|0} min
-                {omSessions.length>0&&<span style={{marginLeft:6,color:diffColor,fontWeight:600}}>· {adaptiveOmDifficulty} (your form)</span>}
+                {history.length===0?"Start with any topic · Easy questions first":("AI picks your weakest topic · "+omQCount+" Qs · ~"+(omQCount*1.5|0)+" min")}
+                {history.length>0&&omSessions.length>0&&<span style={{marginLeft:6,color:diffColor,fontWeight:600}}>· {adaptiveOmDifficulty} (your form)</span>}
               </div>
             </div>
             <button onClick={()=>{
