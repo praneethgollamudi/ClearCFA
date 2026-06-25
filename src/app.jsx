@@ -7422,6 +7422,7 @@ function CFAMock(){
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [showMoreActions,setShowMoreActions]=useState(true);
   const [showMoreSheet,setShowMoreSheet]=useState(false);
+  const [moreSheetClosing,setMoreSheetClosing]=useState(false);
   const [usageStats,setUsageStats]=useState({});
   const usageStatsRef=useRef({});
   const apiLogRef=useRef([]);
@@ -10445,16 +10446,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
           action:()=>{trackUsage("dashboard");setShowMoreSheet(false);setScreen("readiness");}},
         {key:"more",label:"More",
           icon:<Ic d="M4 6h16 M4 12h16 M4 18h16"/>,
-          action:()=>setShowMoreSheet(v=>!v)},
+          action:()=>{if(showMoreSheet||moreSheetClosing)setMoreSheetClosing(true);else setShowMoreSheet(true);}},
       ];
 
       const activeTab = showMoreSheet ? "more" : "home";
 
       return(<>
         {/* More bottom sheet */}
-        {showMoreSheet&&(
-          <div style={{position:"fixed",inset:0,zIndex:250,background:"rgba(0,0,0,0.55)",animation:"fadeIn 0.2s ease"}} onClick={()=>setShowMoreSheet(false)}>
-            <div style={{position:"absolute",bottom:58,left:0,right:0,animation:"slideUp 0.28s cubic-bezier(0.4,0,0.2,1)"}} onClick={e=>e.stopPropagation()}>
+        {(showMoreSheet||moreSheetClosing)&&(
+          <div style={{position:"fixed",inset:0,zIndex:250,background:"rgba(0,0,0,0.55)",animation:`${moreSheetClosing?"fadeOut 0.25s ease":"fadeIn 0.2s ease"} forwards`}} onClick={()=>setMoreSheetClosing(true)}>
+            <div style={{position:"absolute",bottom:58,left:0,right:0,animation:`${moreSheetClosing?"slideDown 0.28s":"slideUp 0.28s"} cubic-bezier(0.4,0,0.2,1) forwards`}} onClick={e=>e.stopPropagation()} onAnimationEnd={moreSheetClosing?()=>{setMoreSheetClosing(false);setShowMoreSheet(false);}:undefined}>
               <div style={{maxWidth:860,margin:"0 auto",background:C.surface,borderRadius:"16px 16px 0 0",padding:"14px 14px 8px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
                 <div style={{width:36,height:3,background:C.border,borderRadius:2,margin:"0 auto 14px"}}/>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
