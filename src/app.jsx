@@ -7333,9 +7333,16 @@ function CFAMock(){
       ];
       for(const k of ALL_KNOWN_KEYS){try{await window.storage.delete(k);}catch{}}
 
-      // If no user is logged in, don't load any localStorage data — prevents showing a previous user's stats
+      // If no user is logged in, clear all user-specific state and localStorage
       const currentAuth=getStoredAuth();
-      if(!currentAuth){setHistoryLoaded(true);setSrLoaded(true);return;}
+      if(!currentAuth){
+        setHistory([]);historyRef.current=[];
+        setSrDeck({});srDeckRef.current={};
+        setWeeklyPlan(null);
+        try{localStorage.removeItem(PLAN_KEY);}catch{}
+        setHistoryLoaded(true);setSrLoaded(true);
+        return;
+      }
 
       // STEP 2: Read only from the ONE primary key
       let bestHistory=[];
@@ -9223,7 +9230,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700,color:C.text}}>ClearCFA Pro</div>
                 <div style={{fontSize:11,color:C.accentLight,marginTop:1}}>Unlimited AI questions · All levels · AI Coach</div>
-                {proValidUntil&&<div style={{fontSize:10,color:C.muted,marginTop:3}}>Active until {new Date(proValidUntil).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>}
+                <div style={{fontSize:10,color:C.muted,marginTop:3}}>{proValidUntil?`Active until ${new Date(proValidUntil).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`:"Lifetime access"}</div>
               </div>
               <span style={{fontSize:11,color:C.accentLight,fontWeight:700}}>Active ✓</span>
             </div>
@@ -9287,7 +9294,29 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:11,color:C.muted,marginBottom:8,textAlign:"center"}}>
               Signed in as <strong style={{color:C.text}}>{authUser?.email}</strong>
             </div>
-            <button onClick={()=>{clearAuth();setAuthUser(null);authUserRef.current=null;setSettingsOpen(false);try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:false}));}catch{}}}
+            <button onClick={()=>{
+              // Clear auth token
+              clearAuth();
+              // Clear all user-specific localStorage keys so next user starts fresh
+              try{localStorage.removeItem(STORAGE_KEY);}catch{}
+              try{localStorage.removeItem(SR_KEY);}catch{}
+              try{localStorage.removeItem(USAGE_KEY);}catch{}
+              try{localStorage.removeItem(PLAN_KEY);}catch{}
+              try{localStorage.removeItem(REFRESHER_KEY);}catch{}
+              try{localStorage.removeItem(LESSONS_KEY);}catch{}
+              try{localStorage.removeItem("cfa_pro_cache");}catch{}
+              // Reset all user-specific React state
+              setAuthUser(null);authUserRef.current=null;
+              setHistory([]);historyRef.current=[];
+              setSrDeck({});srDeckRef.current={};
+              setWeeklyPlan(null);
+              setDailyRefresher(null);
+              setTopicLessons({});
+              setProStatus(false);setProValidUntil(null);
+              setUsageStats({});usageStatsRef.current={};
+              setSettingsOpen(false);
+              try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:false}));}catch{}
+            }}
               style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:"#200010",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
               Sign out
             </button>
