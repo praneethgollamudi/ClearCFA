@@ -4806,6 +4806,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const markGapResolved=(key)=>setResolvedGapKeys(s=>{const n=new Set([...s,key]);try{localStorage.setItem(RESOLVED_GAPS_KEY,JSON.stringify([...n]));}catch{}return n;});
   const [expandedFormula, setExpandedFormula] = useState(null);
   const [expandedFormulaModule, setExpandedFormulaModule] = useState(null);
+  const [expandedMistakeGroup, setExpandedMistakeGroup] = useState(null);
   const [lessonGenerating, setLessonGenerating] = useState({});
 
   // Reset formula module accordion when topic changes
@@ -5171,11 +5172,10 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
 
           {!drillMode && (
             <>
-              {/* ── Formulas from your mistakes ── */}
+              {/* ── Formulas from your mistakes — grouped by module ── */}
               {(()=>{
                 const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));
                 if(!wrongCards.length||!formulaData.length) return null;
-                // Match each wrong card to formula entries by keyword overlap
                 const matchedIdxs=new Set();
                 for(const card of wrongCards){
                   const words=((card.concept||"")+" "+(card.subtopic||"")).toLowerCase().split(/[\s\-\/\(\)]+/).filter(w=>w.length>3);
@@ -5185,25 +5185,55 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                   });
                 }
                 if(!matchedIdxs.size) return null;
+                // Group by module (same grouping used in the Formulas tab)
+                const groupMap={};const groupOrder=[];
+                [...matchedIdxs].forEach(fi=>{
+                  const mod=enrichedFormulas[fi]?.module||"General";
+                  if(!groupMap[mod]){groupMap[mod]=[];groupOrder.push(mod);}
+                  groupMap[mod].push(fi);
+                });
+                const totalFormulas=[...matchedIdxs].length;
                 return(
                   <div style={{marginBottom:14}}>
-                    <div style={{fontSize:11,fontWeight:700,color:"#e05070",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Formulas from your mistakes</div>
-                    <div style={{background:"#0e0818",border:"1px solid #c0304433",borderRadius:10,overflow:"hidden"}}>
-                      {[...matchedIdxs].map((fi,i,arr)=>{
-                        const f=formulaData[fi];
-                        if(!f||!f.name||!f.f) return null;
-                        const fmod=enrichedFormulas[fi]?.module;
-                        const dispName=f.name.length>44?f.name.slice(0,42)+"…":f.name;
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#e05070",textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Formulas from your mistakes</div>
+                      <div style={{fontSize:10,color:"#704050"}}>{totalFormulas} formula{totalFormulas!==1?"s":""} · {groupOrder.length} topic{groupOrder.length!==1?"s":""}</div>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                      {groupOrder.map(modName=>{
+                        const fis=groupMap[modName];
+                        const isOpen=expandedMistakeGroup===modName;
                         return(
-                          <button key={fi} onClick={()=>{
-                            if(fmod){setExpandedFormulaModule(fmod);}
-                            setTimeout(()=>document.getElementById(`formula-${fi}`)?.scrollIntoView({behavior:"smooth",block:"center"}),50);
-                          }}
-                            style={{width:"100%",display:"flex",gap:12,alignItems:"flex-start",padding:"10px 14px",background:"none",border:"none",borderBottom:i<arr.length-1?"1px solid #c0304422":"none",cursor:"pointer",textAlign:"left"}}>
-                            <div style={{fontSize:11,color:"#a05070",minWidth:100,maxWidth:120,flexShrink:0,paddingTop:2,lineHeight:1.4}}>{dispName}</div>
-                            <div style={{fontSize:12,color:"#d090a0",fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word",overflow:"hidden"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
-                            <span style={{fontSize:10,color:"#6060a0",flexShrink:0,marginTop:2}}>↓</span>
-                          </button>
+                          <div key={modName} style={{background:"#0e0818",border:`1px solid ${isOpen?"#c0304466":"#c0304433"}`,borderRadius:10,overflow:"hidden",transition:"border-color 0.15s"}}>
+                            <button onClick={()=>setExpandedMistakeGroup(isOpen?null:modName)}
+                              style={{width:"100%",padding:"10px 14px",background:"none",border:"none",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
+                              <div>
+                                <div style={{fontSize:12,fontWeight:700,color:"#c06070"}}>{modName}</div>
+                                <div style={{fontSize:10,color:"#704050",marginTop:1}}>{fis.length} formula{fis.length!==1?"s":""}</div>
+                              </div>
+                              <span style={{fontSize:11,color:"#a05070",fontWeight:700,flexShrink:0,marginLeft:8}}>{isOpen?"▲":"▼"}</span>
+                            </button>
+                            {isOpen&&(
+                              <div style={{borderTop:"1px solid #c0304422"}}>
+                                {fis.map((fi,i,arr)=>{
+                                  const f=formulaData[fi];
+                                  if(!f||!f.name||!f.f) return null;
+                                  const dispName=f.name.length>44?f.name.slice(0,42)+"…":f.name;
+                                  return(
+                                    <button key={fi} onClick={()=>{
+                                      setExpandedFormulaModule(modName);
+                                      setTimeout(()=>document.getElementById(`formula-${fi}`)?.scrollIntoView({behavior:"smooth",block:"center"}),50);
+                                    }}
+                                      style={{width:"100%",display:"flex",gap:12,alignItems:"flex-start",padding:"10px 14px",background:"none",border:"none",borderBottom:i<arr.length-1?"1px solid #c0304418":"none",cursor:"pointer",textAlign:"left"}}>
+                                      <div style={{fontSize:11,color:"#a05070",minWidth:90,maxWidth:110,flexShrink:0,paddingTop:2,lineHeight:1.4}}>{dispName}</div>
+                                      <div style={{fontSize:12,color:"#d090a0",fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word",overflow:"hidden"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
+                                      <span style={{fontSize:10,color:"#6060a0",flexShrink:0,marginTop:2}}>↓</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
