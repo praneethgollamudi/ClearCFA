@@ -11302,32 +11302,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </button>
       </div>
 
-      {/* #4 — Post-session upgrade nudge for free users who scored ≥70% */}
-      {!proStatus&&sessionPct>=70&&(
-        <div style={{background:`linear-gradient(135deg,${C.easy}14,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"16px 18px",marginBottom:14,display:"flex",gap:14,alignItems:"center"}}>
-          <div style={{fontSize:28,flexShrink:0}}>🚀</div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:13,fontWeight:800,color:C.easy,marginBottom:3}}>You're improving — don't stop here</div>
-            <div style={{fontSize:12,color:C.muted,lineHeight:1.5,marginBottom:10}}>Unlock unlimited AI practice and keep this momentum going every day.</div>
-            <button onClick={()=>setUpgradeModal({reason:"default"})} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
-              Unlock unlimited →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* AM/PM break screen */}
-      {fullExamMode&&examSession===1&&window._cfaExamPMQs?.length>0&&(
-        <div style={{background:`linear-gradient(135deg,${C.easy}12,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"18px 20px",marginBottom:14,textAlign:"center"}}>
-          <div style={{fontSize:16,fontWeight:800,color:C.easy,marginBottom:6}}>AM Session Complete ✓</div>
-          <div style={{fontSize:13,color:C.muted,marginBottom:4}}>Score: {sessionPct}% · {sessionScore}/{questions.length} correct</div>
-          <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>Take a 30-minute break before PM session. Stand up, eat, rest your eyes. CFA examiners build this in — use it.</div>
-          <button onClick={()=>startFullExam(2)} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
-            Start PM Session ({window._cfaExamPMQs.length} questions) →
-          </button>
-        </div>
-      )}
-
+      {/* Action buttons — immediately after score ring */}
       {/* Office Mode — Keep going prompt */}
       {omMode&&(
         <div style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"13px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -11354,7 +11329,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {wrongs.length>0&&(
         <div style={{display:"flex",gap:8,marginBottom:9}}>
           <button onClick={()=>{
-            // Retry the exact wrong questions without any AI call
             setQuestions(wrongs);
             setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);
             qShownAtRef.current={};qTimesRef.current={};
@@ -11373,6 +11347,32 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <button onClick={()=>{setScreen("home");setFocusSuggestions(null);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Home</button>
         <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setScreen("revision");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise {topic?.split(" ")[0]}</button>
       </div>
+
+      {/* #4 — Post-session upgrade nudge for free users who scored ≥70% */}
+      {!proStatus&&sessionPct>=70&&(
+        <div style={{background:`linear-gradient(135deg,${C.easy}14,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"16px 18px",marginBottom:14,display:"flex",gap:14,alignItems:"center"}}>
+          <div style={{fontSize:28,flexShrink:0}}>🚀</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:800,color:C.easy,marginBottom:3}}>You're improving — don't stop here</div>
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.5,marginBottom:10}}>Unlock unlimited AI practice and keep this momentum going every day.</div>
+            <button onClick={()=>setUpgradeModal({reason:"default"})} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+              Unlock unlimited →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* AM/PM break screen */}
+      {fullExamMode&&examSession===1&&window._cfaExamPMQs?.length>0&&(
+        <div style={{background:`linear-gradient(135deg,${C.easy}12,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"18px 20px",marginBottom:14,textAlign:"center"}}>
+          <div style={{fontSize:16,fontWeight:800,color:C.easy,marginBottom:6}}>AM Session Complete ✓</div>
+          <div style={{fontSize:13,color:C.muted,marginBottom:4}}>Score: {sessionPct}% · {sessionScore}/{questions.length} correct</div>
+          <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>Take a 30-minute break before PM session. Stand up, eat, rest your eyes. CFA examiners build this in — use it.</div>
+          <button onClick={()=>startFullExam(2)} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+            Start PM Session ({window._cfaExamPMQs.length} questions) →
+          </button>
+        </div>
+      )}
 
       {/* Session quality breakdown */}
       {qScore&&(
