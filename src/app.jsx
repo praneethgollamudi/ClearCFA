@@ -7134,6 +7134,28 @@ function ReferralCard({userId,cfg,setUpgradeModal}){
   );
 }
 
+function ScoreSparkline({history}){
+  if(history.length<3)return null;
+  const C=getColors();
+  const pts=history.slice(0,15).reverse().map(h=>h.pct||0);
+  const max=Math.max(...pts,70),min=Math.min(...pts,0);
+  const range=max-min||1;
+  const W=140,H=32,pad=3;
+  const xs=pts.map((_,i)=>pad+i*(W-pad*2)/(Math.max(pts.length-1,1)));
+  const ys=pts.map(p=>H-pad-(p-min)/range*(H-pad*2));
+  const points=pts.map((_,i)=>`${xs[i]},${ys[i]}`).join(" ");
+  const latest=pts[pts.length-1];
+  const col=latest>=70?C.easy:C.hard;
+  const threshY=H-pad-(70-min)/range*(H-pad*2);
+  return(
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{display:"block",overflow:"visible"}}>
+      {threshY>=pad&&threshY<=H-pad&&<line x1={pad} y1={threshY} x2={W-pad} y2={threshY} stroke={C.easy} strokeWidth="0.7" strokeDasharray="2,2" opacity="0.5"/>}
+      <polyline points={points} fill="none" stroke={col} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round"/>
+      <circle cx={xs[xs.length-1]} cy={ys[ys.length-1]} r="2.5" fill={col}/>
+    </svg>
+  );
+}
+
 function StudyHeatmap({history}){
   if(!history.length)return null;
   const C=getColors();
@@ -8429,6 +8451,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
     return avg>=80?"Hard":avg>=60?"Medium":"Easy";
   },[history]);
 
+  const smartNudge=useMemo(()=>{
+    if(!moduleReadiness.length||!levelHistory.length)return null;
+    const today=new Date();
+    const scored=moduleReadiness.map(m=>{
+      const last=levelHistory.filter(h=>h.topic===m.topic).sort((a,b)=>(b.dateKey||"").localeCompare(a.dateKey||""))[0];
+      const daysSince=last?Math.max(0,Math.floor((today-new Date(last.dateKey))/86400000)):30;
+      const urgency=(m.weight||1)*Math.min(daysSince,30)/Math.max(m.accuracy||0,15);
+      return{...m,daysSince,urgency};
+    });
+    return scored.sort((a,b)=>b.urgency-a.urgency)[0]||null;
+  },[moduleReadiness,levelHistory]);
+
   const [reviewAiPanel,setReviewAiPanel]=useState(null);
   const [reviewAiInput,setReviewAiInput]=useState("");
   const [reviewAiLoading,setReviewAiLoading]=useState(false);
@@ -9639,7 +9673,35 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"0"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":`${Object.keys(srDeck).length>0?`${Object.keys(srDeck).length} total · none due`:"no cards yet"}`} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
-    <StudyHeatmap history={levelHistory}/>
+    {/* Score sparkline — last 15 session trend */}
+    {levelHistory.length>=3&&(
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:4}}>Last {Math.min(levelHistory.length,15)} sessions</div>
+          <ScoreSparkline history={levelHistory}/>
+        </div>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          <div style={{fontSize:20,fontWeight:800,color:levelHistory[0]?.pct>=70?C.easy:C.hard}}>{levelHistory[0]?.pct??0}%</div>
+          <div style={{fontSize:10,color:C.muted,marginTop:1}}>latest</div>
+        </div>
+      </div>
+    )}
+
+    {/* Smart topic nudge — data-driven, replaces rotating tip */}
+    {smartNudge&&levelHistory.length>=2&&(()=>{
+      const {topic:nt,daysSince,accuracy,weight,sessions}=smartNudge;
+      const reason=sessions===0?`Never studied · ${weight}% of exam`:daysSince>6?`${daysSince}d since last session · ${weight}% exam weight`:`${accuracy}% accuracy · needs drilling`;
+      const mods=Object.keys(activeLOS[nt]?.modules||{});
+      return(
+        <div style={{background:`${C.accent}10`,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"11px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.accentLight,marginBottom:2}}>📍 Focus now: {nt}</div>
+            <div style={{fontSize:11,color:C.muted}}>{reason}</div>
+          </div>
+          <button onClick={()=>generateQuestions(nt,mods[0]||nt,"Medium",10,"guided")} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>Study →</button>
+        </div>
+      );
+    })()}
 
     {/* Study time nudge — implementation intention reminder */}
     {(()=>{
@@ -10133,7 +10195,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const gridStyle={background:C.surface,border:`1px solid ${C.border}`,color:C.textMid};
       const moreItems=[
         {key:"mix",label:"⚡ Weak Spots",style:gridStyle,action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
-        {key:"vignette",label:"📖 Vignette",style:gridStyle,action:()=>{trackUsage("vignette");setVignetteMode(true);setScreen("setup");}},
         {key:"full_exam",label:"⏱ Timed Mock",proTag:true,style:gridStyle,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
         {key:"ethics",label:"⚖️ Ethics",style:gridStyle,action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
         {key:"dashboard",label:"📈 Dashboard",style:gridStyle,action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
@@ -10278,10 +10339,31 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <a
             href={"data:application/json;charset=utf-8,"+encodeURIComponent(data)}
             download={`clearcfa-backup-${new Date().toISOString().slice(0,10)}.json`}
-            style={{display:"block",width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box"}}
+            style={{display:"block",width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box",marginBottom:8}}
           >
             ⬇ Download JSON
           </a>
+          {(()=>{
+            const cards=Object.values(srDeck);
+            if(!cards.length)return null;
+            const rows=cards.map(c=>{
+              const front=(c.question||c.concept||"").replace(/\t/g," ").replace(/\n/g," ");
+              const optText=c.options?Object.entries(c.options).map(([k,v])=>`${k}: ${v}`).join(" | "):"";
+              const back=`${c.answer||""}: ${c.options?.[c.answer]||""} — ${(c.explanation||"").replace(/\t/g," ").replace(/\n/g," ")}`;
+              const tags=(c.topic||"").replace(/\s+/g,"_");
+              return[front,optText,back,tags].join("\t");
+            });
+            const csv="#separator:tab\n#html:false\n#deck:ClearCFA SR Deck\n#notetype:Basic (and reversed card)\n#columns:Front\tOptions\tBack\tTags\n"+rows.join("\n");
+            return(
+              <a
+                href={"data:text/plain;charset=utf-8,"+encodeURIComponent(csv)}
+                download={`clearcfa-anki-${new Date().toISOString().slice(0,10)}.txt`}
+                style={{display:"block",width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box"}}
+              >
+                🃏 Export for Anki ({cards.length} cards)
+              </a>
+            );
+          })()}
         </>);
       })()}
       <div style={{fontSize:11,color:C.muted,marginTop:8,textAlign:"center"}}>
@@ -10897,15 +10979,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <button onClick={()=>{setOmMode(false);setScreen("setup");}} style={{flex:2,padding:"12px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>New Mock →</button>
       </div>
       {wrongs.length>0&&(
-        <button onClick={()=>{
-          // Generate new questions targeting only the LOS that were missed
-          const missedLOS=wrongs.map(q=>q.los_tested).filter(Boolean);
-          const missedConcepts=wrongs.map(q=>q.concept).filter(Boolean);
-          const drillModule=subtopic;
-          generateQuestions(topic,drillModule,difficulty,Math.min(10,wrongs.length+5),"guided");
-        }} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.hard+"20",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer",marginBottom:9}}>
-          🔁 Drill Missed LOS ({wrongs.length} gaps) →
-        </button>
+        <div style={{display:"flex",gap:8,marginBottom:9}}>
+          <button onClick={()=>{
+            // Retry the exact wrong questions without any AI call
+            setQuestions(wrongs);
+            setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);
+            qShownAtRef.current={};qTimesRef.current={};
+            setScreen("quiz");
+          }} style={{flex:1,padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.medium+"20",border:`1px solid ${C.medium}44`,color:C.medium,cursor:"pointer"}}>
+            🔄 Retry missed ({wrongs.length})
+          </button>
+          <button onClick={()=>{
+            generateQuestions(topic,subtopic,difficulty,Math.min(10,wrongs.length+5),"guided");
+          }} style={{flex:1,padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.hard+"20",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
+            🔁 New drill →
+          </button>
+        </div>
       )}
       <div style={{display:"flex",gap:9,marginBottom:16}}>
         <button onClick={()=>{setScreen("home");setFocusSuggestions(null);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Home</button>
@@ -11314,6 +11403,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <StatCard label="Avg Quality" value={avgQuality?`${avgQuality}`:"-"} color={avgQuality>=70?C.easy:avgQuality>=50?C.medium:C.hard}/>
         <StatCard label="Total Time" value={fmtStudyTime(history.reduce((s,h)=>s+getEffectiveTimeSecs(h),0))} color={C.accentLight}/>
       </div>
+
+      <StudyHeatmap history={levelHistory}/>
 
       {/* SR stats */}
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"13px 16px",marginBottom:16}}>
