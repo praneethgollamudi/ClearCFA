@@ -10410,7 +10410,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
     })()}
 
     {/* Fixed bottom toolbar — quick actions + scrollable more tools */}
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:860,zIndex:200,background:C.bg,borderTop:`1px solid ${C.border}`}}>
+    <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:200,background:C.bg,borderTop:`1px solid ${C.border}`}}>
+      <div style={{maxWidth:860,margin:"0 auto"}}>
       <div style={{display:"flex",gap:0,padding:"6px 8px 2px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
         {[
           {key:"mix",icon:"⚡",label:"Weak Spots",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
@@ -10444,6 +10445,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
         </button>
         <button onClick={()=>{trackUsage("ai_coach");setAiCoachScreen(true);}} style={{flex:1,padding:"9px 4px",borderRadius:10,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 Coach</button>
+      </div>
       </div>
     </div>
     {/* Referral card */}
