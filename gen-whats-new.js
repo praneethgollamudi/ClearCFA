@@ -3,20 +3,25 @@
  * gen-whats-new.js — Generate What's New slide content from recent git commits
  *
  * Usage:
- *   ANTHROPIC_API_KEY=sk-ant-... node gen-whats-new.js
+ *   node gen-whats-new.js                  # print ready-to-paste JSX
+ *   ANTHROPIC_API_KEY=sk-ant-... node gen-whats-new.js          # call Claude Haiku + print
+ *   ANTHROPIC_API_KEY=sk-ant-... node gen-whats-new.js --write  # write directly to src/app.jsx + index.html
  *
- * Without an API key it prints a structured template you can fill in manually.
- * With a key it calls Claude Haiku and prints ready-to-paste JSX.
+ * --write mode:
+ *   • Updates WHATS_NEW_VERSION in src/app.jsx
+ *   • Replaces the slides={[...]} array in the What's New SlideOverlay block
+ *   • Bumps the app.js?v= cache version in index.html by 100000
+ *   • Requires ANTHROPIC_API_KEY (skips write without it)
  *
- * After running:
- *   1. Paste the new WHATS_NEW_VERSION value into src/app.jsx
- *   2. Paste the slides array into the SlideOverlay block (~search "whatsNewDismissed")
- *   3. node build.js && git add -A && git commit -m "What's New: <date>"
+ * Without --write:
+ *   Prints the version constant + slides array — paste manually into src/app.jsx
  */
 
 const {execSync} = require('child_process');
 const fs = require('fs');
 const https = require('https');
+
+const WRITE_MODE = process.argv.includes('--write');
 
 // ── Read current version from src/app.jsx ─────────────────────────────────────
 const src = fs.readFileSync('src/app.jsx', 'utf8');
@@ -34,7 +39,6 @@ try {
 } catch {}
 
 if (!commits) {
-  // Fallback: last 15 commits
   try { commits = execSync('git log --oneline -15 --no-merges', {encoding:'utf8'}).trim(); } catch {}
 }
 
@@ -72,24 +76,87 @@ const apiKey = process.env.ANTHROPIC_API_KEY;
 
 if (!apiKey) {
   console.log('ℹ️  No ANTHROPIC_API_KEY set — printing blank template.\n');
+  if (WRITE_MODE) {
+    console.log('⚠️  --write requires ANTHROPIC_API_KEY. Skipping write.');
+    process.exit(0);
+  }
   printTemplate(today);
   process.exit(0);
 }
 
 console.log('Calling Claude Haiku...');
 callAnthropic(apiKey, prompt)
-  .then(slides => printResult(slides, today))
+  .then(slides => {
+    if (WRITE_MODE) {
+      writeToSource(slides, today);
+    } else {
+      printResult(slides, today);
+    }
+  })
   .catch(e => {
     console.error('API error:', e.message);
+    if (WRITE_MODE) {
+      console.log('\n⚠️  API call failed — src/app.jsx unchanged.');
+      process.exit(1);
+    }
     console.log('\nFalling back to template:');
     printTemplate(today);
   });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Write mode ────────────────────────────────────────────────────────────────
+function writeToSource(slides, newVersion) {
+  // 1. Build the JSX slides block (each slide on one line, 8-space indent)
+  const slideLines = slides.map(s => {
+    const color = String(s.color).replace(/^"?(C\.\w+)"?$/, '$1');
+    const bg    = String(s.bg).replace(/^"?(C\.\w+)"?$/, '$1');
+    return `        {emoji:${JSON.stringify(s.emoji)},color:${color},bg:${bg},title:${JSON.stringify(s.title)},sub:${JSON.stringify(s.sub)},desc:${JSON.stringify(s.desc)},tip:${JSON.stringify(s.tip)}}`;
+  }).join(',\n');
+  const slidesBlock = `[\n${slideLines},\n      ]`;
+
+  // 2. Patch src/app.jsx
+  let appSrc = fs.readFileSync('src/app.jsx', 'utf8');
+
+  // Replace WHATS_NEW_VERSION
+  const versionRe = /const WHATS_NEW_VERSION\s*=\s*"[^"]+";/;
+  if (!versionRe.test(appSrc)) {
+    console.error('❌ Could not find WHATS_NEW_VERSION in src/app.jsx');
+    process.exit(1);
+  }
+  appSrc = appSrc.replace(versionRe, `const WHATS_NEW_VERSION    = "${newVersion}";`);
+
+  // Replace slides array in the What's New SlideOverlay block
+  const slidesRe = /(tourDismissed&&!whatsNewDismissed&&<SlideOverlay\s+slides=\{)\[[\s\S]*?\](\})/;
+  if (!slidesRe.test(appSrc)) {
+    console.error('❌ Could not find What\'s New slides block in src/app.jsx');
+    process.exit(1);
+  }
+  appSrc = appSrc.replace(slidesRe, `$1${slidesBlock}$2`);
+
+  fs.writeFileSync('src/app.jsx', appSrc);
+  console.log(`✅ src/app.jsx updated (WHATS_NEW_VERSION → ${newVersion}, slides replaced)`);
+
+  // 3. Bump cache version in index.html
+  let html = fs.readFileSync('index.html', 'utf8');
+  const cacheRe = /app\.js\?v=(\d+)/;
+  const cMatch = html.match(cacheRe);
+  if (cMatch) {
+    const oldV = parseInt(cMatch[1]);
+    const newV = oldV + 100000;
+    html = html.replace(cacheRe, `app.js?v=${newV}`);
+    fs.writeFileSync('index.html', html);
+    console.log(`✅ index.html cache version bumped: ${oldV} → ${newV}`);
+  } else {
+    console.warn('⚠️  Could not find app.js?v= in index.html — skipping cache bump');
+  }
+
+  console.log('\nNext: node build.js && git add src/app.jsx app.js index.html && git commit -m "What\'s New: ' + newVersion + '"');
+  console.log('  Or: bash deploy.sh  (runs the full pipeline)');
+}
+
+// ── Print helpers ─────────────────────────────────────────────────────────────
 function printResult(slides, newVersion) {
-  // Replace "C.foo" strings with actual token references for the JSX output
   const jsxSlides = JSON.stringify(slides, null, 2)
-    .replace(/"(C\.\w+)"/g, '$1');  // "C.easy" → C.easy (unquoted)
+    .replace(/"(C\.\w+)"/g, '$1');
 
   console.log('\n✅ Generated slides:\n');
   console.log(JSON.stringify(slides, null, 2));
@@ -103,6 +170,7 @@ function printResult(slides, newVersion) {
   console.log(`slides={${jsxSlides}}`);
   console.log('\n════════════════════════════════════════════════════════════════');
   console.log('\nNext: node build.js && git add -A && git commit -m "What\'s New: ' + newVersion + '"');
+  console.log('  Or pass --write to apply changes automatically.');
 }
 
 function printTemplate(today) {
@@ -128,6 +196,7 @@ function printTemplate(today) {
   console.log('\n════════════════════════════════════════════════════════════════');
 }
 
+// ── Anthropic API call ────────────────────────────────────────────────────────
 function callAnthropic(key, prompt) {
   const body = JSON.stringify({
     model: 'claude-haiku-4-5-20251001',
