@@ -10453,8 +10453,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       return(<>
         {/* More bottom sheet */}
         {showMoreSheet&&(
-          <div style={{position:"fixed",inset:0,zIndex:250,background:"rgba(0,0,0,0.55)"}} onClick={()=>setShowMoreSheet(false)}>
-            <div style={{position:"absolute",bottom:58,left:0,right:0}} onClick={e=>e.stopPropagation()}>
+          <div style={{position:"fixed",inset:0,zIndex:250,background:"rgba(0,0,0,0.55)",animation:"fadeIn 0.2s ease"}} onClick={()=>setShowMoreSheet(false)}>
+            <div style={{position:"absolute",bottom:58,left:0,right:0,animation:"slideUp 0.28s cubic-bezier(0.4,0,0.2,1)"}} onClick={e=>e.stopPropagation()}>
               <div style={{maxWidth:860,margin:"0 auto",background:C.surface,borderRadius:"16px 16px 0 0",padding:"14px 14px 8px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
                 <div style={{width:36,height:3,background:C.border,borderRadius:2,margin:"0 auto 14px"}}/>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
