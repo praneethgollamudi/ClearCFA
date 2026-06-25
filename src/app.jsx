@@ -2143,6 +2143,11 @@ async function supabaseCreateAccount(cfg, userId, email){
   }catch{return false;}
 }
 
+function loginWithGoogle(){
+  const redirectTo=window.location.origin+window.location.pathname;
+  window.location.href=`${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+}
+
 // Supabase sync — saves entire data blob as one row, keyed to authenticated user
 async function supabaseSync(cfg, history, srDeck, usageStats={}, auth=null){
   if(!cfg||!cfg.url||!cfg.key) return false;
@@ -7273,6 +7278,41 @@ function CFAMock(){
   useEffect(()=>{historyRef.current=history;},[history]);
   // Keep authUserRef in sync (must be unconditional — cannot be after any early return)
   useEffect(()=>{ authUserRef.current=authUser; },[authUser]);
+
+  // Google OAuth callback — detect #access_token= in URL hash after Supabase redirect
+  useEffect(()=>{
+    const hash=window.location.hash;
+    if(!hash.includes('access_token='))return;
+    const params=new URLSearchParams(hash.slice(1));
+    const accessToken=params.get('access_token');
+    if(!accessToken)return;
+    window.history.replaceState(null,'',window.location.pathname);
+    (async()=>{
+      try{
+        const res=await fetch(`${SUPABASE_URL}/auth/v1/user`,{headers:{'Authorization':`Bearer ${accessToken}`,'apikey':SUPABASE_KEY}});
+        if(!res.ok)return;
+        const user=await res.json();
+        const userId=user.id;
+        const email=user.email||'';
+        const auth={id:userId,email,accessToken};
+        const exists=await supabaseCheckAccount(SB_CFG,userId);
+        if(!exists)await supabaseCreateAccount(SB_CFG,userId,email);
+        const prev=getStoredAuth();
+        if(!prev||prev.id!==userId){
+          const sbData=await supabaseLoad(SB_CFG,auth);
+          if(sbData?.history?.length){const h=sbData.history.map(s=>({...s,wrongs:[]}));setHistory(h);historyRef.current=h;storageSet(STORAGE_KEY,h);}
+          if(sbData?.srDeck){setSrDeck(sbData.srDeck);srDeckRef.current=sbData.srDeck;storageSet(SR_KEY,sbData.srDeck);}
+          if(sbData?.usageStats){setUsageStats(sbData.usageStats);usageStatsRef.current=sbData.usageStats;}
+        }
+        saveAuth(auth);
+        setAuthUser(auth);
+        authUserRef.current=auth;
+        try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:true}));}catch{}
+        if(!exists)setShowOnboarding(true);
+      }catch{}
+    })();
+  },[]);
+
   // L2/L3 use item-set/vignette format — auto-enable vignette mode
   useEffect(()=>{if(cfaLevel!=="1")setVignetteMode(true);else setVignetteMode(false);},[cfaLevel]);
 
@@ -8712,6 +8752,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
               New to ClearCFA?{" "}
               <span onClick={()=>{setAuthMode("signup");setAuthError("");setAuthPassword("");setAuthConfirm("");}} style={{color:C.accentLight,cursor:"pointer",fontWeight:700}}>Create a free account →</span>
             </div>}
+            <div style={{display:"flex",alignItems:"center",gap:10,margin:"14px 0 4px"}}>
+              <div style={{flex:1,height:1,background:C.border}}/>
+              <span style={{fontSize:11,color:C.muted,whiteSpace:"nowrap"}}>or</span>
+              <div style={{flex:1,height:1,background:C.border}}/>
+            </div>
+            <button onClick={loginWithGoogle} style={{width:"100%",padding:"12px",borderRadius:11,fontSize:13,fontWeight:700,background:C.surface,border:`1.5px solid ${C.border}`,color:C.text,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+              Continue with Google
+            </button>
           </div>
         </div>
 
