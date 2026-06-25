@@ -2143,6 +2143,11 @@ async function supabaseCreateAccount(cfg, userId, email){
   }catch{return false;}
 }
 
+function loginWithGoogle(){
+  const redirectTo=window.location.origin+window.location.pathname;
+  window.location.href=`${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+}
+
 // Supabase sync — saves entire data blob as one row, keyed to authenticated user
 async function supabaseSync(cfg, history, srDeck, usageStats={}, auth=null){
   if(!cfg||!cfg.url||!cfg.key) return false;
@@ -2219,22 +2224,27 @@ function getForgettingCurve(srDeck){
 }
 
 // ─── QUESTION DEDUPLICATION ──────────────────────────────────────────────────
+const QDB_FRESHNESS_MS = 7 * 24 * 60 * 60 * 1000; // repeat allowed after 7 days
 function hashQuestion(q){
-  // Simple hash: first 60 chars of question text normalised
-  return q.question.slice(0,60).toLowerCase().replace(/\s+/g," ").trim();
+  return q.question.slice(0,120).toLowerCase().replace(/\s+/g," ").trim();
 }
 function filterNewQuestions(questions,qdb){
-  return questions.filter(q=>{const h=hashQuestion(q);return !qdb[h];});
+  const now=Date.now();
+  return questions.filter(q=>{
+    const h=hashQuestion(q);
+    if(!qdb[h]) return true;
+    return (now-qdb[h].seen)>QDB_FRESHNESS_MS; // seen >7 days ago → allow repeat
+  });
 }
 function addToQDB(questions,qdb){
   const updated={...qdb};
   questions.forEach(q=>{const h=hashQuestion(q);updated[h]={seen:Date.now(),topic:q._topic,subtopic:q._subtopic};});
-  // Cap at 400 entries — prune oldest to prevent unbounded growth
+  // Cap at 2000 entries — prune oldest to prevent unbounded growth
   const entries=Object.entries(updated);
-  if(entries.length>400){
+  if(entries.length>2000){
     entries.sort((a,b)=>a[1].seen-b[1].seen);
     const pruned={};
-    entries.slice(-400).forEach(([k,v])=>{pruned[k]=v;});
+    entries.slice(-2000).forEach(([k,v])=>{pruned[k]=v;});
     return pruned;
   }
   return updated;
@@ -2927,11 +2937,32 @@ function _applyTheme(t){
   diffC.Easy=C.easy;diffC.Medium=C.medium;diffC.Hard=C.hard;
   urgencyColor.high=C.hard;urgencyColor.medium=C.medium;urgencyColor.low=C.easy;
   try{document.body.style.background=C.bg;document.documentElement.style.setProperty('--app-bg',C.bg);}catch{}
+  try{window.dispatchEvent(new CustomEvent('cfa_theme',{detail:t}));}catch{}
 }
 
 // ── Freemium tier ─────────────────────────────────────────────────────────────
-const FREE_DAILY_AI_LIMIT=5;
+const FREE_DAILY_AI_LIMIT=10;
 const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
+// ── Payment config (update these to change payment details) ───────────────────
+const PAYMENT_UPI_ID='9493413121@upi';
+const PAYMENT_CONTACT_EMAIL='gspbuilds@gmail.com';
+const PAYMENT_WHATSAPP='919493413121'; // WhatsApp number with country code, no +
+// ── Price ladder — update TIER_TAKEN as slots fill ────────────────────────────
+// Tier 1 → Tier 2 → Regular (price rises as spots fill)
+const PRICE_REGULAR=1199;   // regular price once all tiers fill
+const PRICE_TIER2=799;      // tier-2 price (shown crossed-out when tier 1 active)
+const PRICE_TIER1=499;      // tier-1 price — the current launch price
+const TIER1_SLOTS=10;       // number of tier-1 spots
+const TIER1_TAKEN=0;        // update manually as tier-1 subscribers join
+const TIER2_SLOTS=20;       // number of tier-2 spots
+const TIER2_TAKEN=0;        // update manually as tier-2 subscribers join
+// Derives active tier automatically — just update TIER1_TAKEN / TIER2_TAKEN
+const ACTIVE_TIER=TIER1_TAKEN<TIER1_SLOTS?1:TIER2_TAKEN<TIER2_SLOTS?2:0;
+const ACTIVE_PRICE=ACTIVE_TIER===1?PRICE_TIER1:ACTIVE_TIER===2?PRICE_TIER2:PRICE_REGULAR;
+const ACTIVE_WAS=ACTIVE_TIER===1?PRICE_TIER2:PRICE_REGULAR;
+const ACTIVE_SLOTS=ACTIVE_TIER===1?TIER1_SLOTS:TIER2_SLOTS;
+const ACTIVE_TAKEN=ACTIVE_TIER===1?TIER1_TAKEN:TIER2_TAKEN;
+const ACTIVE_LABEL=ACTIVE_TIER===1?"Early Bird":ACTIVE_TIER===2?"Founding Member":"Pro";
 // Pro status is validated server-side against the subscriptions table.
 // getCachedProStatus / setCachedProStatus cache the server response for 4 hours.
 function getCachedProStatus(userId){
@@ -2939,36 +2970,90 @@ function getCachedProStatus(userId){
     const c=JSON.parse(localStorage.getItem('cfa_pro_cache')||'null');
     if(!c||c.userId!==userId)return null;
     if((Date.now()-new Date(c.at).getTime())>4*3600*1000)return null;
-    return c.isPro===true;
+    return c.isPro===true?{isPro:true,validUntil:c.validUntil||null}:{isPro:false,validUntil:null};
   }catch{return null;}
 }
-function setCachedProStatus(userId,isPro){
-  try{localStorage.setItem('cfa_pro_cache',JSON.stringify({userId,isPro,at:new Date().toISOString()}));}catch{}
+function setCachedProStatus(userId,isPro,validUntil=null){
+  try{localStorage.setItem('cfa_pro_cache',JSON.stringify({userId,isPro,validUntil,at:new Date().toISOString()}));}catch{}
 }
 // Sync fallback — checks owner email + cache (used for initial useState)
 function getProStatus(){
   try{
     const auth=JSON.parse(localStorage.getItem('cfa_auth')||'null');
     if(auth?.email&&OWNER_EMAILS.includes(auth.email.toLowerCase()))return true;
-    if(auth?.id){const c=getCachedProStatus(auth.id);if(c===true)return true;}
+    if(auth?.id){const c=getCachedProStatus(auth.id);if(c?.isPro===true)return true;}
   }catch{}
   return false;
 }
-// Async server check — verifies against Supabase subscriptions table
+function getProValidUntil(){
+  try{
+    const auth=JSON.parse(localStorage.getItem('cfa_auth')||'null');
+    if(auth?.email&&OWNER_EMAILS.includes(auth.email.toLowerCase()))return null; // owner never expires
+    if(auth?.id){const c=getCachedProStatus(auth.id);return c?.validUntil||null;}
+  }catch{}
+  return null;
+}
+// Async server check — verifies against Supabase subscriptions table, respects valid_until
 async function checkProFromServer(cfg,userId,email){
-  if(email&&OWNER_EMAILS.includes(email.toLowerCase()))return true;
+  if(email&&OWNER_EMAILS.includes(email.toLowerCase()))return{isPro:true,validUntil:null};
   const cached=getCachedProStatus(userId);
   if(cached!==null)return cached;
   try{
-    const res=await fetch(`${cfg.url}/rest/v1/subscriptions?user_id=eq.${encodeURIComponent(userId)}&active=eq.true&select=user_id&limit=1`,{
+    const now=new Date().toISOString();
+    const res=await fetch(`${cfg.url}/rest/v1/subscriptions?user_id=eq.${encodeURIComponent(userId)}&active=eq.true&valid_until=gte.${encodeURIComponent(now)}&select=user_id,valid_until&limit=1`,{
       headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
     });
-    if(!res.ok){setCachedProStatus(userId,false);return false;}
+    if(!res.ok){setCachedProStatus(userId,false);return{isPro:false,validUntil:null};}
     const rows=await res.json();
     const isPro=Array.isArray(rows)&&rows.length>0;
-    setCachedProStatus(userId,isPro);
-    return isPro;
-  }catch{return false;}
+    const validUntil=isPro?(rows[0].valid_until||null):null;
+    setCachedProStatus(userId,isPro,validUntil);
+    return{isPro,validUntil};
+  }catch{return{isPro:false,validUntil:null};}
+}
+// ── Referral system ───────────────────────────────────────────────────────────
+const REFERRAL_THRESHOLD=2; // friends needed per free Pro month
+function getReferralLink(userId){
+  try{const u=new URL(window.location.href);u.search="";u.searchParams.set('ref',userId);return u.toString();}
+  catch{return window.location.origin+window.location.pathname+'?ref='+userId;}
+}
+async function getReferralCount(cfg,referrerId){
+  try{
+    const res=await fetch(`${cfg.url}/rest/v1/referrals?referrer_id=eq.${encodeURIComponent(referrerId)}&select=referee_id`,{
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Prefer":"count=exact"}
+    });
+    const range=res.headers.get('content-range')||'';
+    return parseInt(range.split('/')[1]||'0',10)||0;
+  }catch{return 0;}
+}
+async function grantReferralPro(cfg,referrerId){
+  try{
+    // Fetch current valid_until so we extend from it if still future
+    const res=await fetch(`${cfg.url}/rest/v1/subscriptions?user_id=eq.${encodeURIComponent(referrerId)}&select=valid_until&limit=1`,{
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
+    });
+    const rows=res.ok?await res.json():[];
+    const current=rows[0]?.valid_until;
+    const base=(current&&new Date(current)>new Date())?new Date(current):new Date();
+    base.setDate(base.getDate()+30);
+    await fetch(`${cfg.url}/rest/v1/subscriptions`,{
+      method:'POST',
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},
+      body:JSON.stringify({user_id:referrerId,active:true,valid_until:base.toISOString()})
+    });
+  }catch{}
+}
+async function recordReferral(cfg,referrerId,refereeId){
+  if(!referrerId||!refereeId||referrerId===refereeId)return;
+  try{
+    await fetch(`${cfg.url}/rest/v1/referrals`,{
+      method:'POST',
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Content-Type":"application/json","Prefer":"return=minimal,resolution=ignore-duplicates"},
+      body:JSON.stringify({referrer_id:referrerId,referee_id:refereeId})
+    });
+    const count=await getReferralCount(cfg,referrerId);
+    if(count>0&&count%REFERRAL_THRESHOLD===0) await grantReferralPro(cfg,referrerId);
+  }catch{}
 }
 function getDailyAIUsage(){
   try{
@@ -3134,12 +3219,55 @@ function XPBar({ level, progress, label, xp, nextXP }) {
                     <span style={{ fontSize:10, color:C.muted }}>{thresholds[i].toLocaleString()} XP</span>
                   </div>
                   <div style={{ height:3, background:C.dim, borderRadius:2, overflow:"hidden" }}>
-                    <div style={{ height:"100%", width:`${pct}%`, background:current?`linear-gradient(90deg,${C.reward},${C.rewardLight})`:reached?"#4ade8066":"transparent", borderRadius:2 }} />
+                    <div style={{ height:"100%", width:`${pct}%`, background:current?`linear-gradient(90deg,${C.reward},${C.rewardLight})`:reached?C.easy+"66":"transparent", borderRadius:2 }} />
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+function StudyTimeStrip({ todayStudySecs, weekStudySecs, weeklyStudyDays }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const maxS = Math.max(...weeklyStudyDays.map(x => x.secs), 1);
+  return (
+    <div onClick={() => setExpanded(v => !v)}
+      style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:11, padding:"9px 14px", marginBottom:12, cursor:"pointer" }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ fontSize:16 }}>📖</span>
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{fmtStudyTime(todayStudySecs)} studied today</div>
+            <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>This week: {fmtStudyTime(weekStudySecs)}</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"flex-end", gap:3, height:24 }}>
+            {weeklyStudyDays.map(d => {
+              const h = d.secs > 0 ? Math.max(4, Math.round((d.secs / maxS) * 24)) : 2;
+              return <div key={d.key} style={{ width:6, height:h, borderRadius:2, background:d.isToday?C.accent:d.secs>0?C.accent+"66":C.dim, alignSelf:"flex-end" }}/>;
+            })}
+          </div>
+          <div style={{ fontSize:10, color:C.muted, transition:"transform 0.2s", transform:expanded?"rotate(180deg)":"none" }}>▾</div>
+        </div>
+      </div>
+      {expanded && (
+        <div style={{ marginTop:12, animation:"fadeIn 0.15s ease" }}>
+          <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8 }}>This week</div>
+          {weeklyStudyDays.map(d => (
+            <div key={d.key} style={{ display:"flex", alignItems:"center", gap:9, marginBottom:6 }}>
+              <div style={{ fontSize:11, color:d.isToday?C.accentLight:C.muted, fontWeight:d.isToday?700:400, width:26, flexShrink:0 }}>{d.label}</div>
+              <div style={{ flex:1, height:5, background:C.dim, borderRadius:3, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${d.secs>0?Math.max(2,Math.round(d.secs/maxS*100)):0}%`, background:d.isToday?C.accent:C.accent+"66", borderRadius:3, transition:"width 0.4s" }}/>
+              </div>
+              <div style={{ fontSize:11, color:d.secs>0?(d.isToday?C.text:C.textMid):C.muted, fontWeight:d.isToday?700:400, textAlign:"right", width:42, flexShrink:0 }}>
+                {d.secs > 0 ? fmtStudyTime(d.secs) : "—"}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -3496,12 +3624,12 @@ function FormulaSheet({topic, level="1"}){
   const singleGroup=modOrder.length<=1;
   return(
     <div style={{marginBottom:12}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:"#0a0a20",border:`1px solid ${C.accentLight}33`,color:C.accentLight,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accentLight}33`,color:C.accentLight,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
         <span>📐 Formula Sheet — {topic.split(" ")[0]}</span>
         <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {formulas.length} formulas · {modOrder.length} topics</span>
       </button>
       {open&&(
-        <div style={{background:"#08081a",border:`1px solid ${C.accentLight}22`,borderRadius:"0 0 10px 10px",overflow:"hidden"}}>
+        <div style={{background:C.bg,border:`1px solid ${C.accentLight}22`,borderRadius:"0 0 10px 10px",overflow:"hidden"}}>
           {singleGroup?(
             <div style={{padding:"10px 14px",display:"flex",flexDirection:"column",gap:6}}>
               {formulas.map((f,i)=>(
@@ -3516,11 +3644,11 @@ function FormulaSheet({topic, level="1"}){
               const isModOpen=openMod===mod;
               const mFs=modMap[mod];
               return(
-                <div key={mod} style={{borderBottom:mi<modOrder.length-1?`1px solid ${C.accentLight}11`:"none"}}>
+                <div key={mod} style={{borderBottom:mi<modOrder.length-1?`1px solid ${C.border}`:"none"}}>
                   <button onClick={()=>setOpenMod(isModOpen?null:mod)}
-                    style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 14px",background:isModOpen?`${C.accentLight}08`:"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
-                    <span style={{fontSize:11,fontWeight:700,color:isModOpen?C.accentLight:"#7080b0"}}>{mod}</span>
-                    <span style={{fontSize:10,color:"#4a5080"}}>{mFs.length} · {isModOpen?"▲":"▼"}</span>
+                    style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 14px",background:isModOpen?C.accent+"0a":"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
+                    <span style={{fontSize:11,fontWeight:700,color:isModOpen?C.accentLight:C.muted}}>{mod}</span>
+                    <span style={{fontSize:10,color:C.muted}}>{mFs.length} · {isModOpen?"▲":"▼"}</span>
                   </button>
                   {isModOpen&&(
                     <div style={{padding:"4px 14px 10px",display:"flex",flexDirection:"column",gap:6}}>
@@ -3544,34 +3672,47 @@ function FormulaSheet({topic, level="1"}){
 
 function PowerNotesSheet({topic, level="1"}){
   const [open,setOpen]=useState(false);
+  const [openMod,setOpenMod]=useState(null);
   const notes=getActivePowerNotes(level)[topic];
   if(!notes||!notes.topics||!notes.topics.length)return null;
   const totalRules=notes.topics.reduce((s,t)=>s+(t.rules||[]).length+(t.traps||[]).length,0);
   return(
     <div style={{marginBottom:12}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:"#0a1a0a",border:`1px solid ${C.easy}33`,color:C.easy,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{width:"100%",padding:"9px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.easy}33`,color:C.easy,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
         <span>📝 Power Notes — {topic.split(" ")[0]}</span>
-        <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {totalRules} bullets</span>
+        <span style={{fontSize:10,opacity:0.7}}>{open?"▲ Hide":"▼ Show"} {totalRules} bullets · {notes.topics.length} topics</span>
       </button>
       {open&&(
-        <div style={{background:"#08120a",border:`1px solid ${C.easy}22`,borderRadius:"0 0 10px 10px",padding:"10px 14px",display:"flex",flexDirection:"column",gap:10}}>
-          {notes.topics.map((t,ti)=>(
-            <div key={ti}>
-              <div style={{fontSize:10,fontWeight:700,color:C.easy,marginBottom:5,textTransform:"uppercase",letterSpacing:0.5}}>{t.module}</div>
-              {(t.rules||[]).map((r,i)=>(
-                <div key={i} style={{fontSize:11,color:C.text,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.easy}44`,marginBottom:3}}>{r}</div>
-              ))}
-              {(t.traps||[]).length>0&&(
-                <div style={{marginTop:5}}>
-                  <div style={{fontSize:9,color:C.hard,fontWeight:700,marginBottom:3,letterSpacing:0.5}}>⚠ TRAPS</div>
-                  {t.traps.map((r,i)=>(
-                    <div key={i} style={{fontSize:11,color:"#fca5a5",lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.hard}66`,marginBottom:3}}>{r}</div>
-                  ))}
-                </div>
-              )}
-              {t.mnemonic&&<div style={{fontSize:10,color:C.accentLight,fontStyle:"italic",marginTop:4,padding:"4px 8px",background:C.dim,borderRadius:6}}>💡 {t.mnemonic}</div>}
-            </div>
-          ))}
+        <div style={{background:C.bg,border:`1px solid ${C.easy}22`,borderRadius:"0 0 10px 10px",overflow:"hidden"}}>
+          {notes.topics.map((t,ti)=>{
+            const isModOpen=openMod===t.module;
+            const count=(t.rules||[]).length+(t.traps||[]).length;
+            return(
+              <div key={ti} style={{borderBottom:ti<notes.topics.length-1?`1px solid ${C.border}`:"none"}}>
+                <button onClick={()=>setOpenMod(isModOpen?null:t.module)}
+                  style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 14px",background:isModOpen?C.easy+"0a":"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
+                  <span style={{fontSize:11,fontWeight:700,color:isModOpen?C.easy:C.muted,textTransform:"uppercase",letterSpacing:0.4}}>{t.module}</span>
+                  <span style={{fontSize:10,color:C.muted}}>{count} · {isModOpen?"▲":"▼"}</span>
+                </button>
+                {isModOpen&&(
+                  <div style={{padding:"4px 14px 12px",display:"flex",flexDirection:"column",gap:3}}>
+                    {(t.rules||[]).map((r,i)=>(
+                      <div key={i} style={{fontSize:11,color:C.text,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.easy}44`,marginBottom:2}}>{r}</div>
+                    ))}
+                    {(t.traps||[]).length>0&&(
+                      <div style={{marginTop:6}}>
+                        <div style={{fontSize:9,color:C.hard,fontWeight:700,marginBottom:4,letterSpacing:0.5}}>⚠ TRAPS</div>
+                        {t.traps.map((r,i)=>(
+                          <div key={i} style={{fontSize:11,color:C.hard,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.hard}66`,marginBottom:2}}>{r}</div>
+                        ))}
+                      </div>
+                    )}
+                    {t.mnemonic&&<div style={{fontSize:10,color:C.accentLight,fontStyle:"italic",marginTop:6,padding:"4px 8px",background:C.dim,borderRadius:6}}>💡 {t.mnemonic}</div>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -4368,70 +4509,209 @@ function FeedbackModal({onClose, userId="", onSubmit}){
   );
 }
 
-function UpgradeModal({reason, onClose, userEmail=""}){
-  const [joined,setJoined]=useState(false);
+function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=null, weakCount=0, streakDays=0}){
+  const [step,setStep]=useState("info"); // "info" | "pay" | "checking" | "granted" | "notyet"
+  const [copied,setCopied]=useState(false);
   const hoursLeft=()=>{const now=new Date();const midnight=new Date(now);midnight.setHours(24,0,0,0);return Math.max(1,Math.ceil((midnight-now)/(1000*60*60)));};
   const headers={
-    limit:{icon:"⚡",title:"Daily limit reached",sub:`You've used your ${FREE_DAILY_AI_LIMIT} free AI questions today. Resets in ${hoursLeft()} hour${hoursLeft()!==1?"s":""}.`},
-    coach:{icon:"🤖",title:"Pro feature",sub:"AI Coach is unlimited on the Pro plan."},
+    limit:{icon:"⚡",title:"Daily limit reached",sub:`You've used your ${FREE_DAILY_AI_LIMIT} free questions today. Resets in ${hoursLeft()} hr${hoursLeft()!==1?"s":""}.`},
+    coach:{icon:"🤖",title:"Pro feature",sub:"AI Coach is available on the Pro plan."},
     plan:{icon:"🗓",title:"Pro feature",sub:"Weekly AI study plans are available on Pro."},
     l2l3:{icon:"📚",title:"Pro feature",sub:"Full CFA L2 & L3 support is available on Pro."},
     learn:{icon:"🎓",title:"Pro feature",sub:"AI Topic Lessons are available on Pro."},
     default:{icon:"🚀",title:"Upgrade to Pro",sub:"Get unlimited access to every ClearCFA feature."},
   };
   const {icon,title,sub}=headers[reason]||headers.default;
+
+  const copyUPI=()=>{
+    try{navigator.clipboard.writeText(PAYMENT_UPI_ID);}catch{}
+    setCopied(true);setTimeout(()=>setCopied(false),2000);
+  };
+
+  const checkAccess=async()=>{
+    setStep("checking");
+    const isPro=await (onCheckAccess?.()??Promise.resolve(false));
+    setStep(isPro?"granted":"notyet");
+  };
+
   return(
     <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:"20px 20px 0 0",padding:"22px 20px 40px",border:`1px solid ${C.border}`,borderBottom:"none",maxHeight:"90vh",overflowY:"auto"}}>
         <div style={{width:36,height:4,borderRadius:2,background:C.border,margin:"0 auto 20px"}}/>
-        <div style={{textAlign:"center",marginBottom:20}}>
-          <div style={{fontSize:36,marginBottom:8}}>{icon}</div>
-          <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:6}}>{title}</div>
-          <div style={{fontSize:13,color:C.muted,lineHeight:1.55,maxWidth:280,margin:"0 auto"}}>{sub}</div>
-        </div>
-        <div style={{display:"flex",gap:10,marginBottom:16}}>
-          <div style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 11px"}}>
-            <div style={{fontSize:9,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Free</div>
-            <div style={{fontSize:22,fontWeight:900,color:C.text,lineHeight:1}}>$0<span style={{fontSize:10,color:C.muted,fontWeight:400}}> always</span></div>
-            <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
-              {[["5 AI Qs/day",true],["Spaced repetition",true],["Pass probability",true],["CFA Level 1",true],["AI Coach",false],["L2 + L3",false],["Unlimited Qs",false]].map(([f,incl])=>(
-                <div key={f} style={{fontSize:10,color:incl?C.textMid:C.muted,opacity:incl?1:0.5,display:"flex",gap:5,alignItems:"center"}}>
-                  <span style={{color:incl?C.easy:C.muted,fontWeight:700}}>{incl?"✓":"✗"}</span>{f}
-                </div>
-              ))}
-            </div>
+
+        {step==="granted"&&(
+          <div style={{textAlign:"center",padding:"24px 16px"}}>
+            <div style={{fontSize:40,marginBottom:12}}>🎉</div>
+            <div style={{fontSize:17,fontWeight:800,color:C.easy,marginBottom:8}}>Pro access granted!</div>
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.6,marginBottom:20}}>Welcome to ClearCFA Pro. Enjoy unlimited AI questions across L1, L2 & L3.</div>
+            <button onClick={onClose} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.easy},${C.easyLight||C.easy})`,color:"#fff",border:"none",cursor:"pointer"}}>Start studying →</button>
           </div>
-          <div style={{flex:1,background:`linear-gradient(160deg,${C.accent}18,${C.accent}06)`,border:`1.5px solid ${C.accent}55`,borderRadius:12,padding:"13px 11px",position:"relative"}}>
-            <div style={{position:"absolute",top:-9,right:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",fontSize:8,fontWeight:800,padding:"2px 8px",borderRadius:20,letterSpacing:"0.06em"}}>MOST POPULAR</div>
-            <div style={{fontSize:9,fontWeight:700,color:C.accentLight,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Pro</div>
-            <div style={{fontSize:22,fontWeight:900,color:C.text,lineHeight:1}}>$19<span style={{fontSize:10,color:C.muted,fontWeight:400}}>/mo</span></div>
-            <div style={{fontSize:9,color:C.muted,marginBottom:10}}>or $99/yr · save 56%</div>
-            <div style={{display:"flex",flexDirection:"column",gap:4}}>
-              {["Unlimited AI questions","CFA L1 + L2 + L3","AI Coach (unlimited)","Weekly study plans","Advanced analytics"].map(f=>(
-                <div key={f} style={{fontSize:10,color:C.textMid,display:"flex",gap:5,alignItems:"center"}}>
-                  <span style={{color:C.easy,fontWeight:700}}>✓</span>{f}
-                </div>
-              ))}
-            </div>
+        )}
+
+        {step==="notyet"&&(
+          <div style={{textAlign:"center",padding:"20px 16px"}}>
+            <div style={{fontSize:32,marginBottom:10}}>⏳</div>
+            <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:8}}>Not found yet</div>
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:16}}>Payment confirmation usually takes a few hours. If you've already paid, reply to the confirmation email and we'll verify manually.</div>
+            <button onClick={()=>setStep("pay")} style={{width:"100%",padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",marginBottom:8}}>↺ Try again</button>
+            <button onClick={onClose} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Continue on free</button>
           </div>
-        </div>
-        {!joined?(
+        )}
+
+        {step==="checking"&&(
+          <div style={{textAlign:"center",padding:"40px 16px"}}>
+            <div style={{fontSize:28,marginBottom:12,animation:"pulse 1s ease-in-out infinite"}}>🔍</div>
+            <div style={{fontSize:14,color:C.muted}}>Checking your access…</div>
+          </div>
+        )}
+
+        {step==="info"&&(
           <>
-            <button onClick={()=>{try{localStorage.setItem('cfa_pro_waitlist',JSON.stringify({email:userEmail,ts:Date.now()}));}catch{}setJoined(true);}}
+            <div style={{textAlign:"center",marginBottom:18}}>
+              <div style={{fontSize:34,marginBottom:8}}>{icon}</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:5}}>{title}</div>
+              <div style={{fontSize:13,color:C.muted,lineHeight:1.55,maxWidth:280,margin:"0 auto"}}>{sub}</div>
+            </div>
+
+            {/* #2 — Loss-framing panel for daily limit */}
+            {reason==="limit"&&(passProb!==null||weakCount>0||streakDays>0)&&(
+              <div style={{background:C.hard+"14",border:`1px solid ${C.hard}33`,borderRadius:12,padding:"13px 16px",marginBottom:14}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.hard,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>What you're leaving on the table today</div>
+                {passProb!==null&&(
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:passProb>=70?C.easy+"22":C.hard+"22",border:`2px solid ${passProb>=70?C.easy:C.hard}55`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{fontSize:11,fontWeight:800,color:passProb>=70?C.easy:C.hard}}>{passProb}%</span>
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:C.text}}>Pass probability: {passProb}%</div>
+                      <div style={{fontSize:11,color:C.muted}}>{passProb>=70?"On track — keep the momentum":"Every session gap widens this gap"}</div>
+                    </div>
+                  </div>
+                )}
+                {weakCount>0&&(
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:C.medium+"22",border:`2px solid ${C.medium}55`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{fontSize:13,fontWeight:800,color:C.medium}}>{weakCount}</span>
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:C.text}}>{weakCount} topic{weakCount!==1?"s":""} below 60% accuracy</div>
+                      <div style={{fontSize:11,color:C.muted}}>Untrained areas examiners love to test</div>
+                    </div>
+                  </div>
+                )}
+                {streakDays>0&&(
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:C.reward+"22",border:`2px solid ${C.reward}55`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{fontSize:13,fontWeight:800,color:C.rewardLight}}>{streakDays}🔥</span>
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:C.text}}>{streakDays}-day streak at risk</div>
+                      <div style={{fontSize:11,color:C.muted}}>Stop now and the chain breaks</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1.5px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,color:C.accentLight,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>ClearCFA Pro · {ACTIVE_LABEL}</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:8,lineHeight:1}}>
+                    <div style={{fontSize:28,fontWeight:900,color:C.text}}>₹{ACTIVE_PRICE}<span style={{fontSize:11,color:C.muted,fontWeight:400}}>/mo</span></div>
+                    <div style={{fontSize:13,color:C.muted,textDecoration:"line-through",fontWeight:600}}>₹{ACTIVE_WAS}</div>
+                  </div>
+                  <div style={{fontSize:10,color:C.easy,fontWeight:700,marginTop:3}}>Save ₹{ACTIVE_WAS-ACTIVE_PRICE}/month · locked in forever</div>
+                </div>
+                <div style={{background:`linear-gradient(135deg,${C.reward},${C.rewardLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 9px",borderRadius:20,whiteSpace:"nowrap"}}>{ACTIVE_LABEL.toUpperCase()}</div>
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"6px 12px",marginBottom:12}}>
+                {["Unlimited AI questions","CFA L1 + L2 + L3","AI Coach","Weekly study plans","Power Notes + Formulas","Spaced repetition"].map(f=>(
+                  <div key={f} style={{fontSize:11,color:C.textMid,display:"flex",gap:4,alignItems:"center"}}>
+                    <span style={{color:C.easy,fontWeight:700,fontSize:10}}>✓</span>{f}
+                  </div>
+                ))}
+              </div>
+              {/* Slot counter inside the card */}
+              {ACTIVE_TIER>0&&(
+                <div style={{borderTop:`1px solid ${C.accent}22`,paddingTop:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                    <span style={{fontSize:11,color:C.rewardLight,fontWeight:700}}>{ACTIVE_SLOTS-ACTIVE_TAKEN} of {ACTIVE_SLOTS} {ACTIVE_LABEL} spots left</span>
+                    <span style={{fontSize:10,color:C.muted}}>price rises to ₹{ACTIVE_WAS} after</span>
+                  </div>
+                  <div style={{height:4,background:C.border,borderRadius:2}}>
+                    <div style={{height:"100%",width:`${Math.round((ACTIVE_TAKEN/ACTIVE_SLOTS)*100)}%`,background:`linear-gradient(90deg,${C.reward},${C.rewardLight})`,borderRadius:2,transition:"width 0.4s"}}/>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* What happens after this tier fills */}
+            {ACTIVE_TIER===1&&(
+              <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 12px",marginBottom:12}}>
+                <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>
+                  After these {ACTIVE_SLOTS} spots: price goes to <span style={{color:C.text,fontWeight:700}}>₹{PRICE_TIER2}/mo</span>, then <span style={{color:C.text,fontWeight:700}}>₹{PRICE_REGULAR}/mo</span> for everyone else. Your price is locked in forever once you join.
+                </div>
+              </div>
+            )}
+
+            <button onClick={()=>setStep("pay")}
               style={{width:"100%",padding:"14px",borderRadius:11,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 18px ${C.accent}44`,marginBottom:10}}>
-              🚀 Join Pro waitlist
+              💳 Get {ACTIVE_LABEL} — ₹{ACTIVE_PRICE}/month
             </button>
             <button onClick={onClose} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
-              {reason==="limit"?"Wait for reset — keep studying":"Continue on free"}
+              {reason==="limit"?`Continue on free · resets in ${hoursLeft()} hr`:"Continue on free"}
             </button>
           </>
-        ):(
-          <div style={{textAlign:"center",padding:"18px 16px",background:C.successBg,border:`1px solid ${C.easy}33`,borderRadius:12}}>
-            <div style={{fontSize:26,marginBottom:8}}>🎉</div>
-            <div style={{fontSize:14,fontWeight:800,color:C.easy,marginBottom:6}}>You're on the list!</div>
-            <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>{userEmail?`We'll email ${userEmail} when Pro launches.`:"We'll notify you when Pro launches."} Keep practising on the free tier in the meantime.</div>
-            <button onClick={onClose} style={{marginTop:14,padding:"10px 24px",borderRadius:9,fontSize:13,fontWeight:700,background:C.easy+"20",border:`1px solid ${C.easy}44`,color:C.easy,cursor:"pointer"}}>Continue studying →</button>
-          </div>
+        )}
+
+        {step==="pay"&&(
+          <>
+            {/* Founder note */}
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 16px",marginBottom:16,display:"flex",gap:12,alignItems:"flex-start"}}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:C.accent+"22",border:`1px solid ${C.accent}44`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}}>👋</div>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:3}}>Hi, I'm Praneeth</div>
+                <div style={{fontSize:11,color:C.muted,lineHeight:1.6}}>I built ClearCFA while preparing for CFA myself. Pay below and WhatsApp me your screenshot — I'll activate your access personally within the hour.</div>
+              </div>
+            </div>
+
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>UPI ID</div>
+              <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                <div style={{flex:1,fontSize:16,fontWeight:800,color:C.text,letterSpacing:"0.02em"}}>{PAYMENT_UPI_ID}</div>
+                <button onClick={copyUPI} style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:700,background:copied?C.easy+"22":`${C.accent}22`,border:`1px solid ${copied?C.easy:C.accent}44`,color:copied?C.easy:C.accentLight,cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>
+                  {copied?"✓ Copied":"Copy"}
+                </button>
+              </div>
+              <div style={{marginTop:10,padding:"8px 10px",borderRadius:8,background:C.accent+"12",border:`1px solid ${C.accent}22`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <span style={{fontSize:12,fontWeight:800,color:C.accent}}>Amount: </span>
+                  <span style={{fontSize:14,fontWeight:900,color:C.text}}>₹{ACTIVE_PRICE}</span>
+                  <span style={{fontSize:11,color:C.muted}}> /month</span>
+                </div>
+                <div style={{fontSize:11,color:C.muted,textDecoration:"line-through"}}>₹{ACTIVE_WAS}</div>
+              </div>
+            </div>
+
+            {/* WhatsApp CTA — primary confirmation path */}
+            {PAYMENT_WHATSAPP&&(
+              <a href={`https://wa.me/${PAYMENT_WHATSAPP}?text=${encodeURIComponent("Hi Praneeth, I just paid ₹499 for ClearCFA Pro. My registered email is: "+userEmail+"\n\nHere's my payment screenshot 👇")}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,width:"100%",padding:"13px",borderRadius:11,fontSize:13,fontWeight:700,background:"#25D366",color:"#fff",textDecoration:"none",marginBottom:10,boxShadow:"0 4px 14px #25D36644"}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                WhatsApp payment screenshot →
+              </a>
+            )}
+
+            <button onClick={checkAccess}
+              style={{width:"100%",padding:"12px",borderRadius:11,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}55`,color:C.accentLight,cursor:"pointer",marginBottom:8}}>
+              ✓ Already paid — check my access
+            </button>
+            <button onClick={()=>setStep("info")} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+              ← Back
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -5203,7 +5483,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
               <input value={aiInput} onChange={e=>setAiInput(e.target.value)}
                 onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendAI();}}}
                 placeholder="Ask a follow-up question…"
-                style={{flex:1,padding:"10px 13px",borderRadius:10,background:"#0a0a1a",border:`1px solid ${C.accent}33`,color:C.text,fontSize:13,outline:"none"}}
+                style={{flex:1,padding:"10px 13px",borderRadius:10,background:C.surface,border:`1px solid ${C.accent}33`,color:C.text,fontSize:13,outline:"none"}}
               />
               <button onClick={sendAI} disabled={aiLoading||!aiInput.trim()}
                 style={{padding:"10px 16px",borderRadius:10,fontSize:13,fontWeight:700,background:aiLoading||!aiInput.trim()?C.dim:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:aiLoading||!aiInput.trim()?C.muted:"#fff",border:"none",cursor:aiLoading||!aiInput.trim()?"not-allowed":"pointer",flexShrink:0}}>
@@ -6585,9 +6865,12 @@ function CFACalculator({onClose, onMinimize=null}){
 
 // ─── LOFI AMBIENT PLAYER ─────────────────────────────────────────────────────
 function LofiPlayer(){
+  const [loggedIn,setLoggedIn]=useState(()=>{try{return !!JSON.parse(localStorage.getItem('cfa_auth'));}catch{return false;}});
   const [isPlaying,setIsPlaying]=useState(false);
+  const [pendingResume,setPendingResume]=useState(()=>{try{return localStorage.getItem('cfa_lofi_playing')==='1';}catch{return false;}});
   const [vol,setVol]=useState(()=>{try{return parseFloat(localStorage.getItem('cfa_lofi_vol')||'0.35');}catch{return 0.35;}});
   const [showPanel,setShowPanel]=useState(false);
+  const [lTheme,setLTheme]=useState(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}});
   const ctxRef=useRef(null);
   const masterRef=useRef(null);
   const sched=useRef(null); // {nextBeat, beatCount, chordIdx, active}
@@ -6703,8 +6986,13 @@ function LofiPlayer(){
     if(ctxRef.current?.state==='running') ctxRef.current.suspend();
   }
   const toggle=()=>{
-    if(isPlaying){stopAudio();setIsPlaying(false);}
-    else{startAudio();setIsPlaying(true);}
+    if(isPlaying){
+      stopAudio();setIsPlaying(false);setPendingResume(false);
+      try{localStorage.setItem('cfa_lofi_playing','0');}catch{}
+    } else {
+      startAudio();setIsPlaying(true);setPendingResume(false);
+      try{localStorage.setItem('cfa_lofi_playing','1');}catch{}
+    }
   };
   const onVol=v=>{
     setVol(v);
@@ -6712,25 +7000,43 @@ function LofiPlayer(){
     if(masterRef.current&&ctxRef.current) masterRef.current.gain.setTargetAtTime(v,ctxRef.current.currentTime,0.05);
   };
   useEffect(()=>()=>{stopAudio();try{ctxRef.current?.close();}catch{};},[]);
+  useEffect(()=>{const h=(e)=>setLTheme(e.detail||'dark');window.addEventListener('cfa_theme',h);return()=>window.removeEventListener('cfa_theme',h);},[]);
+  useEffect(()=>{const h=(e)=>{setLoggedIn(!!e.detail);if(!e.detail){stopAudio();setIsPlaying(false);setPendingResume(false);}};window.addEventListener('cfa_auth',h);return()=>window.removeEventListener('cfa_auth',h);},[]);
+  // Auto-resume after refresh: start on first user interaction (browsers block autoplay otherwise)
+  useEffect(()=>{
+    if(!pendingResume) return;
+    const resume=()=>{
+      startAudio();setIsPlaying(true);setPendingResume(false);
+    };
+    document.addEventListener('click',resume,{once:true});
+    document.addEventListener('keydown',resume,{once:true});
+    return()=>{
+      document.removeEventListener('click',resume);
+      document.removeEventListener('keydown',resume);
+    };
+  },[pendingResume]);
+  const isLight=lTheme==='light';
+  if(!loggedIn) return null;
   return (
     <>
-      <button onClick={()=>setShowPanel(s=>!s)} title="Lofi study music"
+      <button onClick={()=>setShowPanel(s=>!s)} title={pendingResume?"Tap anywhere to resume music":"Lofi study music"}
         style={{position:"fixed",bottom:22,left:16,zIndex:200,width:46,height:46,borderRadius:"50%",
-          background:isPlaying?"linear-gradient(135deg,#1a3a2a,#1e5c3a)":"linear-gradient(135deg,#1a1a2e,#1e1e38)",
-          border:isPlaying?"1px solid #22c55e55":"1px solid #6366f133",
-          color:isPlaying?"#86efac":"#a5b4fc",fontSize:20,cursor:"pointer",
-          boxShadow:isPlaying?"0 4px 16px #22c55e33":"0 4px 16px #0008",
+          background:isPlaying?"linear-gradient(135deg,#1a3a2a,#1e5c3a)":pendingResume?"linear-gradient(135deg,#1a2e3a,#1e3a5c)":isLight?"linear-gradient(135deg,#e8e8f4,#f4f4fb)":"linear-gradient(135deg,#1a1a2e,#1e1e38)",
+          border:isPlaying?"1px solid #22c55e55":pendingResume?"1px solid #60a5fa88":isLight?"1px solid #6366f155":"1px solid #6366f133",
+          color:isPlaying?"#86efac":pendingResume?"#93c5fd":isLight?"#4f46e5":"#a5b4fc",fontSize:20,cursor:"pointer",
+          boxShadow:isPlaying?"0 4px 16px #22c55e33":pendingResume?"0 4px 16px #60a5fa44":isLight?"0 4px 16px #0002":"0 4px 16px #0008",
           display:"flex",alignItems:"center",justifyContent:"center",
-          touchAction:"manipulation",transition:"all 0.2s"}}>
+          touchAction:"manipulation",transition:"all 0.2s",
+          animation:pendingResume?"pulse 1.6s ease-in-out infinite":undefined}}>
         🎵
       </button>
       {showPanel&&(
-        <div style={{position:"fixed",bottom:76,left:16,zIndex:200,background:"#1a1a38",
-          border:"1px solid #6366f144",borderRadius:16,padding:"16px",
-          boxShadow:"0 8px 32px #00000099",minWidth:210,animation:"fadeIn 0.15s ease"}}>
+        <div style={{position:"fixed",bottom:76,left:16,zIndex:200,background:isLight?"#ffffff":"#1a1a38",
+          border:isLight?"1px solid #6366f144":"1px solid #6366f144",borderRadius:16,padding:"16px",
+          boxShadow:isLight?"0 8px 32px #0001":"0 8px 32px #00000099",minWidth:210,animation:"fadeIn 0.15s ease"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#a5b4fc",letterSpacing:"0.05em"}}>🎵 LOFI STUDY</div>
-            <button onClick={()=>setShowPanel(false)} style={{fontSize:14,color:"#7c7a9e",background:"none",border:"none",cursor:"pointer",lineHeight:1,padding:"2px 6px"}}>✕</button>
+            <div style={{fontSize:12,fontWeight:700,color:isLight?"#4f46e5":"#a5b4fc",letterSpacing:"0.05em"}}>🎵 LOFI STUDY</div>
+            <button onClick={()=>setShowPanel(false)} style={{fontSize:14,color:isLight?"#8b89a8":"#7c7a9e",background:"none",border:"none",cursor:"pointer",lineHeight:1,padding:"2px 6px"}}>✕</button>
           </div>
           <button onClick={toggle} style={{width:"100%",padding:"10px",borderRadius:10,marginBottom:12,
             fontSize:13,fontWeight:700,
@@ -6745,12 +7051,61 @@ function LofiPlayer(){
               style={{flex:1,accentColor:"#6366f1",cursor:"pointer"}}/>
             <span style={{fontSize:14}}>🔊</span>
           </div>
-          <div style={{fontSize:10,color:"#4a4869",textAlign:"center",marginTop:10}}>lofi jazz · 82 BPM · study focus</div>
+          <div style={{fontSize:10,color:isLight?"#8b89a8":"#4a4869",textAlign:"center",marginTop:10}}>lofi jazz · 82 BPM · study focus</div>
         </div>
       )}
     </>
   );
 }
+function ReferralCard({userId,cfg,setUpgradeModal}){
+  const [count,setCount]=useState(null);
+  const [copied,setCopied]=useState(false);
+  const link=getReferralLink(userId);
+  const progress=count!==null?count%REFERRAL_THRESHOLD:0;
+  const earned=count!==null?Math.floor(count/REFERRAL_THRESHOLD):0;
+
+  useEffect(()=>{getReferralCount(cfg,userId).then(setCount);},[]);
+
+  const copy=()=>{
+    try{navigator.clipboard.writeText(link);}catch{}
+    setCopied(true);setTimeout(()=>setCopied(false),2000);
+  };
+  const share=()=>{
+    if(navigator.share){navigator.share({title:'ClearCFA — AI-powered CFA prep',text:'Free AI-powered CFA practice tool. Adapts to your weak spots.',url:link}).catch(()=>{});}
+    else copy();
+  };
+
+  return(
+    <div style={{background:`linear-gradient(135deg,${C.accent}12,${C.accent}06)`,border:`1px solid ${C.accent}33`,borderRadius:14,padding:"14px 16px",marginBottom:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+        <div style={{fontSize:13,fontWeight:800,color:C.text}}>🎁 Invite friends · earn Pro</div>
+        {earned>0&&<span style={{fontSize:10,fontWeight:700,background:C.easy+"22",color:C.easy,padding:"2px 8px",borderRadius:20,border:`1px solid ${C.easy}33`}}>{earned} month{earned!==1?"s":""} earned</span>}
+      </div>
+      <div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.5}}>Get <strong style={{color:C.accentLight}}>1 month Pro free</strong> for every {REFERRAL_THRESHOLD} friends who sign up.</div>
+      {count!==null&&(
+        <div style={{marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+            <span style={{fontSize:10,color:C.muted}}>{progress}/{REFERRAL_THRESHOLD} friends joined</span>
+            {progress>0&&<span style={{fontSize:10,color:C.accentLight}}>{REFERRAL_THRESHOLD-progress} more for next free month</span>}
+          </div>
+          <div style={{height:5,background:C.border,borderRadius:3,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${Math.round((progress/REFERRAL_THRESHOLD)*100)}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s"}}/>
+          </div>
+        </div>
+      )}
+      <div style={{display:"flex",gap:8}}>
+        <div style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"8px 10px",fontSize:11,color:C.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{link}</div>
+        <button onClick={copy} style={{padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:700,background:copied?C.easy+"22":`${C.accent}22`,border:`1px solid ${copied?C.easy:C.accent}44`,color:copied?C.easy:C.accentLight,cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>
+          {copied?"✓":"Copy"}
+        </button>
+        <button onClick={share} style={{padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:700,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>
+          Share
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CFAMock(){
   const [screen,setScreen]=useState("home");
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
@@ -6824,6 +7179,7 @@ function CFAMock(){
   const [theme,setTheme]=useState(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}});
   const toggleTheme=()=>{const t=theme==='dark'?'light':'dark';_applyTheme(t);try{localStorage.setItem('cfa_theme',t);}catch{};setTheme(t);};
   const [proStatus,setProStatus]=useState(getProStatus);
+  const [proValidUntil,setProValidUntil]=useState(getProValidUntil);
   const [dailyAIUsage,setDailyAIUsage]=useState(getDailyAIUsage);
   const [upgradeModal,setUpgradeModal]=useState(null); // null | {reason:string}
   const [feedbackOpen,setFeedbackOpen]=useState(false);
@@ -6853,7 +7209,7 @@ function CFAMock(){
   const authUserRef=useRef(getStoredAuth());
   const [needsFocusRefresh,setNeedsFocusRefresh]=useState(false);
   const [examDate,setExamDate]=useState(EXAM_DATE);
-  const [examDateInput,setExamDateInput]=useState("2026-08-19");
+  const [examDateInput,setExamDateInput]=useState(()=>{const now=new Date();const dates=["2026-02-18","2026-08-19","2027-02-17","2027-08-18"];return dates.find(d=>new Date(d)>now)||"2026-08-19";});
   const [revisionTopic,setRevisionTopic]=useState(null);
   const [revisionTab,setRevisionTab]=useState("notes");
   const [revisionConcept,setRevisionConcept]=useState(null);
@@ -6904,7 +7260,7 @@ function CFAMock(){
   // Re-evaluate Pro status when auth changes (owner email always gets Pro)
   useEffect(()=>{
     if(authUser?.id){
-      checkProFromServer(SB_CFG,authUser.id,authUser.email).then(isPro=>setProStatus(isPro));
+      checkProFromServer(SB_CFG,authUser.id,authUser.email).then(({isPro,validUntil})=>{setProStatus(isPro);setProValidUntil(validUntil||null);});
     }else{
       setProStatus(false);
     }
@@ -6922,6 +7278,41 @@ function CFAMock(){
   useEffect(()=>{historyRef.current=history;},[history]);
   // Keep authUserRef in sync (must be unconditional — cannot be after any early return)
   useEffect(()=>{ authUserRef.current=authUser; },[authUser]);
+
+  // Google OAuth callback — detect #access_token= in URL hash after Supabase redirect
+  useEffect(()=>{
+    const hash=window.location.hash;
+    if(!hash.includes('access_token='))return;
+    const params=new URLSearchParams(hash.slice(1));
+    const accessToken=params.get('access_token');
+    if(!accessToken)return;
+    window.history.replaceState(null,'',window.location.pathname);
+    (async()=>{
+      try{
+        const res=await fetch(`${SUPABASE_URL}/auth/v1/user`,{headers:{'Authorization':`Bearer ${accessToken}`,'apikey':SUPABASE_KEY}});
+        if(!res.ok)return;
+        const user=await res.json();
+        const userId=user.id;
+        const email=user.email||'';
+        const auth={id:userId,email,accessToken};
+        const exists=await supabaseCheckAccount(SB_CFG,userId);
+        if(!exists)await supabaseCreateAccount(SB_CFG,userId,email);
+        const prev=getStoredAuth();
+        if(!prev||prev.id!==userId){
+          const sbData=await supabaseLoad(SB_CFG,auth);
+          if(sbData?.history?.length){const h=sbData.history.map(s=>({...s,wrongs:[]}));setHistory(h);historyRef.current=h;storageSet(STORAGE_KEY,h);}
+          if(sbData?.srDeck){setSrDeck(sbData.srDeck);srDeckRef.current=sbData.srDeck;storageSet(SR_KEY,sbData.srDeck);}
+          if(sbData?.usageStats){setUsageStats(sbData.usageStats);usageStatsRef.current=sbData.usageStats;}
+        }
+        saveAuth(auth);
+        setAuthUser(auth);
+        authUserRef.current=auth;
+        try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:true}));}catch{}
+        if(!exists)setShowOnboarding(true);
+      }catch{}
+    })();
+  },[]);
+
   // L2/L3 use item-set/vignette format — auto-enable vignette mode
   useEffect(()=>{if(cfaLevel!=="1")setVignetteMode(true);else setVignetteMode(false);},[cfaLevel]);
 
@@ -7622,7 +8013,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     if(!proStatus){
       const usage=getDailyAIUsage();
       if(usage.count>=FREE_DAILY_AI_LIMIT){
-        setUpgradeModal({reason:"limit"});
+        setUpgradeModal({reason:"limit",passProb:passProbability?.probability??null,weakCount:moduleReadiness.filter(m=>m.accuracy!==null&&m.accuracy<60).length,streakDays:streak});
         setLoading(false);setLoadingProgress(0);generatingRef.current=false;
         return;
       }
@@ -7648,7 +8039,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(hit){
         const cachedQs=hit.qs.slice(0,cnt);
         const fresh=filterNewQuestions(cachedQs,qdb);
-        const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:cachedQs;
+        // Only use cache if ≥70% are genuinely unseen — otherwise fall through to AI for fresh questions
+        const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:[];
         if(finalQs.length>=Math.ceil(cnt*0.7)){
           qCacheRef.current=qcMarkUsed(qCacheRef.current,t,st,diff,hit.ts);
           storageSet(QCACHE_KEY,qCacheRef.current);
@@ -7728,7 +8120,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
       });
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
       const fresh=filterNewQuestions(parsed_clean,qdb);
-      const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:parsed_clean;
+      // Prefer unseen questions; if not enough, take least-recently-seen to minimise repeats
+      const finalQs=fresh.length>=Math.ceil(cnt*0.7)?fresh:(()=>{
+        const sorted=[...parsed_clean].sort((a,b)=>(qdb[hashQuestion(a)]?.seen||0)-(qdb[hashQuestion(b)]?.seen||0));
+        return sorted.slice(0,cnt);
+      })();
       // Cache successful non-vignette sets for reuse
       if(!isVignette&&parsed_clean.length>=5){
         qCacheRef.current=qcAdd(qCacheRef.current,t,st,diff,parsed_clean);
@@ -7985,7 +8381,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <input value={reviewAiInput} onChange={e=>setReviewAiInput(e.target.value)}
             onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendReviewAI();}}}
             placeholder="Ask a follow-up question…"
-            style={{flex:1,padding:"10px 13px",borderRadius:10,background:"#0a0a1a",border:`1px solid ${C.accent}33`,color:C.text,fontSize:13,outline:"none"}}
+            style={{flex:1,padding:"10px 13px",borderRadius:10,background:C.surface,border:`1px solid ${C.accent}33`,color:C.text,fontSize:13,outline:"none"}}
           />
           <button onClick={sendReviewAI} disabled={reviewAiLoading||!reviewAiInput.trim()}
             style={{padding:"10px 16px",borderRadius:10,fontSize:13,fontWeight:700,background:reviewAiLoading||!reviewAiInput.trim()?C.dim:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:reviewAiLoading||!reviewAiInput.trim()?C.muted:"#fff",border:"none",cursor:reviewAiLoading||!reviewAiInput.trim()?"not-allowed":"pointer",flexShrink:0}}>→</button>
@@ -8084,8 +8480,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
       const untouched=moduleReadiness.filter(m=>m.sessions===0).length;
       return(
-        <div style={{background:"#080818",border:`1px solid #22d3ee22`,borderRadius:11,padding:"12px 14px",marginBottom:14,fontSize:11,color:C.muted}}>
-          <span style={{color:"#22d3ee",fontWeight:700}}>Context loaded: </span>
+        <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"12px 14px",marginBottom:14,fontSize:11,color:C.muted}}>
+          <span style={{color:C.accentLight,fontWeight:700}}>Context loaded: </span>
           {history.length} sessions · {daysLeft} days to exam ·
           {topWeak.length>0?` Weakest: ${topWeak[0].topic.split(" ")[0]} (${topWeak[0].accuracy}%) ·`:""}
           {untouched>0?` ${untouched} untouched modules`:""}
@@ -8282,7 +8678,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
         saveAuth(auth);
         setAuthUser(auth);
         authUserRef.current=auth;
-        if(isSignup) setShowOnboarding(true);
+        try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:true}));}catch{}
+        if(isSignup){
+          setShowOnboarding(true);
+          try{const ref=sessionStorage.getItem('cfa_ref');if(ref&&ref!==auth.id){recordReferral(SB_CFG,ref,auth.id);sessionStorage.removeItem('cfa_ref');}}catch{}
+        }
       }catch{
         setAuthError("Something went wrong. Please try again.");
       }
@@ -8299,7 +8699,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <span style={{fontSize:10,fontWeight:700,color:C.accentLight,background:C.accent+"20",border:`1px solid ${C.accent}44`,borderRadius:20,padding:"2px 8px",marginLeft:2}}>Free to start</span>
           </div>
           <div style={{fontSize:30,fontWeight:900,color:C.text,lineHeight:1.15,marginBottom:10,letterSpacing:"-0.6px",maxWidth:320,margin:"0 auto 10px"}}>
-            Pass CFA Level 1.<br/>
+            Pass the CFA.<br/>
             <span style={{background:`linear-gradient(135deg,${C.accentLight},${C.easyLight})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>AI that adapts to you.</span>
           </div>
           <div style={{fontSize:13,color:C.muted,lineHeight:1.65,maxWidth:290,margin:"0 auto 24px"}}>
@@ -8307,7 +8707,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {/* Stats strip */}
           <div style={{display:"flex",justifyContent:"center",gap:0,background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 0",maxWidth:340,margin:"0 auto"}}>
-            {[["3,200+","Questions","🎯"],["L1 / L2 / L3","All Levels","📚"],["Free tier","5 Qs/day","⚡"]].map(([val,label,ico],i,arr)=>(
+            {[["AI-generated","Questions","🎯"],["L1 / L2 / L3","All Levels","📚"],["Free tier","10 Qs/day","⚡"]].map(([val,label,ico],i,arr)=>(
               <div key={label} style={{flex:1,textAlign:"center",borderRight:i<arr.length-1?`1px solid ${C.border}`:"none",padding:"0 8px"}}>
                 <div style={{fontSize:15,fontWeight:800,color:C.text}}>{ico} {val}</div>
                 <div style={{fontSize:10,color:C.muted,marginTop:2}}>{label}</div>
@@ -8352,6 +8752,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
               New to ClearCFA?{" "}
               <span onClick={()=>{setAuthMode("signup");setAuthError("");setAuthPassword("");setAuthConfirm("");}} style={{color:C.accentLight,cursor:"pointer",fontWeight:700}}>Create a free account →</span>
             </div>}
+            <div style={{display:"flex",alignItems:"center",gap:10,margin:"14px 0 4px"}}>
+              <div style={{flex:1,height:1,background:C.border}}/>
+              <span style={{fontSize:11,color:C.muted,whiteSpace:"nowrap"}}>or</span>
+              <div style={{flex:1,height:1,background:C.border}}/>
+            </div>
+            <button onClick={loginWithGoogle} style={{width:"100%",padding:"12px",borderRadius:11,fontSize:13,fontWeight:700,background:C.surface,border:`1.5px solid ${C.border}`,color:C.text,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+              Continue with Google
+            </button>
           </div>
         </div>
 
@@ -8412,7 +8821,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Free</div>
               <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>$0</div>
               <div style={{fontSize:10,color:C.muted,marginBottom:14}}>always</div>
-              {[["5 AI Qs/day",true],["Spaced repetition",true],["Pass probability",true],["CFA Level 1 only",true],["AI Coach",false],["L2 + L3",false],["Unlimited Qs",false]].map(([f,incl])=>(
+              {[["10 AI Qs/day",true],["Spaced repetition",true],["Pass probability",true],["CFA Level 1 only",true],["AI Coach",false],["L2 + L3",false],["Unlimited Qs",false]].map(([f,incl])=>(
                 <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:incl?C.textMid:C.muted,marginBottom:5,opacity:incl?1:0.5}}>
                   <span style={{color:incl?C.easy:C.muted,fontWeight:700,flexShrink:0,fontSize:10}}>{incl?"✓":"✗"}</span>{f}
                 </div>
@@ -8426,8 +8835,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{flex:1,background:`linear-gradient(160deg,${C.accent}14,${C.accent}06)`,border:`1.5px solid ${C.accent}55`,borderRadius:14,padding:"16px 14px",position:"relative"}}>
               <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 10px",borderRadius:20,letterSpacing:"0.06em",whiteSpace:"nowrap"}}>MOST POPULAR</div>
               <div style={{fontSize:11,fontWeight:700,color:C.accentLight,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Pro</div>
-              <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>$19<span style={{fontSize:13,fontWeight:600,color:C.muted}}>/mo</span></div>
-              <div style={{fontSize:10,color:C.muted,marginBottom:14}}>or $99/year · save 56%</div>
+              <div style={{display:"flex",alignItems:"baseline",gap:8,lineHeight:1,marginBottom:2}}>
+                <div style={{fontSize:26,fontWeight:900,color:C.text}}>₹{ACTIVE_PRICE}<span style={{fontSize:13,fontWeight:600,color:C.muted}}>/mo</span></div>
+                <div style={{fontSize:13,color:C.muted,textDecoration:"line-through"}}>₹{ACTIVE_WAS}</div>
+              </div>
+              <div style={{fontSize:10,color:C.easy,fontWeight:700,marginBottom:14}}>{ACTIVE_LABEL} · {ACTIVE_SLOTS-ACTIVE_TAKEN} spots left</div>
               {[["Unlimited AI questions",true],["CFA L1 + L2 + L3",true],["AI Coach (unlimited)",true],["Weekly study plans",true],["Advanced analytics",true],["Spaced repetition",true],["Priority support",true]].map(([f])=>(
                 <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:C.textMid,marginBottom:5}}>
                   <span style={{color:C.easy,fontWeight:700,flexShrink:0,fontSize:10}}>✓</span>{f}
@@ -8460,6 +8872,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
               Create free account →
             </button>
           </div>
+        </div>
+        {/* Footer links */}
+        <div style={{textAlign:"center",padding:"20px 0 40px",fontSize:11,color:C.muted}}>
+          <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{color:C.muted,textDecoration:"none"}}>Privacy Policy</a>
+          <span style={{margin:"0 8px"}}>·</span>
+          <a href="mailto:gspbuilds@gmail.com" style={{color:C.muted,textDecoration:"none"}}>Contact</a>
         </div>
       </div>
     );
@@ -8771,7 +9189,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
     {/* Settings drawer overlay */}
-    {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""}/>}
+    {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} passProb={upgradeModal.passProb??null} weakCount={upgradeModal.weakCount??0} streakDays={upgradeModal.streakDays??0} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""} onCheckAccess={async()=>{const{isPro,validUntil}=await checkProFromServer(SB_CFG,authUser?.id||"",authUser?.email||"");if(isPro){setProStatus(true);setProValidUntil(validUntil||null);}return isPro;}}/>}
     {feedbackOpen&&<FeedbackModal onClose={()=>setFeedbackOpen(false)} userId={authUser?.id||"anon"} onSubmit={(data)=>submitFeedback(SB_CFG,data)}/>}
     {settingsOpen&&(
       <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
@@ -8807,6 +9225,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700,color:C.text}}>ClearCFA Pro</div>
                 <div style={{fontSize:11,color:C.accentLight,marginTop:1}}>Unlimited AI questions · All levels · AI Coach</div>
+                {proValidUntil&&<div style={{fontSize:10,color:C.muted,marginTop:3}}>Active until {new Date(proValidUntil).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>}
               </div>
               <span style={{fontSize:11,color:C.accentLight,fontWeight:700}}>Active ✓</span>
             </div>
@@ -8815,7 +9234,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <span style={{fontSize:18}}>🚀</span>
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700}}>Upgrade to Pro</div>
-                <div style={{fontSize:11,color:C.muted,marginTop:1}}>Unlimited AI Qs · L2 & L3 · AI Coach · $19/mo</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:1}}>Unlimited AI Qs · L2 & L3 · AI Coach · ₹{ACTIVE_PRICE}/mo</div>
               </div>
               <span style={{fontSize:11,color:C.accentLight,fontWeight:700}}>→</span>
             </button>
@@ -8870,7 +9289,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:11,color:C.muted,marginBottom:8,textAlign:"center"}}>
               Signed in as <strong style={{color:C.text}}>{authUser?.email}</strong>
             </div>
-            <button onClick={()=>{clearAuth();setAuthUser(null);authUserRef.current=null;setSettingsOpen(false);}}
+            <button onClick={()=>{clearAuth();setAuthUser(null);authUserRef.current=null;setSettingsOpen(false);try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:false}));}catch{}}}
               style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:"#200010",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
               Sign out
             </button>
@@ -8879,6 +9298,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:10,lineHeight:1.6}}>
             {history.length} sessions saved locally{sessionSaved===false&&<span style={{color:C.hard}}> · ⚠ last save failed</span>}
             <br/><span style={{color:C.easy}}>🤖 AI powered by ClearCFA — no API key needed</span>
+          </div>
+          <div style={{textAlign:"center",marginTop:8,fontSize:11}}>
+            <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{color:C.muted,textDecoration:"none"}}>Privacy Policy</a>
+            <span style={{margin:"0 6px",color:C.border}}>·</span>
+            <a href="mailto:gspbuilds@gmail.com" style={{color:C.muted,textDecoration:"none"}}>Contact</a>
           </div>
         </div>
       </div>
@@ -8940,6 +9364,24 @@ Return ONLY a JSON array — no prose, no markdown fences:
               </button>
               <button onClick={()=>{try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}setSessionDraft(null);}} style={{padding:"7px 10px",borderRadius:9,fontSize:12,color:C.muted,background:"none",border:`1px solid ${C.border}`,cursor:"pointer"}}>✕</button>
             </div>
+          </div>
+        );
+      })()}
+      {/* Pro renewal reminder — shown when < 5 days remaining */}
+      {proStatus&&proValidUntil&&(()=>{
+        const daysLeft=Math.ceil((new Date(proValidUntil)-Date.now())/(1000*60*60*24));
+        if(daysLeft>5)return null;
+        const urgent=daysLeft<=2;
+        return(
+          <div style={{background:urgent?C.hard+"18":C.medium+"15",border:`1px solid ${urgent?C.hard:C.medium}44`,borderRadius:11,padding:"11px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:18}}>{urgent?"⚠️":"🔔"}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:700,color:urgent?C.hard:C.medium}}>
+                {daysLeft<=0?"Pro access expired":"Pro access expires in "+daysLeft+" day"+(daysLeft!==1?"s":"")}
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Pay ₹499 to {PAYMENT_UPI_ID} and email {PAYMENT_CONTACT_EMAIL} to renew.</div>
+            </div>
+            <button onClick={()=>setUpgradeModal({reason:"default"})} style={{fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:8,background:urgent?C.hard+"22":C.medium+"22",border:`1px solid ${urgent?C.hard:C.medium}44`,color:urgent?C.hard:C.medium,cursor:"pointer",flexShrink:0}}>Renew</button>
           </div>
         );
       })()}
@@ -9333,24 +9775,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     })()}
 
     {/* Study time strip */}
-    {todayStudySecs>0&&(
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"9px 14px",marginBottom:12}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:16}}>📖</span>
-          <div>
-            <div style={{fontSize:13,fontWeight:700,color:C.text}}>{fmtStudyTime(todayStudySecs)} studied today</div>
-            <div style={{fontSize:11,color:C.muted,marginTop:1}}>This week: {fmtStudyTime(weekStudySecs)}</div>
-          </div>
-        </div>
-        <div style={{display:"flex",alignItems:"flex-end",gap:3,height:24}}>
-          {weeklyStudyDays.map(d=>{
-            const maxS=Math.max(...weeklyStudyDays.map(x=>x.secs),1);
-            const h=d.secs>0?Math.max(4,Math.round((d.secs/maxS)*24)):2;
-            return<div key={d.key} style={{width:6,height:h,borderRadius:2,background:d.isToday?C.accent:d.secs>0?C.accent+"66":C.dim,alignSelf:"flex-end"}}/>;
-          })}
-        </div>
-      </div>
-    )}
+    {todayStudySecs>0&&<StudyTimeStrip todayStudySecs={todayStudySecs} weekStudySecs={weekStudySecs} weeklyStudyDays={weeklyStudyDays}/>}
 
     {/* Exam countdown phase banner */}
     {history.length>=3&&daysLeft>14&&(()=>{
@@ -9480,6 +9905,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </button>
       <button onClick={()=>{trackUsage("ai_coach");setAiCoachScreen(true);}} style={{flex:1,padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 Coach</button>
     </div>
+    {/* Referral card */}
+    {authUser&&<ReferralCard userId={authUser.id} cfg={SB_CFG} setUpgradeModal={setUpgradeModal}/>}
+
     {/* Lucky Dip */}
     <button onClick={()=>{
       if(luckyDipSpinning) return;
@@ -9579,9 +10007,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const canRetry=lastGenParamsRef.current&&error.includes("retry");
       return(
         <div onClick={canRetry?()=>{const p=lastGenParamsRef.current;setError("");generateQuestionsRef.current&&generateQuestionsRef.current(p.t,p.st,p.diff,p.cnt,p.m,p.isVignette,p.st2);}:()=>setError("")}
-          style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease",cursor:canRetry?"pointer":"default",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginTop:9,animation:"fadeIn 0.2s ease",cursor:canRetry?"pointer":"default",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span>{error}</span>
-          {canRetry?<span style={{fontSize:11,fontWeight:700,color:"#fca5a5",marginLeft:12,flexShrink:0}}>↺</span>:<span style={{fontSize:11,color:"#fca5a5",opacity:0.6,marginLeft:12,flexShrink:0}}>✕</span>}
+          {canRetry?<span style={{fontSize:11,fontWeight:700,color:C.hard,marginLeft:12,flexShrink:0}}>↺</span>:<span style={{fontSize:11,color:C.hard,opacity:0.6,marginLeft:12,flexShrink:0}}>✕</span>}
         </div>
       );
     })()}
@@ -9786,9 +10214,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       ):(
         <>
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
-            {Object.entries(card.options).map(([key,val])=>{const isCorrect=key===card.answer,wasPicked=key===srAnswer;return(<div key={key} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 15px",borderRadius:10,background:isCorrect?"#041a0e":wasPicked&&!isCorrect?"#1a0407":C.surface,border:`1.5px solid ${isCorrect?"#22a05a":wasPicked&&!isCorrect?C.hard:C.border}`,fontSize:13,lineHeight:1.65,color:isCorrect?"#4ade80":wasPicked&&!isCorrect?"#fca5a5":C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?"#22a05a":wasPicked&&!isCorrect?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
+            {Object.entries(card.options).map(([key,val])=>{const isCorrect=key===card.answer,wasPicked=key===srAnswer;return(<div key={key} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 15px",borderRadius:10,background:isCorrect?C.easy+"22":wasPicked&&!isCorrect?C.hard+"18":C.surface,border:`1.5px solid ${isCorrect?C.easy:wasPicked&&!isCorrect?C.hard:C.border}`,fontSize:13,lineHeight:1.65,color:isCorrect?C.easy:wasPicked&&!isCorrect?C.hard:C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?C.easy:wasPicked&&!isCorrect?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
           </div>
-          <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"14px",marginBottom:6,fontSize:13,color:"#a0a0c0",lineHeight:1.75}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"14px",marginBottom:6,fontSize:13,color:C.textMid,lineHeight:1.75}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
               <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Explanation</div>
               <button onClick={()=>openReviewAI(`${card.concept||card.subtopic||"SR Card"} · ${card.topic}`,`CFA Level 1 — I just answered a spaced repetition card.\n\nConcept: "${card.concept||card.subtopic}"\nTopic: ${card.topic}\n\nExplanation given: "${card.explanation}"\n${card.los_tested?`LOS: ${card.los_tested}`:""}${card.misconception_targeted?`\nCommon error: ${card.misconception_targeted}`:""}\n\nHelp me understand this deeply with a worked example and the key exam nuance I must not miss.`)}
@@ -9799,8 +10227,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
             {card.explanation}
           </div>
           {card.los_tested&&<div style={{background:C.dim,borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:11,color:C.muted}}><span style={{fontWeight:700,color:C.accentLight}}>LOS: </span>{card.los_tested}</div>}
-          {card.misconception_targeted&&<div style={{background:"#0a0518",borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:11,color:"#8060c0"}}><span style={{fontWeight:700}}>Common error tested: </span>{card.misconception_targeted}</div>}
-          <div style={{background:srAnswer===card.answer?"#041a0e":"#1a0407",border:`1px solid ${srAnswer===card.answer?"#22a05a44":C.hard+"44"}`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:srAnswer===card.answer?C.easy:C.hard,fontWeight:600}}>
+          {card.misconception_targeted&&<div style={{background:C.surface,borderRadius:8,padding:"8px 12px",marginBottom:10,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Common error tested: </span>{card.misconception_targeted}</div>}
+          <div style={{background:srAnswer===card.answer?C.easy+"22":C.hard+"18",border:`1px solid ${srAnswer===card.answer?C.easy+"44":C.hard+"44"}`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:srAnswer===card.answer?C.easy:C.hard,fontWeight:600}}>
             {srAnswer===card.answer?`✓ Correct — next review in ${sm2Update(card,true).interval} days`:`✗ Incorrect — review again tomorrow${isLeech?" · Consider re-reading this LOS in your curriculum":""}` }
           </div>
           <button onClick={()=>{
@@ -9921,10 +10349,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
           })}
         </div>
         {subtopic&&activeLOS[topic]?.modules[subtopic]&&(
-          <div style={{marginTop:12,background:"#0a0a18",border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px"}}>
+          <div style={{marginTop:12,background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px"}}>
             <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>LOS for this module ({activeLOS[topic].modules[subtopic].length} statements)</div>
             {activeLOS[topic].modules[subtopic].map((l,i)=>(
-              <div key={i} style={{fontSize:11,color:"#7070a0",lineHeight:1.6,marginBottom:4,display:"flex",gap:6}}>
+              <div key={i} style={{fontSize:11,color:C.muted,lineHeight:1.6,marginBottom:4,display:"flex",gap:6}}>
                 <span style={{color:C.accent,flexShrink:0,fontWeight:700}}>·</span><span>…{l}</span>
               </div>
             ))}
@@ -9974,7 +10402,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     </div>
 
-    {error&&<div style={{background:"#180808",border:`1px solid #5a1a1a`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:14}}>{error}</div>}
+    {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:14}}>{error}</div>}
     <button onClick={()=>{
       if(mode==="interleaved"){generateInterleavedSession(difficulty,count);return;}
       generateQuestions(topic,subtopic,difficulty,warmupEnabled?count+3:count,mode,vignetteMode);
@@ -10102,9 +10530,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {Object.entries(q.options).map(([key,val])=>{
           const sel=answered===key,correct=key===q.answer,reveal=!!answered&&(mode==="guided"||mode==="speed_drill");
           let bg=C.surface,border=C.border,col=C.text;
-          if(reveal&&correct){bg="#041a0e";border="#22a05a";col="#4ade80";}
-          else if(reveal&&sel&&!correct){bg="#1a0407";border=C.hard;col="#fca5a5";}
-          return(<button key={key} onClick={()=>handleAnswer(q.id,key)} disabled={!!answered} style={{display:"flex",alignItems:"flex-start",gap:13,padding:"13px 15px",borderRadius:10,textAlign:"left",background:bg,border:`1.5px solid ${border}`,color:col,cursor:answered?"default":"pointer",fontSize:13,lineHeight:1.65,transition:"all 0.15s"}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:reveal&&correct?"#22a05a":reveal&&sel?C.hard:sel?C.accent:C.dim,color:(reveal||sel)?"#fff":C.muted,transition:"all 0.15s"}}>{key}</span><span>{val}</span></button>);
+          if(reveal&&correct){bg=C.easy+"22";border=C.easy;col=C.easy;}
+          else if(reveal&&sel&&!correct){bg=C.hard+"18";border=C.hard;col=C.hard;}
+          return(<button key={key} onClick={()=>handleAnswer(q.id,key)} disabled={!!answered} style={{display:"flex",alignItems:"flex-start",gap:13,padding:"13px 15px",borderRadius:10,textAlign:"left",background:bg,border:`1.5px solid ${border}`,color:col,cursor:answered?"default":"pointer",fontSize:13,lineHeight:1.65,transition:"all 0.15s"}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:reveal&&correct?C.easy:reveal&&sel?C.hard:sel?C.accent:C.dim,color:(reveal||sel)?"#fff":C.muted,transition:"all 0.15s"}}>{key}</span><span>{val}</span></button>);
         })}
       </div>
       {consecutiveWrong>=3&&mode==="guided"&&!answered&&(
@@ -10118,15 +10546,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       )}
       {showExp&&mode==="guided"&&answered&&(
-        <div style={{background:"#09091a",border:`1px solid #1e1e40`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:"#a0a0c0",lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:C.textMid,lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>Explanation</div>
           {renderExplanation(q.explanation,C,authUser?.id?async(formulaText)=>{
             const prompt=`CFA exam tutor. A student sees this formula in an exam explanation and doesn't know what it is:\n\n"${formulaText}"\n\nContext: topic "${topic}", concept "${q.concept||q.los_tested||""}"\n\nRespond in EXACTLY this format (no preamble, no extra text):\n📐 [Official CFA/finance name for this formula, e.g. "Bond Pricing Formula" or "Macaulay Duration"]\nStandard form: [compact textbook version, e.g. P = Σ C/(1+y)ᵗ + FV/(1+y)ⁿ]\n\n• [symbol from formula] = [plain-English meaning] (= [actual value if present in formula])\n[one bullet per variable/component]\n\nCalculates: [one sentence — what does solving this formula give you?]\n\nUnder 120 words total.`;
             const r=await callClaude(prompt,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"formula_explain"});
             return typeof r==="string"?r:"Formula breakdown unavailable.";
           }:null,q.concept||q.los_tested||"")}
-          {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:"#6060a0"}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
-          {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:"#60508a"}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
+          {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.muted}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
+          {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
         </div>
       )}
       {!answered&&mode!=="speed_drill"&&(
@@ -10174,13 +10602,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 setExplainThisText(typeof result==="string"?result:q.explanation||"");
               }catch(e){setExplainThisText("Could not load explanation.");}
               setExplainThisLoading(false);
-            }} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:600,background:"#09091a",border:`1px solid #22d3ee22`,color:"#22d3ee",cursor:"pointer"}}>
+            }} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.accent}33`,color:C.accentLight,cursor:"pointer"}}>
               💡 Explain This
             </button>
           )}
-          {explainThisLoading&&<div style={{background:"#09091a",border:`1px solid #22d3ee22`,borderRadius:9,padding:"12px 14px",fontSize:12,color:C.muted}}>Thinking…</div>}
+          {explainThisLoading&&<div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:9,padding:"12px 14px",fontSize:12,color:C.muted}}>Thinking…</div>}
           {explainThisText&&(
-            <div style={{background:"#09091a",border:`1px solid #22d3ee22`,borderRadius:9,padding:"12px 14px",fontSize:12,color:"#a0d8e8",lineHeight:1.7,animation:"fadeIn 0.2s ease"}}>
+            <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:9,padding:"12px 14px",fontSize:12,color:C.textMid,lineHeight:1.7,animation:"fadeIn 0.2s ease"}}>
               💡 {explainThisText}
             </div>
           )}
@@ -10249,6 +10677,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </button>
       </div>
 
+      {/* #4 — Post-session upgrade nudge for free users who scored ≥70% */}
+      {!proStatus&&sessionPct>=70&&(
+        <div style={{background:`linear-gradient(135deg,${C.easy}14,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"16px 18px",marginBottom:14,display:"flex",gap:14,alignItems:"center"}}>
+          <div style={{fontSize:28,flexShrink:0}}>🚀</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:800,color:C.easy,marginBottom:3}}>You're improving — don't stop here</div>
+            <div style={{fontSize:12,color:C.muted,lineHeight:1.5,marginBottom:10}}>Unlock unlimited AI practice and keep this momentum going every day.</div>
+            <button onClick={()=>setUpgradeModal({reason:"default"})} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+              Unlock unlimited →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* AM/PM break screen */}
       {fullExamMode&&examSession===1&&window._cfaExamPMQs?.length>0&&(
         <div style={{background:`linear-gradient(135deg,${C.easy}12,${C.easy}06)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"18px 20px",marginBottom:14,textAlign:"center"}}>
@@ -10314,14 +10756,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       )}
 
-      {wrongs.length>0&&<div style={{background:"#0a0a1f",border:`1px solid ${C.accent}33`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:C.muted}}>📋 {wrongs.length} wrong answer{wrongs.length!==1?"s":""} added to SR deck with LOS tags + misconception flags.</div>}
+      {wrongs.length>0&&<div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:C.muted}}>📋 {wrongs.length} wrong answer{wrongs.length!==1?"s":""} added to SR deck with LOS tags + misconception flags.</div>}
 
       {/* AI Session Debrief */}
       {authUser?.id&&wrongs.length>0&&(
-        <div style={{background:"#080818",border:`1px solid #22d3ee33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+        <div style={{background:C.surface,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#22d3ee"}}>🤖 AI Debrief</div>
-            {aiDebriefLoading&&<span style={{fontSize:11,color:"#22d3ee66",fontStyle:"italic"}}>Analysing session…</span>}
+            <div style={{fontSize:12,fontWeight:700,color:C.accentLight}}>🤖 AI Debrief</div>
+            {aiDebriefLoading&&<span style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>Analysing session…</span>}
           </div>
           {aiDebriefLoading&&<Skeleton height={80} radius={6}/>}
           {aiDebrief&&(()=>{
@@ -10329,8 +10771,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
             return(
               <div>
                 {d.pattern&&(
-                  <div style={{background:"#22d3ee0d",borderLeft:"3px solid #22d3ee44",borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:9,fontSize:12,color:"#a0d8e8",lineHeight:1.65}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#22d3ee77",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>⚠ Root pattern</div>
+                  <div style={{background:C.accent+"0d",borderLeft:`3px solid ${C.accent}44`,borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:9,fontSize:12,color:C.textMid,lineHeight:1.65}}>
+                    <div style={{fontSize:10,fontWeight:700,color:C.accentLight,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>⚠ Root pattern</div>
                     {d.pattern}
                   </div>
                 )}
@@ -10342,15 +10784,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 )}
                 {(d.priority||d.time)&&(
                   <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:10}}>
-                    {d.priority&&<span style={{fontSize:11,color:"#a0d8e8"}}>Focus: <b style={{color:"#22d3ee"}}>{d.priority}</b></span>}
-                    {d.time&&<span style={{fontSize:11,background:"#22d3ee15",border:"1px solid #22d3ee33",borderRadius:20,padding:"2px 10px",color:"#22d3ee",flexShrink:0}}>⏱ {d.time}</span>}
+                    {d.priority&&<span style={{fontSize:11,color:C.textMid}}>Focus: <b style={{color:C.accentLight}}>{d.priority}</b></span>}
+                    {d.time&&<span style={{fontSize:11,background:C.accent+"15",border:`1px solid ${C.accent}33`,borderRadius:20,padding:"2px 10px",color:C.accentLight,flexShrink:0}}>⏱ {d.time}</span>}
                   </div>
                 )}
                 <button onClick={()=>generateQuestions(topic,subtopic,difficulty,5,"guided")}
-                  style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:"#22d3ee22",border:"1px solid #22d3ee44",color:"#22d3ee",cursor:"pointer",marginBottom:d.coach?10:0}}>
+                  style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",marginBottom:d.coach?10:0}}>
                   🔁 Drill weak concepts now — 5 questions
                 </button>
-                {d.coach&&<div style={{fontSize:11,color:"#6a8a9a",lineHeight:1.6,fontStyle:"italic",textAlign:"center"}}>"{d.coach}"</div>}
+                {d.coach&&<div style={{fontSize:11,color:C.muted,lineHeight:1.6,fontStyle:"italic",textAlign:"center"}}>"{d.coach}"</div>}
               </div>
             );
           })()}
@@ -10362,12 +10804,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10}}>Missed ({wrongs.length})</div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {wrongs.map(q=>(
-              <div key={q.id} style={{background:C.surface,border:`1px solid #2a1018`,borderRadius:10,padding:"14px"}}>
+              <div key={q.id} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"14px"}}>
                 <div style={{fontSize:13,color:C.text,lineHeight:1.6,marginBottom:8}}>{q.question}</div>
                 <div style={{fontSize:12,color:C.muted}}>Your: <span style={{color:"#f87171"}}>{answers[q.id]||"–"}</span> · Correct: <span style={{color:C.easy}}>{q.answer}</span></div>
-                <div style={{fontSize:12,color:"#6a6a8a",marginTop:8,lineHeight:1.65,borderTop:`1px solid ${C.border}`,paddingTop:8}}>{renderExplanation(q.explanation,C)}</div>
-                {q.los_tested&&<div style={{fontSize:11,color:"#5050a0",marginTop:6}}><span style={{fontWeight:700}}>LOS: </span>{q.los_tested}</div>}
-                {q.misconception_targeted&&<div style={{fontSize:11,color:"#60508a",marginTop:4}}><span style={{fontWeight:700}}>Error pattern: </span>{q.misconception_targeted}</div>}
+                <div style={{fontSize:12,color:C.muted,marginTop:8,lineHeight:1.65,borderTop:`1px solid ${C.border}`,paddingTop:8}}>{renderExplanation(q.explanation,C)}</div>
+                {q.los_tested&&<div style={{fontSize:11,color:C.muted,marginTop:6}}><span style={{fontWeight:700}}>LOS: </span>{q.los_tested}</div>}
+                {q.misconception_targeted&&<div style={{fontSize:11,color:C.muted,marginTop:4}}><span style={{fontWeight:700}}>Error pattern: </span>{q.misconception_targeted}</div>}
                 <button onClick={()=>{setRevisionTopic(q._topic||topic);setRevisionTab("notes");setRevisionConcept(q.concept||q.los_tested||null);setScreen("revision");}}
                   style={{marginTop:10,fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:7,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                   📚 Review in Power Notes →
@@ -10410,8 +10852,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {(()=>{
       const displayScore=predicted?.score??passProbability?.probability??0;
       const isPassing=displayScore>=70;
-      const bg=displayScore>0?(isPassing?"#041a0e":"#1a0407"):C.surface;
-      const borderCol=displayScore>0?(isPassing?"#22a05a44":C.hard+"44"):C.border;
+      const bg=displayScore>0?(isPassing?C.easy+"22":C.hard+"18"):C.surface;
+      const borderCol=displayScore>0?(isPassing?C.easy+"44":C.hard+"44"):C.border;
       return(
         <div style={{background:bg,border:`1px solid ${borderCol}`,borderRadius:13,padding:"18px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:18}}>
           <ScoreRing pct={displayScore} size={84}/>
@@ -10584,7 +11026,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 const stats=m.moduleStats[mod];
                 const los=m.losStats[mod];
                 return(
-                  <span key={mod} title={`${los?.total||0} LOS · ${los?.untested||0} untested`} style={{fontSize:10,padding:"3px 8px",borderRadius:5,fontWeight:600,background:stats?(stats.pct>=70?"#041a0e":stats.pct>=50?"#1a1200":"#1a0407"):C.dim,color:stats?(stats.pct>=70?C.easy:stats.pct>=50?C.medium:C.hard):C.muted,border:`1px solid ${stats?(stats.pct>=70?"#22a05a33":stats.pct>=50?C.medium+"33":C.hard+"33"):C.border}`}}>
+                  <span key={mod} title={`${los?.total||0} LOS · ${los?.untested||0} untested`} style={{fontSize:10,padding:"3px 8px",borderRadius:5,fontWeight:600,background:stats?(stats.pct>=70?C.easy+"22":stats.pct>=50?C.medium+"22":C.hard+"18"):C.dim,color:stats?(stats.pct>=70?C.easy:stats.pct>=50?C.medium:C.hard):C.muted,border:`1px solid ${stats?(stats.pct>=70?C.easy+"33":stats.pct>=50?C.medium+"33":C.hard+"33"):C.border}`}}>
                     {mod.length>18?mod.slice(0,18)+"…":mod}{stats?` ${stats.pct}%`:""}<span style={{opacity:0.45}}> {los?.total}LOS</span>
                   </span>
                 );
@@ -11025,7 +11467,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               const mAcc=mSessions.length?Math.round(mSessions.reduce((s,h)=>s+(h.pct||0),0)/mSessions.length):null;
               const losM=getLOSMastery(history,t,m);
               const tested=mSessions.length>0;
-              const bg=!tested?C.dim:mAcc>=70?"#041a0e":mAcc>=50?"#0a0a04":"#1a0407";
+              const bg=!tested?C.dim:mAcc>=70?C.easy+"22":mAcc>=50?C.medium+"22":C.hard+"18";
               const border=!tested?C.border:mAcc>=70?C.easy+"44":mAcc>=50?C.medium+"44":C.hard+"44";
               const col=!tested?C.muted:mAcc>=70?C.easy:mAcc>=50?C.medium:C.hard;
               return(
@@ -11055,9 +11497,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {w.concept&&<div style={{marginBottom:10}}><Badge color={C.muted}>{w.concept}</Badge></div>}
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"20px",marginBottom:14,fontSize:14,lineHeight:1.78}}>{w.question}</div>
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
-        {Object.entries(w.options).map(([key,val])=>{const isCorrect=key===w.answer,wasWrong=key===w.userAnswer&&!isCorrect;return(<div key={key} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 14px",borderRadius:10,background:isCorrect?"#041a0e":wasWrong?"#1a0407":C.surface,border:`1.5px solid ${isCorrect?"#22a05a":wasWrong?C.hard:C.border}`,fontSize:13,lineHeight:1.6,color:isCorrect?"#4ade80":wasWrong?"#fca5a5":C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?"#22a05a":wasWrong?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
+        {Object.entries(w.options).map(([key,val])=>{const isCorrect=key===w.answer,wasWrong=key===w.userAnswer&&!isCorrect;return(<div key={key} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 14px",borderRadius:10,background:isCorrect?C.easy+"22":wasWrong?C.hard+"18":C.surface,border:`1.5px solid ${isCorrect?C.easy:wasWrong?C.hard:C.border}`,fontSize:13,lineHeight:1.6,color:isCorrect?C.easy:wasWrong?C.hard:C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?C.easy:wasWrong?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
       </div>
-      <div style={{background:"#08081a",border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:6,fontSize:13,color:"#9090b8",lineHeight:1.75}}>
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:6,fontSize:13,color:C.textMid,lineHeight:1.75}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Why you missed this</div>
           <button onClick={()=>openReviewAI(`${w.concept||w.subtopic||"Question"} · ${w.topic||""}`,`CFA Level 1 — I got this wrong in a practice session.\n\nConcept: "${w.concept||w.subtopic}"\n${w.topic?`Topic: ${w.topic}\n`:""}\nExplanation: "${w.explanation}"\n${w.los_tested?`LOS: ${w.los_tested}`:""}${w.misconception_targeted?`\nError pattern: ${w.misconception_targeted}`:""}\n\nHelp me truly understand why I missed this and what I must remember for the exam.`)}
@@ -11068,7 +11510,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {renderExplanation(w.explanation,C)}
       </div>
       {w.los_tested&&<div style={{background:C.dim,borderRadius:8,padding:"8px 12px",marginBottom:8,fontSize:11,color:C.muted}}><span style={{fontWeight:700,color:C.accentLight}}>LOS: </span>{w.los_tested}</div>}
-      {w.misconception_targeted&&<div style={{background:"#0a0518",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:11,color:"#8060c0"}}><span style={{fontWeight:700}}>Error pattern: </span>{w.misconception_targeted}</div>}
+      {w.misconception_targeted&&<div style={{background:C.surface,borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Error pattern: </span>{w.misconception_targeted}</div>}
       <div style={{display:"flex",gap:9}}>
         {reviewIdx>0&&<button onClick={()=>{setReviewIdx(i=>i-1);setReviewAiPanel(null);}} style={{flex:1,padding:"12px",borderRadius:10,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>← Prev</button>}
         {reviewIdx<reviewList.length-1?<button onClick={()=>{setReviewIdx(i=>i+1);setReviewAiPanel(null);}} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Next →</button>:<button onClick={()=>setScreen("home")} style={{flex:2,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.easy},#16c98a)`,color:"#fff",border:"none",cursor:"pointer"}}>Done ✓</button>}
@@ -11172,7 +11614,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               ))}
             </div>
           </div>
-          {calcError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:12}}>{calcError}</div>}
+          {calcError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:12}}>{calcError}</div>}
           <button onClick={generateCalcProblem} disabled={calcLoading} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:calcLoading?C.dim:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:calcLoading?C.muted:"#fff",border:"none",cursor:calcLoading?"not-allowed":"pointer"}}>
             {calcLoading?"Generating problem…":"Generate Problem →"}
           </button>
@@ -11205,7 +11647,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 )}
               </div>
               {calcChecked[idx]&&(
-                <div style={{marginTop:8,padding:"8px 10px",borderRadius:8,background:calcChecked[idx]==="correct"?C.successBg:C.errorBg,fontSize:12,color:calcChecked[idx]==="correct"?C.easy:"#fca5a5",lineHeight:1.5}}>
+                <div style={{marginTop:8,padding:"8px 10px",borderRadius:8,background:calcChecked[idx]==="correct"?C.successBg:C.errorBg,fontSize:12,color:calcChecked[idx]==="correct"?C.easy:C.hard,lineHeight:1.5}}>
                   {calcChecked[idx]==="correct"?"✓ Correct! ":"✗ Answer: "+step.answer+" | "}{step.explanation}
                 </div>
               )}
@@ -11250,7 +11692,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           ))}
         </div>
       </div>
-      {walkthroughError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:"#fca5a5",fontSize:13,marginBottom:12}}>{walkthroughError}</div>}
+      {walkthroughError&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:12}}>{walkthroughError}</div>}
       {!walkthroughText&&!walkthroughLoading&&(
         <button onClick={async()=>{
           if(!authUser?.id){setWalkthroughError("Sign in to use Concept Walkthrough.");return;}
@@ -11319,6 +11761,9 @@ function ToastManager(){
     )
   ));
 }
+
+// Capture referral code from URL before React boots
+try{const ref=new URLSearchParams(window.location.search).get('ref');if(ref){sessionStorage.setItem('cfa_ref',ref);}}catch{}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CFAMock));
