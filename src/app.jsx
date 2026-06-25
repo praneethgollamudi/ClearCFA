@@ -8612,10 +8612,39 @@ Return ONLY a JSON array — no prose, no markdown fences:
       // Track AI usage for free tier
       if(!proStatus){const newUsage=bumpDailyAI(finalQs.length);setDailyAIUsage({...newUsage});}
     }catch(e){
+      // Try offline cache as fallback before showing error
+      if(!isVignette){
+        try{
+          const offlineCache=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
+          // Try specific module first, then any module in the topic
+          const specific=offlineCache[t]?.[st]||[];
+          const anyInTopic=Object.values(offlineCache[t]||{}).flat();
+          const candidates=specific.length>=Math.min(cnt,3)?specific:anyInTopic;
+          const fresh=filterNewQuestions(candidates,qdb);
+          const pool=fresh.length>=Math.ceil(cnt*0.5)?fresh:candidates;
+          const minQs=Math.min(cnt,3);
+          if(pool.length>=minQs){
+            const offlineQs=pool.slice(0,cnt);
+            const usedSt=specific.length>=minQs?st:(Object.keys(offlineCache[t]||{})[0]||st);
+            setLoadingProgress(100);setLoadingMsg(`Using ${offlineQs.length} saved questions`);
+            setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}
+            clearInterval(progressInterval);
+            await new Promise(r=>setTimeout(r,350));
+            setTopic(t);setSubtopic(usedSt);setDifficulty(diff);setCount(cnt);setMode(m);
+            setVignetteMode(false);
+            setQuestions(offlineQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+            setScreen("quiz");
+            setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
+            return;
+          }
+        }catch{}
+      }
       const msg=e.message||"Unknown error";
       setError(msg.includes("Rate limit")||msg.includes("retries failed")
-        ? "API is busy - please wait a minute and try again."
-        : `Generation failed: ${msg}. Tap to retry.`);
+        ? "API is busy — please wait a minute and try again."
+        : msg.includes("Timed out")||msg.includes("AbortError")
+        ? "Connection timed out — tap to retry."
+        : `Session failed: ${msg.slice(0,120)}. Tap to retry.`);
     }
     clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
   };
