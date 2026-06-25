@@ -2899,6 +2899,7 @@ const STUDY_GOAL_KEY       = "cfa_study_goal_v1";
 const WORKED_EX_KEY        = "cfa_worked_ex_v1";
 const PRESETS_KEY          = "cfa_presets_v1";
 const SESSION_DRAFT_KEY    = "cfa_session_draft_v1";
+const PENDING_GEN_KEY      = "cfa_pending_gen_v1";
 const TOUR_KEY             = "cfa_tour_v1";
 const CHECKLIST_KEY        = "cfa_checklist_done";
 const CFA_LEVEL_KEY = "cfa_level_v1";
@@ -7466,6 +7467,7 @@ function CFAMock(){
   const [quizConfidence,setQuizConfidence]=useState(null);
   const [confidenceLog,setConfidenceLog]=useState(()=>{try{return JSON.parse(localStorage.getItem(CONFIDENCE_KEY)||"{}");}catch{return {};}});
   const [sessionDraft,setSessionDraft]=useState(()=>{try{const d=JSON.parse(localStorage.getItem(SESSION_DRAFT_KEY)||"null");if(d&&Date.now()-d.ts<7200000&&d.questions?.length>0&&Object.keys(d.answers||{}).length<d.questions.length)return d;}catch{}return null;});
+  const [pendingGen,setPendingGen]=useState(()=>{try{const d=JSON.parse(localStorage.getItem(PENDING_GEN_KEY)||"null");if(d&&Date.now()-d.ts<3600000)return d;}catch{}return null;});
   const [studyGoal,setStudyGoal]=useState(()=>{try{return JSON.parse(localStorage.getItem(STUDY_GOAL_KEY)||"null");}catch{return null;}});
   const [workedExamples,setWorkedExamples]=useState(()=>{try{return JSON.parse(localStorage.getItem(WORKED_EX_KEY)||"{}");}catch{return {};}});
   const [workedExLoading,setWorkedExLoading]=useState(false);
@@ -7707,7 +7709,7 @@ function CFAMock(){
             "cfa_"+STORAGE_KEY,"cfa_"+SR_KEY,"cfa_"+USAGE_KEY,
             "cfa_"+PASS_TREND_KEY,"cfa_"+PLAN_KEY,"cfa_"+API_LOG_KEY,
             "cfa_"+QCACHE_KEY,"cfa_cfa_focus_cache","cfa_cfa_diag_weak",
-            "cfa_cfa_exam_date","cfa_cfa_refresher_v1","cfa_daily_ai",
+            "cfa_cfa_exam_date","cfa_cfa_refresher_v1","cfa_daily_ai",PENDING_GEN_KEY,
           ];
           SESSION_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch{}});
           setHistory([]);historyRef.current=[];
@@ -8396,6 +8398,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
     setLoadingContext({topic:t,subtopic:st,count:cnt,difficulty:diff,mode:m,isVignette:!!isVignette});
     loadingStartRef.current=Date.now();
+    // Persist params so a page reload can offer to retry
+    const pendingEntry={ts:Date.now(),t,st,diff,cnt,m,isVignette:!!isVignette};
+    setPendingGen(pendingEntry);
+    try{localStorage.setItem(PENDING_GEN_KEY,JSON.stringify(pendingEntry));}catch{}
 
     // ── No auth: use local templates as fallback ──
     // When signed in, always use the API for exam-quality questions.
@@ -8594,6 +8600,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         }catch{}
       }
       setLoadingProgress(100);setLoadingMsg(isVignette?"Vignettes ready!":"Questions ready!");
+      // Clear pending gen — generation succeeded
+      setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}
       await new Promise(r=>setTimeout(r,350));
       setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
       setVignetteMode(isVignette);
@@ -10161,6 +10169,27 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 Resume →
               </button>
               <button onClick={()=>{try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}setSessionDraft(null);}} style={{padding:"7px 10px",borderRadius:9,fontSize:12,color:C.muted,background:"none",border:`1px solid ${C.border}`,cursor:"pointer"}}>✕</button>
+            </div>
+          </div>
+        );
+      })()}
+      {/* Retry interrupted generation */}
+      {pendingGen&&!sessionDraft&&(()=>{
+        const mins=Math.round((Date.now()-pendingGen.ts)/60000);
+        const ago=mins<2?"just now":mins<60?`${mins}m ago`:`${Math.round(mins/60)}h ago`;
+        const dismiss=()=>{setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}};
+        return(
+          <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:13,padding:"12px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:12}}>
+            <div style={{fontSize:22,flexShrink:0}}>🔄</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:2}}>Session interrupted</div>
+              <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>{pendingGen.t} · {pendingGen.cnt} Qs · {pendingGen.diff} · {ago}</div>
+            </div>
+            <div style={{display:"flex",gap:6,flexShrink:0}}>
+              <button onClick={()=>{dismiss();generateQuestions(pendingGen.t,pendingGen.st,pendingGen.diff,pendingGen.cnt,pendingGen.m,pendingGen.isVignette);}} style={{padding:"7px 13px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent,color:"#fff",border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                Retry →
+              </button>
+              <button onClick={dismiss} style={{padding:"7px 10px",borderRadius:9,fontSize:12,color:C.muted,background:"none",border:`1px solid ${C.border}`,cursor:"pointer"}}>✕</button>
             </div>
           </div>
         );
