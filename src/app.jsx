@@ -8525,13 +8525,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(isVignette){
         const vignetteCount=Math.max(1,Math.ceil(cnt/3));
         const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null,activeLOS);
-        const rawVig=await callClaude(vigPrompt,3000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`});
+        const rawVig=await callClaude(vigPrompt,3000,{retries:3,retryDelay:4000,model:useModel,feature:`vignette:${diff}`});
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
-        const tightMax={3:1600,5:2500,10:4500,15:6000,20:7000}[cnt]||(cnt*500);
+        const tightMax={3:1800,5:2800,10:5500,15:8000,20:9500}[cnt]||(cnt*550);
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`});
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx),tightMax,{retries:3,retryDelay:4000,model:useModel,feature:`questions:${diff}`});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
@@ -8970,7 +8970,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           );
         })}
       </div>
-      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
         Cancel
       </button>
     </div>
@@ -11901,7 +11901,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                         <div style={{position:"absolute",top:0,left:"70%",width:2,height:"100%",background:C.easy}}/>
                       </div>
                     </div>
-                    <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(m.topic,weakestMod,i===0?"Hard":"Medium",15,"guided"),100);}} style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:`${urgencyColor}22`,color:urgencyColor,border:`1px solid ${urgencyColor}44`,cursor:"pointer"}}>
+                    <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(m.topic,weakestMod,isUntouched?"Easy":"Medium",15,"guided"),100);}} style={{width:"100%",padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,background:`${urgencyColor}22`,color:urgencyColor,border:`1px solid ${urgencyColor}44`,cursor:"pointer"}}>
                       {isUntouched?`Start ${m.topic} — 15 Qs`:`Fix ${m.topic} — 15 guided Qs →`}
                     </button>
                   </div>
@@ -11910,7 +11910,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <button onClick={()=>{
                 const top=allTargets[0];
                 const weakestMod=top.modulesCovered?.length>0?[...top.modulesCovered].sort((a,b)=>(top.moduleStats[a]?.pct??100)-(top.moduleStats[b]?.pct??100))[0]:top.modules[0]||top.topic;
-                setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(top.topic,weakestMod,"Hard",15,"guided"),100);
+                setScreen("home");setTimeout(()=>generateQuestionsRef.current&&generateQuestionsRef.current(top.topic,weakestMod,top.sessions===0?"Easy":"Medium",15,"guided"),100);
               }} style={{padding:"12px",borderRadius:10,fontSize:13,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
                 🚀 Start highest impact: {allTargets[0]?.topic} →
               </button>
