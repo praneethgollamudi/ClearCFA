@@ -7421,6 +7421,7 @@ function CFAMock(){
   const [weeklyPlanScreen,setWeeklyPlanScreen]=useState(false);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [showMoreActions,setShowMoreActions]=useState(true);
+  const [showMoreSheet,setShowMoreSheet]=useState(false);
   const [usageStats,setUsageStats]=useState({});
   const usageStatsRef=useRef({});
   const apiLogRef=useRef([]);
@@ -10409,45 +10410,93 @@ Return ONLY a JSON array — no prose, no markdown fences:
       );
     })()}
 
-    {/* Fixed bottom toolbar — quick actions + scrollable more tools */}
-    <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:200,background:C.bg,borderTop:`1px solid ${C.border}`}}>
-      <div style={{maxWidth:860,margin:"0 auto"}}>
-      <div style={{display:"flex",gap:0,padding:"6px 8px 2px",overflowX:"auto",scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
-        {[
-          {key:"mix",icon:"⚡",label:"Weak Spots",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
-          {key:"full_exam",icon:"⏱",label:"Timed Mock",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
-          {key:"ethics",icon:"⚖️",label:"Ethics",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
-          {key:"dashboard",icon:"📈",label:"Dashboard",action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
-          {key:"revise",icon:"📝",label:"Notes",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
-          {key:"formulas",icon:"🔢",label:"Formulas",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
-          {key:"week_plan",icon:"🗓",label:"Week Plan",proTag:true,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
-          {key:"calc_trainer",icon:"🧮",label:"Calc",action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
-          {key:"los_coverage",icon:"📍",label:"LOS Map",action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
-          {key:"mastery_grid",icon:"🏆",label:"Mastery",action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
-          {key:"interleaved",icon:"🔀",label:"Mixed",action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
-          {key:"study_path",icon:"🎓",label:"Study Path",action:()=>{trackUsage("study_path");setScreen("studyPath");}},
-        ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0)).map(item=>(
-          <button key={item.key} onClick={item.action} style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"5px 10px 4px",borderRadius:8,fontSize:9,fontWeight:700,color:C.muted,background:"none",border:"none",cursor:"pointer",whiteSpace:"nowrap",position:"relative"}}>
-            {item.proTag&&!proStatus&&<span style={{position:"absolute",top:2,right:2,fontSize:6,fontWeight:800,color:C.accentLight,background:C.accent+"30",border:`1px solid ${C.accent}44`,borderRadius:3,padding:"1px 3px"}}>PRO</span>}
-            <span style={{fontSize:17,lineHeight:1}}>{item.icon}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </div>
-      <div style={{display:"flex",gap:6,padding:"4px 10px",paddingBottom:"max(8px,env(safe-area-inset-bottom,8px))"}}>
-        <button onClick={()=>{trackUsage("custom_mock");setScreen("setup");}} style={{flex:1,padding:"9px 4px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>Custom Mock</button>
-        <button onClick={()=>{
-          trackUsage("wrongs_review");
-          const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
-          if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
-          else{setError("No wrong answers in SR deck yet — complete a session first.");setTimeout(()=>setError(""),3000);}
-        }} style={{flex:1,padding:"9px 4px",borderRadius:10,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${srWrongCount>0?C.hard+"44":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
-          🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-5,right:-5,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
-        </button>
-        <button onClick={()=>{trackUsage("ai_coach");setAiCoachScreen(true);}} style={{flex:1,padding:"9px 4px",borderRadius:10,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 Coach</button>
-      </div>
-      </div>
-    </div>
+    {/* ── Bottom nav bar ── */}
+    {(()=>{
+      const moreItems=[
+        {key:"mix",label:"Weak Spots",icon:"⚡",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
+        {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
+        {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
+        {key:"revise",label:"Notes",icon:"📝",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
+        {key:"formulas",label:"Formulas",icon:"🔢",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
+        {key:"week_plan",label:"Week Plan",icon:"🗓",proTag:true,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
+        {key:"calc_trainer",label:"Calc Trainer",icon:"🧮",action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
+        {key:"los_coverage",label:"LOS Map",icon:"🗺",action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
+        {key:"mastery_grid",label:"Mastery",icon:"🏆",action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
+        {key:"interleaved",label:"Mixed Topics",icon:"🔀",action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
+        {key:"study_path",label:"Study Path",icon:"🎓",action:()=>{trackUsage("study_path");setScreen("studyPath");}},
+        {key:"dashboard",label:"Dashboard",icon:"📊",action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
+      ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
+
+      const Ic=({d,size=22})=>(
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
+      );
+      const navTabs=[
+        {key:"home",label:"Home",
+          icon:<Ic d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10"/>,
+          action:()=>{setShowMoreSheet(false);}},
+        {key:"practice",label:"Practice",
+          icon:<Ic d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>,
+          action:()=>{trackUsage("custom_mock");setShowMoreSheet(false);setScreen("setup");}},
+        {key:"drill",label:"Drill",
+          icon:<Ic d="M2 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z M16 3l-4 4-4-4"/>,
+          action:()=>{trackUsage("mix");setShowMoreSheet(false);const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
+        {key:"progress",label:"Progress",
+          icon:<Ic d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20"/>,
+          action:()=>{trackUsage("dashboard");setShowMoreSheet(false);setScreen("readiness");}},
+        {key:"more",label:"More",
+          icon:<Ic d="M4 6h16 M4 12h16 M4 18h16"/>,
+          action:()=>setShowMoreSheet(v=>!v)},
+      ];
+
+      const activeTab = showMoreSheet ? "more" : "home";
+
+      return(<>
+        {/* More bottom sheet */}
+        {showMoreSheet&&(
+          <div style={{position:"fixed",inset:0,zIndex:250,background:"rgba(0,0,0,0.55)"}} onClick={()=>setShowMoreSheet(false)}>
+            <div style={{position:"absolute",bottom:58,left:0,right:0}} onClick={e=>e.stopPropagation()}>
+              <div style={{maxWidth:860,margin:"0 auto",background:C.surface,borderRadius:"16px 16px 0 0",padding:"14px 14px 8px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
+                <div style={{width:36,height:3,background:C.border,borderRadius:2,margin:"0 auto 14px"}}/>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+                  {moreItems.map(item=>(
+                    <button key={item.key} onClick={()=>{setShowMoreSheet(false);item.action();}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,padding:"12px 6px 10px",borderRadius:12,background:C.bg,border:`1px solid ${C.border}`,cursor:"pointer",position:"relative",transition:"opacity 0.1s"}}>
+                      {item.proTag&&!proStatus&&<span style={{position:"absolute",top:4,right:4,fontSize:7,fontWeight:800,color:C.accentLight,background:C.accent+"30",border:`1px solid ${C.accent}55`,borderRadius:3,padding:"1px 3px",letterSpacing:"0.04em"}}>PRO</span>}
+                      <span style={{fontSize:20,lineHeight:1,color:C.textMid}}>{item.icon}</span>
+                      <span style={{fontSize:10,fontWeight:600,color:C.textMid,textAlign:"center",lineHeight:1.3}}>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div style={{display:"flex",gap:8,marginTop:10}}>
+                  <button onClick={()=>{
+                    trackUsage("wrongs_review");setShowMoreSheet(false);
+                    const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
+                    if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
+                    else{setError("No wrong answers yet — complete a session first.");setTimeout(()=>setError(""),3000);}
+                  }} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid ${srWrongCount>0?C.hard+"55":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
+                    🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
+                  </button>
+                  <button onClick={()=>{trackUsage("ai_coach");setShowMoreSheet(false);setAiCoachScreen(true);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 AI Coach</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Nav bar */}
+        <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:260,background:C.bg,borderTop:`1px solid ${C.border}`}}>
+          <div style={{maxWidth:860,margin:"0 auto",display:"flex",paddingBottom:"max(4px,env(safe-area-inset-bottom,4px))"}}>
+            {navTabs.map(tab=>{
+              const active=activeTab===tab.key;
+              return(
+                <button key={tab.key} onClick={tab.action} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"9px 4px 6px",background:"none",border:"none",cursor:"pointer",color:active?C.accent:C.muted,transition:"color 0.15s",outline:"none",WebkitTapHighlightColor:"transparent"}}>
+                  {tab.icon}
+                  <span style={{fontSize:9,fontWeight:active?700:500,letterSpacing:"0.01em"}}>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </>);
+    })()}
     {/* Referral card */}
     {authUser&&<ReferralCard userId={authUser.id} cfg={SB_CFG} setUpgradeModal={setUpgradeModal}/>}
 
