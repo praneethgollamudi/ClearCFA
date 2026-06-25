@@ -12194,8 +12194,27 @@ function ToastManager(){
 // Capture referral code from URL before React boots
 try{const ref=new URLSearchParams(window.location.search).get('ref');if(ref){sessionStorage.setItem('cfa_ref',ref);}}catch{}
 
+class AppErrorBoundary extends React.Component{
+  constructor(props){super(props);this.state={error:null,info:null};}
+  static getDerivedStateFromError(e){return{error:e};}
+  componentDidCatch(e,i){this.setState({error:e,info:i});console.error("CFAMock crash:",e,i);}
+  render(){
+    if(this.state.error){
+      const msg=this.state.error?.message||String(this.state.error);
+      const stack=(this.state.info?.componentStack||"").slice(0,600);
+      return React.createElement("div",{style:{padding:"24px",fontFamily:"monospace",color:"#ff6b6b",background:"#0a0a14",minHeight:"100vh"}},
+        React.createElement("h2",{style:{color:"#f87171",marginBottom:12}},"⚠ App crashed — please report this"),
+        React.createElement("pre",{style:{fontSize:12,whiteSpace:"pre-wrap",wordBreak:"break-all",background:"#1a1a2e",padding:16,borderRadius:8,marginBottom:12}},msg),
+        React.createElement("pre",{style:{fontSize:10,whiteSpace:"pre-wrap",wordBreak:"break-all",color:"#888",background:"#111",padding:12,borderRadius:8,marginBottom:16}},stack),
+        React.createElement("button",{onClick:()=>{try{localStorage.clear();}catch{}location.reload();},style:{padding:"10px 20px",borderRadius:8,background:"#7c3aed",color:"#fff",border:"none",cursor:"pointer",fontSize:13,fontWeight:700}},"🗑 Clear data & reload")
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(CFAMock));
+root.render(React.createElement(AppErrorBoundary,null,React.createElement(CFAMock)));
 const toastRoot = ReactDOM.createRoot(document.getElementById('toast-root'));
 toastRoot.render(React.createElement(ToastManager));
 const lofiEl = document.createElement('div');
