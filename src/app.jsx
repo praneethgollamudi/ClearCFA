@@ -2116,6 +2116,17 @@ function getStoredAuth(){ try{ return JSON.parse(localStorage.getItem("cfa_auth"
 function saveAuth(auth){ try{ localStorage.setItem("cfa_auth", JSON.stringify(auth)); }catch{} }
 function clearAuth(){ try{ localStorage.removeItem("cfa_auth"); }catch{} }
 
+async function supabaseForgotPassword(cfg, email){
+  try{
+    const res=await fetch(`${cfg.url}/auth/v1/recover`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","apikey":cfg.key},
+      body:JSON.stringify({email})
+    });
+    return res.ok||res.status===200;
+  }catch{return false;}
+}
+
 async function deriveUserId(email, password){
   const text = email.toLowerCase().trim() + ":" + password;
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -2337,10 +2348,11 @@ Misconceptions to use in wrong options: ${misconceptions}
 ${levelGuidance}${personalisedSection}
 
 Return ONLY a JSON array, no markdown:
-[{"id":1,"question":"...","options":{"A":"...","B":"...","C":"..."},"answer":"A","explanation":"...","concept":"3-5 word tag","los_tested":"LOS text","misconception_targeted":"error exploited"}]
+[{"id":1,"question":"...","options":{"A":"...","B":"...","C":"..."},"answer":"A","explanation":"...","concept":"3-5 word tag","los_tested":"LOS text","misconception_targeted":"error exploited","distractor_explanations":{"B":"1 sentence why B is wrong","C":"1 sentence why C is wrong"}}]
 
 Rules:
 - 3 options only (A,B,C). Each wrong option exploits a misconception. Spread questions across different LOS.
+- Add "distractor_explanations" with one sentence per wrong option explaining the specific error it tests (e.g. "Divides by equity multiplier instead of multiplying").
 - CRITICAL for numerical questions: FIRST compute the exact correct answer (show full precision), THEN include that exact value as one of the options. NEVER describe any option as "closest", "nearest", "best approximation", or "closest when accounting for rounding" — if you use such language in the explanation, the question will be discarded. If rounding is needed for a clean option, round the answer FIRST, then build all three options around that rounded figure. The correct computed result must appear verbatim as exactly one of A, B, or C — no approximations. Wrong options must use recognisable formula errors (wrong rate, wrong periods, missing compounding step).
 - The "answer" field must match the letter whose option text equals the correct computed result. The explanation MUST begin with "Correct: [letter]. " (e.g. "Correct: B. Sample variance = 30/4 = 7.5") — questions whose explanation does not start with "Correct: A/B/C" will be discarded. The explanation must be a single clean final solution — NO chain-of-thought, NO intermediate recalculations, NO self-corrections, NO alternative attempts, NO phrases like "recalc needed", "revising", "reinspecting" or "incorrect" near the correct answer value.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
 }
@@ -2643,8 +2655,20 @@ function getStreak(history){
   const days=[...new Set(history.map(h=>h.dateKey))].sort().reverse();
   const today=localDateKey(),yesterday=localDateKey(new Date(Date.now()-86400000));
   if(days[0]!==today&&days[0]!==yesterday)return 0;
+  const freezes=getStreakFreezes();
+  const frozenDates=new Set(freezes.usedDates||[]);
   let streak=1;
-  for(let i=1;i<days.length;i++){if((new Date(days[i-1])-new Date(days[i]))/86400000===1)streak++;else break;}
+  for(let i=1;i<days.length;i++){
+    const gap=(new Date(days[i-1])-new Date(days[i]))/86400000;
+    if(gap===1){streak++;continue;}
+    if(gap===2){
+      // Check if the missing day was covered by a freeze
+      const missingDate=new Date(days[i]);missingDate.setDate(missingDate.getDate()+1);
+      const mk=missingDate.toISOString().slice(0,10);
+      if(frozenDates.has(mk)){streak+=2;continue;}
+    }
+    break;
+  }
   return streak;
 }
 
@@ -2858,6 +2882,9 @@ const QCACHE_MAX   = 25;  // max distinct combos to keep
 const API_LOG_KEY  = "cfa_api_log_v1";
 const PASS_TREND_KEY = "cfa_pass_trend_v1";
 const PLAN_KEY       = "cfa_week_plan_v1";
+const STREAK_FREEZE_KEY="cfa_streak_freeze_v1";
+function getStreakFreezes(){try{return JSON.parse(localStorage.getItem(STREAK_FREEZE_KEY)||'{"held":0,"usedDates":[]}')}catch{return{held:0,usedDates:[]}}}
+function saveStreakFreezes(f){try{localStorage.setItem(STREAK_FREEZE_KEY,JSON.stringify(f));}catch{}}
 const DYNAMIC_PN_KEY = "cfa_dynamic_pn_v1";
 const DYNAMIC_FORMULAS_KEY = "cfa_dynamic_formulas_v1";
 const RESOLVED_GAPS_KEY = "cfa_resolved_gaps_v1";
@@ -2941,7 +2968,7 @@ function _applyTheme(t){
 }
 
 // ── Freemium tier ─────────────────────────────────────────────────────────────
-const FREE_DAILY_AI_LIMIT=10;
+const FREE_DAILY_AI_LIMIT=20;
 const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
 // ── Payment config (update these to change payment details) ───────────────────
 const PAYMENT_UPI_ID='9493413121@upi';
@@ -4519,6 +4546,7 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
     plan:{icon:"🗓",title:"Pro feature",sub:"Weekly AI study plans are available on Pro."},
     l2l3:{icon:"📚",title:"Pro feature",sub:"Full CFA L2 & L3 support is available on Pro."},
     learn:{icon:"🎓",title:"Pro feature",sub:"AI Topic Lessons are available on Pro."},
+    timed_mock:{icon:"⏱",title:"Pro feature",sub:"Timed Mock is a Pro feature — simulate the full 3-hour exam experience"},
     default:{icon:"🚀",title:"Upgrade to Pro",sub:"Get unlimited access to every ClearCFA feature."},
   };
   const {icon,title,sub}=headers[reason]||headers.default;
@@ -7106,6 +7134,54 @@ function ReferralCard({userId,cfg,setUpgradeModal}){
   );
 }
 
+function StudyHeatmap({history}){
+  if(!history.length)return null;
+  const C=getColors();
+  // Build date → session count map for last 84 days (12 weeks)
+  const today=new Date();
+  const counts={};
+  history.forEach(h=>{
+    const dk=h.dateKey||h.date?.slice(0,10);
+    if(dk)counts[dk]=(counts[dk]||0)+1;
+  });
+  const days=[];
+  for(let i=83;i>=0;i--){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const dk=d.toISOString().slice(0,10);
+    days.push({dk,count:counts[dk]||0,isToday:i===0});
+  }
+  const maxCount=Math.max(1,...Object.values(counts));
+  const getColor=(count)=>{
+    if(!count)return C.border;
+    const intensity=Math.min(1,count/Math.min(maxCount,4));
+    if(intensity<0.25)return "#7c3aed33";
+    if(intensity<0.5)return "#7c3aed66";
+    if(intensity<0.75)return "#7c3aed99";
+    return "#7c3aed";
+  };
+  const totalDays=days.filter(d=>d.count>0).length;
+  const totalSessions=history.length;
+  return(
+    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <span style={{fontSize:12,fontWeight:700,color:C.text}}>Study Activity</span>
+        <span style={{fontSize:10,color:C.muted}}>{totalDays} days · {totalSessions} sessions</span>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(84,1fr)",gap:2}}>
+        {days.map(({dk,count,isToday})=>(
+          <div key={dk} title={`${dk}: ${count} session${count!==1?"s":""}`}
+            style={{aspectRatio:"1",borderRadius:2,background:isToday&&!count?"#7c3aed44":getColor(count),border:isToday?`1px solid #7c3aed99`:"none",transition:"background 0.2s"}}/>
+        ))}
+      </div>
+      <div style={{display:"flex",gap:6,alignItems:"center",marginTop:6,justifyContent:"flex-end"}}>
+        <span style={{fontSize:9,color:C.muted}}>Less</span>
+        {[0,1,2,3,4].map(i=><div key={i} style={{width:8,height:8,borderRadius:1,background:getColor(i)}}/>)}
+        <span style={{fontSize:9,color:C.muted}}>More</span>
+      </div>
+    </div>
+  );
+}
+
 function CFAMock(){
   const [screen,setScreen]=useState("home");
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
@@ -7123,6 +7199,8 @@ function CFAMock(){
   const [aiCoachScreen,setAiCoachScreen]=useState(false);const [aiCoachMessages,setAiCoachMessages]=useState([]);const [aiCoachInput,setAiCoachInput]=useState("");const [aiCoachLoading,setAiCoachLoading]=useState(false);
   const [formulaDrillMode,setFormulaDrillMode]=useState(false);const [formulaDrillIdx,setFormulaDrillIdx]=useState(0);const [formulaFlipped,setFormulaFlipped]=useState(false);const [formulaDrillTopic,setFormulaDrillTopic]=useState("Quantitative Methods");
   const timerRef=useRef(null);const startRef=useRef(null);
+  const qShownAtRef=useRef({});
+  const qTimesRef=useRef({});
   const [history,setHistory]=useState([]);const [historyLoaded,setHistoryLoaded]=useState(false);
   const historyRef=useRef([]);
   const [srDeck,setSrDeck]=useState({});const [srLoaded,setSrLoaded]=useState(false);
@@ -7198,6 +7276,10 @@ function CFAMock(){
   const [authMode,setAuthMode]=useState("signin"); // "signin" | "signup"
   const [authLoading,setAuthLoading]=useState(false);
   const [authError,setAuthError]=useState("");
+  const [forgotMode,setForgotMode]=useState(false);
+  const [forgotEmail,setForgotEmail]=useState("");
+  const [forgotSent,setForgotSent]=useState(false);
+  const [forgotLoading,setForgotLoading]=useState(false);
   const [showOnboarding,setShowOnboarding]=useState(false);
   const [showDiagnostic,setShowDiagnostic]=useState(false);
   const [diagQ,setDiagQ]=useState(0);
@@ -7245,6 +7327,7 @@ function CFAMock(){
   const qCacheRef=React.useRef({});
   const [luckyDipSpinning,setLuckyDipSpinning]=useState(false);
   const [luckyDipLabel,setLuckyDipLabel]=useState("");
+  const [streakFreezes,setStreakFreezes]=useState(()=>getStreakFreezes());
   const [personalBests,setPersonalBests]=useState(()=>{try{return JSON.parse(localStorage.getItem(BESTS_KEY)||"{}");}catch{return {};}});
   const [levelUpInfo,setLevelUpInfo]=useState(null);
   const [speedQTime,setSpeedQTime]=useState(100);
@@ -7254,6 +7337,11 @@ function CFAMock(){
   const passTrendRef=useRef([]);
   const [explainThisText,setExplainThisText]=useState(null);
   const [explainThisLoading,setExplainThisLoading]=useState(false);
+
+  useEffect(()=>{
+    if(!('serviceWorker' in navigator))return;
+    navigator.serviceWorker.register('/ClearCFA/sw.js').catch(()=>{});
+  },[]);
 
   // Sync body background when theme changes
   useEffect(()=>{try{document.body.style.background=C.bg;}catch{}},[theme]);
@@ -7537,6 +7625,14 @@ function CFAMock(){
   },[screen,count,endQuiz,fullExamMode]);
 
   useEffect(()=>{
+    if(screen!=="quiz"||!questions.length)return;
+    const q=questions[currentQ];
+    if(q&&!qShownAtRef.current[q.id]){
+      qShownAtRef.current[q.id]=Date.now();
+    }
+  },[currentQ,screen,questions]);
+
+  useEffect(()=>{
     clearInterval(speedDrillRef.current);
     if(screen!=="quiz"||mode!=="speed_drill")return;
     setSpeedQTime(100);
@@ -7628,6 +7724,7 @@ function CFAMock(){
       id:Date.now(),topic:t,subtopic:st,difficulty:diff,mode:m,
       score,total:qs.length,pct,timeTaken:elapsed,
       avgSecsPerQ:qs.length>0?Math.round(elapsed/qs.length):0,
+      qTimes:{...qTimesRef.current},
       date:new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"}),
       dateKey:localDateKey(),
       wrongCount:qs.filter(q=>ans[q.id]!==q.answer).length,
@@ -7937,7 +8034,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const mainTopic=pool[0]?.topic||"Mixed";
       setTopic(mainTopic);setSubtopic(`Interleaved (${pool.map(m=>m.topic.split(" ")[0]).join("·")})`);setDifficulty(diff);
       setMode("guided");setVignetteMode(false);
-      setQuestions(tagged);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);
+      setQuestions(tagged);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
       setScreen("quiz");
     }catch(e){setError("Interleaved session failed: "+e.message);}
     setLoading(false);setLoadingProgress(0);generatingRef.current=false;
@@ -7964,7 +8061,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       await new Promise(r=>setTimeout(r,200));
       setTopic("Financial Statement Analysis");setSubtopic(subtopic);setDifficulty(difficulty);
       setMode("fsa_vignette");setVignetteMode(true);
-      setQuestions(qs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setConsecutiveWrong(0);
+      setQuestions(qs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);setConsecutiveWrong(0);
       setScreen("quiz");
     }catch(e){
       clearInterval(progressInterval);
@@ -8002,7 +8099,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           await new Promise(r=>setTimeout(r,300));
           setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
           setVignetteMode(false);
-          setQuestions(localQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);
+          setQuestions(localQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
           setScreen("quiz");
           setLoading(false);setLoadingProgress(0);generatingRef.current=false;
           return;
@@ -8059,7 +8156,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           await new Promise(r=>setTimeout(r,250));
           setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
           setVignetteMode(false);
-          setQuestions(finalQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);
+          setQuestions(finalQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
           setScreen("quiz");
           clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
           return;
@@ -8145,7 +8242,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       await new Promise(r=>setTimeout(r,350));
       setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
       setVignetteMode(isVignette);
-      setQuestions(finalQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);
+      setQuestions(finalQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
       setScreen("quiz");
       // Track AI usage for free tier
       if(!proStatus){const newUsage=bumpDailyAI(finalQs.length);setDailyAIUsage({...newUsage});}
@@ -8193,7 +8290,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const sessionQs=sessionNum===1?amQs:pmQs;
       setExamSession(sessionNum);
       setTopic("Full Exam");setSubtopic(sessionNum===1?"AM Session":"PM Session");setDifficulty("Medium");setCount(sessionQs.length);setMode("exam");setFullExamMode(true);
-      setQuestions(sessionQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);
+      setQuestions(sessionQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};
       setScreen("quiz");
     }catch(e){setError(`Full exam failed: ${e.message}`);}
     setLoading(false);
@@ -8211,6 +8308,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
     if(answers[qId])return;
     const newAnswers={...answers,[qId]:opt};
     setAnswers(newAnswers);
+    if(qShownAtRef.current[qId]){
+      qTimesRef.current[qId]=Math.round((Date.now()-qShownAtRef.current[qId])/1000);
+    }
     if(mode==="guided")setShowExp(true);
     const q=questions.find(q=>q.id===qId);
     if(q){
@@ -8718,7 +8818,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {/* Stats strip */}
           <div style={{display:"flex",justifyContent:"center",gap:0,background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 0",maxWidth:340,margin:"0 auto"}}>
-            {[["AI-generated","Questions","🎯"],["L1 / L2 / L3","All Levels","📚"],["Free tier","10 Qs/day","⚡"]].map(([val,label,ico],i,arr)=>(
+            {[["AI-generated","Questions","🎯"],["L1 / L2 / L3","All Levels","📚"],["Free tier","20 Qs/day","⚡"]].map(([val,label,ico],i,arr)=>(
               <div key={label} style={{flex:1,textAlign:"center",borderRight:i<arr.length-1?`1px solid ${C.border}`:"none",padding:"0 8px"}}>
                 <div style={{fontSize:15,fontWeight:800,color:C.text}}>{ico} {val}</div>
                 <div style={{fontSize:10,color:C.muted,marginTop:2}}>{label}</div>
@@ -8759,7 +8859,41 @@ Return ONLY a JSON array — no prose, no markdown fences:
               {authLoading?(isSignup?"Creating your account…":"Signing in…"):(isSignup?"Start studying free →":"Sign in →")}
             </button>
             {authError&&<div style={{fontSize:12,color:C.hard,marginTop:10,padding:"9px 12px",background:C.errorBg,borderRadius:8,border:`1px solid ${C.hard}33`}}>{authError}</div>}
-            {!isSignup&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:12}}>
+            {!isSignup&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:10}}>
+              <span onClick={()=>{setForgotMode(true);setForgotEmail(authEmail);setForgotSent(false);}} style={{color:C.muted,cursor:"pointer",textDecoration:"underline"}}>Forgot password?</span>
+            </div>}
+            {forgotMode&&(
+              <div style={{marginTop:12,padding:"14px",background:C.surfaceHigh,borderRadius:10,border:`1px solid ${C.border}`}}>
+                {forgotSent?(
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:20,marginBottom:6}}>📧</div>
+                    <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>Check your email</div>
+                    <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>A reset link has been sent to {forgotEmail}. Check spam if you don't see it.</div>
+                    <button onClick={()=>{setForgotMode(false);setForgotSent(false);}} style={{marginTop:10,fontSize:11,color:C.accentLight,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>Back to sign in</button>
+                  </div>
+                ):(
+                  <>
+                    <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:8}}>Reset your password</div>
+                    <input value={forgotEmail} onChange={e=>setForgotEmail(e.target.value.trim())}
+                      placeholder="your@email.com" type="email"
+                      style={{width:"100%",padding:"10px 12px",borderRadius:8,fontSize:13,background:C.surface,border:`1px solid ${C.border}`,color:C.text,outline:"none",marginBottom:8,boxSizing:"border-box"}}/>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>setForgotMode(false)} style={{flex:1,padding:"9px",borderRadius:8,fontSize:12,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Cancel</button>
+                      <button onClick={async()=>{
+                        setForgotLoading(true);
+                        const ok=await supabaseForgotPassword(SB_CFG,forgotEmail);
+                        setForgotLoading(false);
+                        setForgotSent(true);
+                      }} disabled={forgotLoading||!forgotEmail.includes("@")}
+                        style={{flex:2,padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:forgotEmail.includes("@")?`linear-gradient(135deg,${C.accent},${C.accentLight})`:`${C.accent}40`,color:"#fff",border:"none",cursor:forgotEmail.includes("@")?"pointer":"default"}}>
+                        {forgotLoading?"Sending…":"Send reset link"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            {!isSignup&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:10}}>
               New to ClearCFA?{" "}
               <span onClick={()=>{setAuthMode("signup");setAuthError("");setAuthPassword("");setAuthConfirm("");}} style={{color:C.accentLight,cursor:"pointer",fontWeight:700}}>Create a free account →</span>
             </div>}
@@ -9285,6 +9419,33 @@ Return ONLY a JSON array — no prose, no markdown fences:
               {theme==='dark'?'☀️ Light':'🌙 Dark'}
             </button>
           </div>
+          {/* Notifications */}
+          {"Notification" in window&&(
+            <button onClick={async()=>{
+              if(Notification.permission==="granted"){
+                // Show a test notification
+                const sw=await navigator.serviceWorker.ready.catch(()=>null);
+                if(sw){sw.showNotification("ClearCFA",{body:`You have ${dueCards.length} SR cards due today`,icon:"/ClearCFA/icon-192.png",tag:"test"});}
+              }else{
+                const perm=await Notification.requestPermission();
+                if(perm==="granted"){
+                  const sw=await navigator.serviceWorker.ready.catch(()=>null);
+                  if(sw){sw.showNotification("ClearCFA",{body:"Notifications enabled! We'll remind you when SR cards are due.",icon:"/ClearCFA/icon-192.png",tag:"test"});}
+                }
+              }
+            }} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+              <span style={{fontSize:18}}>🔔</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:600}}>Study Reminders</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:1}}>
+                  {Notification.permission==="granted"?"Enabled — tap to test":"Tap to enable daily SR reminders"}
+                </div>
+              </div>
+              <span style={{fontSize:11,color:Notification.permission==="granted"?C.easy:C.muted,fontWeight:700}}>
+                {Notification.permission==="granted"?"ON":"OFF"}
+              </span>
+            </button>
+          )}
           {/* Feedback */}
           <button onClick={()=>{setSettingsOpen(false);setFeedbackOpen(true);}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
             <span style={{fontSize:18}}>💬</span>
@@ -9349,7 +9510,36 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
         <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-          {streak>0&&(()=>{const studiedToday=history.some(h=>h.dateKey===localDateKey());return(<div style={{marginTop:4,position:"relative"}}><StreakFlame streak={streak}/>{!studiedToday&&<div style={{position:"absolute",top:-4,right:-4,width:8,height:8,borderRadius:"50%",background:C.hard,border:`1.5px solid ${C.bg}`,animation:"pulse 1.5s ease-in-out infinite"}}/>}</div>);})()}
+          {streak>0&&(()=>{
+            const studiedToday=history.some(h=>h.dateKey===localDateKey());
+            return(
+              <div style={{marginTop:4}}>
+                <StreakFlame streak={streak}/>
+                {!studiedToday&&(
+                  <div style={{display:"flex",alignItems:"center",gap:4,marginTop:4}}>
+                    <div style={{width:6,height:6,borderRadius:"50%",background:C.hard,animation:"pulse 1.5s ease-in-out infinite"}}/>
+                    {streakFreezes.held>0?(
+                      <button onClick={()=>{
+                        const today=localDateKey();
+                        const updated={...streakFreezes,held:streakFreezes.held-1,usedDates:[...(streakFreezes.usedDates||[]),today]};
+                        setStreakFreezes(updated);saveStreakFreezes(updated);
+                      }} style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:5,background:"#7c3aed22",border:"1px solid #7c3aed55",color:"#a78bfa",cursor:"pointer"}}>
+                        🧊 Use freeze ({streakFreezes.held})
+                      </button>
+                    ):(
+                      <button onClick={()=>{
+                        if(getTotalXP(history)<200){setError("You need 200 XP to buy a freeze");return;}
+                        const updated={...streakFreezes,held:Math.min(2,streakFreezes.held+1)};
+                        setStreakFreezes(updated);saveStreakFreezes(updated);
+                      }} style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:5,background:"#1a1a2e",border:"1px solid #333",color:C.muted,cursor:"pointer"}}>
+                        🧊 Buy freeze (200 XP)
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <div style={{textAlign:"right"}}>
             <div style={{fontSize:28,fontWeight:800,color:daysLeft<30?C.hard:daysLeft<60?C.medium:C.accentLight,lineHeight:1}}>{daysLeft}</div>
             <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2}}>days to exam</div>
@@ -9449,6 +9639,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"0"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":`${Object.keys(srDeck).length>0?`${Object.keys(srDeck).length} total · none due`:"no cards yet"}`} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
+    <StudyHeatmap history={levelHistory}/>
 
     {/* Study time nudge — implementation intention reminder */}
     {(()=>{
@@ -9936,32 +10127,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* Referral card */}
     {authUser&&<ReferralCard userId={authUser.id} cfg={SB_CFG} setUpgradeModal={setUpgradeModal}/>}
 
-    {/* Lucky Dip */}
-    <button onClick={()=>{
-      if(luckyDipSpinning) return;
-      trackUsage("lucky_dip");
-      setLuckyDipSpinning(true);
-      const allTopics=Object.keys(activeLOS);
-      let count=0;
-      const spin=()=>{
-        const t=allTopics[Math.floor(Math.random()*allTopics.length)];
-        setLuckyDipLabel(t);
-        count++;
-        if(count<9){setTimeout(spin,80+count*55);}
-        else{
-          setTimeout(()=>{
-            setLuckyDipSpinning(false);
-            const mods=Object.keys(activeLOS[t].modules||{});
-            const m=mods[Math.floor(Math.random()*mods.length)]||Object.keys(activeLOS[t].modules||{})[0];
-            if(generateQuestionsRef.current) generateQuestionsRef.current(t,m,"Medium",10,"guided");
-          },600);
-        }
-      };
-      spin();
-    }} style={{width:"100%",marginBottom:12,padding:"12px",borderRadius:11,fontSize:13,fontWeight:700,background:luckyDipSpinning?"#1a1a2e":`linear-gradient(135deg,#7c3aed22,#6366f118)`,border:`1px solid ${luckyDipSpinning?"#7c3aed88":"#6366f144"}`,color:luckyDipSpinning?"#a78bfa":C.textMid,cursor:luckyDipSpinning?"default":"pointer",transition:"all 0.15s",letterSpacing:luckyDipSpinning?0.3:0,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
-      {luckyDipSpinning?`🎲 ${luckyDipLabel}`:"🎲 Lucky Dip — Surprise me!"}
-    </button>
-
 
     {/* More actions — sorted by usage frequency, collapsed by default */}
     {(()=>{
@@ -9969,7 +10134,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const moreItems=[
         {key:"mix",label:"⚡ Weak Spots",style:gridStyle,action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
         {key:"vignette",label:"📖 Vignette",style:gridStyle,action:()=>{trackUsage("vignette");setVignetteMode(true);setScreen("setup");}},
-        {key:"full_exam",label:"🎓 Full Exam",style:gridStyle,action:()=>{trackUsage("full_exam");startFullExam();}},
+        {key:"full_exam",label:"⏱ Timed Mock",proTag:true,style:gridStyle,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
         {key:"ethics",label:"⚖️ Ethics",style:gridStyle,action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
         {key:"dashboard",label:"📈 Dashboard",style:gridStyle,action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
         {key:"revise",label:"📝 Notes",style:gridStyle,action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
@@ -10003,33 +10168,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         )}
       </>);
-    })()}
-    {/* Feature discovery nudge */}
-    {(()=>{
-      const nudges=[
-        {id:"dashboard",cond:history.length>=3&&!usageStats.dashboard,icon:"📈",text:"See your full performance breakdown — by topic, difficulty and quality.",cta:"Dashboard",go:()=>{trackUsage("dashboard");setScreen("dashboard");}},
-        {id:"week_plan",cond:history.length>=3&&!usageStats.week_plan,icon:"🗓",text:weeklyPlan?"Your personalised weekly plan is ready — see today's sessions and focus.":"You've done enough sessions — let us build a personalised weekly plan around your schedule and weak spots.",cta:weeklyPlan?"View Plan":"Week Plan",go:()=>{trackUsage("week_plan");setWeeklyPlanScreen(true);}},
-        {id:"los_coverage",cond:history.length>=5&&!usageStats.los_coverage,icon:"🗺",text:"Check which LOS topics you've covered and where the gaps are.",cta:"LOS Map",go:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
-        {id:"notes_review",cond:srWrongCount>=5&&!usageStats.notes_review,icon:"📝",text:`You have ${srWrongCount} concepts in your SR deck — Power Notes condenses the key rules and traps for each topic.`,cta:"Power Notes",go:()=>{trackUsage("notes_review");setRevisionTab("notes");setRevisionTopic(null);setScreen("revision");}},
-        {id:"formulas",cond:srWrongCount>=3&&!usageStats.formulas,icon:"📐",text:"You have wrong answers — drill the formulas that are tripping you up.",cta:"Formula Drill",go:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
-        {id:"readiness",cond:history.length>=5&&!usageStats.readiness,icon:"📊",text:"Check your pass probability — see how your trend compares to the 70% threshold.",cta:"Pass %",go:()=>{trackUsage("readiness");setScreen("readiness");}},
-        {id:"calc_trainer",cond:history.length>=7&&!usageStats.calc_trainer,icon:"🔢",text:"Practice TVM and fixed income calculations with your BA II Plus.",cta:"Calc Trainer",go:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
-      ];
-      const nudge=nudges.find(n=>n.cond&&!dismissedNudges[n.id]);
-      if(!nudge)return null;
-      const dismiss=()=>{const u={...dismissedNudges,[nudge.id]:true};setDismissedNudges(u);try{localStorage.setItem("cfa_dismissed_nudges",JSON.stringify(u));}catch{}};
-      return(
-        <div style={{background:`${C.accent}10`,border:`1px solid ${C.accent}30`,borderRadius:10,padding:"11px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:11,color:C.accentLight,fontWeight:700,marginBottom:3}}>{nudge.icon} Did you know?</div>
-            <div style={{fontSize:12,color:C.textMid,lineHeight:1.45}}>{nudge.text}</div>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:5,flexShrink:0,alignItems:"flex-end"}}>
-            <button onClick={nudge.go} style={{fontSize:11,fontWeight:700,padding:"5px 10px",borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>{nudge.cta} →</button>
-            <button onClick={dismiss} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:0}}>dismiss</button>
-          </div>
-        </div>
-      );
     })()}
     {error&&(()=>{
       const canRetry=lastGenParamsRef.current&&error.includes("retry");
@@ -10478,7 +10616,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <button onClick={()=>setExitConfirm(true)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,flexShrink:0}}>← Home</button>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          <div style={{fontSize:14,fontWeight:800,padding:"5px 14px",borderRadius:20,background:timeLeft<120?"#180308":C.surface,color:timeLeft<120?C.hard:C.muted,border:`1px solid ${timeLeft<120?C.hard+"55":C.border}`,transition:"all 0.3s"}}>⏱ {fmt(timeLeft)}</div>
+          <div style={{fontSize:fullExamMode?16:14,fontWeight:800,padding:fullExamMode?"7px 18px":"5px 14px",borderRadius:20,background:timeLeft<300?"#180308":fullExamMode?"#1a0a2e":C.surface,color:timeLeft<300?C.hard:fullExamMode?"#a78bfa":C.muted,border:`1px solid ${timeLeft<300?C.hard+"55":fullExamMode?"#7c3aed55":C.border}`,transition:"all 0.3s"}}>
+            {fullExamMode?"🏛 ":""}{fmt(timeLeft)}
+          </div>
           {(()=>{const idealLeft=(questions.length-currentQ)*90;const paceRatio=timeLeft/Math.max(1,idealLeft);const paceCol=paceRatio>1.1?C.easy:paceRatio>0.8?C.medium:C.hard;const paceLabel=paceRatio>1.1?"Ahead":paceRatio>0.8?"On track":"Speed up";return timeLeft>0&&questions.length>1?<span style={{fontSize:10,color:paceCol,fontWeight:700,padding:"3px 7px",borderRadius:6,background:paceCol+"18"}}>{paceLabel}</span>:null;})()}
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:13,color:C.muted}}><span style={{color:C.accentLight,fontWeight:800}}>{currentQ+1}</span>/{questions.length}</span><Badge color={diffC[difficulty]}>{difficulty}</Badge></div>
@@ -10662,6 +10802,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
   if(screen==="results"){
     const wrongs=questions.filter(q=>answers[q.id]!==q.answer);
     const avgTime=questions.length?Math.round(timeTaken/questions.length):0;
+    const slowQIds=Object.entries(lastSession?.qTimes||{}).filter(([,t])=>t>90).map(([id])=>String(id));
+    const slowQs=questions.filter(q=>slowQIds.includes(String(q.id)));
     const passed=sessionPct>=70;
     const qScore=lastSessionQuality;
     return wrap(<>
@@ -10781,6 +10923,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <QualityBar quality={qScore.speedScore} label="Speed (vs 90s/q)" color={qScore.speedScore>=70?C.easy:C.medium}/>
           {qScore.difficultyBonus>0&&<div style={{fontSize:11,color:C.muted,marginTop:6}}>+{qScore.difficultyBonus} difficulty bonus ({difficulty} mode)</div>}
           <div style={{fontSize:12,fontWeight:700,color:qScore.quality>=80?C.easy:qScore.quality>=65?C.medium:C.hard,marginTop:8}}>Overall quality: {qScore.quality}/100</div>
+        </div>
+      )}
+      {slowQs.length>0&&(
+        <div style={{background:`${C.hard}10`,border:`1px solid ${C.hard}33`,borderRadius:10,padding:"10px 14px",marginBottom:10}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.hard,marginBottom:4}}>⏱ Slow questions ({slowQs.length}) — over 90 seconds each</div>
+          {slowQs.map(q=>(
+            <div key={q.id} style={{fontSize:11,color:C.muted,paddingLeft:8,marginBottom:2}}>• {q.concept||q.topic} — {lastSession.qTimes[q.id]}s</div>
+          ))}
+          <div style={{fontSize:10,color:C.muted,marginTop:6}}>Aim for 90s per question on exam day</div>
         </div>
       )}
 
@@ -11525,7 +11676,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {w.concept&&<div style={{marginBottom:10}}><Badge color={C.muted}>{w.concept}</Badge></div>}
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"20px",marginBottom:14,fontSize:14,lineHeight:1.78}}>{w.question}</div>
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
-        {Object.entries(w.options).map(([key,val])=>{const isCorrect=key===w.answer,wasWrong=key===w.userAnswer&&!isCorrect;return(<div key={key} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"12px 14px",borderRadius:10,background:isCorrect?C.easy+"22":wasWrong?C.hard+"18":C.surface,border:`1.5px solid ${isCorrect?C.easy:wasWrong?C.hard:C.border}`,fontSize:13,lineHeight:1.6,color:isCorrect?C.easy:wasWrong?C.hard:C.muted}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?C.easy:wasWrong?C.hard:C.dim,color:"#fff"}}>{key}</span><span>{val}</span></div>);})}
+        {Object.entries(w.options).map(([key,val])=>{
+          const isCorrect=key===w.answer,wasWrong=key===w.userAnswer&&!isCorrect;
+          const distractorExp=!isCorrect&&w.distractor_explanations?.[key];
+          return(
+            <div key={key} style={{display:"flex",flexDirection:"column",gap:4,padding:"12px 14px",borderRadius:10,background:isCorrect?C.easy+"22":wasWrong?C.hard+"18":C.surface,border:`1.5px solid ${isCorrect?C.easy:wasWrong?C.hard:C.border}`,marginBottom:8}}>
+              <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+                <span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:isCorrect?C.easy:wasWrong?C.hard:C.dim,color:"#fff"}}>{key}</span>
+                <span style={{fontSize:13,lineHeight:1.6,color:isCorrect?C.easy:wasWrong?C.hard:C.muted}}>{val}</span>
+              </div>
+              {distractorExp&&<div style={{fontSize:11,color:C.muted,paddingLeft:36,fontStyle:"italic",lineHeight:1.4}}>↳ {distractorExp}</div>}
+            </div>
+          );
+        })}
       </div>
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:6,fontSize:13,color:C.textMid,lineHeight:1.75}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
