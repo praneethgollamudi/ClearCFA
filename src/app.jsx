@@ -2901,6 +2901,10 @@ const PRESETS_KEY          = "cfa_presets_v1";
 const SESSION_DRAFT_KEY    = "cfa_session_draft_v1";
 const PENDING_GEN_KEY      = "cfa_pending_gen_v1";
 const TOUR_KEY             = "cfa_tour_v1";
+const WHATS_NEW_KEY        = "cfa_whats_new_v1";
+const WHATS_NEW_VERSION    = "2026-06-25";
+const PRO_TOUR_KEY         = "cfa_pro_tour_v1";
+const SCREEN_ONBOARD_KEY   = "cfa_screen_onboard_v1";
 const CHECKLIST_KEY        = "cfa_checklist_done";
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
@@ -6369,6 +6373,55 @@ const DIAGNOSTIC_QUESTIONS=[
   {id:"dg15",topic:"Derivatives",question:"A forward contract DIFFERS from a futures contract primarily because forwards are:",options:{A:"Always cash-settled with no possibility of delivery","B":"Exchange-traded and require daily mark-to-market margining","C":"Private bilateral agreements with no daily settlement"},answer:"C",explanation:"Forwards are OTC (private) contracts customised between two parties with no daily settlement — gain/loss is settled at expiry. Futures are standardised, exchange-traded contracts subject to daily mark-to-market and margin calls."},
 ];
 
+// ─── REUSABLE SLIDE OVERLAY (swipeable) ───────────────────────────────────────
+function SlideOverlay({slides, onDismiss, skipLabel="Skip →", ctaLabel="Let's go →", zIndex=350}){
+  const [slide,setSlide]=useState(0);
+  const touchStartX=useRef(null);
+  const isLast=slide===slides.length-1;
+  const sl=slides[slide];
+  const dismiss=onDismiss;
+
+  const handleTouchStart=(e)=>{touchStartX.current=e.touches[0].clientX;};
+  const handleTouchEnd=(e)=>{
+    if(touchStartX.current===null)return;
+    const dx=e.changedTouches[0].clientX-touchStartX.current;
+    touchStartX.current=null;
+    if(Math.abs(dx)<50)return;
+    if(dx<0){if(isLast)dismiss();else setSlide(s=>s+1);}
+    else{if(slide>0)setSlide(s=>s-1);}
+  };
+
+  return(
+    <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}
+      style={{position:"fixed",inset:0,zIndex,background:"rgba(0,0,0,0.92)",backdropFilter:"blur(8px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",animation:"fadeIn 0.3s ease"}}>
+      <button onClick={dismiss} style={{position:"absolute",top:20,right:20,background:"none",border:"none",color:"#666",fontSize:12,fontWeight:600,cursor:"pointer",padding:"6px 10px"}}>{skipLabel}</button>
+      <div key={slide} style={{width:"100%",maxWidth:380,background:C.surface,borderRadius:20,padding:"28px 22px",border:`1px solid ${(sl.bg||C.accent)}33`,animation:"fadeIn 0.25s ease",textAlign:"center"}}>
+        <div style={{width:72,height:72,borderRadius:20,background:`linear-gradient(135deg,${(sl.bg||C.accent)}33,${(sl.bg||C.accent)}15)`,border:`1px solid ${(sl.bg||C.accent)}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,margin:"0 auto 16px"}}>
+          {sl.emoji}
+        </div>
+        {sl.sub&&<div style={{fontSize:11,fontWeight:700,color:sl.color||C.accentLight,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>{sl.sub}</div>}
+        <div style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:12,letterSpacing:"-0.3px"}}>{sl.title}</div>
+        <div style={{fontSize:13,color:C.muted,lineHeight:1.75,marginBottom:sl.tip?18:0}}>{sl.desc}</div>
+        {sl.tip&&<div style={{background:`${(sl.bg||C.accent)}12`,border:`1px solid ${(sl.bg||C.accent)}33`,borderRadius:10,padding:"10px 14px",fontSize:12,color:sl.color||C.accentLight,lineHeight:1.55,textAlign:"left"}}>
+          💡 {sl.tip}
+        </div>}
+      </div>
+      <div style={{display:"flex",gap:8,marginTop:24,alignItems:"center"}}>
+        {slides.map((_,i)=>(
+          <div key={i} onClick={()=>setSlide(i)} style={{width:i===slide?28:8,height:8,borderRadius:4,background:i===slide?C.accent:C.border,transition:"all 0.3s",cursor:"pointer"}}/>
+        ))}
+      </div>
+      <div style={{display:"flex",gap:10,marginTop:18,width:"100%",maxWidth:380}}>
+        {slide>0&&<button onClick={()=>setSlide(s=>s-1)} style={{flex:1,padding:"13px",borderRadius:11,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>← Back</button>}
+        <button onClick={()=>{if(isLast)dismiss();else setSlide(s=>s+1);}} style={{flex:2,padding:"13px",borderRadius:11,fontSize:13,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}44`}}>
+          {isLast?ctaLabel:"Next →"}
+        </button>
+      </div>
+      <div style={{marginTop:14,fontSize:11,color:C.muted}}>{slide+1} of {slides.length} · swipe to navigate</div>
+    </div>
+  );
+}
+
 function StudyPathScreen({onBack, onLearn, onPractice, srDeck={}, cfaLevel="1", topicLessons={}, isPro=false}){
   const activeLOS=getActiveLOS(cfaLevel);
   const topics=Object.entries(activeLOS).sort((a,b)=>(b[1].weight||0)-(a[1].weight||0));
@@ -7551,6 +7604,9 @@ function CFAMock(){
   const [diagWeak,setDiagWeak]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_cfa_diag_weak")||"[]");}catch{return [];}});
   const [tourSlide,setTourSlide]=useState(0);
   const [tourDismissed,setTourDismissed]=useState(()=>{try{return!!localStorage.getItem(TOUR_KEY);}catch{return false;}});
+  const [whatsNewDismissed,setWhatsNewDismissed]=useState(()=>{try{return localStorage.getItem(WHATS_NEW_KEY)===WHATS_NEW_VERSION;}catch{return false;}});
+  const [proTourDismissed,setProTourDismissed]=useState(()=>{try{return!!localStorage.getItem(PRO_TOUR_KEY);}catch{return false;}});
+  const [screenOnboard,setScreenOnboard]=useState(()=>{try{return JSON.parse(localStorage.getItem(SCREEN_ONBOARD_KEY)||"{}");}catch{return {};}});
   const [checklistDismissed,setChecklistDismissed]=useState(()=>{try{return!!localStorage.getItem(CHECKLIST_KEY);}catch{return false;}});
   const [clVisitedReadiness,setClVisitedReadiness]=useState(()=>{try{return!!localStorage.getItem("cfa_cl_readiness");}catch{return false;}});
   const [clVisitedRevision,setClVisitedRevision]=useState(()=>{try{return!!localStorage.getItem("cfa_cl_revision");}catch{return false;}});
@@ -7622,6 +7678,13 @@ function CFAMock(){
       setProStatus(false);
     }
   },[authUser]);
+
+  // Show Pro tour once when user first becomes Pro
+  useEffect(()=>{
+    if(proStatus&&!proTourDismissed){
+      // Only auto-trigger if tour hasn't been seen; tour is also gated by tourDismissed being true (new users see feature tour first)
+    }
+  },[proStatus]);
 
   // Auto-trigger focus refresh when flagged
   useEffect(()=>{
@@ -9887,53 +9950,44 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} passProb={upgradeModal.passProb??null} weakCount={upgradeModal.weakCount??0} streakDays={upgradeModal.streakDays??0} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""} onCheckAccess={async()=>{const{isPro,validUntil}=await checkProFromServer(SB_CFG,authUser?.id||"",authUser?.email||"");if(isPro){setProStatus(true);setProValidUntil(validUntil||null);}return isPro;}}/>}
     {feedbackOpen&&<FeedbackModal onClose={()=>setFeedbackOpen(false)} userId={authUser?.id||"anon"} onSubmit={(data)=>submitFeedback(SB_CFG,data)}/>}
 
-    {/* Feature tour — full-screen overlay, shown once for new users */}
-    {!tourDismissed&&(()=>{
-      const dismissTour=()=>{setTourDismissed(true);try{localStorage.setItem(TOUR_KEY,"1");}catch{}};
-      const slides=[
+    {/* Feature tour — shown once for new users */}
+    {!tourDismissed&&<SlideOverlay
+      slides={[
         {emoji:"⚡",color:C.accentLight,bg:C.accent,title:"Office Mode",sub:"Your daily AI drill",desc:"Every day, AI picks your weakest CFA topic and fires questions calibrated to your current form. One tap, 5–10 minutes, maximum exam impact.",tip:"Look for ⚡ Office Mode at the top of home — tap Start every day you study."},
         {emoji:"📋",color:C.accentLight,bg:C.accent,title:"Spaced Repetition",sub:"Never forget what you've learned",desc:"Every wrong answer becomes a smart flashcard. The SM-2 algorithm resurfaces it at exactly the right interval — not too soon, not too late.",tip:"Watch the 'SR Due' counter in your stats strip and review cards daily."},
         {emoji:"📈",color:C.easy,bg:C.easy,title:"Pass Probability",sub:"Unlocks after 3 sessions",desc:"A live score showing how likely you are to pass based on your accuracy, topic coverage, and exam weight. Ruthlessly honest — no false comfort.",tip:"Tap the Progress tab in the bottom nav to see your topic-by-topic breakdown."},
         {emoji:"🎯",color:C.medium,bg:C.medium,title:"Today's Focus",sub:"Your AI-powered study plan",desc:"Tap Generate on the home screen — AI analyses your weak spots, exam weight, and spaced repetition dues to build a prioritised plan for today.",tip:"Generate a fresh focus each morning. It adapts every time you complete a session."},
-      ];
-      const sl=slides[tourSlide];
-      const isLast=tourSlide===slides.length-1;
-      return(
-        <div style={{position:"fixed",inset:0,zIndex:350,background:"rgba(0,0,0,0.92)",backdropFilter:"blur(8px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",animation:"fadeIn 0.3s ease"}}>
-          {/* Skip */}
-          <button onClick={dismissTour} style={{position:"absolute",top:20,right:20,background:"none",border:"none",color:C.muted,fontSize:12,fontWeight:600,cursor:"pointer",padding:"6px 10px"}}>Skip tour →</button>
-          {/* Slide card */}
-          <div key={tourSlide} style={{width:"100%",maxWidth:380,background:C.surface,borderRadius:20,padding:"28px 22px",border:`1px solid ${sl.bg}33`,animation:"fadeIn 0.25s ease",textAlign:"center"}}>
-            <div style={{width:72,height:72,borderRadius:20,background:`linear-gradient(135deg,${sl.bg}33,${sl.bg}15)`,border:`1px solid ${sl.bg}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,margin:"0 auto 16px"}}>
-              {sl.emoji}
-            </div>
-            <div style={{fontSize:11,fontWeight:700,color:sl.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>{sl.sub}</div>
-            <div style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:12,letterSpacing:"-0.3px"}}>{sl.title}</div>
-            <div style={{fontSize:13,color:C.muted,lineHeight:1.75,marginBottom:18}}>{sl.desc}</div>
-            <div style={{background:`${sl.bg}12`,border:`1px solid ${sl.bg}33`,borderRadius:10,padding:"10px 14px",fontSize:12,color:sl.color,lineHeight:1.55,textAlign:"left"}}>
-              💡 {sl.tip}
-            </div>
-          </div>
-          {/* Progress dots */}
-          <div style={{display:"flex",gap:8,marginTop:24,alignItems:"center"}}>
-            {slides.map((_,i)=>(
-              <div key={i} onClick={()=>setTourSlide(i)} style={{width:i===tourSlide?28:8,height:8,borderRadius:4,background:i===tourSlide?C.accent:C.border,transition:"all 0.3s",cursor:"pointer"}}/>
-            ))}
-          </div>
-          {/* Navigation */}
-          <div style={{display:"flex",gap:10,marginTop:18,width:"100%",maxWidth:380}}>
-            {tourSlide>0&&(
-              <button onClick={()=>setTourSlide(s=>s-1)} style={{flex:1,padding:"13px",borderRadius:11,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>← Back</button>
-            )}
-            <button onClick={()=>{if(isLast)dismissTour();else setTourSlide(s=>s+1);}} style={{flex:2,padding:"13px",borderRadius:11,fontSize:13,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}44`}}>
-              {isLast?"🚀 Let's start studying →":"Next →"}
-            </button>
-          </div>
-          {/* Step counter */}
-          <div style={{marginTop:14,fontSize:11,color:C.muted}}>{tourSlide+1} of {slides.length}</div>
-        </div>
-      );
-    })()}
+      ]}
+      onDismiss={()=>{setTourDismissed(true);try{localStorage.setItem(TOUR_KEY,"1");}catch{}}}
+      ctaLabel="🚀 Let's start studying →"
+      zIndex={350}
+    />}
+
+    {/* What's New — shown once per release version */}
+    {tourDismissed&&!whatsNewDismissed&&<SlideOverlay
+      slides={[
+        {emoji:"🔄",color:C.accentLight,bg:C.accent,title:"Smarter Offline Mode",sub:"June 2026 update",desc:"If the network is slow or the API is busy, ClearCFA now automatically falls back to your saved questions — so your session never gets stuck at a loading spinner.",tip:"Your last 30 questions per topic are always cached. You can study even on a bad connection."},
+        {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Question Generation",sub:"AI speed boost",desc:"All questions now use our optimised AI model. Generation is 3× faster and costs less — meaning more of your subscription goes toward your study experience.",tip:"Hard questions are still as challenging — we've just made the engine more efficient."},
+        {emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator & Music Fixed",sub:"UI fixes",desc:"The calculator and music player buttons were hiding behind the bottom navigation bar. Both are now always visible and reachable at the bottom-right and bottom-left of the screen.",tip:"Tap 🧮 bottom-right to open the financial calculator. Tap 🎵 bottom-left for focus music."},
+      ]}
+      onDismiss={()=>{setWhatsNewDismissed(true);try{localStorage.setItem(WHATS_NEW_KEY,WHATS_NEW_VERSION);}catch{}}}
+      skipLabel="Got it →"
+      ctaLabel="✓ Got it →"
+      zIndex={345}
+    />}
+
+    {/* Pro upgrade tour — shown once when user first goes Pro */}
+    {tourDismissed&&whatsNewDismissed&&proStatus&&!proTourDismissed&&<SlideOverlay
+      slides={[
+        {emoji:"⭐",color:C.accentLight,bg:C.accent,title:"Welcome to Pro!",sub:"You're now a Pro member",desc:"Unlimited AI questions, all three CFA levels, AI Debrief after every session, AI Coach for on-demand help — everything is now unlocked for you.",tip:"Your Pro status is linked to your account. It works across devices automatically."},
+        {emoji:"🤖",color:C.accentLight,bg:C.accent,title:"AI Debrief",sub:"Pro feature unlocked",desc:"After every quiz, tap 'AI Debrief' to get a personalised breakdown of where you went wrong, what concept gaps to address, and a targeted study plan.",tip:"The debrief uses your actual wrong answers — it's tailored to exactly what you need to fix."},
+        {emoji:"📚",color:C.easy,bg:C.easy,title:"All CFA Levels",sub:"L1, L2 & L3 unlocked",desc:"Switch between CFA Level 1, 2, and 3 anytime from Settings. Level 2 auto-enables item-set vignettes; Level 3 focuses on portfolio management and IPS questions.",tip:"You can switch levels mid-study — your SR deck and history are tracked per level."},
+      ]}
+      onDismiss={()=>{setProTourDismissed(true);try{localStorage.setItem(PRO_TOUR_KEY,"1");}catch{}}}
+      skipLabel="Skip →"
+      ctaLabel="🚀 Start studying →"
+      zIndex={340}
+    />}
 
     {settingsOpen&&(
       <div style={{position:"fixed",inset:0,zIndex:300,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
@@ -11795,6 +11849,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
   }
   // ══ READINESS ══════════════════════════════════════════════════════════════
   if(screen==="readiness") return wrap(<>
+    {!screenOnboard.readiness&&<SlideOverlay
+      slides={[{emoji:"📈",color:C.easy,bg:C.easy,title:"Pass Probability",sub:"How this screen works",desc:"Your pass probability is calculated from your accuracy across all topics, weighted by the official CFA exam weights. The higher your score on high-weight topics, the bigger the boost.",tip:"Focus on Ethics (15%), Fixed Income (15%), and Equity (15%) — they move the needle most. Scroll down to see per-topic Fix to Pass targets."}]}
+      onDismiss={()=>{const u={...screenOnboard,readiness:true};setScreenOnboard(u);try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{}}}
+      skipLabel="Got it →"
+      ctaLabel="Got it →"
+      zIndex={360}
+    />}
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
       <div><h2 style={{margin:0,fontSize:22,fontWeight:800}}>Pass Probability</h2><div style={{fontSize:12,color:C.muted,marginTop:3}}>Updated after every session</div></div>
       <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
@@ -12028,6 +12089,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
   if(screen==="masteryGrid"){
     const topicKeys=Object.keys(activeLOS);
     return wrap(<>
+      {!screenOnboard.masteryGrid&&<SlideOverlay
+        slides={[{emoji:"🏆",color:C.medium,bg:C.medium,title:"Concept Mastery",sub:"How this screen works",desc:"Each coloured pill is one module. Green = ≥70% accuracy, amber = 50–69%, red = below 50%, grey = untested. Tap any pill to immediately drill that module.",tip:"Red pills are your highest-leverage targets — fixing a red module in a high-weight topic like Fixed Income has a big impact on your pass probability."}]}
+        onDismiss={()=>{const u={...screenOnboard,masteryGrid:true};setScreenOnboard(u);try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{}}}
+        skipLabel="Got it →"
+        ctaLabel="Got it →"
+        zIndex={360}
+      />}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <div><h2 style={{margin:0,fontSize:20,fontWeight:800}}>Concept Mastery</h2><div style={{fontSize:12,color:C.muted,marginTop:2}}>Each pill = one module. Tap to drill.</div></div>
         <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
@@ -12578,6 +12646,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
       setCalcChecked(c=>({...c,[stepIdx]:ok?"correct":"wrong"}));
     };
     return(<>
+      {!screenOnboard.calcTrainer&&<SlideOverlay
+        slides={[{emoji:"🔢",color:C.accentLight,bg:C.accent,title:"Calc Trainer",sub:"How this works",desc:"Pick a topic and difficulty, then tap Generate. You'll get a multi-step CFA calculation problem — enter your answer for each step to check it. Use the BA II Plus calculator alongside for realistic exam practice.",tip:"The CFA exam allows the BA II Plus. Practice using it for every step here so the workflow is muscle memory on exam day."}]}
+        onDismiss={()=>{const u={...screenOnboard,calcTrainer:true};setScreenOnboard(u);try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{}}}
+        skipLabel="Got it →"
+        ctaLabel="Got it →"
+        zIndex={360}
+      />}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <div><h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>🔢 Calc Trainer</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>Step-by-step calculation practice</div></div>
         <button onClick={()=>{setScreen("home");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
