@@ -2898,6 +2898,8 @@ const STUDY_GOAL_KEY       = "cfa_study_goal_v1";
 const WORKED_EX_KEY        = "cfa_worked_ex_v1";
 const PRESETS_KEY          = "cfa_presets_v1";
 const SESSION_DRAFT_KEY    = "cfa_session_draft_v1";
+const TOUR_KEY             = "cfa_tour_v1";
+const CHECKLIST_KEY        = "cfa_checklist_done";
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
@@ -7490,6 +7492,12 @@ function CFAMock(){
   const [diagQ,setDiagQ]=useState(0);
   const [diagAnswers,setDiagAnswers]=useState({});
   const [diagWeak,setDiagWeak]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_cfa_diag_weak")||"[]");}catch{return [];}});
+  const [tourSlide,setTourSlide]=useState(0);
+  const [tourDismissed,setTourDismissed]=useState(()=>{try{return!!localStorage.getItem(TOUR_KEY);}catch{return false;}});
+  const [checklistDismissed,setChecklistDismissed]=useState(()=>{try{return!!localStorage.getItem(CHECKLIST_KEY);}catch{return false;}});
+  const [clVisitedReadiness,setClVisitedReadiness]=useState(()=>{try{return!!localStorage.getItem("cfa_cl_readiness");}catch{return false;}});
+  const [clVisitedRevision,setClVisitedRevision]=useState(()=>{try{return!!localStorage.getItem("cfa_cl_revision");}catch{return false;}});
+  const [clChecklistRewarded,setClChecklistRewarded]=useState(()=>{try{return!!localStorage.getItem("cfa_cl_rewarded");}catch{return false;}});
   const [demoMode,setDemoMode]=useState(false);
   const [demoQ,setDemoQ]=useState(0);
   const [demoAnswers,setDemoAnswers]=useState({});
@@ -7811,6 +7819,10 @@ function CFAMock(){
   useEffect(()=>{modeRef.current=mode;},[mode]);
   useEffect(()=>{confidenceLogRef.current=confidenceLog;},[confidenceLog]);
   useEffect(()=>{if(screen==="home")setError("");},[screen]);
+  useEffect(()=>{
+    if(screen==="readiness"&&!clVisitedReadiness){setClVisitedReadiness(true);try{localStorage.setItem("cfa_cl_readiness","1");}catch{}}
+    if(screen==="revision"&&!clVisitedRevision){setClVisitedRevision(true);try{localStorage.setItem("cfa_cl_revision","1");}catch{}}
+  },[screen]);
   // Warn before accidental page refresh/close during an active quiz
   useEffect(()=>{
     if(screen!=="quiz")return;
@@ -9741,6 +9753,55 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* Settings drawer overlay */}
     {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} passProb={upgradeModal.passProb??null} weakCount={upgradeModal.weakCount??0} streakDays={upgradeModal.streakDays??0} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""} onCheckAccess={async()=>{const{isPro,validUntil}=await checkProFromServer(SB_CFG,authUser?.id||"",authUser?.email||"");if(isPro){setProStatus(true);setProValidUntil(validUntil||null);}return isPro;}}/>}
     {feedbackOpen&&<FeedbackModal onClose={()=>setFeedbackOpen(false)} userId={authUser?.id||"anon"} onSubmit={(data)=>submitFeedback(SB_CFG,data)}/>}
+
+    {/* Feature tour — full-screen overlay, shown once for new users */}
+    {!tourDismissed&&(()=>{
+      const dismissTour=()=>{setTourDismissed(true);try{localStorage.setItem(TOUR_KEY,"1");}catch{}};
+      const slides=[
+        {emoji:"⚡",color:C.accentLight,bg:C.accent,title:"Office Mode",sub:"Your daily AI drill",desc:"Every day, AI picks your weakest CFA topic and fires questions calibrated to your current form. One tap, 5–10 minutes, maximum exam impact.",tip:"Look for ⚡ Office Mode at the top of home — tap Start every day you study."},
+        {emoji:"📋",color:C.accentLight,bg:C.accent,title:"Spaced Repetition",sub:"Never forget what you've learned",desc:"Every wrong answer becomes a smart flashcard. The SM-2 algorithm resurfaces it at exactly the right interval — not too soon, not too late.",tip:"Watch the 'SR Due' counter in your stats strip and review cards daily."},
+        {emoji:"📈",color:C.easy,bg:C.easy,title:"Pass Probability",sub:"Unlocks after 3 sessions",desc:"A live score showing how likely you are to pass based on your accuracy, topic coverage, and exam weight. Ruthlessly honest — no false comfort.",tip:"Tap the Progress tab in the bottom nav to see your topic-by-topic breakdown."},
+        {emoji:"🎯",color:C.medium,bg:C.medium,title:"Today's Focus",sub:"Your AI-powered study plan",desc:"Tap Generate on the home screen — AI analyses your weak spots, exam weight, and spaced repetition dues to build a prioritised plan for today.",tip:"Generate a fresh focus each morning. It adapts every time you complete a session."},
+      ];
+      const sl=slides[tourSlide];
+      const isLast=tourSlide===slides.length-1;
+      return(
+        <div style={{position:"fixed",inset:0,zIndex:350,background:"rgba(0,0,0,0.92)",backdropFilter:"blur(8px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",animation:"fadeIn 0.3s ease"}}>
+          {/* Skip */}
+          <button onClick={dismissTour} style={{position:"absolute",top:20,right:20,background:"none",border:"none",color:C.muted,fontSize:12,fontWeight:600,cursor:"pointer",padding:"6px 10px"}}>Skip tour →</button>
+          {/* Slide card */}
+          <div key={tourSlide} style={{width:"100%",maxWidth:380,background:C.surface,borderRadius:20,padding:"28px 22px",border:`1px solid ${sl.bg}33`,animation:"fadeIn 0.25s ease",textAlign:"center"}}>
+            <div style={{width:72,height:72,borderRadius:20,background:`linear-gradient(135deg,${sl.bg}33,${sl.bg}15)`,border:`1px solid ${sl.bg}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:34,margin:"0 auto 16px"}}>
+              {sl.emoji}
+            </div>
+            <div style={{fontSize:11,fontWeight:700,color:sl.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>{sl.sub}</div>
+            <div style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:12,letterSpacing:"-0.3px"}}>{sl.title}</div>
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.75,marginBottom:18}}>{sl.desc}</div>
+            <div style={{background:`${sl.bg}12`,border:`1px solid ${sl.bg}33`,borderRadius:10,padding:"10px 14px",fontSize:12,color:sl.color,lineHeight:1.55,textAlign:"left"}}>
+              💡 {sl.tip}
+            </div>
+          </div>
+          {/* Progress dots */}
+          <div style={{display:"flex",gap:8,marginTop:24,alignItems:"center"}}>
+            {slides.map((_,i)=>(
+              <div key={i} onClick={()=>setTourSlide(i)} style={{width:i===tourSlide?28:8,height:8,borderRadius:4,background:i===tourSlide?C.accent:C.border,transition:"all 0.3s",cursor:"pointer"}}/>
+            ))}
+          </div>
+          {/* Navigation */}
+          <div style={{display:"flex",gap:10,marginTop:18,width:"100%",maxWidth:380}}>
+            {tourSlide>0&&(
+              <button onClick={()=>setTourSlide(s=>s-1)} style={{flex:1,padding:"13px",borderRadius:11,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>← Back</button>
+            )}
+            <button onClick={()=>{if(isLast)dismissTour();else setTourSlide(s=>s+1);}} style={{flex:2,padding:"13px",borderRadius:11,fontSize:13,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}44`}}>
+              {isLast?"🚀 Let's start studying →":"Next →"}
+            </button>
+          </div>
+          {/* Step counter */}
+          <div style={{marginTop:14,fontSize:11,color:C.muted}}>{tourSlide+1} of {slides.length}</div>
+        </div>
+      );
+    })()}
+
     {settingsOpen&&(
       <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end"}} onClick={()=>setSettingsOpen(false)}>
         <div onClick={e=>e.stopPropagation()} style={{background:C.bg,borderRadius:"18px 18px 0 0",border:`1px solid ${C.border}`,borderBottom:"none",display:"flex",flexDirection:"column",maxHeight:"88vh"}}>
@@ -10076,6 +10137,54 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       </div>
     )}
+
+    {/* Getting Started checklist — shows for first 5 sessions */}
+    {historyLoaded&&history.length<5&&!checklistDismissed&&(()=>{
+      const hasExamDate=examDate&&examDate!=="2026-08-19";
+      const hasDoneSession=history.length>0;
+      const hasDoneOM=history.some(h=>h.isOfficeMode);
+      const hasVisitedReadiness=clVisitedReadiness;
+      const hasVisitedRevision=clVisitedRevision;
+      const items=[
+        {label:"Set your exam date",done:hasExamDate,action:()=>setSettingsOpen(true)},
+        {label:"Complete your first session",done:hasDoneSession,action:()=>{const t=diagWeak[0]||Object.keys(activeLOS)[0];const mods=Object.keys(activeLOS[t]?.modules||{});generateQuestions(t,mods[0]||t,"Easy",10,"guided");}},
+        {label:"Try Office Mode",done:hasDoneOM,action:null},
+        {label:"Check Pass Probability",done:hasVisitedReadiness,action:()=>setScreen("readiness")},
+        {label:"Open Quick Revision",done:hasVisitedRevision,action:()=>setScreen("revision")},
+      ];
+      const doneCount=items.filter(i=>i.done).length;
+      const allDone=doneCount===items.length;
+      if(allDone&&!clChecklistRewarded){
+        setClChecklistRewarded(true);
+        try{localStorage.setItem("cfa_cl_rewarded","1");}catch{}
+        showToast("🎉","Setup Complete!","You've unlocked everything ClearCFA has to offer.",true);
+        setTimeout(()=>{setChecklistDismissed(true);try{localStorage.setItem(CHECKLIST_KEY,"1");}catch{}},3000);
+      }
+      return(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <span style={{fontSize:12,fontWeight:800,color:C.accent,letterSpacing:"0.04em"}}>🗺 GETTING STARTED</span>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:11,color:C.muted}}>{doneCount}/{items.length}</span>
+              <button onClick={()=>{setChecklistDismissed(true);try{localStorage.setItem(CHECKLIST_KEY,"1");}catch{}}} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:"2px 6px"}}>✕</button>
+            </div>
+          </div>
+          <div style={{height:3,background:C.border,borderRadius:2,marginBottom:12}}>
+            <div style={{height:"100%",width:`${doneCount/items.length*100}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:2,transition:"width 0.5s ease"}}/>
+          </div>
+          {items.map((item,i)=>(
+            <div key={i} onClick={!item.done&&item.action?item.action:undefined} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<items.length-1?`1px solid ${C.border}22`:"none",cursor:!item.done&&item.action?"pointer":"default",opacity:item.done?0.7:1}}>
+              <div style={{width:20,height:20,borderRadius:10,background:item.done?C.easy+"33":C.border,border:`2px solid ${item.done?C.easy:C.border}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:11}}>
+                {item.done?"✓":""}
+              </div>
+              <span style={{fontSize:12,color:item.done?C.muted:C.text,textDecoration:item.done?"line-through":"none",flex:1}}>{item.label}</span>
+              {!item.done&&item.action&&<span style={{fontSize:10,color:C.accent}}>→</span>}
+            </div>
+          ))}
+          {allDone&&<div style={{textAlign:"center",fontSize:12,color:C.easy,fontWeight:700,marginTop:10}}>🎉 All done — you're all set!</div>}
+        </div>
+      );
+    })()}
 
     {/* Stats strip */}
     {!historyLoaded?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>{[0,1,2,3].map(i=><Skeleton key={i} height={68} radius={11}/>)}</div>:(
