@@ -3318,17 +3318,33 @@ function TrendArrow({ trend, delta }) {
   return <span style={{ fontSize:11, color:col, fontWeight:700, background:col+"18", padding:"1px 6px", borderRadius:4 }}>{trend==="up"?"↑":trend==="down"?"↓":"→"}{delta!=null?` ${Math.abs(delta)}%`:""}</span>;
 }
 function ScoreRing({ pct, size=96, showLabel=true }) {
-  const r=(size-12)/2, circ=2*Math.PI*r, offset=circ-(pct/100)*circ;
-  const col = pct>=70?C.easy:pct>=50?C.medium:C.hard;
-  return (
-    <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
+  const [animPct,setAnimPct]=useState(0);
+  const [displayPct,setDisplayPct]=useState(0);
+  useEffect(()=>{
+    const t=setTimeout(()=>{
+      setAnimPct(pct);
+      let start=null;
+      const step=(ts)=>{
+        if(!start)start=ts;
+        const prog=Math.min((ts-start)/900,1);
+        setDisplayPct(Math.round((1-Math.pow(1-prog,3))*pct));
+        if(prog<1)requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    },50);
+    return()=>clearTimeout(t);
+  },[pct]);
+  const r=(size-12)/2,circ=2*Math.PI*r,offset=circ-(animPct/100)*circ;
+  const col=pct>=70?C.easy:pct>=50?C.medium:C.hard;
+  return(
+    <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.dim} strokeWidth={7}/>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={col} strokeWidth={7}
         strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        style={{ transition:"stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1)", filter:`drop-shadow(0 0 6px ${col}88)` }}/>
-      {showLabel && <text x={size/2} y={size/2} textAnchor="middle" dominantBaseline="middle"
-        style={{ fill:col, fontSize:size>80?16:12, fontWeight:800, transform:`rotate(90deg)`, transformOrigin:`${size/2}px ${size/2}px` }}>
-        {pct}%
+        style={{transition:"stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1)",filter:`drop-shadow(0 0 6px ${col}88)`}}/>
+      {showLabel&&<text x={size/2} y={size/2} textAnchor="middle" dominantBaseline="middle"
+        style={{fill:col,fontSize:size>80?16:12,fontWeight:800,transform:`rotate(90deg)`,transformOrigin:`${size/2}px ${size/2}px`}}>
+        {displayPct}%
       </text>}
     </svg>
   );
@@ -7423,6 +7439,8 @@ function CFAMock(){
   const [showMoreActions,setShowMoreActions]=useState(true);
   const [showMoreSheet,setShowMoreSheet]=useState(false);
   const [moreSheetClosing,setMoreSheetClosing]=useState(false);
+  const sheetPanelRef=useRef(null);
+  const sheetDragY=useRef(null);
   const [usageStats,setUsageStats]=useState({});
   const usageStatsRef=useRef({});
   const apiLogRef=useRef([]);
@@ -8810,7 +8828,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
       <div style={{fontSize:24,fontWeight:800,marginBottom:6,letterSpacing:"-0.01em"}}>ClearCFA</div>
       <div style={{fontSize:15,fontWeight:600,color:C.accentLight,marginBottom:4,textAlign:"center"}}>{loadingMsg}</div>
-      <div style={{fontSize:12,color:C.muted,marginBottom:32}}>{loadingETA>0?`~${loadingETA}s remaining`:"Finishing up…"}</div>
+      <div style={{fontSize:12,color:C.muted,marginBottom:20}}>{loadingETA>0?`~${loadingETA}s remaining`:"Finishing up…"}</div>
+      <div style={{width:"100%",maxWidth:420,marginBottom:16,display:"flex",flexDirection:"column",gap:7}}>
+        {[1,2,3].map(i=>(
+          <div key={i} style={{height:50,borderRadius:9,background:`linear-gradient(90deg,${C.surface} 25%,${C.dim} 50%,${C.surface} 75%)`,backgroundSize:"200% 100%",animation:`shimmer 1.6s ease-in-out infinite`,animationDelay:`${(i-1)*0.2}s`,border:`1px solid ${C.border}`}}/>
+        ))}
+      </div>
       <div style={{width:"100%",maxWidth:420}}>
         <div style={{height:5,background:`${C.accent}20`,borderRadius:3,marginBottom:8,overflow:"hidden"}}>
           <div style={{height:"100%",width:`${loadingProgress}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s ease",boxShadow:`0 0 10px ${C.accent}88`}}/>
@@ -9588,6 +9611,115 @@ Return ONLY a JSON array — no prose, no markdown fences:
     </>)}
   </>);
   }
+
+  // ══ GLOBAL NAV BAR (portal — renders on home, quiz, results, setup) ═══════
+  const _navRootEl = document.getElementById("nav-root");
+  const navPortal = _navRootEl ? ReactDOM.createPortal((()=>{
+    const moreItems=[
+      {key:"mix",label:"Weak Spots",icon:"⚡",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
+      {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
+      {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
+      {key:"revise",label:"Notes",icon:"📝",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
+      {key:"formulas",label:"Formulas",icon:"🔢",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
+      {key:"week_plan",label:"Week Plan",icon:"🗓",proTag:true,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
+      {key:"calc_trainer",label:"Calc Trainer",icon:"🧮",action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
+      {key:"los_coverage",label:"LOS Map",icon:"🗺",action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
+      {key:"mastery_grid",label:"Mastery",icon:"🏆",action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
+      {key:"interleaved",label:"Mixed Topics",icon:"🔀",action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
+      {key:"study_path",label:"Study Path",icon:"🎓",action:()=>{trackUsage("study_path");setScreen("studyPath");}},
+      {key:"dashboard",label:"Dashboard",icon:"📊",action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
+    ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
+    const Ic=({d,size=22})=>(
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
+    );
+    const navTabs=[
+      {key:"home",label:"Home",
+        icon:<Ic d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10"/>,
+        action:()=>{setShowMoreSheet(false);setScreen("home");}},
+      {key:"practice",label:"Practice",
+        icon:<Ic d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>,
+        action:()=>{trackUsage("custom_mock");setShowMoreSheet(false);setScreen("setup");}},
+      {key:"drill",label:"Drill",
+        icon:<Ic d="M2 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z M16 3l-4 4-4-4"/>,
+        action:()=>{
+          trackUsage("mix");setShowMoreSheet(false);
+          const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
+          const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];
+          if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");
+        }},
+      {key:"progress",label:"Progress",
+        icon:<Ic d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20"/>,
+        action:()=>{trackUsage("dashboard");setShowMoreSheet(false);setScreen("readiness");}},
+      {key:"more",label:"More",
+        icon:<Ic d="M4 6h16 M4 12h16 M4 18h16"/>,
+        action:()=>{if(showMoreSheet||moreSheetClosing)setMoreSheetClosing(true);else setShowMoreSheet(true);}},
+    ];
+    const activeTab = showMoreSheet ? "more" :
+      ({home:"home",setup:"practice",quiz:"practice",srReview:"drill",
+        results:"practice",revision:"practice",studyPath:"practice",
+        dashboard:"progress",readiness:"progress",losCoverage:"progress",
+        masteryGrid:"progress",calcTrainer:"drill"}[screen]||"home");
+    const handlePillTouchStart=(e)=>{sheetDragY.current=e.touches[0].clientY;};
+    const handlePillTouchMove=(e)=>{
+      if(sheetDragY.current===null)return;
+      const dy=e.touches[0].clientY-sheetDragY.current;
+      if(dy>0&&sheetPanelRef.current)sheetPanelRef.current.style.transform=`translateY(${dy}px)`;
+    };
+    const handlePillTouchEnd=(e)=>{
+      if(sheetDragY.current===null)return;
+      const dy=e.changedTouches[0].clientY-sheetDragY.current;
+      sheetDragY.current=null;
+      if(sheetPanelRef.current)sheetPanelRef.current.style.transform="";
+      if(dy>80)setMoreSheetClosing(true);
+    };
+    return(<>
+      {(showMoreSheet||moreSheetClosing)&&(
+        <div style={{position:"fixed",inset:0,zIndex:250,background:"rgba(0,0,0,0.55)",animation:`${moreSheetClosing?"fadeOut 0.25s ease":"fadeIn 0.2s ease"} forwards`}} onClick={()=>setMoreSheetClosing(true)}>
+          <div ref={sheetPanelRef} style={{position:"absolute",bottom:58,left:0,right:0,animation:`${moreSheetClosing?"slideDown 0.28s":"slideUp 0.28s"} cubic-bezier(0.4,0,0.2,1) forwards`}} onClick={e=>e.stopPropagation()} onAnimationEnd={moreSheetClosing?()=>{setMoreSheetClosing(false);setShowMoreSheet(false);}:undefined}>
+            <div style={{maxWidth:860,margin:"0 auto",background:C.surface,borderRadius:"16px 16px 0 0",padding:"14px 14px 8px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
+              <div onTouchStart={handlePillTouchStart} onTouchMove={handlePillTouchMove} onTouchEnd={handlePillTouchEnd}
+                style={{padding:"8px 0 14px",cursor:"grab",touchAction:"none",WebkitTapHighlightColor:"transparent"}}>
+                <div style={{width:36,height:3,background:C.border,borderRadius:2,margin:"0 auto"}}/>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+                {moreItems.map(item=>(
+                  <button key={item.key} onClick={()=>{setShowMoreSheet(false);item.action();}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,padding:"12px 6px 10px",borderRadius:12,background:C.bg,border:`1px solid ${C.border}`,cursor:"pointer",position:"relative",transition:"opacity 0.1s"}}>
+                    {item.proTag&&!proStatus&&<span style={{position:"absolute",top:4,right:4,fontSize:7,fontWeight:800,color:C.accentLight,background:C.accent+"30",border:`1px solid ${C.accent}55`,borderRadius:3,padding:"1px 3px",letterSpacing:"0.04em"}}>PRO</span>}
+                    <span style={{fontSize:20,lineHeight:1,color:C.textMid}}>{item.icon}</span>
+                    <span style={{fontSize:10,fontWeight:600,color:C.textMid,textAlign:"center",lineHeight:1.3}}>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:8,marginTop:10}}>
+                <button onClick={()=>{
+                  trackUsage("wrongs_review");setShowMoreSheet(false);
+                  const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
+                  if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
+                  else{setError("No wrong answers yet — complete a session first.");setTimeout(()=>setError(""),3000);}
+                }} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid ${srWrongCount>0?C.hard+"55":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
+                  🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
+                </button>
+                <button onClick={()=>{trackUsage("ai_coach");setShowMoreSheet(false);setAiCoachScreen(true);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 AI Coach</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:260,background:C.bg,borderTop:`1px solid ${C.border}`}}>
+        <div style={{maxWidth:860,margin:"0 auto",display:"flex",paddingBottom:"max(4px,env(safe-area-inset-bottom,4px))"}}>
+          {navTabs.map(tab=>{
+            const active=activeTab===tab.key;
+            return(
+              <button key={tab.key} onClick={tab.action} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"9px 4px 6px",background:"none",border:"none",cursor:"pointer",color:active?C.accent:C.muted,transition:"color 0.15s",outline:"none",WebkitTapHighlightColor:"transparent"}}>
+                {tab.icon}
+                <span style={{fontSize:9,fontWeight:active?700:500,letterSpacing:"0.01em"}}>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>);
+  })(), _navRootEl) : null;
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
   if(screen==="home") return wrap(<>
@@ -10411,93 +10543,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       );
     })()}
 
-    {/* ── Bottom nav bar ── */}
-    {(()=>{
-      const moreItems=[
-        {key:"mix",label:"Weak Spots",icon:"⚡",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
-        {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
-        {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
-        {key:"revise",label:"Notes",icon:"📝",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
-        {key:"formulas",label:"Formulas",icon:"🔢",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
-        {key:"week_plan",label:"Week Plan",icon:"🗓",proTag:true,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
-        {key:"calc_trainer",label:"Calc Trainer",icon:"🧮",action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
-        {key:"los_coverage",label:"LOS Map",icon:"🗺",action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
-        {key:"mastery_grid",label:"Mastery",icon:"🏆",action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
-        {key:"interleaved",label:"Mixed Topics",icon:"🔀",action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
-        {key:"study_path",label:"Study Path",icon:"🎓",action:()=>{trackUsage("study_path");setScreen("studyPath");}},
-        {key:"dashboard",label:"Dashboard",icon:"📊",action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
-      ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
-
-      const Ic=({d,size=22})=>(
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
-      );
-      const navTabs=[
-        {key:"home",label:"Home",
-          icon:<Ic d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10"/>,
-          action:()=>{setShowMoreSheet(false);}},
-        {key:"practice",label:"Practice",
-          icon:<Ic d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>,
-          action:()=>{trackUsage("custom_mock");setShowMoreSheet(false);setScreen("setup");}},
-        {key:"drill",label:"Drill",
-          icon:<Ic d="M2 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z M16 3l-4 4-4-4"/>,
-          action:()=>{trackUsage("mix");setShowMoreSheet(false);const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
-        {key:"progress",label:"Progress",
-          icon:<Ic d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20"/>,
-          action:()=>{trackUsage("dashboard");setShowMoreSheet(false);setScreen("readiness");}},
-        {key:"more",label:"More",
-          icon:<Ic d="M4 6h16 M4 12h16 M4 18h16"/>,
-          action:()=>{if(showMoreSheet||moreSheetClosing)setMoreSheetClosing(true);else setShowMoreSheet(true);}},
-      ];
-
-      const activeTab = showMoreSheet ? "more" : "home";
-
-      return(<>
-        {/* More bottom sheet */}
-        {(showMoreSheet||moreSheetClosing)&&(
-          <div style={{position:"fixed",inset:0,zIndex:250,background:"rgba(0,0,0,0.55)",animation:`${moreSheetClosing?"fadeOut 0.25s ease":"fadeIn 0.2s ease"} forwards`}} onClick={()=>setMoreSheetClosing(true)}>
-            <div style={{position:"absolute",bottom:58,left:0,right:0,animation:`${moreSheetClosing?"slideDown 0.28s":"slideUp 0.28s"} cubic-bezier(0.4,0,0.2,1) forwards`}} onClick={e=>e.stopPropagation()} onAnimationEnd={moreSheetClosing?()=>{setMoreSheetClosing(false);setShowMoreSheet(false);}:undefined}>
-              <div style={{maxWidth:860,margin:"0 auto",background:C.surface,borderRadius:"16px 16px 0 0",padding:"14px 14px 8px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
-                <div style={{width:36,height:3,background:C.border,borderRadius:2,margin:"0 auto 14px"}}/>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-                  {moreItems.map(item=>(
-                    <button key={item.key} onClick={()=>{setShowMoreSheet(false);item.action();}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,padding:"12px 6px 10px",borderRadius:12,background:C.bg,border:`1px solid ${C.border}`,cursor:"pointer",position:"relative",transition:"opacity 0.1s"}}>
-                      {item.proTag&&!proStatus&&<span style={{position:"absolute",top:4,right:4,fontSize:7,fontWeight:800,color:C.accentLight,background:C.accent+"30",border:`1px solid ${C.accent}55`,borderRadius:3,padding:"1px 3px",letterSpacing:"0.04em"}}>PRO</span>}
-                      <span style={{fontSize:20,lineHeight:1,color:C.textMid}}>{item.icon}</span>
-                      <span style={{fontSize:10,fontWeight:600,color:C.textMid,textAlign:"center",lineHeight:1.3}}>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-                <div style={{display:"flex",gap:8,marginTop:10}}>
-                  <button onClick={()=>{
-                    trackUsage("wrongs_review");setShowMoreSheet(false);
-                    const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
-                    if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
-                    else{setError("No wrong answers yet — complete a session first.");setTimeout(()=>setError(""),3000);}
-                  }} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid ${srWrongCount>0?C.hard+"55":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
-                    🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
-                  </button>
-                  <button onClick={()=>{trackUsage("ai_coach");setShowMoreSheet(false);setAiCoachScreen(true);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 AI Coach</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Nav bar */}
-        <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:260,background:C.bg,borderTop:`1px solid ${C.border}`}}>
-          <div style={{maxWidth:860,margin:"0 auto",display:"flex",paddingBottom:"max(4px,env(safe-area-inset-bottom,4px))"}}>
-            {navTabs.map(tab=>{
-              const active=activeTab===tab.key;
-              return(
-                <button key={tab.key} onClick={tab.action} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"9px 4px 6px",background:"none",border:"none",cursor:"pointer",color:active?C.accent:C.muted,transition:"color 0.15s",outline:"none",WebkitTapHighlightColor:"transparent"}}>
-                  {tab.icon}
-                  <span style={{fontSize:9,fontWeight:active?700:500,letterSpacing:"0.01em"}}>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </>);
-    })()}
+    {navPortal}
     {/* Referral card */}
     {authUser&&<ReferralCard userId={authUser.id} cfg={SB_CFG} setUpgradeModal={setUpgradeModal}/>}
 
@@ -10979,6 +11025,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
     {loading&&<div style={{marginTop:20,display:"flex",flexDirection:"column",gap:10}}>{[1,2,3].map(i=><div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:16}}><Skeleton height={13} style={{marginBottom:10}}/><Skeleton height={10} width="70%" style={{marginBottom:8}}/>{[1,2,3].map(j=><Skeleton key={j} height={9} width={`${58+j*9}%`} style={{marginBottom:6}}/>)}</div>)}</div>}
+    <div style={{height:70}}/>
+    {navPortal}
   </>);
   // ══ QUIZ ══════════════════════════════════════════════════════════════════
   if(screen==="quiz"){
@@ -11200,6 +11248,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       )}
       {currentQ>2&&mode!=="exam"&&<button onClick={endQuiz} style={{marginTop:9,width:"100%",padding:"9px",borderRadius:10,fontSize:12,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>End & See Results</button>}
+      <div style={{height:70}}/>
+      {navPortal}
     </>);
   }
 
@@ -11430,6 +11480,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           )}
         </div>
       )}
+      <div style={{height:70}}/>
+      {navPortal}
     </>);
   }
   // ══ READINESS ══════════════════════════════════════════════════════════════
