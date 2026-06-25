@@ -7230,7 +7230,7 @@ function LofiPlayer(){
   return (
     <>
       <button onClick={()=>setShowPanel(s=>!s)} title={pendingResume?"Tap anywhere to resume music":"Lofi study music"}
-        style={{position:"fixed",bottom:70,left:16,zIndex:200,width:46,height:46,borderRadius:"50%",
+        style={{position:"fixed",bottom:82,left:16,zIndex:270,width:46,height:46,borderRadius:"50%",
           background:isPlaying?"linear-gradient(135deg,#1a3a2a,#1e5c3a)":pendingResume?"linear-gradient(135deg,#1a2e3a,#1e3a5c)":isLight?"linear-gradient(135deg,#e8e8f4,#f4f4fb)":"linear-gradient(135deg,#1a1a2e,#1e1e38)",
           border:isPlaying?"1px solid #22c55e55":pendingResume?"1px solid #60a5fa88":isLight?"1px solid #6366f155":"1px solid #6366f133",
           color:isPlaying?"#86efac":pendingResume?"#93c5fd":isLight?"#4f46e5":"#a5b4fc",fontSize:20,cursor:"pointer",
@@ -7241,7 +7241,7 @@ function LofiPlayer(){
         🎵
       </button>
       {showPanel&&(
-        <div style={{position:"fixed",bottom:124,left:16,zIndex:200,background:isLight?"#ffffff":"#1a1a38",
+        <div style={{position:"fixed",bottom:136,left:16,zIndex:270,background:isLight?"#ffffff":"#1a1a38",
           border:isLight?"1px solid #6366f144":"1px solid #6366f144",borderRadius:16,padding:"16px",
           boxShadow:isLight?"0 8px 32px #0001":"0 8px 32px #00000099",minWidth:210,animation:"fadeIn 0.15s ease"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
@@ -11351,7 +11351,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     return wrap(<>
       {/* Floating calculator button */}
       <button onClick={()=>setCalcOpen(true)} title="Open BA II Plus Calculator"
-        style={{position:"fixed",bottom:22,right:16,zIndex:200,width:46,height:46,borderRadius:"50%",background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",border:"1px solid #2563eb55",color:"#93c5fd",fontSize:20,cursor:"pointer",boxShadow:"0 4px 16px #0008",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>
+        style={{position:"fixed",bottom:82,right:16,zIndex:270,width:46,height:46,borderRadius:"50%",background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",border:"1px solid #2563eb55",color:"#93c5fd",fontSize:20,cursor:"pointer",boxShadow:"0 4px 16px #0008",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>
         🧮
       </button>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
