@@ -10043,69 +10043,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"0"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":`${Object.keys(srDeck).length>0?`${Object.keys(srDeck).length} total · none due`:"no cards yet"}`} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
       </div>
     )}
-    {/* Score sparkline — last 15 session trend — tap to open session history */}
-    {levelHistory.length>=3&&(
-      <div onClick={()=>{setScreen("dashboard");setDashTab("sessions");}} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:4}}>Last {Math.min(levelHistory.length,15)} sessions</div>
-          <ScoreSparkline history={levelHistory}/>
-        </div>
-        <div style={{textAlign:"right",flexShrink:0}}>
-          <div style={{fontSize:20,fontWeight:800,color:levelHistory[0]?.pct>=70?C.easy:C.hard}}>{levelHistory[0]?.pct??0}%</div>
-          <div style={{fontSize:10,color:C.muted,marginTop:1}}>tap for history</div>
-        </div>
-      </div>
-    )}
-
-    {/* Smart topic nudge — data-driven, replaces rotating tip */}
-    {smartNudge&&levelHistory.length>=2&&(()=>{
-      const {topic:nt,daysSince,accuracy,weight,sessions}=smartNudge;
-      const reason=sessions===0?`Never studied · ${weight}% of exam`:accuracy!==null&&accuracy<80?`${accuracy}% accuracy · improve this`:daysSince>6?`${daysSince}d since last session · refresher due`:`${accuracy}% accuracy · ${daysSince}d ago`;
-      const mods=Object.keys(activeLOS[nt]?.modules||{});
-      return(
-        <div style={{background:`${C.accent}10`,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"11px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.accentLight,marginBottom:2}}>📍 Focus now: {nt}</div>
-            <div style={{fontSize:11,color:C.muted}}>{reason}</div>
-          </div>
-          <button onClick={()=>generateQuestions(nt,mods[0]||nt,"Medium",10,"guided")} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>Study →</button>
-        </div>
-      );
-    })()}
-
-    {/* Study time nudge — implementation intention reminder */}
-    {(()=>{
-      if(!studyGoal?.time)return null;
-      const h=new Date().getHours();
-      const inWindow={morning:h>=6&&h<11,midday:h>=11&&h<14,evening:h>=17&&h<21,night:h>=21||h<2}[studyGoal.time];
-      if(!inWindow)return null;
-      return(
-        <div style={{background:`${C.accent}12`,border:`1px solid ${C.accent}33`,borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
-          <div style={{fontSize:18}}>⏰</div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:12,fontWeight:700,color:C.accentLight}}>This is your study time</div>
-            <div style={{fontSize:11,color:C.muted}}>You committed to {studyGoal.time} sessions — your future self will thank you.</div>
-          </div>
-        </div>
-      );
-    })()}
-
-    {/* Overconfidence alert — metacognitive calibration */}
-    {(()=>{
-      const entries=Object.values(confidenceLog).filter(e=>e&&typeof e==="object"&&"c" in e);
-      const sure=entries.filter(e=>e.c==="sure");
-      if(sure.length<5)return null;
-      const sureWrong=sure.filter(e=>!e.ok).length;
-      const rate=Math.round(sureWrong/sure.length*100);
-      if(rate<35)return null;
-      return(
-        <div style={{background:`${C.hard}0d`,border:`1px solid ${C.hard}44`,borderRadius:10,padding:"10px 14px",marginBottom:10}}>
-          <div style={{fontSize:12,fontWeight:700,color:C.hard,marginBottom:3}}>⚠ Confidence gap detected</div>
-          <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>{sureWrong} of {sure.length} answers you rated "Sure" were wrong ({rate}%). Overconfidence is the #1 exam risk — revisit those topics in Power Notes.</div>
-        </div>
-      );
-    })()}
-
     {/* Office Mode — primary CTA */}
     {(()=>{
       const omSessions=history.filter(h=>h.isOfficeMode);
@@ -10427,6 +10364,69 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     {/* Study time strip */}
     {todayStudySecs>0&&<StudyTimeStrip todayStudySecs={todayStudySecs} weekStudySecs={weekStudySecs} weeklyStudyDays={weeklyStudyDays}/>}
+
+    {/* Score sparkline — last 15 session trend — tap to open session history */}
+    {levelHistory.length>=3&&(
+      <div onClick={()=>{setScreen("dashboard");setDashTab("sessions");}} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:4}}>Last {Math.min(levelHistory.length,15)} sessions</div>
+          <ScoreSparkline history={levelHistory}/>
+        </div>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          <div style={{fontSize:20,fontWeight:800,color:levelHistory[0]?.pct>=70?C.easy:C.hard}}>{levelHistory[0]?.pct??0}%</div>
+          <div style={{fontSize:10,color:C.muted,marginTop:1}}>tap for history</div>
+        </div>
+      </div>
+    )}
+
+    {/* Smart topic nudge — data-driven, replaces rotating tip */}
+    {smartNudge&&levelHistory.length>=2&&(()=>{
+      const {topic:nt,daysSince,accuracy,weight,sessions}=smartNudge;
+      const reason=sessions===0?`Never studied · ${weight}% of exam`:accuracy!==null&&accuracy<80?`${accuracy}% accuracy · improve this`:daysSince>6?`${daysSince}d since last session · refresher due`:`${accuracy}% accuracy · ${daysSince}d ago`;
+      const mods=Object.keys(activeLOS[nt]?.modules||{});
+      return(
+        <div style={{background:`${C.accent}10`,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"11px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.accentLight,marginBottom:2}}>📍 Focus now: {nt}</div>
+            <div style={{fontSize:11,color:C.muted}}>{reason}</div>
+          </div>
+          <button onClick={()=>generateQuestions(nt,mods[0]||nt,"Medium",10,"guided")} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>Study →</button>
+        </div>
+      );
+    })()}
+
+    {/* Study time nudge — implementation intention reminder */}
+    {(()=>{
+      if(!studyGoal?.time)return null;
+      const h=new Date().getHours();
+      const inWindow={morning:h>=6&&h<11,midday:h>=11&&h<14,evening:h>=17&&h<21,night:h>=21||h<2}[studyGoal.time];
+      if(!inWindow)return null;
+      return(
+        <div style={{background:`${C.accent}12`,border:`1px solid ${C.accent}33`,borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{fontSize:18}}>⏰</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:700,color:C.accentLight}}>This is your study time</div>
+            <div style={{fontSize:11,color:C.muted}}>You committed to {studyGoal.time} sessions — your future self will thank you.</div>
+          </div>
+        </div>
+      );
+    })()}
+
+    {/* Overconfidence alert — metacognitive calibration */}
+    {(()=>{
+      const entries=Object.values(confidenceLog).filter(e=>e&&typeof e==="object"&&"c" in e);
+      const sure=entries.filter(e=>e.c==="sure");
+      if(sure.length<5)return null;
+      const sureWrong=sure.filter(e=>!e.ok).length;
+      const rate=Math.round(sureWrong/sure.length*100);
+      if(rate<35)return null;
+      return(
+        <div style={{background:`${C.hard}0d`,border:`1px solid ${C.hard}44`,borderRadius:10,padding:"10px 14px",marginBottom:10}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.hard,marginBottom:3}}>⚠ Confidence gap detected</div>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>{sureWrong} of {sure.length} answers you rated "Sure" were wrong ({rate}%). Overconfidence is the #1 exam risk — revisit those topics in Power Notes.</div>
+        </div>
+      );
+    })()}
 
     {/* Exam countdown phase banner */}
     {history.length>=3&&daysLeft>14&&(()=>{
