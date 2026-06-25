@@ -812,6 +812,7 @@ const QCACHE_KEY   = "cfa_qcache_v1";
 const QCACHE_SLOTS = 2;   // sets per topic+module+difficulty combo
 const QCACHE_MAX   = 25;  // max distinct combos to keep
 const API_LOG_KEY  = "cfa_api_log_v1";
+const FLAGS_KEY        = "cfa_flags_v1";
 const PASS_TREND_KEY = "cfa_pass_trend_v1";
 const PLAN_KEY       = "cfa_week_plan_v1";
 const LAST_UID_KEY   = "cfa_last_uid";
@@ -4848,7 +4849,7 @@ function CFAMock(){
   const [srQueue,setSrQueue]=useState([]);const [srIdx,setSrIdx]=useState(0);const [srAnswer,setSrAnswer]=useState(null);
   const [autoEscalation,setAutoEscalation]=useState(null);
   const [historyFilter,setHistoryFilter]=useState("All"); // topic filter for history
-  const [dashTab,setDashTab]=useState("sessions"); // sessions | patterns | quality
+  const [dashTab,setDashTab]=useState("sessions"); // sessions | time | patterns | quality | sr | flags | api
   const [exitConfirm,setExitConfirm]=useState(false);
   const [storageKeys,setStorageKeys]=useState(null);
   const [storageOk,setStorageOk]=useState(null); // null=checking, true=ok, false=failing
@@ -4860,6 +4861,8 @@ function CFAMock(){
   const lastGenParamsRef=useRef(null); // for tap-to-retry
   const [weeklyPlanScreen,setWeeklyPlanScreen]=useState(false);
   const [settingsOpen,setSettingsOpen]=useState(false);
+  const [questionFlags,setQuestionFlags]=useState(()=>{try{return JSON.parse(localStorage.getItem(FLAGS_KEY)||"[]");}catch{return [];}});
+  const [flagging,setFlagging]=useState(null);
   const [showMoreActions,setShowMoreActions]=useState(true);
   const [showMoreSheet,setShowMoreSheet]=useState(false);
   const [moreSheetClosing,setMoreSheetClosing]=useState(false);
@@ -7465,6 +7468,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{fontSize:11,color:C.muted,marginTop:1}}>Report bugs · suggest features · share thoughts</div>
             </div>
           </button>
+          {/* Flagged Questions */}
+          <button onClick={()=>{setSettingsOpen(false);setScreen("dashboard");setDashTab("flags");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+            <span style={{fontSize:18}}>⚑</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700}}>Flagged Questions</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>{questionFlags.length>0?`${questionFlags.length} flagged — review or clear`:"Flag bad questions during a quiz"}</div>
+            </div>
+          </button>
+          {/* API Usage */}
+          <button onClick={()=>{setSettingsOpen(false);setScreen("dashboard");setDashTab("api");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+            <span style={{fontSize:18}}>📊</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700}}>API Usage</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>Cost breakdown · feature spend · recent calls</div>
+            </div>
+          </button>
           {/* Account */}
           <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12,marginTop:4}}>
             <div style={{fontSize:11,color:C.muted,marginBottom:8,textAlign:"center"}}>
@@ -8894,6 +8913,30 @@ Return ONLY a JSON array — no prose, no markdown fences:
           {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
         </div>
       )}
+      {answered&&(
+        <div style={{textAlign:"right",marginBottom:6,marginTop:-4}}>
+          {flagging===q.id?(
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px",marginBottom:4,textAlign:"left",animation:"fadeIn 0.15s ease"}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:8}}>What's the issue?</div>
+              {[["wrong_answer","Wrong answer key"],["unclear","Unclear question"],["factual_error","Factual error in explanation"]].map(([r,label])=>(
+                <button key={r} onClick={()=>{
+                  const flag={id:q.id,ts:Date.now(),topic,module:subtopic,reason:r,question:q.question.slice(0,200),correctAnswer:q.answer,userAnswer:answers[q.id]};
+                  const updated=[flag,...questionFlags.filter(f=>f.id!==q.id)].slice(0,100);
+                  setQuestionFlags(updated);
+                  try{localStorage.setItem(FLAGS_KEY,JSON.stringify(updated));}catch{}
+                  setFlagging(null);
+                  showToast("⚑","Question flagged","Noted for review — thanks.");
+                }} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 10px",borderRadius:7,fontSize:12,color:C.textMid,background:"none",border:`1px solid ${C.border}`,marginBottom:4,cursor:"pointer"}}>{label}</button>
+              ))}
+              <button onClick={()=>setFlagging(null)} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",marginTop:2}}>Cancel</button>
+            </div>
+          ):questionFlags.some(f=>f.id===q.id)?(
+            <span style={{fontSize:11,color:C.muted}}>⚑ Flagged</span>
+          ):(
+            <button onClick={()=>setFlagging(q.id)} style={{fontSize:11,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:"4px 8px"}}>⚑ Flag issue</button>
+          )}
+        </div>
+      )}
       {!answered&&mode!=="speed_drill"&&(
         <div style={{marginBottom:16}}>
           <div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:8,letterSpacing:"0.03em"}}>How confident are you?</div>
@@ -9530,9 +9573,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
 
       {/* Tab nav */}
-      <div style={{display:"flex",gap:6,marginBottom:16}}>
-        {[["sessions","Sessions"],["time","Time"],["patterns","Errors"],["quality","Quality"]].map(([tab,label])=>(
-          <button key={tab} onClick={()=>setDashTab(tab)} style={{flex:1,padding:"8px",borderRadius:8,fontSize:12,fontWeight:600,border:dashTab===tab?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:dashTab===tab?C.accent+"18":C.surface,color:dashTab===tab?C.accentLight:C.muted,cursor:"pointer"}}>{label}</button>
+      <div style={{display:"flex",gap:6,marginBottom:16,overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:2}}>
+        {[["sessions","Sessions"],["time","Time"],["patterns","Errors"],["quality","Quality"],["sr","Retention"],["flags","Flagged"]].map(([tab,label])=>(
+          <button key={tab} onClick={()=>setDashTab(tab)} style={{flexShrink:0,padding:"8px 12px",borderRadius:8,fontSize:12,fontWeight:600,border:dashTab===tab?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:dashTab===tab?C.accent+"18":C.surface,color:dashTab===tab?C.accentLight:C.muted,cursor:"pointer",whiteSpace:"nowrap"}}>{label}</button>
         ))}
       </div>
 
@@ -9750,6 +9793,98 @@ Return ONLY a JSON array — no prose, no markdown fences:
           );
         })()}
       </>}
+
+      {dashTab==="sr"&&(()=>{
+        const cards=Object.values(srDeck);
+        if(!cards.length)return(<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"28px 20px",textAlign:"center",color:C.muted,fontSize:13}}>No SR cards yet. Complete sessions to build your deck — each question you answer gets added automatically.</div>);
+        const practiced=cards.filter(c=>(c.repetitions||0)+(c.wrongCount||0)>0);
+        const mastered=cards.filter(c=>(c.repetitions||0)>=3&&!(c.wrongCount||0));
+        const struggling=cards.filter(c=>(c.wrongCount||0)>=3).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));
+        const avgRetention=practiced.length>0?Math.round(practiced.reduce((s,c)=>s+(c.repetitions||0)/Math.max(1,(c.repetitions||0)+(c.wrongCount||0)),0)/practiced.length*100):null;
+        const avgEF=cards.length>0?Math.round(cards.reduce((s,c)=>s+(c.ef||2.5),0)/cards.length*100)/100:null;
+        const byTopic={};
+        cards.forEach(c=>{
+          const t=c.topic||"Unknown";
+          if(!byTopic[t])byTopic[t]={total:0,correct:0,wrong:0,mastered:0};
+          byTopic[t].total++;
+          byTopic[t].correct+=(c.repetitions||0);
+          byTopic[t].wrong+=(c.wrongCount||0);
+          byTopic[t].mastered+=((c.repetitions||0)>=3&&!(c.wrongCount||0))?1:0;
+        });
+        const topicRows=Object.entries(byTopic).map(([topic,d])=>({topic,...d,ret:d.correct+d.wrong>0?Math.round(d.correct/(d.correct+d.wrong)*100):null})).sort((a,b)=>(a.ret??101)-(b.ret??101));
+        return(<>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
+            {[["Retention",avgRetention!=null?`${avgRetention}%`:"-",avgRetention>=70?C.easy:avgRetention>=50?C.medium:C.hard],["Mastered",mastered.length,C.easy],["Struggling",struggling.length,struggling.length>0?C.hard:C.easy],["Ease",avgEF??"-",avgEF>=2.5?C.easy:avgEF>=2.1?C.medium:C.hard]].map(([label,val,col])=>(
+              <div key={label} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"10px 6px",textAlign:"center"}}>
+                <div style={{fontSize:15,fontWeight:800,color:col}}>{val}</div>
+                <div style={{fontSize:10,color:C.muted,marginTop:2}}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:10}}>Retention by Topic</div>
+            {topicRows.map(row=>(
+              <div key={row.topic} style={{marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                  <div style={{fontSize:12,color:C.textMid}}>{row.topic}</div>
+                  <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                    <div style={{fontSize:10,color:C.muted}}>{row.total} cards</div>
+                    <div style={{fontSize:12,fontWeight:700,color:row.ret>=70?C.easy:row.ret>=50?C.medium:row.ret!=null?C.hard:C.muted,minWidth:32,textAlign:"right"}}>{row.ret!=null?`${row.ret}%`:"-"}</div>
+                  </div>
+                </div>
+                <div style={{height:5,background:C.border,borderRadius:3}}><div style={{height:"100%",width:`${row.ret??0}%`,background:row.ret>=70?C.easy:row.ret>=50?C.medium:C.hard,borderRadius:3,transition:"width 0.3s"}}/></div>
+              </div>
+            ))}
+          </div>
+          {struggling.length>0&&(
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>Struggling Concepts (wrong 3×+)</div>
+              {struggling.slice(0,10).map((card,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:i<Math.min(9,struggling.length-1)?`1px solid ${C.border}`:"none"}}>
+                  <div>
+                    <div style={{fontSize:12,color:C.textMid}}>{card.concept||card.subtopic||"Unknown"}</div>
+                    <div style={{fontSize:10,color:C.muted}}>{card.topic}</div>
+                  </div>
+                  <div style={{fontSize:11,fontWeight:700,color:C.hard}}>{card.wrongCount}× wrong</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{fontSize:11,color:C.muted,textAlign:"center",padding:"4px 0"}}>Ease factor {avgEF} (ideal: 2.5+) · {cards.length} total cards · {practiced.length} practiced</div>
+        </>);
+      })()}
+
+      {dashTab==="flags"&&(()=>{
+        const flags=questionFlags;
+        const REASON={wrong_answer:"Wrong answer key",unclear:"Unclear question",factual_error:"Factual error in explanation"};
+        return(<>
+          <div style={{fontSize:12,color:C.muted,marginBottom:12}}>Questions you flagged during practice — wrong answer keys, unclear wording, or factual errors in explanations.</div>
+          {flags.length===0?(
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"28px 20px",textAlign:"center",color:C.muted,fontSize:13}}>No flagged questions yet.<br/><span style={{fontSize:11,display:"block",marginTop:6}}>Tap "⚑ Flag issue" during a quiz when something looks wrong.</span></div>
+          ):(<>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={{fontSize:11,color:C.muted}}>{flags.length} flagged question{flags.length!==1?"s":""}</div>
+              <button onClick={()=>{setQuestionFlags([]);try{localStorage.removeItem(FLAGS_KEY);}catch{}}} style={{fontSize:11,color:C.hard,background:"none",border:"none",cursor:"pointer"}}>Clear all</button>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
+              {flags.map((f,i)=>(
+                <div key={i} style={{background:C.surface,border:`1px solid ${C.hard}33`,borderRadius:10,padding:"12px 14px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                    <span style={{fontSize:10,fontWeight:700,color:C.hard,background:C.hard+"18",padding:"2px 8px",borderRadius:12}}>{REASON[f.reason]||f.reason}</span>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <span style={{fontSize:10,color:C.muted}}>{new Date(f.ts).toLocaleDateString()}</span>
+                      <button onClick={()=>{const u=flags.filter((_,j)=>j!==i);setQuestionFlags(u);try{localStorage.setItem(FLAGS_KEY,JSON.stringify(u));}catch{}}} style={{fontSize:10,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:"2px 4px"}}>✕</button>
+                    </div>
+                  </div>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:6}}>{f.topic} · {f.module}</div>
+                  <div style={{fontSize:12,color:C.textMid,lineHeight:1.6,marginBottom:8}}>{f.question}</div>
+                  <div style={{fontSize:11,color:C.muted}}>Answer key: <span style={{color:C.accentLight,fontWeight:700}}>{f.correctAnswer}</span> · Your answer: <span style={{fontWeight:700,color:f.userAnswer===f.correctAnswer?C.easy:C.hard}}>{f.userAnswer||"—"}</span></div>
+                </div>
+              ))}
+            </div>
+          </>)}
+        </>);
+      })()}
 
       {dashTab==="api"&&(()=>{
         const log=apiLogRef.current;
