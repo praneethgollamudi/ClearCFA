@@ -837,23 +837,6 @@ const SESSION_DRAFT_KEY    = "cfa_session_draft_v1";
 const PENDING_GEN_KEY      = "cfa_pending_gen_v1";
 const TOUR_KEY             = "cfa_tour_v1";
 const WHATS_NEW_KEY        = "cfa_whats_new_v1";
-const WHATS_NEW_SLIDES=[
-// WN_START
-// WN_VER:2026-06-26
-{version:"2026-06-26",slides:[
-{emoji:"📦",color:C.easy,bg:C.easy,title:"Study Without Sign-In",sub:"Offline Mode · June 2026 update",desc:"ClearCFA now ships with 30 starter questions across all 10 CFA Level 1 topics — ready before you create an account. If the AI is busy or you're offline, your last 30 questions per topic are always available as an instant fallback.",tip:"Sign in to unlock AI-personalised questions and track your progress. The offline bank is just your starting point."},
-{emoji:"🔥",color:C.reward,bg:C.reward,title:"Streak Protection Alerts",sub:"Motivation · June 2026 update",desc:"When you hit the daily free question limit, ClearCFA now shows exactly how many streak days you're protecting — and puts your streak count front and centre in the upgrade prompt. No vague sales pitch, just the truth about what's at stake.",tip:"Go Pro to remove the daily cap and never risk breaking your streak mid-session."},
-{emoji:"✨",color:C.accentLight,bg:C.accent,title:"Pro Tour & Onboarding",sub:"Onboarding · June 2026 update",desc:"Upgrading to Pro now triggers a 3-slide walkthrough of AI Debrief, AI Coach, and all three CFA levels — so every feature is immediately usable. New users also get a Getting Started checklist to reach their first session in under a minute.",tip:"Missed the Pro tour? Open Settings → scroll down → tap 'Replay Pro Tour'."},
-]},
-// WN_VER:2026-06-26-ai
-{version:"2026-06-26-ai",slides:[
-{emoji:"🤔",color:C.accentLight,bg:C.accent,title:"Socratic Wrong-Answer Tutor",sub:"AI · June 2026 update",desc:"When you get a quiz question wrong, a new 'Ask tutor →' button appears below the explanation. The AI doesn't just re-explain — it asks you Socratic questions to help you discover the gap yourself. Multi-turn dialogue, no extra quota used.",tip:"The Socratic method is proven to build deeper understanding than re-reading explanations. Try it on your next wrong answer."},
-{emoji:"⚡",color:C.reward,bg:C.reward,title:"Daily Mission Agent",sub:"AI · June 2026 update",desc:"Every day, an AI coach analyses your weakest topics and your recent sessions to generate a specific, actionable study mission — with a task, an exam insight, and a one-tap Start button. Resets at midnight and adapts as your weak spots change.",tip:"The Daily Mission appears on your home screen automatically once you have some study history. No setup needed."},
-{emoji:"🤖",color:C.easy,bg:C.easy,title:"Multi-turn Concept Coach",sub:"AI · June 2026 update",desc:"Open Quick Revision → tap the new '🤖 Coach' tab. Pick any CFA topic and the AI teaches it through Socratic dialogue — one concept at a time, checking your understanding before advancing. It remembers the conversation and adapts to your answers.",tip:"Unlike the AI Debrief (which reviews what went wrong), the Concept Coach is proactive — use it before a topic to build a mental model, not just after to patch gaps."},
-]},
-// WN_END
-];
-const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
 const PRO_TOUR_KEY         = "cfa_pro_tour_v1";
 const SCREEN_ONBOARD_KEY   = "cfa_screen_onboard_v1";
 const CHECKLIST_KEY        = "cfa_checklist_done";
@@ -974,6 +957,23 @@ const LIGHT_PALETTE = {
 };
 const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}})();
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
+const WHATS_NEW_SLIDES=[
+// WN_START
+// WN_VER:2026-06-26
+{version:"2026-06-26",slides:[
+{emoji:"📦",color:C.easy,bg:C.easy,title:"Study Without Sign-In",sub:"Offline Mode · June 2026 update",desc:"ClearCFA now ships with 30 starter questions across all 10 CFA Level 1 topics — ready before you create an account. If the AI is busy or you're offline, your last 30 questions per topic are always available as an instant fallback.",tip:"Sign in to unlock AI-personalised questions and track your progress. The offline bank is just your starting point."},
+{emoji:"🔥",color:C.reward,bg:C.reward,title:"Streak Protection Alerts",sub:"Motivation · June 2026 update",desc:"When you hit the daily free question limit, ClearCFA now shows exactly how many streak days you're protecting — and puts your streak count front and centre in the upgrade prompt. No vague sales pitch, just the truth about what's at stake.",tip:"Go Pro to remove the daily cap and never risk breaking your streak mid-session."},
+{emoji:"✨",color:C.accentLight,bg:C.accent,title:"Pro Tour & Onboarding",sub:"Onboarding · June 2026 update",desc:"Upgrading to Pro now triggers a 3-slide walkthrough of AI Debrief, AI Coach, and all three CFA levels — so every feature is immediately usable. New users also get a Getting Started checklist to reach their first session in under a minute.",tip:"Missed the Pro tour? Open Settings → scroll down → tap 'Replay Pro Tour'."},
+]},
+// WN_VER:2026-06-26-ai
+{version:"2026-06-26-ai",slides:[
+{emoji:"🤔",color:C.accentLight,bg:C.accent,title:"Socratic Wrong-Answer Tutor",sub:"AI · June 2026 update",desc:"When you get a quiz question wrong, a new 'Ask tutor →' button appears below the explanation. The AI doesn't just re-explain — it asks you Socratic questions to help you discover the gap yourself. Multi-turn dialogue, no extra quota used.",tip:"The Socratic method is proven to build deeper understanding than re-reading explanations. Try it on your next wrong answer."},
+{emoji:"⚡",color:C.reward,bg:C.reward,title:"Daily Mission Agent",sub:"AI · June 2026 update",desc:"Every day, an AI coach analyses your weakest topics and your recent sessions to generate a specific, actionable study mission — with a task, an exam insight, and a one-tap Start button. Resets at midnight and adapts as your weak spots change.",tip:"The Daily Mission appears on your home screen automatically once you have some study history. No setup needed."},
+{emoji:"🤖",color:C.easy,bg:C.easy,title:"Multi-turn Concept Coach",sub:"AI · June 2026 update",desc:"Open Quick Revision → tap the new '🤖 Coach' tab. Pick any CFA topic and the AI teaches it through Socratic dialogue — one concept at a time, checking your understanding before advancing. It remembers the conversation and adapts to your answers.",tip:"Unlike the AI Debrief (which reviews what went wrong), the Concept Coach is proactive — use it before a topic to build a mental model, not just after to patch gaps."},
+]},
+// WN_END
+];
+const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
 const diffC={Easy:C.easy,Medium:C.medium,Hard:C.hard};
 const urgencyColor={high:C.hard,medium:C.medium,low:C.easy};
 function _applyTheme(t){
