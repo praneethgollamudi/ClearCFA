@@ -5171,6 +5171,7 @@ function CFAMock(){
   const refresherTouchX=useRef(null);
   const [passTrend,setPassTrend]=useState([]);
   const passTrendRef=useRef([]);
+  const [adminBudget,setAdminBudget]=useState(()=>{try{return localStorage.getItem("cfa_admin_budget")||"";}catch{return "";}});
 
   useEffect(()=>{
     if(!('serviceWorker' in navigator))return;
@@ -9584,12 +9585,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ════════════════════════════════════════
   // SCREEN: adminDashboard
   // ════════════════════════════════════════
-  if(screen==="adminDashboard"&&isAdmin) return wrap((()=>{
+  if(screen==="adminDashboard"&&!isAdmin){setScreen("home");return null;}
+  if(screen==="adminDashboard") return wrap((()=>{
     const s=adminStats;
     const fmt=n=>n==null?"—":typeof n==="number"?n.toLocaleString():String(n);
     const fmtCur=n=>n==null?"—":`$${Number(n).toFixed(4)}`;
-    const [budget,setBudget]=useState(()=>{try{return localStorage.getItem("cfa_admin_budget")||"";}catch{return "";}});
-    const saveBudget=v=>{setBudget(v);try{localStorage.setItem("cfa_admin_budget",v);}catch{}};
+    const budget=adminBudget;
+    const saveBudget=v=>{setAdminBudget(v);try{localStorage.setItem("cfa_admin_budget",v);}catch{}};
 
     // Sparkline bar chart for AI trend
     const SparkBars=({data,color})=>{
