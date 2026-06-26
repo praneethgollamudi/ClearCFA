@@ -134,7 +134,7 @@ Deno.serve(async (req: Request) => {
 
   // Run all queries in parallel
   const [sessions, aiQuota14, chatQuota14, subs, feedbackAll, feedbackRecent, flags, referrals] = await Promise.all([
-    safe(queryTable(supabaseUrl, svcHeaders, 'sessions?select=user_id,updated_at&limit=5000') as Promise<Array<{user_id:string;updated_at:string}>>, []),
+    safe(queryTable(supabaseUrl, svcHeaders, 'sessions?select=user_id,updated_at,data&limit=5000') as Promise<Array<{user_id:string;updated_at:string;data?:string}>>, []),
     safe(queryTable(supabaseUrl, svcHeaders, `ai_quota?select=user_id,quota_date,quota_count&quota_date=gte.${d14}&quota_date=lt.z&limit=5000`) as Promise<Array<{user_id:string;quota_date:string;quota_count:number}>>, []),
     safe(queryTable(supabaseUrl, svcHeaders, `ai_quota?select=user_id,quota_date,quota_count&quota_date=gte.${chatD14}&limit=5000`) as Promise<Array<{user_id:string;quota_date:string;quota_count:number}>>, []),
     safe(queryTable(supabaseUrl, svcHeaders, `subscriptions?select=user_id,valid_until&active=eq.true&valid_until=gte.${now.toISOString()}&limit=500`) as Promise<Array<{user_id:string;valid_until:string}>>, []),
@@ -145,13 +145,31 @@ Deno.serve(async (req: Request) => {
   ]);
 
   // ── User metrics ────────────────────────────────────────────────────────────
-  const allSessions = sessions as Array<{user_id:string;updated_at:string}>;
+  const allSessions = sessions as Array<{user_id:string;updated_at:string;data?:string}>;
+
+  // Try to extract email from session data (present on fresh accounts, lost after first sync)
+  const emailMap: Record<string, string> = {};
+  for (const row of allSessions) {
+    if (!row.data) continue;
+    try {
+      const parsed = JSON.parse(row.data) as { email?: string };
+      if (parsed.email) emailMap[row.user_id] = parsed.email;
+    } catch { /* ignore malformed */ }
+  }
+
   const uniqueUsers = new Set(allSessions.map(s => s.user_id));
   const dau = new Set(allSessions.filter(s => s.updated_at.slice(0,10) === today).map(s => s.user_id)).size;
   const wau = new Set(allSessions.filter(s => s.updated_at >= d7ts).map(s => s.user_id)).size;
   const mau = new Set(allSessions.filter(s => s.updated_at >= d30ts).map(s => s.user_id)).size;
-  // New users (accounts created in last 7 / 30 days) - sessions has created_at via updated_at proxy
-  const recentSessions = allSessions.sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 5);
+
+  const recentSessions = allSessions
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    .slice(0, 5)
+    .map(r => ({
+      user_id: r.user_id,
+      display: emailMap[r.user_id] || (r.user_id.slice(0, 8) + '…'),
+      updated_at: r.updated_at,
+    }));
 
   // ── AI metrics ──────────────────────────────────────────────────────────────
   const aiRows = aiQuota14 as Array<{user_id:string;quota_date:string;quota_count:number}>;

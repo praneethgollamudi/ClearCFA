@@ -9664,7 +9664,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{marginTop:6}}>
               <div style={{fontSize:10,color:C.muted,marginBottom:4}}>RECENTLY ACTIVE</div>
               {s.users.recentSessions.slice(0,3).map((r,i)=>(
-                <div key={i} style={{fontSize:11,color:C.textMid,marginBottom:2}}>· {r.user_id.slice(0,8)}… — {new Date(r.updated_at).toLocaleDateString()}</div>
+                <div key={i} style={{fontSize:11,color:C.textMid,marginBottom:2}}>· {r.display||r.user_id.slice(0,8)+"…"} — {new Date(r.updated_at).toLocaleDateString()}</div>
               ))}
             </div>
           )}
@@ -9772,12 +9772,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
         {/* Revenue */}
         <Card title="Revenue" icon="⭐" accent={C.easy}>
-          <Row label="Pro subscribers (active)" value={fmt(s.revenue.proCount)} color={C.easy}/>
-          <Row label="Free users" value={fmt(s.revenue.freeCount)}/>
+          <Row label="Paid Pro subscribers" value={fmt(s.revenue.proCount)} color={C.easy}/>
+          <Row label="Free users (excl. admin)" value={fmt(s.revenue.freeCount)}/>
           <Row label="Conversion rate" value={`${s.revenue.conversionRate}%`} color={s.revenue.conversionRate>5?C.easy:C.muted}/>
           <Row label="Referral grants issued" value={fmt(s.revenue.referrals)}/>
           <div style={{marginTop:8,fontSize:11,color:C.muted,background:C.bg,borderRadius:8,padding:"8px 10px"}}>
-            ℹ️ Pro subs are currently granted via referrals only. Payment integration pending.
+            ℹ️ Admin account is Pro via owner override — not counted above. Manual Pro grants: insert row in Supabase subscriptions table.
           </div>
         </Card>
 
