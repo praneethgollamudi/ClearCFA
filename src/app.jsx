@@ -7674,24 +7674,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <span style={{fontSize:11,color:C.accentLight,fontWeight:700}}>→</span>
             </button>
           )}
-          {/* Supabase */}
-          <button onClick={async()=>{
-            setSupabaseSyncing(true);
-            setDriveStatus("syncing");
-            const ok=await supabaseSync(SB_CFG,history,srDeckRef.current,usageStatsRef.current,authUserRef.current);
-            setDriveStatus(ok?"synced":"error");
-            setTimeout(()=>setDriveStatus(null),4000);
-            setSupabaseSyncing(false);
-          }} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surfaceHigh,border:`1px solid #22d3ee33`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
-            <span style={{fontSize:18}}>☁</span>
-            <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700}}>Cloud Sync</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:1}}>
-                {supabaseSyncing?"Syncing…":`${history.length} sessions · ${Object.keys(srDeckRef.current).length} SR cards${driveStatus==="synced"?" · synced ✓":driveStatus==="error"?" · sync failed ✗":" · tap to sync"}`}
-              </div>
-            </div>
-            <span style={{fontSize:11,color:driveStatus==="synced"?C.easy:driveStatus==="error"?C.hard:"#22d3ee",fontWeight:700}}>{driveStatus==="synced"?"✓":driveStatus==="error"?"✗":"↑"}</span>
-          </button>
           {/* Backup */}
           <button onClick={()=>{setSettingsOpen(false);setScreen("backup");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
             <span style={{fontSize:18}}>💾</span>
@@ -7784,8 +7766,28 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </button>}
           {/* Account */}
           <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12,marginTop:4}}>
-            <div style={{fontSize:11,color:C.muted,marginBottom:8,textAlign:"center"}}>
+            <div style={{fontSize:11,color:C.muted,marginBottom:4,textAlign:"center"}}>
               Signed in as <strong style={{color:C.text}}>{authUser?.email}</strong>
+            </div>
+            <div style={{fontSize:10,color:driveStatus==="error"?C.hard:C.muted,textAlign:"center",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <span>☁</span>
+              <span>
+                {supabaseSyncing?"Syncing…":`${history.length} sessions · ${Object.keys(srDeckRef.current).length} SR cards`}
+              </span>
+              {!supabaseSyncing&&(
+                <span style={{color:driveStatus==="error"?C.hard:C.easy,fontWeight:700}}>
+                  {driveStatus==="error"?"· sync failed ✗":"· synced ✓"}
+                </span>
+              )}
+              <button onClick={async()=>{
+                setSupabaseSyncing(true);setDriveStatus("syncing");
+                const ok=await supabaseSync(SB_CFG,history,srDeckRef.current,usageStatsRef.current,authUserRef.current);
+                setDriveStatus(ok?"synced":"error");
+                setTimeout(()=>setDriveStatus(null),4000);
+                setSupabaseSyncing(false);
+              }} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:10,padding:"0 2px",textDecoration:"underline"}}>
+                sync now
+              </button>
             </div>
             <button onClick={()=>{
               // Clear auth token
