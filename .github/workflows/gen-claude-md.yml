@@ -1,0 +1,42 @@
+name: Maintain CLAUDE.md
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'supabase/**'
+      - 'CLAUDE.md'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    # Never run when the bot itself pushes (prevents infinite loop)
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 10   # enough history for diff analysis
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update CLAUDE.md
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node gen-claude-md.js --write
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CLAUDE.md
+          if git diff --cached --quiet; then
+            echo "CLAUDE.md already up to date."
+          else
+            git commit -m "CLAUDE.md: auto-sync constants and document gaps [skip ci]"
+            git push origin main
+            git push origin main:claude/index-html-github-pages-cfa8fd
+          fi
