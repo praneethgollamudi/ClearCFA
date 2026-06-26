@@ -7832,8 +7832,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {/* Data status */}
           <div style={{fontSize:11,color:C.muted,textAlign:"center",marginTop:10,lineHeight:1.6}}>
-            {history.length} sessions saved locally{sessionSaved===false&&<span style={{color:C.hard}}> · ⚠ last save failed</span>}
-            <br/><span style={{color:C.easy}}>🤖 AI powered by ClearCFA — no API key needed</span>
+            <span style={{color:C.easy}}>🤖 AI powered by ClearCFA — no API key needed</span>
             <br/>
             <a href="/ClearCFA/privacy.html" target="_blank" rel="noopener" style={{color:C.muted,textDecoration:"underline",fontSize:11}}>Privacy Policy</a>
           </div>
