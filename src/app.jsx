@@ -5139,8 +5139,6 @@ function CFAMock(){
   const refresherTouchX=useRef(null);
   const [passTrend,setPassTrend]=useState([]);
   const passTrendRef=useRef([]);
-  const [explainThisText,setExplainThisText]=useState(null);
-  const [explainThisLoading,setExplainThisLoading]=useState(false);
 
   useEffect(()=>{
     if(!('serviceWorker' in navigator))return;
@@ -9242,29 +9240,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
             "For calculation questions, check units first. Wrong units = wrong answer.",
             "Vignette questions: the answer is always in the text, not your memory.",
           ][currentQ%7]}</div>
-        </div>
-      )}
-      {answered&&mode!=="speed_drill"&&(
-        <div style={{marginBottom:8}}>
-          {!explainThisText&&!explainThisLoading&&(
-            <button onClick={async()=>{
-              if(!authUser?.id){setExplainThisText("Sign in to use Explain This.");return;}
-              setExplainThisLoading(true);
-              try{
-                const result=await callClaude(`You are a CFA L1 tutor. A student just answered this question:\n\nQuestion: ${q.question}\nCorrect answer: ${q.options[q.answer]} (${q.answer})\nConcept: ${q.concept||q.los_tested||""}\n\nIn 2-3 plain sentences, explain the core concept being tested and why the correct answer is right. Be direct, no preamble.`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"explain_this"});
-                setExplainThisText(typeof result==="string"?result:q.explanation||"");
-              }catch(e){setExplainThisText("Could not load explanation.");}
-              setExplainThisLoading(false);
-            }} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:600,background:C.surface,border:`1px solid ${C.accent}33`,color:C.accentLight,cursor:"pointer"}}>
-              💡 Explain This
-            </button>
-          )}
-          {explainThisLoading&&<div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:9,padding:"12px 14px",fontSize:12,color:C.muted}}>Thinking…</div>}
-          {explainThisText&&(
-            <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:9,padding:"12px 14px",fontSize:12,color:C.textMid,lineHeight:1.7,animation:"fadeIn 0.2s ease"}}>
-              💡 {explainThisText}
-            </div>
-          )}
         </div>
       )}
       {answered&&(
