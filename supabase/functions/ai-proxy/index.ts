@@ -172,6 +172,28 @@ Deno.serve(async (req: Request) => {
     });
 
     const data = await res.json();
+
+    // Track chat calls in ai_quota using "chat-YYYY-MM-DD" date key (no quota limit, analytics only)
+    if (res.ok) {
+      const chatDate = `chat-${todayUTC()}`;
+      try {
+        const chatGetRes = await fetch(
+          `${supabaseUrl}/rest/v1/ai_quota?user_id=eq.${encodeURIComponent(userId as string)}&quota_date=eq.${chatDate}&select=quota_count`,
+          { headers: { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}` } }
+        );
+        const chatRows = await chatGetRes.json() as Array<{ quota_count: number }>;
+        const chatCount = Array.isArray(chatRows) && chatRows.length > 0 ? (chatRows[0].quota_count || 0) + 1 : 1;
+        await fetch(`${supabaseUrl}/rest/v1/ai_quota`, {
+          method: 'POST',
+          headers: {
+            apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal',
+          },
+          body: JSON.stringify({ user_id: userId, quota_date: chatDate, quota_count: chatCount }),
+        });
+      } catch { /* analytics — never block the response */ }
+    }
+
     return jsonResponse(data, res.ok ? 200 : res.status);
   }
 

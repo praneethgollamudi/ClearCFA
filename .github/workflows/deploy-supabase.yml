@@ -38,7 +38,13 @@ jobs:
         with:
           version: latest
 
-      - name: Deploy ai-proxy function
+      - name: Deploy all edge functions
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: supabase functions deploy ai-proxy --project-ref uucxyuqxqjpbxecemdvf
+        run: |
+          for fn in supabase/functions/*/; do
+            name=$(basename "$fn")
+            echo "▶ Deploying $name..."
+            supabase functions deploy "$name" --project-ref uucxyuqxqjpbxecemdvf
+            echo "  ✓ $name deployed"
+          done

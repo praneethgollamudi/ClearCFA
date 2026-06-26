@@ -9225,6 +9225,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   const updated=[flag,...questionFlags.filter(f=>f.id!==q.id)].slice(0,100);
                   setQuestionFlags(updated);
                   try{localStorage.setItem(FLAGS_KEY,JSON.stringify(updated));}catch{}
+                  // Sync to Supabase for admin visibility
+                  if(authUser?.id){fetch(`${SUPABASE_URL}/rest/v1/feedback`,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`,Prefer:"return=minimal"},body:JSON.stringify({user_id:authUser.id,rating:0,category:"Question Flag",message:JSON.stringify(flag)})}).catch(()=>{});}
                   setFlagging(null);
                   showToast("⚑","Question flagged","Noted for review — thanks.");
                 }} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 10px",borderRadius:7,fontSize:12,color:C.textMid,background:"none",border:`1px solid ${C.border}`,marginBottom:4,cursor:"pointer"}}>{label}</button>
@@ -9528,6 +9530,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const s=adminStats;
     const fmt=n=>n==null?"—":typeof n==="number"?n.toLocaleString():String(n);
     const fmtCur=n=>n==null?"—":`$${Number(n).toFixed(4)}`;
+    const [budget,setBudget]=useState(()=>{try{return localStorage.getItem("cfa_admin_budget")||"";}catch{return "";}});
+    const saveBudget=v=>{setBudget(v);try{localStorage.setItem("cfa_admin_budget",v);}catch{}};
 
     // Sparkline bar chart for AI trend
     const SparkBars=({data,color})=>{
@@ -9617,14 +9621,49 @@ Return ONLY a JSON array — no prose, no markdown fences:
           )}
         </Card>
 
+        {/* AI Chat Usage */}
+        <Card title="AI Chat (tutor, walkthrough, coach)" icon="💬🤖" accent="#a78bfa">
+          <Row label="Chat calls today" value={fmt(s.chat?.today)} color={s.chat?.today>0?C.accentLight:C.muted}/>
+          <Row label="Chat calls (14d)" value={fmt(s.chat?.week)}/>
+          <Row label="Est. chat cost today" value={fmtCur(s.chat?.costToday)}/>
+          <Row label="Est. chat cost (14d)" value={fmtCur(s.chat?.costWeek)}/>
+          {s.chat?.trend?.length>0&&(
+            <div style={{marginTop:6}}>
+              <div style={{fontSize:10,color:C.muted,marginBottom:2}}>14-DAY TREND (chat calls)</div>
+              <SparkBars data={s.chat.trend} color="#a78bfa"/>
+            </div>
+          )}
+        </Card>
+
         {/* Cost */}
-        <Card title="Cost (generate route only)" icon="💰" accent={C.reward}>
-          <Row label="Est. cost today" value={fmtCur(s.cost.today)} color={C.reward}/>
-          <Row label="Est. cost this week" value={fmtCur(s.cost.week)} color={C.reward}/>
-          <Row label="Cost per question call" value={fmtCur(s.cost.perCall)} sub="Haiku $0.80/$4.00 per M"/>
-          <div style={{marginTop:8,fontSize:11,color:C.muted,lineHeight:1.6,background:C.bg,borderRadius:8,padding:"8px 10px"}}>
-            ℹ️ Estimate based on {fmt(s.ai.week)} generate calls × avg 750 in / 450 out tokens.<br/>
-            Chat route (AI Coach, Walkthrough, Calc Trainer) not counted here — no server-side tracking.
+        <Card title="Cost Breakdown" icon="💰" accent={C.reward}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+            {[["Generate today",fmtCur(s.cost?.generateToday)],["Generate 7d",fmtCur(s.cost?.generateWeek)],["Chat today",fmtCur(s.cost?.chatToday)],["Chat 14d",fmtCur(s.cost?.chatWeek)]].map(([l,v])=>(
+              <div key={l} style={{background:C.bg,borderRadius:9,padding:"8px 10px",border:`1px solid ${C.border}`}}>
+                <div style={{fontSize:10,color:C.muted,marginBottom:2}}>{l}</div>
+                <div style={{fontSize:14,fontWeight:800,color:C.reward}}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <Row label="Total cost today" value={fmtCur(s.cost?.totalToday)} color={C.reward}/>
+          <Row label="Total cost (7d/14d)" value={fmtCur(s.cost?.totalWeek)} color={C.reward}/>
+          <Row label="Avg daily rate" value={fmtCur(s.cost?.dailyRate)} sub="based on last 7d"/>
+          <div style={{marginTop:10,background:C.bg,borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.reward,marginBottom:8}}>💳 Budget Runway</div>
+            <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
+              <span style={{fontSize:11,color:C.muted,whiteSpace:"nowrap"}}>Remaining credits ($):</span>
+              <input type="number" min="0" step="0.01" value={budget} onChange={e=>saveBudget(e.target.value)}
+                placeholder="e.g. 4.80"
+                style={{flex:1,padding:"5px 8px",borderRadius:7,border:`1px solid ${C.border}`,background:C.surface,color:C.text,fontSize:12}}/>
+            </div>
+            {budget&&parseFloat(budget)>0&&s.cost?.dailyRate>0?(
+              <div style={{fontSize:13,fontWeight:800,color:parseFloat(budget)/s.cost.dailyRate>7?C.easy:C.hard}}>
+                ~{Math.floor(parseFloat(budget)/s.cost.dailyRate)} days remaining
+                <span style={{fontSize:10,fontWeight:400,color:C.muted,marginLeft:6}}>at ${s.cost.dailyRate}/day</span>
+              </div>
+            ):budget&&parseFloat(budget)>0?(
+              <div style={{fontSize:11,color:C.muted}}>Not enough data yet to estimate daily rate.</div>
+            ):null}
           </div>
         </Card>
 
@@ -9663,6 +9702,28 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 </div>
               ))}
             </div>
+          )}
+        </Card>
+
+        {/* Flagged Questions */}
+        <Card title="Flagged Questions" icon="⚑" accent={C.hard}>
+          <Row label="Total flags (all users)" value={fmt(s.flags?.total)} color={s.flags?.total>0?C.hard:C.muted}/>
+          {s.flags?.items?.length>0?(
+            <div style={{marginTop:8}}>
+              <div style={{fontSize:10,color:C.muted,marginBottom:6}}>RECENT FLAGS</div>
+              {s.flags.items.slice(0,10).map((f,i)=>(
+                <div key={i} style={{background:C.bg,border:`1px solid ${C.hard}33`,borderRadius:9,padding:"9px 12px",marginBottom:6}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                    <span style={{fontSize:10,fontWeight:700,color:C.hard,background:C.hard+"18",padding:"2px 7px",borderRadius:10}}>{f.reason?.replace(/_/g," ")||"—"}</span>
+                    <span style={{fontSize:10,color:C.muted}}>{new Date(f.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div style={{fontSize:11,color:C.textMid,marginBottom:2}}><b style={{color:C.muted}}>Topic:</b> {f.topic} · {f.module}</div>
+                  <div style={{fontSize:11,color:C.textMid,lineHeight:1.5,borderLeft:`2px solid ${C.hard}44`,paddingLeft:8,marginTop:4}}>{f.question?.slice(0,180)}{(f.question?.length||0)>180?"…":""}</div>
+                </div>
+              ))}
+            </div>
+          ):(
+            <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"16px 0"}}>No flagged questions yet.</div>
           )}
         </Card>
       </>)}

@@ -65,13 +65,17 @@ Deno.serve(async (req: Request) => {
   const d7ts  = new Date(now.getTime() -  7 * 86400000).toISOString();
   const d30ts = new Date(now.getTime() - 30 * 86400000).toISOString();
 
+  const chatD14 = `chat-${d14}`;
+
   // Run all queries in parallel
-  const [sessions, aiQuota14, subs, feedbackAll, feedbackRecent, referrals] = await Promise.all([
+  const [sessions, aiQuota14, chatQuota14, subs, feedbackAll, feedbackRecent, flags, referrals] = await Promise.all([
     safe(queryTable(supabaseUrl, svcHeaders, 'sessions?select=user_id,updated_at&limit=5000') as Promise<Array<{user_id:string;updated_at:string}>>, []),
-    safe(queryTable(supabaseUrl, svcHeaders, `ai_quota?select=user_id,quota_date,quota_count&quota_date=gte.${d14}&limit=5000`) as Promise<Array<{user_id:string;quota_date:string;quota_count:number}>>, []),
+    safe(queryTable(supabaseUrl, svcHeaders, `ai_quota?select=user_id,quota_date,quota_count&quota_date=gte.${d14}&quota_date=lt.z&limit=5000`) as Promise<Array<{user_id:string;quota_date:string;quota_count:number}>>, []),
+    safe(queryTable(supabaseUrl, svcHeaders, `ai_quota?select=user_id,quota_date,quota_count&quota_date=gte.${chatD14}&limit=5000`) as Promise<Array<{user_id:string;quota_date:string;quota_count:number}>>, []),
     safe(queryTable(supabaseUrl, svcHeaders, `subscriptions?select=user_id,valid_until&active=eq.true&valid_until=gte.${now.toISOString()}&limit=500`) as Promise<Array<{user_id:string;valid_until:string}>>, []),
-    safe(queryTable(supabaseUrl, svcHeaders, 'feedback?select=rating,category&limit=2000') as Promise<Array<{rating:number;category:string}>>, []),
-    safe(queryTable(supabaseUrl, svcHeaders, 'feedback?select=rating,category,message,created_at&order=created_at.desc&limit=8') as Promise<Array<{rating:number;category:string;message:string;created_at:string}>>, []),
+    safe(queryTable(supabaseUrl, svcHeaders, 'feedback?select=rating,category&category=neq.Question Flag&limit=2000') as Promise<Array<{rating:number;category:string}>>, []),
+    safe(queryTable(supabaseUrl, svcHeaders, 'feedback?select=rating,category,message,created_at&category=neq.Question Flag&order=created_at.desc&limit=8') as Promise<Array<{rating:number;category:string;message:string;created_at:string}>>, []),
+    safe(queryTable(supabaseUrl, svcHeaders, 'feedback?select=user_id,message,created_at&category=eq.Question Flag&order=created_at.desc&limit=50') as Promise<Array<{user_id:string;message:string;created_at:string}>>, []),
     safe(queryTable(supabaseUrl, svcHeaders, 'referrals?select=referrer_id&limit=2000') as Promise<Array<{referrer_id:string}>>, []),
   ]);
 
@@ -111,6 +115,31 @@ Deno.serve(async (req: Request) => {
   const conversionRate = totalUsers > 0 ? Math.round(proCount / totalUsers * 1000) / 10 : 0;
   const referralTotal = (referrals as Array<{referrer_id:string}>).length;
 
+  // ── Chat metrics ─────────────────────────────────────────────────────────
+  const chatRows = chatQuota14 as Array<{user_id:string;quota_date:string;quota_count:number}>;
+  const chatTodayDate = `chat-${today}`;
+  const chatToday = chatRows.filter(r => r.quota_date === chatTodayDate).reduce((s, r) => s + (r.quota_count || 0), 0);
+  const chatWeek  = chatRows.reduce((s, r) => s + (r.quota_count || 0), 0);
+  // Chat token estimates: ~400 in / ~300 out
+  const CHAT_IN = 400; const CHAT_OUT = 300;
+  const COST_PER_CHAT = (CHAT_IN * HAIKU_IN + CHAT_OUT * HAIKU_OUT) / 1_000_000;
+  const chatCostToday = Math.round(chatToday * COST_PER_CHAT * 10000) / 10000;
+  const chatCostWeek  = Math.round(chatWeek  * COST_PER_CHAT * 10000) / 10000;
+
+  const chatTrendMap: Record<string, number> = {};
+  for (const r of chatRows) {
+    const dateKey = r.quota_date.replace(/^chat-/, '');
+    chatTrendMap[dateKey] = (chatTrendMap[dateKey] || 0) + (r.quota_count || 0);
+  }
+  const chatTrend = Object.entries(chatTrendMap)
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // ── Total cost ────────────────────────────────────────────────────────────
+  const totalCostToday = Math.round((costToday + chatCostToday) * 10000) / 10000;
+  const totalCostWeek  = Math.round((costWeek  + chatCostWeek)  * 10000) / 10000;
+  const dailyRate = Math.round(totalCostWeek / 7 * 10000) / 10000;
+
   // ── Feedback ─────────────────────────────────────────────────────────────────
   const fbAll = (feedbackAll as Array<{rating:number;category:string}>).filter(f => f.rating > 0);
   const avgRating = fbAll.length > 0
@@ -119,12 +148,35 @@ Deno.serve(async (req: Request) => {
   const byCategory: Record<string, number> = {};
   for (const f of fbAll) { byCategory[f.category] = (byCategory[f.category] || 0) + 1; }
 
+  // ── Flagged questions ─────────────────────────────────────────────────────
+  const flagRows = (flags as Array<{user_id:string;message:string;created_at:string}>).map(f => {
+    let parsed: Record<string, unknown> = {};
+    try { parsed = JSON.parse(f.message); } catch { /* raw message */ }
+    return {
+      user_id:    f.user_id,
+      created_at: f.created_at,
+      reason:     (parsed.reason as string) || f.message.slice(0, 80),
+      topic:      (parsed.topic as string) || '—',
+      module:     (parsed.module as string) || '—',
+      question:   (parsed.question as string) || '—',
+    };
+  });
+
   return jsonResponse({
     users:    { total: totalUsers, dau, wau, mau, recentSessions },
     ai:       { today: aiToday, week: aiWeek, usersAtLimit, activeAiToday, trend },
-    cost:     { today: costToday, week: costWeek, perCall: Math.round(COST_PER_CALL * 1_000_000) / 1_000_000 },
+    chat:     { today: chatToday, week: chatWeek, costToday: chatCostToday, costWeek: chatCostWeek, trend: chatTrend },
+    cost:     {
+      generateToday: costToday, generateWeek: costWeek,
+      chatToday: chatCostToday, chatWeek: chatCostWeek,
+      totalToday: totalCostToday, totalWeek: totalCostWeek,
+      dailyRate,
+      perGenerateCall: Math.round(COST_PER_CALL * 1_000_000) / 1_000_000,
+      perChatCall:     Math.round(COST_PER_CHAT * 1_000_000) / 1_000_000,
+    },
     revenue:  { proCount, freeCount: Math.max(0, totalUsers - proCount), conversionRate, referrals: referralTotal },
     feedback: { total: fbAll.length, avgRating, byCategory, recent: feedbackRecent },
+    flags:    { total: flagRows.length, items: flagRows.slice(0, 50) },
     generatedAt: now.toISOString(),
   });
 });
