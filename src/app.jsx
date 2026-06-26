@@ -981,6 +981,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🔐",color:C.hard,bg:C.hard,title:"Stronger Admin Security",sub:"Bug Fix · 2026-06-26 update",desc:"We fixed authentication issues in the admin dashboard that were preventing proper session verification. This ensures your study data stays secure and admin features work reliably.",tip:"No action needed—this update runs silently in the background to protect your account."},
 {emoji:"⚙️",color:C.medium,bg:C.medium,title:"More Reliable Syncing",sub:"Speed · 2026-06-26 update",desc:"Our backend now handles concurrent updates better with improved retry logic, so your progress syncs smoothly even during heavy usage. Study without worrying about lost sessions or data conflicts.",tip:"Your progress saves seamlessly—focus on your exam prep instead of managing sync."},
 ]},
+// WN_VER:2026-06-26-d
+{version:"2026-06-26-d",slides:[
+{emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've streamlined your Settings screen by removing redundant sync labels and consolidating account information into a single footer. Your study space is now less cluttered so you can focus on what matters—your exam prep.",tip:"Open Settings to see your account status at the bottom in one glance."},
+{emoji:"🔒",color:C.easy,bg:C.easy,title:"More Reliable Cloud Updates",sub:"Speed · 2026-06-26 update",desc:"We've improved our backend infrastructure to handle simultaneous updates better, reducing the chance of sync conflicts when you're studying across multiple devices. Your progress now syncs more smoothly without interruptions.",tip:"Keep studying without worrying—your sessions will save reliably even during peak usage times."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Enhanced Admin Insights",sub:"Study Tools · 2026-06-26 update",desc:"Behind the scenes, we've improved how our team tracks Pro user engagement and app health, ensuring ClearCFA stays fast and reliable for your exam preparation. These refinements help us spot and fix issues before they affect you.",tip:"You'll notice even better performance and faster response times as we leverage these insights."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
