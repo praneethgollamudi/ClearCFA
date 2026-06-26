@@ -75,6 +75,9 @@ WhatsApp message template uses `` `₹${ACTIVE_PRICE}` `` — do not hardcode th
 
 ## Pro Status & Subscriptions
 
+**Admin account Pro override**: The admin account (email: `sai.praneeth557@gmail.com`) is Pro via owner override and is **excluded from all Pro subscriber counts** in the admin dashboard. When inserting manual Pro grants to the `subscriptions` table, the admin row should not be counted in `revenue.proCount` metrics.
+
+
 `proStatus` (boolean, in CFAMock state) is determined by checking the `subscriptions` table:
 
 ```
@@ -125,6 +128,9 @@ git push origin main && git push origin main:claude/index-html-github-pages-cfa8
 ```
 
 ## Architecture
+
+**Settings screen UI folding**: Cloud Sync status (sessions count, SR card count, sync button) was moved from a dedicated row button into the account footer text in Settings. The sync UI is now inline and compact — always show sync status next to the email footer, not as a separate card.
+
 
 - **Multi-file source**: `build.js` concatenates source files then runs Babel → `app.js` (~960KB)
 - No npm bundler, no webpack, no TypeScript, no tests
@@ -552,7 +558,9 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1786900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1787000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
+
+**Recently active user display**: The "Recently active" card now shows `display` field (user email) for each session, with fallback to truncated `user_id` if display is null. Update the admin-stats query to include email in the `recentSessions` response for proper display in the UI.
