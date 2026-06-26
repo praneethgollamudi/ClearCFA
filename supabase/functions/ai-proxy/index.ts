@@ -26,7 +26,7 @@ function buildChatSystem(level: string): string {
   ].join(" ");
 }
 
-const MAX_CHAT_TOKENS = 450;
+const MAX_CHAT_TOKENS = 900;
 const MAX_CHAT_HISTORY = 10;
 const MAX_MSG_CHARS = 800;
 
@@ -164,7 +164,7 @@ Deno.serve(async (req: Request) => {
       headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: MAX_CHAT_TOKENS,
+        max_tokens: Math.min(typeof maxTokens === 'number' ? maxTokens : MAX_CHAT_TOKENS, MAX_CHAT_TOKENS),
         temperature: 0.2,
         system: buildChatSystem(typeof level === 'string' ? level : '1'),
         messages: trimmed,

@@ -2247,7 +2247,7 @@ async function callAIChat(userId, messages, maxTokens=450, level="1", {throws=fa
     const res=await fetch(AI_PROXY_URL,{
       method:"POST",
       headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},
-      body:JSON.stringify({requestType:"chat",userId,messages:trimmed,maxTokens:Math.min(maxTokens,450),level})
+      body:JSON.stringify({requestType:"chat",userId,messages:trimmed,maxTokens:Math.min(maxTokens,900),level})
     });
     if(!res.ok){
       const body=await res.json().catch(()=>({}));
@@ -5680,7 +5680,7 @@ FIX: [1 specific action to take today — concrete and actionable]
 PRIORITY: [exact concept name from wrong list to drill first]
 TIME: [realistic time to close this gap, e.g. "20 min" or "1 hour"]
 COACH: [1 honest, direct sentence — no generic cheerleading]`;
-      callClaude(debriefPrompt,500,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_debrief"})
+      callClaude(debriefPrompt,350,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_debrief"})
         .then(r=>{setAiDebrief(typeof r==="string"?r:"");})
         .catch(()=>{setAiDebrief("PATTERN: Could not generate debrief.\nFIX: Review the wrong answers below.\nPRIORITY: \nTIME: \nCOACH: Every session is data — keep going.");})
         .finally(()=>setAiDebriefLoading(false));
@@ -5874,7 +5874,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         .split("{srDue}").join(String(dueCards.length))
         .split("{daysSince}").join(String(daysSince));
 
-      const plan=await callClaude(prompt,2000,{retries:3,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"week_plan"});
+      const plan=await callClaude(prompt,1400,{retries:3,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"week_plan"});
       if(!plan||!plan.days) throw new Error("Plan missing 'days' field — got: "+JSON.stringify(plan).slice(0,100));
       setWeeklyPlan(plan);
       try{localStorage.setItem(PLAN_KEY,JSON.stringify(plan));}catch{}
@@ -5918,7 +5918,7 @@ CRITICAL for numerical questions: FIRST compute the correct answer, THEN make th
 
 Return ONLY a JSON array — no prose, no markdown fences:
 [{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic name from list above>","_subtopic":"<module name>"}]`;
-      const qs=await callClaude(prompt,Math.min(cnt*300+500,4000),{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"interleaved"});
+      const qs=await callClaude(prompt,Math.min(cnt*250+400,3200),{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"interleaved"});
       if(!Array.isArray(qs)||qs.length===0)throw new Error("Invalid interleaved response — no questions returned");
       const tagged=qs.map((q,i)=>({...q,id:q.id||`il_${Date.now()}_${i}`}));
       setLoadingProgress(100);await new Promise(r=>setTimeout(r,200));
@@ -5938,7 +5938,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const progressInterval=setInterval(()=>{setLoadingProgress(p=>Math.min(85,p+3));},300);
     try{
       if(!authUser?.id){setError("FSA Vignette requires a ClearCFA account. Please sign in.");setLoading(false);clearInterval(progressInterval);generatingRef.current=false;return;}
-      const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),2500,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"fsa_vignette"});
+      const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),1800,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"fsa_vignette"});
       clearInterval(progressInterval);
       if(!raw||!raw.questions)throw new Error("Invalid FSA vignette format");
       const stmtText=formatStatements(raw);
@@ -6098,7 +6098,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(isVignette){
         const vignetteCount=Math.max(1,Math.ceil(cnt/3));
         const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null,activeLOS);
-        const rawVig=await callClaude(vigPrompt,3000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`});
+        const rawVig=await callClaude(vigPrompt,2000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`});
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
@@ -6673,7 +6673,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               const untouched=moduleReadiness.filter(m=>m.sessions===0).map(m=>m.topic.split(" ")[0]).join(", ");
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass probability ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest modules: ${topWeak||"none yet"}, untouched: ${untouched||"none"}, SR due: ${dueCards.length}, leeches: ${leeches.length}.`;
               const sysPrompt=`You are a direct, honest CFA Level 1 study coach. ${context} Give specific, actionable advice in 2-4 sentences. No generic motivational fluff.`;
-              const result=await callClaude(`${sysPrompt}\n\nStudent: ${prompt}`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_coach"});
+              const result=await callAIChat(authUser.id,[{role:"user",content:`${sysPrompt}\n\nStudent: ${prompt}`}],300,cfaLevel);
               const text=(typeof result==="string"?result:"")||"No response";
               setAiCoachMessages(m=>[...m,{role:"assistant",text}]);
             }catch(e){setAiCoachMessages(m=>[...m,{role:"assistant",text:"Error: "+e.message}]);}
@@ -6711,7 +6711,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             try{
               const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3).map(m=>`${m.topic}: ${m.accuracy}%`).join(", ");
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass prob ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest: ${topWeak||"none"}.`;
-              const result=await callClaude(`You are a direct CFA L1 coach. ${context}\n\nStudent: ${q}`,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_coach"});
+              const result=await callAIChat(authUser.id,[{role:"user",content:`You are a direct CFA L1 coach. ${context}\n\nStudent: ${q}`}],300,cfaLevel);
               setAiCoachMessages(m=>[...m,{role:"assistant",text:(typeof result==="string"?result:"")||"No response"}]);
             }catch(e){setAiCoachMessages(m=>[...m,{role:"assistant",text:"Error: "+e.message}]);}
             setAiCoachLoading(false);
@@ -9106,9 +9106,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:12,fontSize:13,color:C.textMid,lineHeight:1.75,animation:"fadeIn 0.2s ease"}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>Explanation</div>
           {renderExplanation(q.explanation,C,authUser?.id?async(formulaText)=>{
+            const fcKey="cfa_formula_v1";
+            try{const fc=JSON.parse(localStorage.getItem(fcKey)||"{}");const k=formulaText.slice(0,60);if(fc[k])return fc[k];}catch{}
             const prompt=`CFA exam tutor. A student sees this formula in an exam explanation and doesn't know what it is:\n\n"${formulaText}"\n\nContext: topic "${topic}", concept "${q.concept||q.los_tested||""}"\n\nRespond in EXACTLY this format (no preamble, no extra text):\n📐 [Official CFA/finance name for this formula, e.g. "Bond Pricing Formula" or "Macaulay Duration"]\nStandard form: [compact textbook version, e.g. P = Σ C/(1+y)ᵗ + FV/(1+y)ⁿ]\n\n• [symbol from formula] = [plain-English meaning] (= [actual value if present in formula])\n[one bullet per variable/component]\n\nCalculates: [one sentence — what does solving this formula give you?]\n\nUnder 120 words total.`;
-            const r=await callClaude(prompt,300,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"formula_explain"});
-            return typeof r==="string"?r:"Formula breakdown unavailable.";
+            const r=await callAIChat(authUser.id,[{role:"user",content:prompt}],250,cfaLevel);
+            const out=typeof r==="string"?r:"Formula breakdown unavailable.";
+            try{const fc=JSON.parse(localStorage.getItem(fcKey)||"{}");fc[formulaText.slice(0,60)]=out;localStorage.setItem(fcKey,JSON.stringify(fc));}catch{}
+            return out;
           }:null,q.concept||q.los_tested||"")}
           {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.muted}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
           {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
@@ -10391,7 +10395,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(!authUser?.id){setCalcError("Sign in to use Calc Trainer.");return;}
       setCalcLoading(true);setCalcError("");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});
       try{
-        const result=await callClaude(`Generate a CFA Level 1 multi-step calculation problem for: ${calcTopic} (${calcDifficulty}).\n\nReturn JSON:\n{\n  "problem": "Full problem statement with all given data",\n  "steps": [\n    {"step_num": 1, "instruction": "Calculate X first", "answer": "exact numerical answer", "formula": "formula used", "explanation": "why this step"},\n    {"step_num": 2, "instruction": "...", "answer": "...", "formula": "...", "explanation": "..."}\n  ],\n  "final_answer": "final answer with units",\n  "concept": "what is being tested",\n  "los_tested": "relevant CFA LOS"\n}\n\nMake it 3-5 steps. Use realistic CFA exam numbers. Output ONLY valid JSON.`,1200,{retries:2,retryDelay:5000,model:"claude-haiku-4-5-20251001",feature:"calc_trainer"});
+        const rawCalc=await callAIChat(authUser.id,[{role:"user",content:`Generate a CFA Level ${cfaLevel} multi-step calculation problem for: ${calcTopic} (${calcDifficulty}).\n\nReturn JSON:\n{\n  "problem": "Full problem statement with all given data",\n  "steps": [\n    {"step_num": 1, "instruction": "Calculate X first", "answer": "exact numerical answer", "formula": "formula used", "explanation": "why this step"},\n    {"step_num": 2, "instruction": "...", "answer": "...", "formula": "...", "explanation": "..."}\n  ],\n  "final_answer": "final answer with units",\n  "concept": "what is being tested",\n  "los_tested": "relevant CFA LOS"\n}\n\nMake it 3-5 steps. Use realistic CFA exam numbers. Output ONLY valid JSON.`}],800,cfaLevel);
+        let result=null;
+        if(rawCalc){try{result=JSON.parse(rawCalc.replace(/```json\n?|```/g,"").trim());}catch{const m=rawCalc.match(/\{[\s\S]*\}/);if(m)try{result=JSON.parse(m[0]);}catch{}}}
         if(result&&result.steps){setCalcProblem(result);setCalcSteps(result.steps||[]);}
         else throw new Error("Invalid response format");
       }catch(e){setCalcError("Failed to generate problem: "+e.message);}
@@ -10531,8 +10537,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
           if(!authUser?.id){setWalkthroughError("Sign in to use Concept Walkthrough.");return;}
           setWalkthroughLoading(true);setWalkthroughError("");setWalkthroughText(null);
           try{
-            const result=await callClaude(`You are a CFA Level 1 tutor. Create a concise concept walkthrough for: ${walkthroughTopic} → ${activeWtMod}\n\nStructure your response as:\n**Core Concept** (2 sentences explaining the big idea)\n**Key Rules** (3-4 bullet points of what you MUST know for the exam)\n**Worked Example** (one numerical or scenario-based example with the solution)\n**Exam Traps** (2 bullet points of common mistakes)\n\nBe specific to CFA L1 2026 curriculum. No padding.`,800,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"walkthrough"});
-            setWalkthroughText(typeof result==="string"?result:JSON.stringify(result));
+            const wtCacheKey="cfa_walkthrough_v1";
+            const wtKey=`${walkthroughTopic}|||${activeWtMod}`;
+            const wtCached=(()=>{try{return JSON.parse(localStorage.getItem(wtCacheKey)||"{}")[wtKey]||null;}catch{return null;}})();
+            if(wtCached){setWalkthroughText(wtCached);setWalkthroughLoading(false);return;}
+            const result=await callAIChat(authUser.id,[{role:"user",content:`You are a CFA Level ${cfaLevel} tutor. Create a concise concept walkthrough for: ${walkthroughTopic} → ${activeWtMod}\n\nStructure your response as:\n**Core Concept** (2 sentences explaining the big idea)\n**Key Rules** (3-4 bullet points of what you MUST know for the exam)\n**Worked Example** (one numerical or scenario-based example with the solution)\n**Exam Traps** (2 bullet points of common mistakes)\n\nBe specific to CFA L${cfaLevel} 2026 curriculum. No padding.`}],550,cfaLevel);
+            const text=result||"Could not generate walkthrough.";
+            setWalkthroughText(text);
+            try{const wtc=JSON.parse(localStorage.getItem(wtCacheKey)||"{}");wtc[wtKey]=text;localStorage.setItem(wtCacheKey,JSON.stringify(wtc));}catch{}
           }catch(e){setWalkthroughError("Walkthrough failed: "+e.message);}
           setWalkthroughLoading(false);
         }} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 16px ${C.accent}44`}}>
@@ -10544,7 +10556,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{animation:"fadeIn 0.2s ease"}}>
           <div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:13,padding:"16px",marginBottom:14,whiteSpace:"pre-wrap",fontSize:13,color:C.textMid,lineHeight:1.8}}>{walkthroughText}</div>
           <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>{setWalkthroughText(null);}} style={{flex:1,padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>↺ Regenerate</button>
+            <button onClick={()=>{setWalkthroughText(null);try{const wtc=JSON.parse(localStorage.getItem("cfa_walkthrough_v1")||"{}");delete wtc[`${walkthroughTopic}|||${activeWtMod}`];localStorage.setItem("cfa_walkthrough_v1",JSON.stringify(wtc));}catch{}}} style={{flex:1,padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>↺ Regenerate</button>
             <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(walkthroughTopic,activeWtMod,"Medium",5,"guided"),100);}} style={{flex:2,padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
               Start Drilling →
             </button>
