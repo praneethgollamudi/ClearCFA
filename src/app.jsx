@@ -1061,14 +1061,23 @@ function getReferralLink(userId){
   try{const u=new URL(window.location.href);u.search="";u.searchParams.set('ref',userId);return u.toString();}
   catch{return window.location.origin+window.location.pathname+'?ref='+userId;}
 }
-async function getReferralCount(cfg,referrerId){
+async function getReferralStats(cfg,referrerId){
   try{
     const res=await fetch(`${cfg.url}/rest/v1/referrals?referrer_id=eq.${encodeURIComponent(referrerId)}&select=referee_id`,{
-      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Prefer":"count=exact"}
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
     });
-    const range=res.headers.get('content-range')||'';
-    return parseInt(range.split('/')[1]||'0',10)||0;
-  }catch{return 0;}
+    const rows=res.ok?await res.json():[];
+    const signups=rows.length;
+    if(!signups)return{signups:0,paid:0};
+    const ids=rows.map(r=>r.referee_id).join(',');
+    const now=new Date().toISOString();
+    const subRes=await fetch(
+      `${cfg.url}/rest/v1/subscriptions?user_id=in.(${encodeURIComponent(ids)})&active=eq.true&valid_until=gte.${encodeURIComponent(now)}&select=user_id`,
+      {headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}}
+    );
+    const subRows=subRes.ok?await subRes.json():[];
+    return{signups,paid:subRows.length};
+  }catch{return{signups:0,paid:0};}
 }
 async function grantReferralPro(cfg,referrerId){
   try{
@@ -1095,8 +1104,7 @@ async function recordReferral(cfg,referrerId,refereeId){
       headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Content-Type":"application/json","Prefer":"return=minimal,resolution=ignore-duplicates"},
       body:JSON.stringify({referrer_id:referrerId,referee_id:refereeId})
     });
-    const count=await getReferralCount(cfg,referrerId);
-    if(count>0&&count%REFERRAL_THRESHOLD===0) await grantReferralPro(cfg,referrerId);
+    // Reward is granted automatically via DB trigger when the referred user upgrades to Pro
   }catch{}
 }
 function getDailyAIUsage(){
@@ -4809,13 +4817,15 @@ function LofiPlayer(){
   );
 }
 function ReferralCard({userId,cfg,setUpgradeModal}){
-  const [count,setCount]=useState(null);
+  const [stats,setStats]=useState(null);
   const [copied,setCopied]=useState(false);
   const link=getReferralLink(userId);
-  const progress=count!==null?count%REFERRAL_THRESHOLD:0;
-  const earned=count!==null?Math.floor(count/REFERRAL_THRESHOLD):0;
+  const paid=stats?.paid??0;
+  const signups=stats?.signups??0;
+  const progress=paid%REFERRAL_THRESHOLD;
+  const earned=Math.floor(paid/REFERRAL_THRESHOLD);
 
-  useEffect(()=>{getReferralCount(cfg,userId).then(setCount);},[]);
+  useEffect(()=>{getReferralStats(cfg,userId).then(setStats);},[]);
 
   const copy=()=>{
     try{navigator.clipboard.writeText(link);}catch{}
@@ -4826,7 +4836,7 @@ function ReferralCard({userId,cfg,setUpgradeModal}){
     else copy();
   };
 
-  const slots=Array.from({length:REFERRAL_THRESHOLD},(_,i)=>i<progress);
+  const slots=Array.from({length:REFERRAL_THRESHOLD},(_,i)=>i<paid%REFERRAL_THRESHOLD||(paid>0&&paid%REFERRAL_THRESHOLD===0));
   return(
     <div style={{background:`linear-gradient(145deg,${C.accent}15,${C.surface})`,border:`1px solid ${C.accent}35`,borderRadius:16,overflow:"hidden",marginBottom:12}}>
       {/* Hero banner */}
@@ -4839,7 +4849,7 @@ function ReferralCard({userId,cfg,setUpgradeModal}){
             <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.6)",letterSpacing:"0.08em",marginBottom:4}}>REFERRAL REWARD</div>
             <div style={{fontSize:17,fontWeight:900,color:"#fff",lineHeight:1.2,marginBottom:4}}>Study together,<br/>earn Pro free 🎁</div>
             <div style={{fontSize:11,color:"rgba(255,255,255,0.75)",lineHeight:1.5}}>
-              Invite {REFERRAL_THRESHOLD} friends → get <strong style={{color:"#fbbf24"}}>1 month Pro</strong> free
+              Get {REFERRAL_THRESHOLD} friends to subscribe → earn <strong style={{color:"#fbbf24"}}>1 month Pro</strong> free
             </div>
           </div>
           {/* SVG illustration — connected avatars */}
@@ -4883,12 +4893,12 @@ function ReferralCard({userId,cfg,setUpgradeModal}){
 
       {/* Progress + actions */}
       <div style={{padding:"12px 16px"}}>
-        {count!==null&&(
+        {stats!==null&&(
           <div style={{marginBottom:12}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-              <span style={{fontSize:11,fontWeight:600,color:C.text}}>{progress} of {REFERRAL_THRESHOLD} friends joined</span>
-              {progress<REFERRAL_THRESHOLD&&<span style={{fontSize:10,color:C.accentLight}}>{REFERRAL_THRESHOLD-progress} more → 1 month free</span>}
-              {progress>=REFERRAL_THRESHOLD&&<span style={{fontSize:10,color:C.easy,fontWeight:700}}>Reward unlocked 🎉</span>}
+              <span style={{fontSize:11,fontWeight:600,color:C.text}}>{paid} of {REFERRAL_THRESHOLD} subscribed{signups>paid?<span style={{color:C.muted}}> · {signups} signed up</span>:null}</span>
+              {progress<REFERRAL_THRESHOLD&&<span style={{fontSize:10,color:C.accentLight}}>{REFERRAL_THRESHOLD-progress} more subscribers → 1 month free</span>}
+              {progress===0&&paid>0&&<span style={{fontSize:10,color:C.easy,fontWeight:700}}>Reward unlocked 🎉</span>}
             </div>
             <div style={{display:"flex",gap:5}}>
               {slots.map((filled,i)=>(
