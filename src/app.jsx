@@ -5111,6 +5111,9 @@ function CFAMock(){
   const [walkthroughText, setWalkthroughText] = useState(null);
   const [walkthroughLoading, setWalkthroughLoading] = useState(false);
   const [walkthroughError, setWalkthroughError] = useState("");
+  const [adminStats,setAdminStats]=useState(null);
+  const [adminStatsLoading,setAdminStatsLoading]=useState(false);
+  const [adminStatsError,setAdminStatsError]=useState("");
   const [fsaVignetteOpen, setFsaVignetteOpen] = useState(false);
   const [fsaSubtopic, setFsaSubtopic] = useState("Financial Ratios");
   const [fsaDifficulty, setFsaDifficulty] = useState("Medium");
@@ -5686,6 +5689,21 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         .finally(()=>setAiDebriefLoading(false));
     }
   },[screen]);
+
+  const ADMIN_EMAIL="sai.praneeth557@gmail.com";
+  const isAdmin=authUser?.email===ADMIN_EMAIL;
+  const ADMIN_STATS_URL=`${SUPABASE_URL}/functions/v1/admin-stats`;
+  const fetchAdminStats=async()=>{
+    if(!authUser?.accessToken||!isAdmin)return;
+    setAdminStatsLoading(true);setAdminStatsError("");
+    try{
+      const res=await fetch(ADMIN_STATS_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser.accessToken})});
+      const data=await res.json();
+      if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`);
+      setAdminStats(data);
+    }catch(e){setAdminStatsError(e.message||"Failed to load stats");}
+    setAdminStatsLoading(false);
+  };
 
   const callClaude=async(prompt,maxTokens=8000,{retries=2,retryDelay=8000,model="claude-haiku-4-5-20251001",feature=""}={})=>{
     if(!navigator.onLine) throw new Error("No internet — check your connection and retry.");
@@ -7440,7 +7458,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       ({home:"home",setup:"practice",quiz:"practice",srReview:"drill",
         results:"practice",revision:"practice",studyPath:"practice",
         dashboard:"progress",readiness:"progress",losCoverage:"progress",
-        masteryGrid:"progress",calcTrainer:"drill"}[screen]||"home");
+        masteryGrid:"progress",calcTrainer:"drill",adminDashboard:"home"}[screen]||"home");
     const handlePillTouchStart=(e)=>{sheetDragY.current=e.touches[0].clientY;};
     const handlePillTouchMove=(e)=>{
       if(sheetDragY.current===null)return;
@@ -7682,22 +7700,30 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <div style={{fontSize:11,color:C.muted,marginTop:1}}>Report bugs · suggest features · share thoughts</div>
             </div>
           </button>
-          {/* Flagged Questions */}
-          <button onClick={()=>{setSettingsOpen(false);setScreen("dashboard");setDashTab("flags");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+          {/* Flagged Questions — admin only */}
+          {isAdmin&&<button onClick={()=>{setSettingsOpen(false);setScreen("dashboard");setDashTab("flags");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
             <span style={{fontSize:18}}>⚑</span>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700}}>Flagged Questions</div>
               <div style={{fontSize:11,color:C.muted,marginTop:1}}>{questionFlags.length>0?`${questionFlags.length} flagged — review or clear`:"Flag bad questions during a quiz"}</div>
             </div>
-          </button>
-          {/* API Usage */}
-          <button onClick={()=>{setSettingsOpen(false);setScreen("dashboard");setDashTab("api");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+          </button>}
+          {/* API Usage — admin only */}
+          {isAdmin&&<button onClick={()=>{setSettingsOpen(false);setScreen("dashboard");setDashTab("api");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:C.surface,border:`1px solid ${C.border}`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
             <span style={{fontSize:18}}>📊</span>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700}}>API Usage</div>
               <div style={{fontSize:11,color:C.muted,marginTop:1}}>Cost breakdown · feature spend · recent calls</div>
             </div>
-          </button>
+          </button>}
+          {/* Admin Dashboard — admin only */}
+          {isAdmin&&<button onClick={()=>{setSettingsOpen(false);fetchAdminStats();setScreen("adminDashboard");}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"13px 14px",borderRadius:12,background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,color:C.text,cursor:"pointer",marginBottom:9,textAlign:"left"}}>
+            <span style={{fontSize:18}}>🛡️</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>Admin Dashboard</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:1}}>Users · AI usage · cost · revenue · feedback</div>
+            </div>
+          </button>}
           {/* Account */}
           <div style={{borderTop:`1px solid ${C.border}`,paddingTop:12,marginTop:4}}>
             <div style={{fontSize:11,color:C.muted,marginBottom:8,textAlign:"center"}}>
@@ -9494,6 +9520,155 @@ Return ONLY a JSON array — no prose, no markdown fences:
       )}
     </>);
   }
+  // ══ ADMIN DASHBOARD ══════════════════════════════════════════════════════════
+  // ════════════════════════════════════════
+  // SCREEN: adminDashboard
+  // ════════════════════════════════════════
+  if(screen==="adminDashboard"&&isAdmin) return wrap((()=>{
+    const s=adminStats;
+    const fmt=n=>n==null?"—":typeof n==="number"?n.toLocaleString():String(n);
+    const fmtCur=n=>n==null?"—":`$${Number(n).toFixed(4)}`;
+
+    // Sparkline bar chart for AI trend
+    const SparkBars=({data,color})=>{
+      if(!data?.length)return null;
+      const max=Math.max(...data.map(d=>d.count),1);
+      const W=220,H=36,n=data.length,bw=Math.max(2,Math.floor(W/n)-2);
+      return(<svg width={W} height={H} style={{display:"block",marginTop:6}}>
+        {data.map((d,i)=>{
+          const bh=Math.max(2,Math.round((d.count/max)*(H-4)));
+          return<rect key={i} x={i*(bw+2)} y={H-bh-2} width={bw} height={bh} rx={1} fill={color} opacity={0.75}/>;
+        })}
+      </svg>);
+    };
+
+    const Card=({title,icon,children,accent})=>(
+      <div style={{background:C.surface,border:`1px solid ${accent?accent+"44":C.border}`,borderRadius:14,padding:"14px 16px",marginBottom:12}}>
+        <div style={{fontSize:11,fontWeight:800,color:accent||C.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:10}}>{icon} {title}</div>
+        {children}
+      </div>
+    );
+
+    const Row=({label,value,sub,color})=>(
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8}}>
+        <span style={{fontSize:12,color:C.muted}}>{label}</span>
+        <span style={{fontSize:14,fontWeight:800,color:color||C.text}}>{value}{sub&&<span style={{fontSize:10,fontWeight:400,color:C.muted,marginLeft:4}}>{sub}</span>}</span>
+      </div>
+    );
+
+    const updatedAt=s?.generatedAt?new Date(s.generatedAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):"—";
+
+    return(<>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div>
+          <h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>🛡️ Admin Dashboard</h2>
+          <div style={{fontSize:11,color:C.muted,marginTop:2}}>Updated {updatedAt} · sai.praneeth557</div>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={fetchAdminStats} disabled={adminStatsLoading} style={{padding:"8px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent+"22",color:C.accentLight,border:`1px solid ${C.accent}44`,cursor:"pointer"}}>
+            {adminStatsLoading?"⏳":"↺"} Refresh
+          </button>
+          <button onClick={()=>setScreen("home")} style={{padding:"8px 12px",borderRadius:9,fontSize:12,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>← Home</button>
+        </div>
+      </div>
+
+      {adminStatsError&&<div style={{background:C.hard+"18",border:`1px solid ${C.hard}44`,borderRadius:10,padding:"12px 14px",marginBottom:12,fontSize:12,color:C.hard}}>{adminStatsError}</div>}
+
+      {adminStatsLoading&&!s&&(
+        <div style={{textAlign:"center",padding:"48px 0",color:C.muted,animation:"pulse 1.5s infinite"}}>Loading metrics…</div>
+      )}
+
+      {s&&(<>
+        {/* Users */}
+        <Card title="Users" icon="👥" accent={C.accentLight}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
+            {[["Total registered",s.users.total],["Active today (DAU)",s.users.dau,C.easy],["Active 7d (WAU)",s.users.wau],["Active 30d (MAU)",s.users.mau]].map(([l,v,col])=>(
+              <div key={l} style={{background:C.bg,borderRadius:10,padding:"10px 12px",border:`1px solid ${C.border}`}}>
+                <div style={{fontSize:10,color:C.muted,marginBottom:3}}>{l}</div>
+                <div style={{fontSize:20,fontWeight:800,color:col||C.text}}>{fmt(v)}</div>
+              </div>
+            ))}
+          </div>
+          {s.users.recentSessions?.length>0&&(
+            <div style={{marginTop:6}}>
+              <div style={{fontSize:10,color:C.muted,marginBottom:4}}>RECENTLY ACTIVE</div>
+              {s.users.recentSessions.slice(0,3).map((r,i)=>(
+                <div key={i} style={{fontSize:11,color:C.textMid,marginBottom:2}}>· {r.user_id.slice(0,8)}… — {new Date(r.updated_at).toLocaleDateString()}</div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* AI Usage */}
+        <Card title="AI Usage (free quota)" icon="🤖" accent="#22d3ee">
+          <Row label="Questions generated today" value={fmt(s.ai.today)} color={s.ai.today>0?C.easy:C.muted}/>
+          <Row label="Questions generated (7d)" value={fmt(s.ai.week)}/>
+          <Row label="Active AI users today" value={fmt(s.ai.activeAiToday)}/>
+          <Row label="Users at daily limit today" value={fmt(s.ai.usersAtLimit)} color={s.ai.usersAtLimit>0?C.medium:C.muted} sub={s.ai.usersAtLimit>0?"⚠️ churn risk":""}/>
+          {s.ai.trend?.length>0&&(
+            <div style={{marginTop:6}}>
+              <div style={{fontSize:10,color:C.muted,marginBottom:2}}>14-DAY TREND (generate calls)</div>
+              <SparkBars data={s.ai.trend} color="#22d3ee"/>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:C.muted,marginTop:2}}>
+                <span>{s.ai.trend[0]?.date?.slice(5)}</span>
+                <span>{s.ai.trend[s.ai.trend.length-1]?.date?.slice(5)}</span>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Cost */}
+        <Card title="Cost (generate route only)" icon="💰" accent={C.reward}>
+          <Row label="Est. cost today" value={fmtCur(s.cost.today)} color={C.reward}/>
+          <Row label="Est. cost this week" value={fmtCur(s.cost.week)} color={C.reward}/>
+          <Row label="Cost per question call" value={fmtCur(s.cost.perCall)} sub="Haiku $0.80/$4.00 per M"/>
+          <div style={{marginTop:8,fontSize:11,color:C.muted,lineHeight:1.6,background:C.bg,borderRadius:8,padding:"8px 10px"}}>
+            ℹ️ Estimate based on {fmt(s.ai.week)} generate calls × avg 750 in / 450 out tokens.<br/>
+            Chat route (AI Coach, Walkthrough, Calc Trainer) not counted here — no server-side tracking.
+          </div>
+        </Card>
+
+        {/* Revenue */}
+        <Card title="Revenue" icon="⭐" accent={C.easy}>
+          <Row label="Pro subscribers (active)" value={fmt(s.revenue.proCount)} color={C.easy}/>
+          <Row label="Free users" value={fmt(s.revenue.freeCount)}/>
+          <Row label="Conversion rate" value={`${s.revenue.conversionRate}%`} color={s.revenue.conversionRate>5?C.easy:C.muted}/>
+          <Row label="Referral grants issued" value={fmt(s.revenue.referrals)}/>
+          <div style={{marginTop:8,fontSize:11,color:C.muted,background:C.bg,borderRadius:8,padding:"8px 10px"}}>
+            ℹ️ Pro subs are currently granted via referrals only. Payment integration pending.
+          </div>
+        </Card>
+
+        {/* Feedback */}
+        <Card title="Feedback" icon="💬" accent={C.accentLight}>
+          <Row label="Total feedback items" value={fmt(s.feedback.total)}/>
+          <Row label="Average rating" value={s.feedback.avgRating?`${s.feedback.avgRating} / 5`:"—"} color={s.feedback.avgRating>=4?C.easy:s.feedback.avgRating>=3?C.medium:C.hard}/>
+          {s.feedback.byCategory&&Object.keys(s.feedback.byCategory).length>0&&(
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+              {Object.entries(s.feedback.byCategory).map(([cat,n])=>(
+                <span key={cat} style={{fontSize:10,fontWeight:700,background:C.accent+"22",color:C.accentLight,border:`1px solid ${C.accent}44`,borderRadius:20,padding:"3px 9px"}}>{cat} ({n})</span>
+              ))}
+            </div>
+          )}
+          {s.feedback.recent?.length>0&&(
+            <div>
+              <div style={{fontSize:10,color:C.muted,marginBottom:6}}>RECENT MESSAGES</div>
+              {s.feedback.recent.map((f,i)=>(
+                <div key={i} style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 12px",marginBottom:6}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                    <span style={{fontSize:11,color:C.medium}}>{"★".repeat(f.rating||0)}{"☆".repeat(Math.max(0,5-(f.rating||0)))}</span>
+                    <span style={{fontSize:10,color:C.muted}}>{f.category} · {new Date(f.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div style={{fontSize:12,color:C.textMid,lineHeight:1.5}}>{f.message}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </>)}
+    </>);
+  })());
+
   // ══ READINESS ══════════════════════════════════════════════════════════════
   // ════════════════════════════════════════
   // SCREEN: readiness
