@@ -118,6 +118,9 @@ Pro users bypass both limits entirely.
 
 ## Build & Deploy
 
+**Pace prediction card removed**: The pace prediction card (which displayed sessions needed and days-left metrics) was removed in commit 52766de because its math was not based on validated methodology. Do not re-add this card without a defensible predictive model.
+
+
 **What's New slides versioning**: Added internal-only release notes versions (`2026-06-26-b`, `2026-06-26-c`, etc.) to document UX improvements and bug fixes. These appear in the What's New carousel and track product updates for users.
 
 
@@ -576,7 +579,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1787200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1788200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
