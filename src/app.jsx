@@ -9658,7 +9658,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       )}
       {answered&&(
-        <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",paddingRight:58}}>
+        <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",paddingLeft:58,paddingRight:58}}>
           <button type="button" onClick={nextQ} onTouchEnd={(e)=>{e.preventDefault();nextQ();}} style={{flex:1,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",touchAction:"manipulation"}}>{isLast?"See Results →":"Next →"}</button>
           {answers[q.id]===q.answer&&(
             <button onClick={()=>setFlaggedQ(f=>({...f,[q.id]:!f[q.id]}))}
