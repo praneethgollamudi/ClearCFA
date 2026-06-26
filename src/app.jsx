@@ -6391,7 +6391,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     if(!weakTopics.length)return;
     setMissionGenerating(true);
     const recentStr=levelHistory.slice(0,5).map(h=>`${h.topic||""} ${h.pct||0}%`).join(", ")||"no recent sessions";
-    const prompt=`CFA Level ${cfaLevel} exam coach. Generate a specific daily study mission.\nWeak topics: ${weakTopics.join(", ")}\nRecent: ${recentStr}\n\nFormat EXACTLY:\nMISSION: [one actionable sentence]\nACTION: [specific task, e.g. "Do 10 Fixed Income questions on Modified Duration"]\nTIPP: [1 exam insight]\nTOPIC: [exact topic name]\n\nUnder 60 words total.`;
+    const prompt=`CFA Level ${cfaLevel} exam coach. Generate a specific daily study mission for an app-based study session.\nWeak topics: ${weakTopics.join(", ")}\nRecent: ${recentStr}\n\nFormat EXACTLY:\nMISSION: [one actionable sentence — what the student should master today]\nACTION: [specific in-app task, e.g. "Review the Notes tab for ${weakTopics[0]}, then attempt 10 practice questions on it" or "Do 10 practice questions on Modified Duration"]\nTIPP: [1 exam insight or memory trick]\nTOPIC: [exact topic name from the weak topics list]\n\nRule: Do NOT reference external textbooks, readings, or curriculum book sections (R1-R7, curriculum, etc). Only reference in-app features: practice questions or reviewing the Notes tab.\nUnder 60 words total.`;
     callAIChat(authUser.id,[{role:"user",content:prompt}],200,cfaLevel)
       .then(reply=>{
         if(!reply)return;
@@ -8082,12 +8082,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
             {dailyMission?.action&&<div style={{fontSize:12,color:C.textMid,marginBottom:8,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.reward}55`}}>{dailyMission.action}</div>}
             {dailyMission?.tip&&<div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.6}}>💡 {dailyMission.tip}</div>}
             {dailyMission?.topic&&(
-              <button onClick={()=>{
-                generateQuestions(dailyMission.topic,Object.keys(getActiveLOS(cfaLevel)[dailyMission.topic]?.modules||{})[0]||dailyMission.topic,"Medium",10,"guided");
-                if(!screenOnboard.dailyMission){const u={...screenOnboard,dailyMission:true};setScreenOnboard(u);try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{}}
-              }} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.reward,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
-                Start Mission →
-              </button>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>{setRevisionTopic(dailyMission.topic);setRevisionTab(proStatus?"learn":"notes");setScreen("revision");}}
+                  style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:C.surface,color:C.textMid,border:`1px solid ${C.border}`,cursor:"pointer"}}>
+                  📖 Read notes
+                </button>
+                <button onClick={()=>{
+                  generateQuestions(dailyMission.topic,Object.keys(getActiveLOS(cfaLevel)[dailyMission.topic]?.modules||{})[0]||dailyMission.topic,"Medium",10,"guided");
+                  if(!screenOnboard.dailyMission){const u={...screenOnboard,dailyMission:true};setScreenOnboard(u);try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{}}
+                }} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.reward,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
+                  Start Practice →
+                </button>
+              </div>
             )}
           </>
         )}
