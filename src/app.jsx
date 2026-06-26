@@ -5633,6 +5633,7 @@ function CFAMock(){
   const subtopicRef=useRef("");
   const difficultyRef=useRef("Medium");
   const modeRef=useRef("guided");
+  useEffect(()=>{window.scrollTo(0,0);document.body.scrollTop=0;document.documentElement.scrollTop=0;},[currentQ]);
   useEffect(()=>{questionsRef.current=questions;},[questions]);
   useEffect(()=>{answersRef.current=answers;},[answers]);
   useEffect(()=>{flaggedQRef.current=flaggedQ;},[flaggedQ]);
@@ -6545,7 +6546,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const qId=questions[currentQ]?.id;
     if(qId&&quizConfidence){const correct=answers[qId]===questions[currentQ]?.answer;setConfidenceLog(c=>{const u={...c,[qId]:{c:quizConfidence,ok:correct}};try{localStorage.setItem(CONFIDENCE_KEY,JSON.stringify(u));}catch{}return u;});}
     setQuizConfidence(null);
-    if(currentQ<questions.length-1){setCurrentQ(q=>q+1);setShowExp(false);window.scrollTo({top:0,behavior:'instant'});}else endQuiz();
+    if(currentQ<questions.length-1){setCurrentQ(q=>q+1);setShowExp(false);}else endQuiz();
   };
 
   // ── DERIVED DATA ──
