@@ -974,8 +974,6 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-06-26-b
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
-{emoji:"🛡️",color:C.medium,bg:C.medium,title:"More Reliable Admin Tools",sub:"Bug Fix · 2026-06-26 update",desc:"Fixed critical authentication and display issues in the admin dashboard that caused blank pages and login failures. Teachers and admins can now reliably manage accounts and track student progress without technical roadblocks.",tip:"If you're an instructor, log in to the admin dashboard to verify your student roster now loads correctly."},
-{emoji:"🔄",color:C.reward,bg:C.reward,title:"Smarter Deployment Pipeline",sub:"Speed · 2026-06-26 update",desc:"Our build system now automatically retries failed pushes when multiple commits happen at once, reducing deployment delays. You'll get bug fixes and new features pushed to your device faster and more reliably.",tip:"Updates may arrive more frequently now—keep your app up to date for the latest exam content."},
 ]},
 // WN_VER:2026-06-26-c
 {version:"2026-06-26-c",slides:[
