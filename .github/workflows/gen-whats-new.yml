@@ -44,6 +44,12 @@ jobs:
           else
             VERSION=$(node -e "const s=require('fs').readFileSync('src/app.jsx','utf8');const m=[...s.matchAll(/\/\/ WN_VER:([^\n]+)/g)];console.log(m.length?m[m.length-1][1].trim():'')")
             git commit -m "What's New: ${VERSION} [skip ci]"
-            git push origin main
-            git push origin main:claude/index-html-github-pages-cfa8fd
+            # Rebase on top of any commits that landed while we were generating
+            git pull --rebase origin main
+            for attempt in 1 2 3 4; do
+              git push origin main && git push origin main:claude/index-html-github-pages-cfa8fd && break
+              echo "Push attempt $attempt failed — rebasing and retrying..."
+              git pull --rebase origin main
+              sleep $((attempt * 2))
+            done
           fi

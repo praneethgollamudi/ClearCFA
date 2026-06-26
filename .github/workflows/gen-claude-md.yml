@@ -39,6 +39,11 @@ jobs:
             echo "CLAUDE.md already up to date."
           else
             git commit -m "CLAUDE.md: auto-sync constants and document gaps [skip ci]"
-            git push origin main
-            git push origin main:claude/index-html-github-pages-cfa8fd
+            git pull --rebase origin main
+            for attempt in 1 2 3 4; do
+              git push origin main && git push origin main:claude/index-html-github-pages-cfa8fd && break
+              echo "Push attempt $attempt failed — rebasing and retrying..."
+              git pull --rebase origin main
+              sleep $((attempt * 2))
+            done
           fi
