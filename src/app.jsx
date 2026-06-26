@@ -1046,11 +1046,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-26-d
-{version:"2026-06-26-d",slides:[
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother Quiz Navigation",sub:"UX · 2026-06-26 update",desc:"The Next button now responds instantly on all devices and won't be blocked by floating elements like the lofi player. You can breeze through practice questions without frustrating taps or hidden buttons.",tip:"Try tapping Next rapidly during a quiz session—it'll keep up with your pace."},
-{emoji:"🎁",color:C.reward,bg:C.reward,title:"Updated Referral Rewards",sub:"Study Tools · 2026-06-26 update",desc:"The referral card now highlights your signup bonus more clearly. Share ClearCFA with friends and earn rewards to unlock premium study features.",tip:"Check your referral card in settings to see exactly what bonus you'll unlock when someone signs up."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1074,11 +1069,6 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
@@ -6553,7 +6543,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
   }
   const nextQ=()=>{
     clearInterval(speedDrillRef.current);
-    setExplainThisText(null);setExplainThisLoading(false);
     const qId=questions[currentQ]?.id;
     if(qId&&quizConfidence){const correct=answers[qId]===questions[currentQ]?.answer;setConfidenceLog(c=>{const u={...c,[qId]:{c:quizConfidence,ok:correct}};try{localStorage.setItem(CONFIDENCE_KEY,JSON.stringify(u));}catch{}return u;});}
     setQuizConfidence(null);
