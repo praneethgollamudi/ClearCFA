@@ -1,15 +1,21 @@
 name: Generate What's New Slides
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'supabase/functions/**'
 
 jobs:
   generate:
     runs-on: ubuntu-latest
+    # Never run when the bot itself pushes (prevents infinite loop)
+    if: github.actor != 'github-actions[bot]'
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # full history so gen-whats-new.js can read commits
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -34,8 +40,8 @@ jobs:
           if git diff --cached --quiet; then
             echo "Nothing changed — slides already up to date."
           else
-            VERSION=$(node -e "const s=require('fs').readFileSync('src/app.jsx','utf8');console.log(s.match(/WHATS_NEW_VERSION\s*=\s*\"([^\"]+)\"/)?.[1]||'')")
-            git commit -m "What's New: ${VERSION}"
+            VERSION=$(node -e "const s=require('fs').readFileSync('src/app.jsx','utf8');const m=[...s.matchAll(/\/\/ WN_VER:([^\n]+)/g)];console.log(m.length?m[m.length-1][1].trim():'')")
+            git commit -m "What's New: ${VERSION} [skip ci]"
             git push origin main
             git push origin main:claude/index-html-github-pages-cfa8fd
           fi

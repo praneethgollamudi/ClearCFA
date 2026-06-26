@@ -1,20 +1,17 @@
 #!/usr/bin/env node
 /**
- * gen-whats-new.js — Generate What's New slide content from recent git commits
+ * gen-whats-new.js — Append a new What's New entry from recent git commits
  *
  * Usage:
- *   node gen-whats-new.js                  # print ready-to-paste JSX
+ *   node gen-whats-new.js                          # print ready-to-paste JSX
  *   ANTHROPIC_API_KEY=sk-ant-... node gen-whats-new.js          # call Claude Haiku + print
  *   ANTHROPIC_API_KEY=sk-ant-... node gen-whats-new.js --write  # write directly to src/app.jsx + index.html
  *
  * --write mode:
- *   • Updates WHATS_NEW_VERSION in src/app.jsx
- *   • Replaces the slides={[...]} array in the What's New SlideOverlay block
+ *   • Appends a new {version, slides} entry to the WHATS_NEW_SLIDES array in src/app.jsx
+ *   • Trims the array to at most 5 entries (oldest dropped first)
+ *   • Updates WHATS_NEW_VERSION (derived automatically from last array entry)
  *   • Bumps the app.js?v= cache version in index.html by 100000
- *   • Requires ANTHROPIC_API_KEY (skips write without it)
- *
- * Without --write:
- *   Prints the version constant + slides array — paste manually into src/app.jsx
  */
 
 const {execSync} = require('child_process');
@@ -22,24 +19,39 @@ const fs = require('fs');
 const https = require('https');
 
 const WRITE_MODE = process.argv.includes('--write');
+const MAX_ENTRIES = 5;
 
 // ── Read current version from src/app.jsx ─────────────────────────────────────
 const src = fs.readFileSync('src/app.jsx', 'utf8');
-const vMatch = src.match(/WHATS_NEW_VERSION\s*=\s*"([^"]+)"/);
-const lastVersion = vMatch?.[1] || new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+const vMatch = src.match(/WHATS_NEW_VERSION=WHATS_NEW_SLIDES\[[\s\S]*?\]\.version/);
+// Extract last version from WN_VER comments
+const verMatches = [...src.matchAll(/\/\/ WN_VER:([^\n]+)/g)];
+const lastVersion = verMatches.length ? verMatches[verMatches.length-1][1].trim() : new Date(Date.now()-30*864e5).toISOString().slice(0,10);
 const today = new Date().toISOString().slice(0,10);
 
-console.log(`Current WHATS_NEW_VERSION: ${lastVersion}`);
-console.log(`New version will be:       ${today}`);
+// If today's version already exists, add a suffix to keep it unique
+let newVersion = today;
+const existingVers = verMatches.map(m => m[1].trim());
+if (existingVers.includes(newVersion)) {
+  const suffixes = 'bcdefghij'.split('');
+  for (const s of suffixes) {
+    if (!existingVers.includes(newVersion + '-' + s)) { newVersion = newVersion + '-' + s; break; }
+  }
+}
+
+console.log(`Last WHATS_NEW_VERSION: ${lastVersion}`);
+console.log(`New version will be:    ${newVersion}`);
 
 // ── Get commits since last version ────────────────────────────────────────────
 let commits = '';
 try {
   commits = execSync(`git log --oneline --since="${lastVersion}" --no-merges 2>/dev/null`, {encoding:'utf8'}).trim();
+  // Filter out bot commits
+  commits = commits.split('\n').filter(l => !l.includes('[skip ci]') && !l.includes('github-actions')).join('\n').trim();
 } catch {}
 
 if (!commits) {
-  try { commits = execSync('git log --oneline -15 --no-merges', {encoding:'utf8'}).trim(); } catch {}
+  try { commits = execSync('git log --oneline -10 --no-merges', {encoding:'utf8'}).trim(); } catch {}
 }
 
 if (!commits) { console.error('No git history found.'); process.exit(1); }
@@ -59,7 +71,7 @@ Rules:
 - Desc: 2 sentences. What changed + why it helps the student preparing for CFA.
 - Tip: 1 sentence. A concrete action or thing to notice.
 - Use distinct emojis and varied color tokens.
-- If a commit is purely internal/infrastructure (CLAUDE.md, hooks, build), omit it.
+- If a commit is purely internal/infrastructure (CLAUDE.md, hooks, build, [skip ci]), omit it.
 
 Available color tokens (use the raw token name as a string — the app substitutes them):
   C.accentLight, C.easy, C.medium, C.hard, C.reward
@@ -76,124 +88,87 @@ const apiKey = process.env.ANTHROPIC_API_KEY;
 
 if (!apiKey) {
   console.log('ℹ️  No ANTHROPIC_API_KEY set — printing blank template.\n');
-  if (WRITE_MODE) {
-    console.log('⚠️  --write requires ANTHROPIC_API_KEY. Skipping write.');
-    process.exit(0);
-  }
-  printTemplate(today);
+  if (WRITE_MODE) { console.log('⚠️  --write requires ANTHROPIC_API_KEY. Skipping write.'); process.exit(0); }
+  printTemplate(newVersion);
   process.exit(0);
 }
 
 console.log('Calling Claude Haiku...');
 callAnthropic(apiKey, prompt)
   .then(slides => {
-    if (WRITE_MODE) {
-      writeToSource(slides, today);
-    } else {
-      printResult(slides, today);
-    }
+    if (WRITE_MODE) writeToSource(slides, newVersion);
+    else printResult(slides, newVersion);
   })
   .catch(e => {
     console.error('API error:', e.message);
-    if (WRITE_MODE) {
-      console.log('\n⚠️  API call failed — src/app.jsx unchanged.');
-      process.exit(1);
-    }
+    if (WRITE_MODE) { console.log('\n⚠️  API call failed — src/app.jsx unchanged.'); process.exit(1); }
     console.log('\nFalling back to template:');
-    printTemplate(today);
+    printTemplate(newVersion);
   });
 
 // ── Write mode ────────────────────────────────────────────────────────────────
-function writeToSource(slides, newVersion) {
-  // 1. Build the JSX slides block (each slide on one line, 8-space indent)
+function writeToSource(slides, version) {
+  // Build the new entry block
   const slideLines = slides.map(s => {
     const color = String(s.color).replace(/^"?(C\.\w+)"?$/, '$1');
     const bg    = String(s.bg).replace(/^"?(C\.\w+)"?$/, '$1');
-    return `        {emoji:${JSON.stringify(s.emoji)},color:${color},bg:${bg},title:${JSON.stringify(s.title)},sub:${JSON.stringify(s.sub)},desc:${JSON.stringify(s.desc)},tip:${JSON.stringify(s.tip)}}`;
+    return `{emoji:${JSON.stringify(s.emoji)},color:${color},bg:${bg},title:${JSON.stringify(s.title)},sub:${JSON.stringify(s.sub)},desc:${JSON.stringify(s.desc)},tip:${JSON.stringify(s.tip)}}`;
   }).join(',\n');
-  const slidesBlock = `[\n${slideLines},\n      ]`;
+  const newEntry = `// WN_VER:${version}\n{version:${JSON.stringify(version)},slides:[\n${slideLines},\n]},\n`;
 
-  // 2. Patch src/app.jsx
   let appSrc = fs.readFileSync('src/app.jsx', 'utf8');
 
-  // Replace WHATS_NEW_VERSION
-  const versionRe = /const WHATS_NEW_VERSION\s*=\s*"[^"]+";/;
-  if (!versionRe.test(appSrc)) {
-    console.error('❌ Could not find WHATS_NEW_VERSION in src/app.jsx');
-    process.exit(1);
-  }
-  appSrc = appSrc.replace(versionRe, `const WHATS_NEW_VERSION    = "${newVersion}";`);
+  // Find the block between // WN_START and // WN_END
+  const wnBlockRe = /(\/\/ WN_START\n)([\s\S]*?)(\/\/ WN_END)/;
+  const match = appSrc.match(wnBlockRe);
+  if (!match) { console.error('❌ Could not find // WN_START ... // WN_END markers in src/app.jsx'); process.exit(1); }
 
-  // Replace slides array in the What's New SlideOverlay block
-  const slidesRe = /(tourDismissed&&!whatsNewDismissed&&<SlideOverlay\s+slides=\{)\[[\s\S]*?\](\})/;
-  if (!slidesRe.test(appSrc)) {
-    console.error('❌ Could not find What\'s New slides block in src/app.jsx');
-    process.exit(1);
-  }
-  appSrc = appSrc.replace(slidesRe, `$1${slidesBlock}$2`);
+  // Split existing entries by WN_VER comment markers, keep last (MAX_ENTRIES - 1)
+  const existingBlock = match[2];
+  const entryChunks = existingBlock.split(/(?=\/\/ WN_VER:)/).filter(c => c.trim());
+  const kept = entryChunks.slice(-(MAX_ENTRIES - 1));
+  const newBlock = kept.join('') + newEntry;
 
+  appSrc = appSrc.replace(wnBlockRe, `$1${newBlock}$3`);
   fs.writeFileSync('src/app.jsx', appSrc);
-  console.log(`✅ src/app.jsx updated (WHATS_NEW_VERSION → ${newVersion}, slides replaced)`);
+  console.log(`✅ src/app.jsx updated — appended version ${version}, kept ${kept.length + 1} of ${MAX_ENTRIES} max entries`);
 
-  // 3. Bump cache version in index.html
+  // Bump cache version in index.html
   let html = fs.readFileSync('index.html', 'utf8');
   const cacheRe = /app\.js\?v=(\d+)/;
   const cMatch = html.match(cacheRe);
   if (cMatch) {
-    const oldV = parseInt(cMatch[1]);
-    const newV = oldV + 100000;
+    const newV = parseInt(cMatch[1]) + 100000;
     html = html.replace(cacheRe, `app.js?v=${newV}`);
     fs.writeFileSync('index.html', html);
-    console.log(`✅ index.html cache version bumped: ${oldV} → ${newV}`);
-  } else {
-    console.warn('⚠️  Could not find app.js?v= in index.html — skipping cache bump');
+    console.log(`✅ index.html cache version bumped to ${newV}`);
   }
 
-  console.log('\nNext: node build.js && git add src/app.jsx app.js index.html && git commit -m "What\'s New: ' + newVersion + '"');
-  console.log('  Or: bash deploy.sh  (runs the full pipeline)');
+  console.log('\nNext: node build.js && git add src/app.jsx app.js index.html && git commit -m "What\'s New: ' + version + ' [skip ci]"');
 }
 
 // ── Print helpers ─────────────────────────────────────────────────────────────
-function printResult(slides, newVersion) {
-  const jsxSlides = JSON.stringify(slides, null, 2)
-    .replace(/"(C\.\w+)"/g, '$1');
-
+function printResult(slides, version) {
   console.log('\n✅ Generated slides:\n');
   console.log(JSON.stringify(slides, null, 2));
-
-  console.log('\n══ PASTE INTO src/app.jsx ══════════════════════════════════════\n');
-  console.log(`// 1. Update the version constant (search WHATS_NEW_VERSION):`);
-  console.log(`const WHATS_NEW_VERSION    = "${newVersion}";`);
-  console.log('');
-  console.log(`// 2. Replace the slides={[...]} array in the SlideOverlay block`);
-  console.log(`//    (search "whatsNewDismissed" to find it):`);
-  console.log(`slides={${jsxSlides}}`);
-  console.log('\n════════════════════════════════════════════════════════════════');
-  console.log('\nNext: node build.js && git add -A && git commit -m "What\'s New: ' + newVersion + '"');
-  console.log('  Or pass --write to apply changes automatically.');
+  console.log('\n══ PASTE INTO src/app.jsx (between // WN_END and the entry before it) ══');
+  const slideLines = slides.map(s => {
+    const color = String(s.color).replace(/^"?(C\.\w+)"?$/, '$1');
+    const bg    = String(s.bg).replace(/^"?(C\.\w+)"?$/, '$1');
+    return `{emoji:${JSON.stringify(s.emoji)},color:${color},bg:${bg},title:${JSON.stringify(s.title)},sub:${JSON.stringify(s.sub)},desc:${JSON.stringify(s.desc)},tip:${JSON.stringify(s.tip)}}`;
+  }).join(',\n');
+  console.log(`// WN_VER:${version}\n{version:${JSON.stringify(version)},slides:[\n${slideLines},\n]},`);
+  console.log('\n════════════════════════════════════════');
+  console.log('Or pass --write to apply automatically.');
 }
 
-function printTemplate(today) {
-  console.log('══ BLANK TEMPLATE — fill in and paste into src/app.jsx ══════════\n');
-  console.log(`const WHATS_NEW_VERSION    = "${today}";\n`);
-  console.log(`slides={[
-  {emoji:"⚡",color:C.accentLight,bg:C.accent,
-   title:"Short benefit title",
-   sub:"Category · ${today} update",
-   desc:"2 sentences: what changed and why it helps the student.",
-   tip:"One concrete tip or action."},
-  {emoji:"🎯",color:C.easy,bg:C.easy,
-   title:"Short benefit title",
-   sub:"Category · ${today} update",
-   desc:"2 sentences: what changed and why it helps the student.",
-   tip:"One concrete tip or action."},
-  {emoji:"🔧",color:C.medium,bg:C.medium,
-   title:"Short benefit title",
-   sub:"Category · ${today} update",
-   desc:"2 sentences: what changed and why it helps the student.",
-   tip:"One concrete tip or action."},
-]}`);
-  console.log('\n════════════════════════════════════════════════════════════════');
+function printTemplate(version) {
+  console.log(`\n// WN_VER:${version}
+{version:"${version}",slides:[
+{emoji:"⚡",color:C.accentLight,bg:C.accent,title:"Short benefit title",sub:"Category · ${version} update",desc:"2 sentences: what changed and why it helps.",tip:"One concrete tip."},
+{emoji:"🎯",color:C.easy,bg:C.easy,title:"Short benefit title",sub:"Category · ${version} update",desc:"2 sentences: what changed and why it helps.",tip:"One concrete tip."},
+{emoji:"🔧",color:C.medium,bg:C.medium,title:"Short benefit title",sub:"Category · ${version} update",desc:"2 sentences: what changed and why it helps.",tip:"One concrete tip."},
+]},`);
 }
 
 // ── Anthropic API call ────────────────────────────────────────────────────────
@@ -217,7 +192,6 @@ function callAnthropic(key, prompt) {
       }
     };
 
-    // Respect HTTPS_PROXY if set (for corporate/cloud environments)
     const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
     if (proxy) {
       try {
