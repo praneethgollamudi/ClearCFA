@@ -9660,11 +9660,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   <span style={{fontSize:11,fontWeight:700,color:C.reward}}>💳 Budget Runway</span>
                   {hasAnt?(
                     <span style={{fontSize:10,fontWeight:700,color:C.easy,background:C.easy+"18",padding:"2px 7px",borderRadius:10}}>✓ Anthropic verified</span>
-                  ):(
-                    <span style={{fontSize:10,color:C.muted}}>{ant?.error?"⚠️ Admin key error":"No admin key set"}</span>
-                  )}
+                  ):ant?.error?(
+                    <span style={{fontSize:10,color:C.medium}}>⚠️ API not available</span>
+                  ):null}
                 </div>
-                {ant?.error&&<div style={{fontSize:10,color:C.hard,marginBottom:8,wordBreak:"break-all"}}>{ant.error}</div>}
+                {ant?.error&&<div style={{fontSize:10,color:C.medium,marginBottom:8,wordBreak:"break-all",background:C.medium+"12",borderRadius:7,padding:"6px 8px"}}>Cost API: {ant.error}</div>}
                 {hasAnt&&(
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
                     {[["Anthropic spend (7d)",`$${ant.spend7d}`],["Anthropic spend (30d)",`$${ant.spend30d}`]].map(([l,v])=>(
@@ -9697,13 +9697,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   );
                 })():budget&&parseFloat(budget)>0?(
                   <div style={{fontSize:11,color:C.muted}}>Not enough usage data yet for daily rate.</div>
-                ):!ant&&(
-                  <div style={{fontSize:11,color:C.muted,marginTop:4}}>
-                    Set <code>ANTHROPIC_ADMIN_KEY</code> secret in Supabase for real spend data.<br/>
-                    Console → Settings → API Keys → Create Admin Key (<code>sk-ant-admin01-...</code>)<br/>
-                    Then: <code>supabase secrets set ANTHROPIC_ADMIN_KEY=sk-ant-admin01-...</code>
-                  </div>
-                )}
+                ):null}
               </div>
             );
           })()}
