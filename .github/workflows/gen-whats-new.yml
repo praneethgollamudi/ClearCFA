@@ -1,0 +1,41 @@
+name: Generate What's New Slides
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history so gen-whats-new.js can read commits
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Babel (needed by build.js)
+        run: npm install --no-save @babel/core @babel/preset-react
+
+      - name: Generate What's New slides
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node gen-whats-new.js --write
+
+      - name: Build app.js
+        run: node build.js
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/app.jsx app.js index.html
+          if git diff --cached --quiet; then
+            echo "Nothing changed — slides already up to date."
+          else
+            VERSION=$(node -e "const s=require('fs').readFileSync('src/app.jsx','utf8');console.log(s.match(/WHATS_NEW_VERSION\s*=\s*\"([^\"]+)\"/)?.[1]||'')")
+            git commit -m "What's New: ${VERSION}"
+            git push origin main
+            git push origin main:claude/index-html-github-pages-cfa8fd
+          fi
