@@ -5281,13 +5281,24 @@ function CFAMock(){
             "cfa_"+STORAGE_KEY,"cfa_"+SR_KEY,"cfa_"+USAGE_KEY,
             "cfa_"+PASS_TREND_KEY,"cfa_"+PLAN_KEY,"cfa_"+API_LOG_KEY,
             "cfa_"+QCACHE_KEY,"cfa_cfa_focus_cache","cfa_cfa_diag_weak",
-            "cfa_cfa_exam_date","cfa_cfa_refresher_v1","cfa_daily_ai",PENDING_GEN_KEY,
+            "cfa_cfa_exam_date","cfa_daily_ai",PENDING_GEN_KEY,
+            // Direct-localStorage keys (no "cfa_" prefix added by storageSet)
+            CFA_LEVEL_KEY,REFRESHER_KEY,LESSONS_KEY,STUDY_GOAL_KEY,
+            PRESETS_KEY,MISSION_KEY,CONFIDENCE_KEY,WORKED_EX_KEY,
+            DYNAMIC_PN_KEY,DYNAMIC_FORMULAS_KEY,STREAK_FREEZE_KEY,
+            CALC_SNAP_KEY,SESSION_DRAFT_KEY,FLAGS_KEY,
+            BESTS_KEY,RESOLVED_GAPS_KEY,REMINDER_TIME_KEY,
           ];
           SESSION_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch{}});
           setHistory([]);historyRef.current=[];
           setSrDeck({});srDeckRef.current={};
-          setWeeklyPlan(null);
-          setDiagWeak([]);
+          setWeeklyPlan(null);setDiagWeak([]);
+          setCfaLevel("1");
+          setStudyGoal(null);setPresets([]);
+          setDailyMission(null);setDailyRefresher(null);
+          setTopicLessons({});setConfidenceLog({});
+          setWorkedExamples({});setSessionDraft(null);
+          setQuestionFlags([]);setPersonalBests({});
         }
         localStorage.setItem(LAST_UID_KEY,currentAuth.id);
       }
@@ -7772,20 +7783,28 @@ Return ONLY a JSON array — no prose, no markdown fences:
               // Clear auth token
               clearAuth();
               // Clear all user-specific localStorage keys so next user starts fresh
-              try{localStorage.removeItem(STORAGE_KEY);}catch{}
-              try{localStorage.removeItem(SR_KEY);}catch{}
-              try{localStorage.removeItem(USAGE_KEY);}catch{}
-              try{localStorage.removeItem(PLAN_KEY);}catch{}
-              try{localStorage.removeItem(REFRESHER_KEY);}catch{}
-              try{localStorage.removeItem(LESSONS_KEY);}catch{}
-              try{localStorage.removeItem("cfa_pro_cache");}catch{}
+              [
+                "cfa_"+STORAGE_KEY,"cfa_"+SR_KEY,"cfa_"+USAGE_KEY,
+                "cfa_"+PASS_TREND_KEY,"cfa_"+PLAN_KEY,"cfa_"+API_LOG_KEY,
+                "cfa_"+QCACHE_KEY,
+                CFA_LEVEL_KEY,REFRESHER_KEY,LESSONS_KEY,STUDY_GOAL_KEY,
+                PRESETS_KEY,MISSION_KEY,CONFIDENCE_KEY,WORKED_EX_KEY,
+                DYNAMIC_PN_KEY,DYNAMIC_FORMULAS_KEY,STREAK_FREEZE_KEY,
+                CALC_SNAP_KEY,SESSION_DRAFT_KEY,FLAGS_KEY,
+                BESTS_KEY,RESOLVED_GAPS_KEY,REMINDER_TIME_KEY,
+                LAST_UID_KEY,"cfa_pro_cache","cfa_cfa_focus_cache","cfa_cfa_exam_date","cfa_daily_ai",
+              ].forEach(k=>{try{localStorage.removeItem(k);}catch{}});
               // Reset all user-specific React state
               setAuthUser(null);authUserRef.current=null;
               setHistory([]);historyRef.current=[];
               setSrDeck({});srDeckRef.current={};
-              setWeeklyPlan(null);
-              setDailyRefresher(null);
-              setTopicLessons({});
+              setWeeklyPlan(null);setDiagWeak([]);
+              setDailyRefresher(null);setTopicLessons({});
+              setCfaLevel("1");
+              setStudyGoal(null);setPresets([]);
+              setDailyMission(null);setConfidenceLog({});
+              setWorkedExamples({});setSessionDraft(null);
+              setQuestionFlags([]);setPersonalBests({});
               setProStatus(false);setProValidUntil(null);
               setUsageStats({});usageStatsRef.current={};
               setSettingsOpen(false);
