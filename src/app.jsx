@@ -8099,7 +8099,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <div>
           <div style={{fontSize:13,fontWeight:800,color:C.text}}>🎯 Today's Focus</div>
-          <div style={{fontSize:11,color:C.muted,marginTop:2}}>{weeklyPlan?"Plan · adaptive + AI":"Adaptive engine · AI-enhanced"}</div>
+          <div style={{fontSize:11,color:C.muted,marginTop:2}}>Personalised to your weak spots</div>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           {weeklyPlan&&(
@@ -8107,10 +8107,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
               Full Plan
             </button>
           )}
-          {!focusLoading&&(
-            <button onClick={()=>{trackUsage("daily_focus");generateFocus();}} style={{fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
-              {focusSuggestions?"Refresh":"Generate"}
-            </button>
+          {!focusLoading&&focusSuggestions&&(
+            <button onClick={()=>{trackUsage("daily_focus");generateFocus();}} style={{fontSize:18,lineHeight:1,background:"none",border:"none",color:C.muted,cursor:"pointer",padding:"2px 4px"}} title="Refresh">⟳</button>
           )}
         </div>
       </div>
@@ -8172,83 +8170,48 @@ Return ONLY a JSON array — no prose, no markdown fences:
         );
       })()}
 
-      {/* Adaptive picks — instant, always shown */}
-      {adaptiveSuggestions.length>0&&(
-        <div style={{marginBottom:10}}>
-          <div style={{fontSize:10,fontWeight:800,color:C.accentLight,letterSpacing:"0.08em",marginBottom:8}}>⚡ ADAPTIVE PICKS</div>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            {adaptiveSuggestions.map((s,i)=>{
-              const uc={critical:C.hard,high:"#f97316",medium:C.accent,low:C.muted}[s.urgency]||C.muted;
-              return(
-                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:C.surfaceHigh,borderRadius:10,border:`1px solid ${uc}33`}}>
-                  <div style={{flex:1,marginRight:10}}>
-                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
-                      <span style={{fontSize:12,fontWeight:700,color:C.text}}>{s.module}</span>
-                      <span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:4,background:uc+"22",color:uc,textTransform:"uppercase"}}>{s.urgency}</span>
-                    </div>
-                    <div style={{fontSize:10,color:C.muted}}>{s.topic} · {s.difficulty}</div>
-                    <div style={{fontSize:11,color:C.textMid,marginTop:3,lineHeight:1.4}}>{s.reason}</div>
-                  </div>
-                  <button onClick={()=>generateQuestions(s.topic,s.module,s.difficulty,10,"guided")}
-                    style={{fontSize:11,fontWeight:700,padding:"7px 11px",borderRadius:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0}}>
-                    Start →
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      {focusLoading&&<div style={{display:"flex",flexDirection:"column",gap:9}}>{[0,1,2].map(i=><Skeleton key={i} height={72} radius={10}/>)}<div style={{fontSize:12,color:C.muted,textAlign:"center",animation:"pulse 1.5s infinite"}}>Analysing LOS gaps + SR deck…</div></div>}
+      {focusLoading&&<div style={{display:"flex",flexDirection:"column",gap:9}}>{[0,1,2].map(i=><Skeleton key={i} height={72} radius={10}/>)}</div>}
       {focusError&&<div style={{fontSize:13,color:C.hard,padding:"10px",background:C.errorBg,borderRadius:8}}>{focusError}</div>}
-      {!focusLoading&&!focusSuggestions&&!focusError&&(
-        <div style={{textAlign:"center",padding:"6px 0 2px"}}>
-          <div style={{fontSize:11,color:C.muted}}>↑ Tap Generate for AI analysis of LOS gaps + SR patterns</div>
-        </div>
-      )}
-      {focusSuggestions&&!focusLoading&&(()=>{
+      {!focusLoading&&(()=>{
         const todayName=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date().getDay()];
         const todayPlanSessions=(weeklyPlan?.days||[]).find(d=>d.day===todayName)?.sessions||[];
         const planTopicKeys=new Set(todayPlanSessions.map(s=>`${s.topic}|||${s.module}`));
-        const deduped=focusSuggestions.filter(s=>!planTopicKeys.has(`${s.topic}|||${s.module}`));
-        if(deduped.length===0) return null;
+        const items=(focusSuggestions||adaptiveSuggestions).filter(s=>!planTopicKeys.has(`${s.topic}|||${s.module}`));
+        if(!items.length) return null;
         return(
-          <div>
-            <div style={{fontSize:10,fontWeight:800,color:C.muted,letterSpacing:"0.07em",textTransform:"uppercase",marginBottom:8}}>🤖 AI ANALYSIS</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {deduped.map((s,i)=>(
-                <div key={i} onClick={()=>setSelectedFocus(selectedFocus===i?null:i)}
-                  style={{border:`1.5px solid ${selectedFocus===i?urgencyColor[s.urgency]:C.border}`,borderRadius:12,padding:"13px 14px",cursor:"pointer",background:selectedFocus===i?urgencyColor[s.urgency]+"12":C.surfaceHigh,transition:"all 0.15s",animation:selectedFocus===i?"fadeInScale 0.15s ease":undefined}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:13,fontWeight:700,color:C.text}}>{s.module}</div>
-                      <div style={{fontSize:11,color:C.muted,marginTop:1}}>{s.topic}</div>
-                    </div>
-                    <div style={{display:"flex",gap:5,flexShrink:0,marginLeft:8}}>
-                      <Badge color={urgencyColor[s.urgency]}>{s.urgency}</Badge>
-                      <Badge color={diffC[s.difficulty]||C.medium}>{{Easy:"easy",Medium:"med",Hard:"hard"}[s.difficulty]||s.difficulty} diff</Badge>
-                    </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {items.slice(0,3).map((s,i)=>(
+              <div key={i} onClick={()=>setSelectedFocus(selectedFocus===i?null:i)}
+                style={{border:`1.5px solid ${selectedFocus===i?urgencyColor[s.urgency]:C.border}`,borderRadius:12,padding:"13px 14px",cursor:"pointer",background:selectedFocus===i?urgencyColor[s.urgency]+"12":C.surfaceHigh,transition:"all 0.15s"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:C.text}}>{s.module}</div>
+                    <div style={{fontSize:11,color:C.muted,marginTop:1}}>{s.topic}</div>
                   </div>
-                  <div style={{fontSize:12,color:C.textMid,lineHeight:1.55,marginBottom:selectedFocus===i?12:0}}>{s.reason}</div>
-                  {selectedFocus===i&&(
-                    <div onClick={e=>e.stopPropagation()}>
-                      {s.mode!=="sr_review"&&<div style={{display:"flex",gap:6,marginBottom:8}}>
-                        {[5,10,15].map(n=>(
-                          <button key={n} onClick={e=>{e.stopPropagation();setFocusCount(n);}}
-                            style={{flex:1,padding:"6px 0",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",border:focusCount===n?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:focusCount===n?C.accent+"22":C.surface,color:focusCount===n?C.accentLight:C.muted,transition:"all 0.15s"}}>
-                            {n} Qs
-                          </button>
-                        ))}
-                      </div>}
-                      <button onClick={e=>{e.stopPropagation();if(s.mode==="sr_review"){const cards=dueCards.filter(c=>c.topic===s.topic&&c.subtopic===s.module).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));if(cards.length){trackUsage("sr_review");setSrQueue(cards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}else{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}}else{generateQuestions(s.topic,s.module,s.difficulty,focusCount,s.mode||"guided");}}}
-                        style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`}}>
-                        {s.mode==="sr_review"?`Review ${s.count} SR Card${s.count!==1?"s":""}  →`:`Start ${focusCount} Questions →`}
-                      </button>
-                    </div>
-                  )}
+                  <div style={{display:"flex",gap:5,flexShrink:0,marginLeft:8}}>
+                    <Badge color={urgencyColor[s.urgency]}>{s.urgency}</Badge>
+                    <Badge color={diffC[s.difficulty]||C.medium}>{{Easy:"easy",Medium:"med",Hard:"hard"}[s.difficulty]||s.difficulty} diff</Badge>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div style={{fontSize:12,color:C.textMid,lineHeight:1.55,marginBottom:selectedFocus===i?12:0}}>{s.reason}</div>
+                {selectedFocus===i&&(
+                  <div onClick={e=>e.stopPropagation()}>
+                    {s.mode!=="sr_review"&&<div style={{display:"flex",gap:6,marginBottom:8}}>
+                      {[5,10,15].map(n=>(
+                        <button key={n} onClick={e=>{e.stopPropagation();setFocusCount(n);}}
+                          style={{flex:1,padding:"6px 0",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",border:focusCount===n?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:focusCount===n?C.accent+"22":C.surface,color:focusCount===n?C.accentLight:C.muted,transition:"all 0.15s"}}>
+                          {n} Qs
+                        </button>
+                      ))}
+                    </div>}
+                    <button onClick={e=>{e.stopPropagation();if(s.mode==="sr_review"){const cards=dueCards.filter(c=>c.topic===s.topic&&c.subtopic===s.module).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));if(cards.length){trackUsage("sr_review");setSrQueue(cards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}else{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}}else{generateQuestions(s.topic,s.module,s.difficulty,focusCount,s.mode||"guided");}}}
+                      style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`}}>
+                      {s.mode==="sr_review"?`Review ${s.count} SR Card${s.count!==1?"s":""}  →`:`Start ${focusCount} Questions →`}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         );
       })()}
@@ -8354,21 +8317,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
 
-    {/* Smart topic nudge — data-driven, replaces rotating tip */}
-    {smartNudge&&levelHistory.length>=2&&(()=>{
-      const {topic:nt,daysSince,accuracy,weight,sessions}=smartNudge;
-      const reason=sessions===0?`Never studied · ${weight}% of exam`:accuracy!==null&&accuracy<80?`${accuracy}% accuracy · improve this`:daysSince>6?`${daysSince}d since last session · refresher due`:`${accuracy}% accuracy · ${daysSince}d ago`;
-      const mods=Object.keys(activeLOS[nt]?.modules||{});
-      return(
-        <div style={{background:`${C.accent}10`,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"11px 14px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.accentLight,marginBottom:2}}>📍 Focus now: {nt}</div>
-            <div style={{fontSize:11,color:C.muted}}>{reason}</div>
-          </div>
-          <button onClick={()=>generateQuestions(nt,mods[0]||nt,"Medium",10,"guided")} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>Study →</button>
-        </div>
-      );
-    })()}
 
     {/* Study time nudge — implementation intention reminder */}
     {(()=>{
