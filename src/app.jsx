@@ -1041,11 +1041,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
-// WN_VER:2026-06-26-c
-{version:"2026-06-26-c",slides:[
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Clearer Study Pace Insights",sub:"Study Tools · 2026-06-26 update",desc:"We replaced misleading pace predictions with an honest comparison of your current study sessions per day versus your target. This gives you an accurate picture of whether you're on track without false math.",tip:"Check your Pace card to see how your daily session count stacks up against your goal—no guesswork needed."},
-{emoji:"🎨",color:C.reward,bg:C.reward,title:"Streak Freeze Buttons Redesigned",sub:"UX · 2026-06-26 update",desc:"Streak freeze buttons now use consistent design tokens that match your app's theme, making them feel more polished and easier to spot when you need them. This small refinement improves the overall visual cohesion of the study dashboard.",tip:"Look for your streak freeze option—it's now styled to blend seamlessly with the rest of your study interface."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1064,13 +1059,6 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"docs: add complete user-facing features inventory to CLAUDE.md",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
@@ -2800,6 +2788,7 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
                     <div style={{fontSize:13,color:C.muted,textDecoration:"line-through",fontWeight:600}}>₹{ACTIVE_WAS}</div>
                   </div>
                   <div style={{fontSize:10,color:C.easy,fontWeight:700,marginTop:3}}>Save ₹{ACTIVE_WAS-ACTIVE_PRICE}/month · locked in forever</div>
+                  <div style={{fontSize:10,color:C.muted,marginTop:1}}>~${Math.round(ACTIVE_PRICE/85)} USD · payment via UPI</div>
                 </div>
                 <div style={{background:`linear-gradient(135deg,${C.reward},${C.rewardLight})`,color:"#fff",fontSize:9,fontWeight:800,padding:"3px 9px",borderRadius:20,whiteSpace:"nowrap"}}>{ACTIVE_LABEL.toUpperCase()}</div>
               </div>
@@ -3157,7 +3146,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
 
       {/* Tab switcher */}
       <div style={{display:"flex",gap:0,marginBottom:14,background:C.surface,borderRadius:10,padding:3,border:`1px solid ${C.border}`}}>
-        {[["notes","📝 Notes"],["formulas","📐 Formulas"],["learn","🎓 Learn"],["coach","🤖 Coach"]].map(([t,label])=>(
+        {[["notes","📝 Notes"],["formulas","📐 Formulas"],["los","📋 LOS"],["learn","🎓 Learn"],["coach","🤖 Coach"]].map(([t,label])=>(
           <button key={t} onClick={()=>setTab(t)}
             style={{flex:1,padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,border:"none",cursor:"pointer",
               background:tab===t?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.surface,
@@ -3169,9 +3158,9 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
 
       {/* Topic picker */}
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-        {Object.keys(tab==="notes"?POWER_NOTES:FORMULAS).map(t=>{
+        {Object.keys(tab==="los"?activeLOSR:tab==="notes"?POWER_NOTES:FORMULAS).map(t=>{
           const w=activeLOSR[t]?.weight||0;
-          const hasContent=tab==="notes"?(activePowerNotes[t]?.topics?.length>0):(activeFormulas[t]?.length>0);
+          const hasContent=tab==="los"?!!(activeLOSR[t]?.modules):(tab==="notes"?(activePowerNotes[t]?.topics?.length>0):(activeFormulas[t]?.length>0));
           if(!hasContent)return null;
           return(
             <button key={t} onClick={()=>{setSelTopic(t);setExpandedModule(null);}}
@@ -3849,6 +3838,52 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
           </div>
         </>
       )}
+
+      {/* ── LOS TAB ── */}
+      {tab==="los"&&(()=>{
+        const topicModules=activeLOSR[selTopic]?.modules||{};
+        const moduleNames=Object.keys(topicModules);
+        return(
+          <div style={{animation:"fadeIn 0.2s ease"}}>
+            <div style={{fontSize:11,color:C.muted,marginBottom:14,lineHeight:1.6,padding:"10px 12px",background:C.surfaceHigh,borderRadius:9,border:`1px solid ${C.border}`}}>
+              <strong style={{color:C.text}}>2026 Learning Outcome Statements</strong> for <strong style={{color:C.accentLight}}>{selTopic}</strong>.
+              {" "}These are the exact skills CFA Institute tests — each question maps to one of these.
+            </div>
+            {moduleNames.length===0&&<div style={{fontSize:13,color:C.muted,textAlign:"center",padding:"24px 0"}}>No LOS data for this topic.</div>}
+            {moduleNames.map(modName=>{
+              const losItems=topicModules[modName]||[];
+              const isOpen=expandedModule===modName;
+              return(
+                <div key={modName} style={{marginBottom:8,borderRadius:11,border:`1px solid ${isOpen?C.accent+"55":C.border}`,overflow:"hidden",transition:"border-color 0.15s"}}>
+                  <button onClick={()=>setExpandedModule(isOpen?null:modName)}
+                    style={{width:"100%",padding:"12px 14px",background:isOpen?C.accent+"10":C.surface,border:"none",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left"}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:isOpen?C.accentLight:C.text,lineHeight:1.35}}>{modName}</div>
+                      <div style={{fontSize:10,color:C.muted,marginTop:2}}>{losItems.length} outcome{losItems.length!==1?"s":""}</div>
+                    </div>
+                    <span style={{fontSize:11,color:C.muted,fontWeight:700,flexShrink:0,marginLeft:8}}>{isOpen?"▲":"▼"}</span>
+                  </button>
+                  {isOpen&&(
+                    <div style={{borderTop:`1px solid ${C.border}`,background:C.surfaceHigh}}>
+                      {losItems.map((los,i)=>(
+                        <div key={i} style={{padding:"11px 14px",borderBottom:i<losItems.length-1?`1px solid ${C.border}`:undefined,display:"flex",gap:10,alignItems:"flex-start"}}>
+                          <div style={{color:C.accent,fontSize:11,fontWeight:800,flexShrink:0,marginTop:1,minWidth:18}}>{i+1}.</div>
+                          <div style={{fontSize:12,color:C.text,lineHeight:1.7}}>{los}</div>
+                        </div>
+                      ))}
+                      <div style={{padding:"10px 14px",borderTop:`1px solid ${C.border}`}}>
+                        <button onClick={()=>{if(onStartQuiz)onStartQuiz(selTopic,modName,"Medium",5,"guided");}} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                          Practice this module →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -5130,6 +5165,7 @@ function CFAMock(){
   const [showSavePreset,setShowSavePreset]=useState(false);
   const [warmupEnabled,setWarmupEnabled]=useState(false);
   const [focusLastGenerated,setFocusLastGenerated]=useState(null); // timestamp of last generation
+  const [reportedQIds,setReportedQIds]=useState([]);
   const [lastSession,setLastSession]=useState(null);
   const [srQueue,setSrQueue]=useState([]);const [srIdx,setSrIdx]=useState(0);const [srAnswer,setSrAnswer]=useState(null);
   const [autoEscalation,setAutoEscalation]=useState(null);
@@ -7072,6 +7108,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
               </div>
             ))}
           </div>
+          {/* Social proof */}
+          <div style={{marginTop:14,fontSize:12,color:C.muted,textAlign:"center"}}>
+            🎓 <strong style={{color:C.text}}>{COMMUNITY_COUNT}+</strong> CFA candidates preparing for August 2026
+          </div>
         </div>
 
         {/* ── Auth Form ── */}
@@ -8054,6 +8094,26 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </button>
         </div>
       )}
+      {/* Final 30 days intensity ramp */}
+      {daysLeft>0&&daysLeft<=30&&authUser&&(()=>{
+        const examWeek=daysLeft<=7;
+        const color=examWeek?C.hard:C.medium;
+        const msg=examWeek
+          ?`Exam in ${daysLeft} day${daysLeft===1?"":"s"} — daily full mocks now`
+          :`${daysLeft} days out — ramp to 10+ questions/day`;
+        const sub=examWeek
+          ?"Focus: timed mocks + SR cards only. No new topics."
+          :"Prioritise weak topics. Aim for one timed mock this weekend.";
+        return(
+          <div style={{background:`${color}12`,border:`1px solid ${color}44`,borderRadius:12,padding:"11px 14px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:800,color}}>{examWeek?"⚡":"📅"} {msg}</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:2}}>{sub}</div>
+            </div>
+            {examWeek&&proStatus&&<button onClick={()=>{trackUsage("full_exam");startFullExam();}} style={{padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:700,background:`${color}22`,border:`1px solid ${color}44`,color,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Mock →</button>}
+          </div>
+        );
+      })()}
       {/* Resume interrupted session banner */}
       {sessionDraft&&(()=>{
         const mins=Math.round((Date.now()-sessionDraft.ts)/60000);
@@ -8319,7 +8379,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {/* Time selector */}
           <div style={{display:"flex",gap:6}}>
-            {[{n:3,label:"3 Qs · ~5 min"},{n:5,label:"5 Qs · ~8 min"},{n:10,label:"10 Qs · ~15 min"}].map(({n,label})=>(
+            {(daysLeft<=14&&daysLeft>0?[{n:5,label:"5 Qs · ~8 min"},{n:10,label:"10 Qs · ~15 min"},{n:15,label:"15 Qs · ~20 min"}]:[{n:3,label:"3 Qs · ~5 min"},{n:5,label:"5 Qs · ~8 min"},{n:10,label:"10 Qs · ~15 min"}]).map(({n,label})=>(
               <button key={n} onClick={()=>{setOmQCount(n);try{localStorage.setItem("cfa_om_count",String(n));}catch{}}} style={{flex:1,padding:"6px 4px",borderRadius:8,fontSize:11,fontWeight:700,background:omQCount===n?C.accent+"33":"transparent",border:`1px solid ${omQCount===n?C.accent+"88":C.border}`,color:omQCount===n?C.accentLight:C.muted,cursor:"pointer",transition:"all 0.15s"}}>
                 {label}
               </button>
@@ -9387,10 +9447,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
       )}
-      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
         {q.concept&&<Badge color={C.muted}>{q.concept}</Badge>}
         <Badge color={C.accent+"cc"}>{q._subtopic||subtopic}</Badge>
         {q._isEthicsCase&&<Badge color={C.hard}>CFA Institute Case</Badge>}
+        <Badge color={C.accentLight}>📋 2026 LOS</Badge>
       </div>
       {q._isEthicsCase&&<div style={{fontSize:10,color:C.muted,marginBottom:8,fontStyle:"italic"}}>© 2019 CFA Institute. Ethics in Practice Casebook. Used with attribution for non-commercial study.</div>}
       <FormulaSheet topic={topic} level={cfaLevel}/>
@@ -9592,6 +9653,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
               {flaggedQ[q.id]?"⚑ Flagged":"⚐ Not sure"}
             </button>
           )}
+          <button onClick={()=>{
+            if(reportedQIds.includes(q.id))return;
+            setReportedQIds(a=>[...a,q.id]);
+            showToast("Thanks — flagged for quality review","easy");
+          }} title="Report bad question" style={{padding:"13px 11px",borderRadius:10,fontSize:13,background:reportedQIds.includes(q.id)?C.surfaceHigh:C.surface,border:`1.5px solid ${C.border}`,color:reportedQIds.includes(q.id)?C.easy:C.muted,cursor:"pointer",flexShrink:0}}>
+            {reportedQIds.includes(q.id)?"✓":"👎"}
+          </button>
         </div>
       )}
       {currentQ>2&&mode!=="exam"&&<button onClick={endQuiz} style={{marginTop:9,width:"100%",padding:"9px",borderRadius:10,fontSize:12,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>End & See Results</button>}
