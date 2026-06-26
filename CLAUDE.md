@@ -75,6 +75,9 @@ WhatsApp message template uses `` `₹${ACTIVE_PRICE}` `` — do not hardcode th
 
 ## Pro Status & Subscriptions
 
+**USD price display in UpgradeModal**: The upgrade modal now displays an approximate USD conversion (`~${Math.round(ACTIVE_PRICE/85)} USD`) below the INR price using a fixed 85 INR/USD exchange rate. This is for reference only — all payments remain in INR via UPI.
+
+
 **Admin account Pro override**: The admin account (email: `sai.praneeth557@gmail.com`) is Pro via owner override and is **excluded from all Pro subscriber counts** in the admin dashboard. When inserting manual Pro grants to the `subscriptions` table, the admin row should not be counted in `revenue.proCount` metrics.
 
 
@@ -117,6 +120,12 @@ Pro users bypass both limits entirely.
 - `getReferralStats(cfg, referrerId)` returns `{signups, paid}` — card shows paid count for progress, sign-up count as context
 
 ## Build & Deploy
+
+**UpgradeModal USD pricing**: Added approximate USD conversion display (`~${Math.round(ACTIVE_PRICE/85)} USD`) below INR amount using fixed 85 INR/USD rate for reference. Always update CLAUDE.md if exchange rate assumption changes.
+
+
+**LOS (Learning Outcome Statements) tab**: RevisionScreen now includes a new `los` tab alongside Notes, Formulas, Learn, and Coach. Displays 2026 LOS by module with expandable sections and a "Practice this module" button that triggers guided quizzes. Data sourced from `activeLOSR` object keyed by topic.
+
 
 **What's New slides versioning**: Added internal-only release notes versions (`2026-06-26-b`, `2026-06-26-c`, etc.) to document UX improvements and bug fixes. These appear in the What's New carousel and track product updates for users.
 
@@ -576,7 +585,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1787200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
