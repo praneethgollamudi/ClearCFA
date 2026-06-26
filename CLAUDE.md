@@ -90,6 +90,9 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
+**Pace status calculation**: `getPaceStatus()` now returns `{avg, neededPerDay, sessionsNeeded, ahead}` instead of the old `{delta, daysToComplete, avgSessionsPerDay}`. The pace card was removed entirely — the metric was based on invented math. Current implementation compares actual sessions/day (`avg`) against required sessions/day (`neededPerDay`) to show if user is ahead or behind. Always reference the new structure when displaying pace feedback.
+
+
 **Weekly Plan prompt level-awareness**: The `WEEKLY_PLAN_PROMPT` now accepts a `level` parameter ("1", "2", or "3") and injects it via `.split("{level}").join(cfaLevel)` at call time. Callers must pass `cfaLevel` from state; failure to do so defaults to Level 1 prompts.
 
 
@@ -576,7 +579,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1787200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1788200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
