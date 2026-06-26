@@ -19,11 +19,18 @@ jobs:
         run: |
           for f in $(ls supabase/migrations/*.sql 2>/dev/null | sort); do
             echo "▶ $f"
-            curl -sf -X POST \
+            SQL=$(cat "$f")
+            BODY=$(jq -n --arg q "$SQL" '{"query": $q}')
+            HTTP=$(curl -s -o /tmp/migration_response.json -w "%{http_code}" -X POST \
               "https://api.supabase.com/v1/projects/uucxyuqxqjpbxecemdvf/database/query" \
               -H "Authorization: Bearer $PAT" \
               -H "Content-Type: application/json" \
-              -d "{\"query\": $(jq -Rs . < "$f")}"
+              -d "$BODY")
+            echo "  HTTP $HTTP: $(cat /tmp/migration_response.json)"
+            if [ "$HTTP" -ge 400 ]; then
+              echo "❌ Migration failed"
+              exit 1
+            fi
             echo "  ✓"
           done
 
