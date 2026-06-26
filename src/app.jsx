@@ -1041,6 +1041,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
+// WN_VER:2026-06-26-c
+{version:"2026-06-26-c",slides:[
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Clearer Study Pace Insights",sub:"Study Tools · 2026-06-26 update",desc:"We replaced misleading pace predictions with an honest comparison of your current study sessions per day versus your target. This gives you an accurate picture of whether you're on track without false math.",tip:"Check your Pace card to see how your daily session count stacks up against your goal—no guesswork needed."},
+{emoji:"🎨",color:C.reward,bg:C.reward,title:"Streak Freeze Buttons Redesigned",sub:"UX · 2026-06-26 update",desc:"Streak freeze buttons now use consistent design tokens that match your app's theme, making them feel more polished and easier to spot when you need them. This small refinement improves the overall visual cohesion of the study dashboard.",tip:"Look for your streak freeze option—it's now styled to blend seamlessly with the rest of your study interface."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1059,6 +1064,13 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
+]},
+// AC_VER:2026-06-26
+{date:"2026-06-26",entries:[
+"docs: add complete user-facing features inventory to CLAUDE.md",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
