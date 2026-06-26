@@ -837,7 +837,7 @@ const SESSION_DRAFT_KEY    = "cfa_session_draft_v1";
 const PENDING_GEN_KEY      = "cfa_pending_gen_v1";
 const TOUR_KEY             = "cfa_tour_v1";
 const WHATS_NEW_KEY        = "cfa_whats_new_v1";
-const WHATS_NEW_VERSION    = "2026-06-26";
+const WHATS_NEW_VERSION    = "2026-06-26-ai";
 const PRO_TOUR_KEY         = "cfa_pro_tour_v1";
 const SCREEN_ONBOARD_KEY   = "cfa_screen_onboard_v1";
 const CHECKLIST_KEY        = "cfa_checklist_done";
@@ -2827,6 +2827,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachTopic, setCoachTopic] = useState(null);
   const coachMsgsEndRef = useRef(null);
+  const [coachOnboardDone, setCoachOnboardDone] = useState(()=>{try{return !!localStorage.getItem("cfa_coach_onboard_v1");}catch{return false;}});
 
   // Reset formula module accordion when topic changes
   useEffect(()=>{setExpandedFormulaModule(null);setExpandedFormula(null);},[selTopic]);
@@ -3541,6 +3542,18 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
       )}
 
       {/* ── COACH TAB ── */}
+      {tab==="coach"&&!coachOnboardDone&&isPro&&(
+        <SlideOverlay
+          slides={[
+            {emoji:"🤖",color:C.accentLight,bg:C.accent,title:"AI Concept Coach",sub:"Multi-turn teaching dialogue",desc:"Pick a CFA topic and I'll teach it through Socratic questions — one concept at a time. I check your understanding before moving on, and adapt to your answers. Think of it as a 1-on-1 tutoring session.",tip:"Start a coaching session on your weakest topic for the biggest impact. The coach builds on your wrong answers from that topic."},
+            {emoji:"💬",color:C.easy,bg:C.easy,title:"How it works",sub:"Dialogue-based learning",desc:"I ask a question. You answer in the text box. I respond — either building on your understanding or gently correcting and re-explaining. Each round deepens the model. Tap 'New session' anytime to restart with a different topic.",tip:"Unlike flashcards, coaching sessions have no fixed endpoint. Keep going until the concept feels solid, then tap Practice to test it with real exam questions."},
+          ]}
+          onDismiss={()=>{setCoachOnboardDone(true);try{localStorage.setItem("cfa_coach_onboard_v1","1");}catch{}}}
+          skipLabel="Skip →"
+          ctaLabel="Let's start →"
+          zIndex={350}
+        />
+      )}
       {tab==="coach"&&(
         <div style={{animation:"fadeIn 0.2s ease"}}>
           {/* Topic picker */}
@@ -7499,9 +7512,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* What's New — shown once per release version */}
     {tourDismissed&&!whatsNewDismissed&&<SlideOverlay
       slides={[
-        {emoji:"📦",color:C.easy,bg:C.easy,title:"Study Without Sign-In",sub:"Offline Mode · June 2026",desc:"ClearCFA now ships with 30 starter questions across all 10 CFA Level 1 topics — ready before you create an account. If the AI is busy or you're offline, your last 30 questions per topic are always available as an instant fallback.",tip:"Sign in to unlock AI-personalised questions and track your progress. The offline bank is just your starting point."},
-        {emoji:"🔥",color:C.reward,bg:C.reward,title:"Streak Protection Alerts",sub:"Motivation · June 2026",desc:"When you hit the daily free question limit, ClearCFA now shows exactly how many streak days you're protecting — and puts your streak count front and centre in the upgrade prompt. No vague sales pitch, just the truth about what's at stake.",tip:"Go Pro to remove the daily cap and never risk breaking your streak mid-session."},
-        {emoji:"✨",color:C.accentLight,bg:C.accent,title:"Pro Tour & What's New",sub:"Onboarding · June 2026",desc:"Upgrading to Pro now triggers a 3-slide walkthrough of AI Debrief, AI Coach, and all three CFA levels — so every feature is immediately usable. New users also get a Getting Started checklist to reach their first session in under a minute.",tip:"Missed the Pro tour? Open Settings → scroll down → tap 'Replay Pro Tour'."},
+        {emoji:"🤔",color:C.accentLight,bg:C.accent,title:"Socratic Wrong-Answer Tutor",sub:"New AI Feature · June 2026",desc:"When you get a quiz question wrong, a new 'Ask tutor →' button appears below the explanation. The AI doesn't just re-explain — it asks you Socratic questions to help you discover the gap yourself. Multi-turn dialogue, no extra quota used.",tip:"The Socratic method is proven to build deeper understanding than re-reading explanations. Try it on your next wrong answer."},
+        {emoji:"⚡",color:C.reward,bg:C.reward,title:"Daily Mission Agent",sub:"New AI Feature · June 2026",desc:"Every day, an AI coach analyses your weakest topics and your recent sessions to generate a specific, actionable study mission — with a task, an exam insight, and a one-tap Start button. Resets at midnight and adapts as your weak spots change.",tip:"The Daily Mission appears on your home screen automatically once you have some study history. No setup needed."},
+        {emoji:"🤖",color:C.easy,bg:C.easy,title:"Multi-turn Concept Coach",sub:"New AI Feature · June 2026",desc:"Open Quick Revision → tap the new '🤖 Coach' tab. Pick any CFA topic and the AI teaches it through Socratic dialogue — one concept at a time, checking your understanding before advancing. It remembers the conversation and adapts to your answers.",tip:"Unlike the AI Debrief (which reviews what went wrong), the Concept Coach is proactive — use it before a topic to build a mental model, not just after to patch gaps."},
       ]}
       onDismiss={()=>{setWhatsNewDismissed(true);try{localStorage.setItem(WHATS_NEW_KEY,WHATS_NEW_VERSION);}catch{}}}
       skipLabel="Got it →"
@@ -8045,15 +8058,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
         ):(
           <>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-              <div style={{fontSize:11,fontWeight:800,color:C.reward,letterSpacing:"0.05em",textTransform:"uppercase"}}>⚡ DAILY MISSION</div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <div style={{fontSize:11,fontWeight:800,color:C.reward,letterSpacing:"0.05em",textTransform:"uppercase"}}>⚡ DAILY MISSION</div>
+                {!screenOnboard.dailyMission&&<span style={{fontSize:9,fontWeight:800,color:C.bg,background:C.easy,borderRadius:6,padding:"1px 6px",letterSpacing:"0.06em"}}>NEW</span>}
+              </div>
               {dailyMission?.topic&&<span style={{fontSize:10,color:C.muted,background:C.surface,padding:"2px 8px",borderRadius:10,border:`1px solid ${C.border}`}}>{dailyMission.topic}</span>}
             </div>
             {dailyMission?.mission&&<div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:6,lineHeight:1.5}}>{dailyMission.mission}</div>}
             {dailyMission?.action&&<div style={{fontSize:12,color:C.textMid,marginBottom:8,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.reward}55`}}>{dailyMission.action}</div>}
             {dailyMission?.tip&&<div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.6}}>💡 {dailyMission.tip}</div>}
             {dailyMission?.topic&&(
-              <button onClick={()=>generateQuestions(dailyMission.topic,Object.keys(getActiveLOS(cfaLevel)[dailyMission.topic]?.modules||{})[0]||dailyMission.topic,"Medium",10,"guided")}
-                style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.reward,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
+              <button onClick={()=>{
+                generateQuestions(dailyMission.topic,Object.keys(getActiveLOS(cfaLevel)[dailyMission.topic]?.modules||{})[0]||dailyMission.topic,"Medium",10,"guided");
+                if(!screenOnboard.dailyMission){const u={...screenOnboard,dailyMission:true};setScreenOnboard(u);try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{}}
+              }} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.reward,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
                 Start Mission →
               </button>
             )}
@@ -9133,6 +9151,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {/* Socratic Wrong-Answer Tutor */}
       {showExp&&(mode==="guided"||mode==="essay")&&answered&&answered!==q.answer&&(
         <div style={{marginBottom:12,animation:"fadeIn 0.2s ease"}}>
+          {/* First-use callout */}
+          {!screenOnboard.socraticTutor&&(!socraticQ||socraticQ.id!==q.id)&&authUser?.id&&(
+            <div style={{background:`${C.accent}18`,border:`1px solid ${C.accent}44`,borderRadius:9,padding:"9px 12px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontSize:11,color:C.accentLight,lineHeight:1.5}}>✨ <strong>New:</strong> Tap "Ask tutor →" to get Socratic guidance — AI asks questions, you discover the answer.</div>
+              <button onClick={()=>{const u={...screenOnboard,socraticTutor:true};setScreenOnboard(u);try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{}}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,lineHeight:1,marginLeft:8,flexShrink:0}}>✕</button>
+            </div>
+          )}
           {(!socraticQ||socraticQ.id!==q.id)?(
             <div style={{background:`linear-gradient(135deg,${C.accent}10,${C.accent}05)`,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"12px 14px"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -9141,7 +9166,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   <div style={{fontSize:11,color:C.muted,marginTop:2}}>AI tutor guides you with questions, not answers</div>
                 </div>
                 {authUser?.id?(
-                  <button onClick={()=>startSocratic(q,answered)}
+                  <button onClick={()=>{startSocratic(q,answered);const u={...screenOnboard,socraticTutor:true};setScreenOnboard(u);try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{};}}
                     style={{padding:"8px 14px",borderRadius:9,fontSize:12,fontWeight:700,
                       background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,
                       color:"#fff",border:"none",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,marginLeft:10}}>
