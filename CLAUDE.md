@@ -18,6 +18,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ### Edge Functions (in `supabase/functions/`)
 
+All AI prompts (`buildVignettePrompt()`, `buildFSAStatementPrompt()`, `WEEKLY_PLAN_PROMPT`) now accept a `level` parameter ("1", "2", or "3") and inject it into the prompt template. Callers must pass `cfaLevel` from state — failure to do so defaults to Level 1 prompts. The `WEEKLY_PLAN_PROMPT` uses `{level}` placeholder which is replaced at call time via `.split("{level}").join(cfaLevel)`.
+
+
 All AI prompts that call `buildVignettePrompt()`, `buildFSAStatementPrompt()`, and `WEEKLY_PLAN_PROMPT` now accept a `level` parameter ("1", "2", or "3") and inject it into the prompt. This makes question generation, vignettes, FSA problems, and weekly study plans level-aware. Always pass `cfaLevel` from state when calling these builders.
 
 
@@ -148,6 +151,12 @@ Use `grep "SCREEN:"` to get a full screen index with line numbers. Each screen b
 ```
 
 ## Key Patterns
+
+**Complete user isolation on sign-out**: When a user signs out or switches accounts, `SESSION_KEYS` array now includes all direct-localStorage keys (those without "cfa_" prefix auto-added) like `CFA_LEVEL_KEY`, `REFRESHER_KEY`, `STUDY_GOAL_KEY`, etc. These are explicitly cleared alongside prefixed keys. Always maintain this list when adding new localStorage state — add both the key constant and the literal key name if it differs.
+
+
+**FixToPassScreen level awareness**: `FixToPassScreen` now accepts `cfaLevel` prop (defaults to "1") and uses it when calling `getActiveLOS(cfaLevel)` to fetch the correct curriculum for the user's exam level. Always pass `cfaLevel` from parent state.
+
 
 ### Screen navigation
 
@@ -495,7 +504,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1786400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1786500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
