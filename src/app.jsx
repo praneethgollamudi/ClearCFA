@@ -977,6 +977,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🛡️",color:C.medium,bg:C.medium,title:"More Reliable Admin Tools",sub:"Bug Fix · 2026-06-26 update",desc:"Fixed critical authentication and display issues in the admin dashboard that caused blank pages and login failures. Teachers and admins can now reliably manage accounts and track student progress without technical roadblocks.",tip:"If you're an instructor, log in to the admin dashboard to verify your student roster now loads correctly."},
 {emoji:"🔄",color:C.reward,bg:C.reward,title:"Smarter Deployment Pipeline",sub:"Speed · 2026-06-26 update",desc:"Our build system now automatically retries failed pushes when multiple commits happen at once, reducing deployment delays. You'll get bug fixes and new features pushed to your device faster and more reliably.",tip:"Updates may arrive more frequently now—keep your app up to date for the latest exam content."},
 ]},
+// WN_VER:2026-06-26-c
+{version:"2026-06-26-c",slides:[
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings Experience",sub:"UX · 2026-06-26 update",desc:"We've streamlined your Settings page by removing redundant information and consolidating sync status into your account footer. You now see exactly what matters—your progress and account info—without clutter.",tip:"Check your account footer to see your sync and session status at a glance."},
+{emoji:"🔐",color:C.hard,bg:C.hard,title:"Stronger Admin Security",sub:"Bug Fix · 2026-06-26 update",desc:"We fixed authentication issues in the admin dashboard that were preventing proper session verification. This ensures your study data stays secure and admin features work reliably.",tip:"No action needed—this update runs silently in the background to protect your account."},
+{emoji:"⚙️",color:C.medium,bg:C.medium,title:"More Reliable Syncing",sub:"Speed · 2026-06-26 update",desc:"Our backend now handles concurrent updates better with improved retry logic, so your progress syncs smoothly even during heavy usage. Study without worrying about lost sessions or data conflicts.",tip:"Your progress saves seamlessly—focus on your exam prep instead of managing sync."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
