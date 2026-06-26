@@ -125,6 +125,10 @@ C.hard        — red (#ef4444), wrong/fail
 C.reward      — gold, streaks/rewards
 ```
 
+**CRITICAL: `C` is a module-level constant defined at ~line 976 in `src/app.jsx`** (after the palette definitions). Any module-level code that references `C.*` color tokens **must be placed after that line**. Placing it before causes a `ReferenceError` at runtime that results in a blank page — the Babel build will succeed without error, so this won't be caught until the app is opened in a browser.
+
+The pre-commit hook checks for this automatically and will abort the commit if a `C.*` token appears before the `C=Object.assign(...)` definition.
+
 ## Key State (in CFAMock)
 
 | Variable | Type | Description |
@@ -154,8 +158,7 @@ SR_KEY             = "cfa_sr_v7"          — SR deck
 OFFLINE_QS_KEY     = "cfa_offline_qs_v1"  — cached questions (up to 30 per topic/module)
 OFFLINE_SEED_KEY   = "cfa_offline_seed_seeded_v1" — flag: OFFLINE_SEED_QS already seeded
 TOUR_KEY           = "cfa_tour_v1"        — feature tour dismissed
-WHATS_NEW_KEY      = "cfa_whats_new_v1"   — what's new version seen
-WHATS_NEW_VERSION  = "2026-06-25"         — bump this string each release
+WHATS_NEW_KEY      = "cfa_whats_new_v1"   — last seen What's New version (string)
 PRO_TOUR_KEY       = "cfa_pro_tour_v1"    — pro tour dismissed
 SCREEN_ONBOARD_KEY = "cfa_screen_onboard_v1" — per-screen first-visit flags
 ```
@@ -192,6 +195,7 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+- **C before definition**: `C` is defined at ~line 976. Any module-level code using `C.*` color tokens must come after that line. Violating this causes a blank page — Babel won't catch it, but the pre-commit smoke check will.
 - **navPortal**: `wrap()` includes it automatically. Never add it manually to a screen.
 - **Cache bust**: Always increment `v=` in `index.html` before committing. Without this, users see the old cached version.
 - **Two-branch push**: Always push both `main` AND `main:claude/index-html-github-pages-cfa8fd`.
