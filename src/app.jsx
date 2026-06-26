@@ -290,8 +290,8 @@ Rules:
 }
 
 // Expand compact JSON keys returned by optimised prompt
-function buildFSAStatementPrompt(subtopic, difficulty){
-  return `You are a CFA Level 1 exam writer. Create an FSA financial statement analysis problem.
+function buildFSAStatementPrompt(subtopic, difficulty, level="1"){
+  return `You are a CFA Level ${level} exam writer. Create an FSA financial statement analysis problem.
 
 Generate a JSON object with this exact structure:
 {
@@ -361,9 +361,9 @@ function generateStudyPlan(history, srDeck, examDate, daysLeft){
   return plan;
 }
 
-function buildVignettePrompt(topic,module,difficulty,vigCount,subtopic2=null,losData=null){
+function buildVignettePrompt(topic,module,difficulty,vigCount,subtopic2=null,losData=null,level="1"){
   const los=((losData||LOS)[topic]?.modules[module]||[]).slice(0,4).map((l,i)=>`${i+1}. ${l}`).join("\n");
-  return `You are a CFA Level 1 exam writer. Generate ${vigCount} item set(s) for ${topic} — ${module} at ${difficulty} difficulty.
+  return `You are a CFA Level ${level} exam writer. Generate ${vigCount} item set(s) for ${topic} — ${module} at ${difficulty} difficulty.
 
 Each item set = one scenario (100-150 words) + exactly 3 multiple-choice questions testing that scenario.
 
@@ -750,7 +750,7 @@ function getStudyPace(history, daysLeft) {
 }
 
 // ─── WEEKLY PLAN GENERATOR (AI-powered) ─────────────────────────────────────
-const WEEKLY_PLAN_PROMPT = `You are a CFA Level 1 study coach. Generate a practical weekly study plan.
+const WEEKLY_PLAN_PROMPT = `You are a CFA Level {level} study coach. Generate a practical weekly study plan.
 
 Student data:
 - Days to exam: {days}
@@ -3998,7 +3998,7 @@ function StudyPathScreen({onBack, onLearn, onPractice, srDeck={}, cfaLevel="1", 
   );
 }
 
-function FixToPassScreen({onBack,passProbability,moduleReadiness,generateQuestions}){
+function FixToPassScreen({onBack,passProbability,moduleReadiness,generateQuestions,cfaLevel="1"}){
   const blocking=moduleReadiness
     .filter(m=>m.reliable&&m.accuracy!==null&&m.accuracy<70)
     .map(m=>({...m,gap:70-m.accuracy,impact:(70-m.accuracy)*m.weight}))
@@ -4082,7 +4082,7 @@ function FixToPassScreen({onBack,passProbability,moduleReadiness,generateQuestio
                   </div>
                 </div>
                 <button onClick={()=>{
-                  const mods=Object.keys(getActiveLOS("1")[m.topic]?.modules||{});
+                  const mods=Object.keys(getActiveLOS(cfaLevel)[m.topic]?.modules||{});
                   const weakestMod=m.modulesCovered?.length>0
                     ? m.modulesCovered.sort((a,b)=>(m.moduleStats[a]?.pct??100)-(m.moduleStats[b]?.pct??100))[0]
                     : mods[0]||m.topic;
@@ -4098,7 +4098,7 @@ function FixToPassScreen({onBack,passProbability,moduleReadiness,generateQuestio
           {/* Primary CTA — start with highest impact */}
           <button onClick={()=>{
             const top=allTargets[0];
-            const mods=Object.keys(getActiveLOS("1")[top.topic]?.modules||{});
+            const mods=Object.keys(getActiveLOS(cfaLevel)[top.topic]?.modules||{});
             const weakestMod=top.modulesCovered?.length>0
               ? top.modulesCovered.sort((a,b)=>(top.moduleStats[a]?.pct??100)-(top.moduleStats[b]?.pct??100))[0]
               : mods[0]||top.topic;
@@ -5913,6 +5913,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
       const daysSince=studyPace?.daysSinceLastSession||"unknown";
 
       const prompt=WEEKLY_PLAN_PROMPT
+        .split("{level}").join(cfaLevel)
         .split("{days}").join(String(daysLeft))
         .split("{hours}").join(String(hoursThisWeek))
         .split("{prob}").join(String(prob))
@@ -5985,7 +5986,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const progressInterval=setInterval(()=>{setLoadingProgress(p=>Math.min(85,p+3));},300);
     try{
       if(!authUser?.id){setError("FSA Vignette requires a ClearCFA account. Please sign in.");setLoading(false);clearInterval(progressInterval);generatingRef.current=false;return;}
-      const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty),1800,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"fsa_vignette"});
+      const raw=await callClaude(buildFSAStatementPrompt(subtopic,difficulty,cfaLevel),1800,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"fsa_vignette"});
       clearInterval(progressInterval);
       if(!raw||!raw.questions)throw new Error("Invalid FSA vignette format");
       const stmtText=formatStatements(raw);
@@ -6144,7 +6145,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       let parsed;
       if(isVignette){
         const vignetteCount=Math.max(1,Math.ceil(cnt/3));
-        const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null,activeLOS);
+        const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null,activeLOS,cfaLevel);
         const rawVig=await callClaude(vigPrompt,2000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`});
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
@@ -6728,7 +6729,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3).map(m=>`${m.topic}: ${m.accuracy}%`).join(", ");
               const untouched=moduleReadiness.filter(m=>m.sessions===0).map(m=>m.topic.split(" ")[0]).join(", ");
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass probability ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest modules: ${topWeak||"none yet"}, untouched: ${untouched||"none"}, SR due: ${dueCards.length}, leeches: ${leeches.length}.`;
-              const sysPrompt=`You are a direct, honest CFA Level 1 study coach. ${context} Give specific, actionable advice in 2-4 sentences. No generic motivational fluff.`;
+              const sysPrompt=`You are a direct, honest CFA Level ${cfaLevel} study coach. ${context} Give specific, actionable advice in 2-4 sentences. No generic motivational fluff.`;
               const result=await callAIChat(authUser.id,[{role:"user",content:`${sysPrompt}\n\nStudent: ${prompt}`}],300,cfaLevel);
               const text=(typeof result==="string"?result:"")||"No response";
               setAiCoachMessages(m=>[...m,{role:"assistant",text}]);
@@ -6767,7 +6768,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             try{
               const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3).map(m=>`${m.topic}: ${m.accuracy}%`).join(", ");
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass prob ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest: ${topWeak||"none"}.`;
-              const result=await callAIChat(authUser.id,[{role:"user",content:`You are a direct CFA L1 coach. ${context}\n\nStudent: ${q}`}],300,cfaLevel);
+              const result=await callAIChat(authUser.id,[{role:"user",content:`You are a direct CFA L${cfaLevel} coach. ${context}\n\nStudent: ${q}`}],300,cfaLevel);
               setAiCoachMessages(m=>[...m,{role:"assistant",text:(typeof result==="string"?result:"")||"No response"}]);
             }catch(e){setAiCoachMessages(m=>[...m,{role:"assistant",text:"Error: "+e.message}]);}
             setAiCoachLoading(false);
@@ -8811,7 +8812,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"14px",marginBottom:6,fontSize:13,color:C.textMid,lineHeight:1.75}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
               <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Explanation</div>
-              <button onClick={()=>openReviewAI(`${card.concept||card.subtopic||"SR Card"} · ${card.topic}`,`CFA Level 1 — I just answered a spaced repetition card.\n\nConcept: "${card.concept||card.subtopic}"\nTopic: ${card.topic}\n\nExplanation given: "${card.explanation}"\n${card.los_tested?`LOS: ${card.los_tested}`:""}${card.misconception_targeted?`\nCommon error: ${card.misconception_targeted}`:""}\n\nHelp me understand this deeply with a worked example and the key exam nuance I must not miss.`)}
+              <button onClick={()=>openReviewAI(`${card.concept||card.subtopic||"SR Card"} · ${card.topic}`,`CFA Level ${cfaLevel} — I just answered a spaced repetition card.\n\nConcept: "${card.concept||card.subtopic}"\nTopic: ${card.topic}\n\nExplanation given: "${card.explanation}"\n${card.los_tested?`LOS: ${card.los_tested}`:""}${card.misconception_targeted?`\nCommon error: ${card.misconception_targeted}`:""}\n\nHelp me understand this deeply with a worked example and the key exam nuance I must not miss.`)}
                 style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:7,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>
                 💬 Ask AI
               </button>
@@ -10630,7 +10631,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"15px",marginBottom:6,fontSize:13,color:C.textMid,lineHeight:1.75}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Why you missed this</div>
-          <button onClick={()=>openReviewAI(`${w.concept||w.subtopic||"Question"} · ${w.topic||""}`,`CFA Level 1 — I got this wrong in a practice session.\n\nConcept: "${w.concept||w.subtopic}"\n${w.topic?`Topic: ${w.topic}\n`:""}\nExplanation: "${w.explanation}"\n${w.los_tested?`LOS: ${w.los_tested}`:""}${w.misconception_targeted?`\nError pattern: ${w.misconception_targeted}`:""}\n\nHelp me truly understand why I missed this and what I must remember for the exam.`)}
+          <button onClick={()=>openReviewAI(`${w.concept||w.subtopic||"Question"} · ${w.topic||""}`,`CFA Level ${cfaLevel} — I got this wrong in a practice session.\n\nConcept: "${w.concept||w.subtopic}"\n${w.topic?`Topic: ${w.topic}\n`:""}\nExplanation: "${w.explanation}"\n${w.los_tested?`LOS: ${w.los_tested}`:""}${w.misconception_targeted?`\nError pattern: ${w.misconception_targeted}`:""}\n\nHelp me truly understand why I missed this and what I must remember for the exam.`)}
             style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:7,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>
             💬 Ask AI
           </button>
