@@ -9667,13 +9667,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
               {flaggedQ[q.id]?"⚑ Flagged":"⚐ Not sure"}
             </button>
           )}
-          <button onClick={()=>{
-            if(reportedQIds.includes(q.id))return;
-            setReportedQIds(a=>[...a,q.id]);
-            showToast("Thanks — flagged for quality review","easy");
-          }} title="Report bad question" style={{padding:"13px 11px",borderRadius:10,fontSize:13,background:reportedQIds.includes(q.id)?C.surfaceHigh:C.surface,border:`1.5px solid ${C.border}`,color:reportedQIds.includes(q.id)?C.easy:C.muted,cursor:"pointer",flexShrink:0}}>
-            {reportedQIds.includes(q.id)?"✓":"👎"}
-          </button>
         </div>
       )}
       {currentQ>2&&mode!=="exam"&&<button onClick={endQuiz} style={{marginTop:9,width:"100%",padding:"9px",borderRadius:10,fontSize:12,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>End & See Results</button>}
