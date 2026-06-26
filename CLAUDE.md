@@ -21,6 +21,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ### Edge Functions (in `supabase/functions/`)
 
+**`admin-stats` auth update**: Now accepts `userId` and `email` in request body as fallbacks for password-based logins (where `accessToken` is `undefined`). If `ADMIN_USER_ID` environment secret is set, it's checked first; otherwise falls back to verifying `userId` exists in `sessions` table + `email` matches `ADMIN_EMAIL`. Always send all three (`accessToken`, `userId`, `email`) from the client for robustness.
+
+
 All AI prompts (`buildVignettePrompt()`, `buildFSAStatementPrompt()`, `WEEKLY_PLAN_PROMPT`) now accept a `level` parameter ("1", "2", or "3") and inject it into the prompt template. Callers must pass `cfaLevel` from state — failure to do so defaults to Level 1 prompts. The `WEEKLY_PLAN_PROMPT` uses `{level}` placeholder which is replaced at call time via `.split("{level}").join(cfaLevel)`.
 
 
@@ -154,6 +157,15 @@ Use `grep "SCREEN:"` to get a full screen index with line numbers. Each screen b
 ```
 
 ## Key Patterns
+
+**Admin access gate**: Check `isAdmin` at render time and call `setScreen("home")` if unauthorized — do NOT render admin content conditionally in JSX. This prevents hooks violations and ensures clean redirect behavior.
+
+
+**Admin screen auto-fetch**: Admin dashboard now has a useEffect that auto-fetches stats when `screen==="adminDashboard"` and `!adminStats && !adminStatsLoading`. This eliminates blank page on first navigation to admin screen.
+
+
+**Admin dashboard state management**: `adminBudget` is now a top-level React state variable (not useState inside the render function) to avoid hook violations on route changes. Initialize from localStorage via useState initializer function. This prevents crashes when navigating away from admin screen mid-render.
+
 
 **State reset on sign-out/switch**: Beyond localStorage cleanup, ALL user-specific React state variables must be explicitly reset: `setCfaLevel("1")`, `setStudyGoal(null)`, `setPresets([])`, `setDailyMission(null)`, `setDailyRefresher(null)`, `setTopicLessons({})`, `setConfidenceLog({})`, `setWorkedExamples({})`, `setSessionDraft(null)`, `setQuestionFlags([])`, `setPersonalBests({})`, `setWeeklyPlan(null)`, `setDiagWeak([])`. Failure to reset state causes data bleed across account switches.
 
@@ -531,7 +543,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1786700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1786800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
