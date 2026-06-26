@@ -211,8 +211,15 @@ function callAnthropic(key, prompt) {
         try {
           const parsed = JSON.parse(data);
           if (parsed.error) return reject(new Error(parsed.error.message));
-          const text = (parsed.content?.[0]?.text || '').replace(/```json\n?|```/g,'').trim();
-          resolve(JSON.parse(text));
+          let text = (parsed.content?.[0]?.text || '').replace(/```json\n?|```/g,'').trim();
+          // Extract just the JSON array in case Claude added trailing text
+          const arrM = text.match(/\[[\s\S]*\]/);
+          if (arrM) text = arrM[0];
+          // Attempt 1: direct parse
+          try { return resolve(JSON.parse(text)); } catch {}
+          // Attempt 2: sanitize literal newlines inside string values
+          const fixed = text.replace(/("(?:[^"\\]|\\.)*")/gs, s => s.replace(/\n/g, '\\n').replace(/\r/g, ''));
+          resolve(JSON.parse(fixed));
         } catch(e) {
           reject(new Error(`Parse failed: ${e.message}\nRaw: ${data.slice(0,400)}`));
         }
