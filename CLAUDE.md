@@ -113,6 +113,9 @@ Pro users bypass both limits entirely.
 
 ## Referral System
 
+**Referral signup bonus**: Each friend who signs up via referral link now earns the referrer **+3 days Pro free** immediately (displayed in ReferralCard as `+{signups*3}d Pro`). The existing 1-month-per-2-paid-subscriptions reward remains unchanged. ReferralCard now shows both signup bonus progress and paid subscription progress separately.
+
+
 - Referral links: `?ref=<userId>` in URL → stored in sessionStorage → recorded to `referrals` table on sign-in
 - **Reward triggers on Pro upgrade, not sign-up** — a PostgreSQL trigger (`trg_referral_on_pro_upgrade` on the `subscriptions` table) fires when a referred user gets a subscription row inserted, automatically granting the referrer 1 free month per 2 paid referrals
 - `REFERRAL_THRESHOLD = 2` (friends who must subscribe per free month)
@@ -120,6 +123,9 @@ Pro users bypass both limits entirely.
 - `getReferralStats(cfg, referrerId)` returns `{signups, paid}` — card shows paid count for progress, sign-up count as context
 
 ## Build & Deploy
+
+**Quiz Next button iOS responsiveness**: Added `touchAction: 'manipulation'` and `type='button'` to the Next button, plus added `paddingRight: 58` to parent div to prevent overlap with calculator icon. useEffect now includes a 100ms delayed retry of `window.scrollTo()` to ensure scroll-to-top works reliably on slower devices and after question transitions.
+
 
 **UpgradeModal USD pricing**: Added approximate USD conversion display (`~${Math.round(ACTIVE_PRICE/85)} USD`) below INR amount using fixed 85 INR/USD rate for reference. Always update CLAUDE.md if exchange rate assumption changes.
 
@@ -585,7 +591,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1788800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
