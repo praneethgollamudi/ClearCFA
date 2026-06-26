@@ -1046,6 +1046,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
+// WN_VER:2026-06-26-d
+{version:"2026-06-26-d",slides:[
+{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"AI Debrief Always Works Now",sub:"AI · 2026-06-26 update",desc:"Fixed a bug where AI explanations would appear blank after answering questions. Your instant AI debrief will now load reliably every time, helping you understand why you got a question right or wrong.",tip:"Try answering a practice question—you'll see the AI debrief appear immediately below your answer."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother Question Navigation",sub:"UX · 2026-06-26 update",desc:"Improved the Next button so it works instantly without delays or interference from other interface elements. You can now move through your practice questions faster and stay in study flow.",tip:"On iOS, you'll notice the Next button sits perfectly above the safe area—tap it anytime to advance."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1069,6 +1074,11 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-06-26
+{date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
