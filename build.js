@@ -21,7 +21,7 @@ const src = SOURCE_FILES.map(f => {
   return `\n// ═══ ${f} ═══\n${content}`;
 }).join('\n');
 
-try {
+async function main() {
   let presetPath;
   try {
     presetPath = require.resolve('@babel/preset-react');
@@ -33,10 +33,32 @@ try {
     presets: [[presetPath, { runtime: 'classic' }]],
     filename: 'app.jsx'
   });
-  fs.writeFileSync('app.js', result.code);
-  const files = SOURCE_FILES.map(f => f.split('/').pop()).join(' + ');
-  console.log(`Built app.js (${(result.code.length / 1024).toFixed(1)} KB) from [${files}]`);
-} catch (e) {
+
+  let finalCode = result.code;
+  const rawKB = (result.code.length / 1024).toFixed(1);
+
+  try {
+    const Terser = require('terser');
+    const minified = await Terser.minify(finalCode, {
+      compress: { passes: 2, drop_console: false },
+      mangle: { toplevel: false, reserved: ['React', 'ReactDOM'] },
+      output: { ascii_only: true },
+    });
+    if (minified.code) {
+      finalCode = minified.code;
+      const minKB = (finalCode.length / 1024).toFixed(1);
+      const files = SOURCE_FILES.map(f => f.split('/').pop()).join(' + ');
+      console.log(`Built app.js (${rawKB} KB → ${minKB} KB minified) from [${files}]`);
+    }
+  } catch {
+    const files = SOURCE_FILES.map(f => f.split('/').pop()).join(' + ');
+    console.log(`Built app.js (${rawKB} KB) from [${files}] (Terser unavailable)`);
+  }
+
+  fs.writeFileSync('app.js', finalCode);
+}
+
+main().catch(e => {
   console.error('Build failed:', e.message);
   process.exit(1);
-}
+});

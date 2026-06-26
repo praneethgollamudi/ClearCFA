@@ -477,6 +477,55 @@ function computeCalibration(qs,ans,confidenceLog){
   return log;
 }
 
+// ── Item 10: Deterministic option-order fingerprint per user ─────────────────
+function fingerprintQuestions(qs, userId) {
+  if (!userId || !qs.length) return qs;
+  const seed = userId.split('').reduce((s, c, i) => (s * 31 + c.charCodeAt(0) * (i + 1)) & 0xfffffff, 0);
+  return qs.map((q, qi) => {
+    if (!q.options || !q.answer) return q;
+    const letters = Object.keys(q.options).sort();
+    if (letters.length < 2) return q;
+    const perm = letters.slice();
+    for (let i = perm.length - 1; i > 0; i--) {
+      const j = ((seed ^ (qi * 2654435761 + i * 6364136223)) >>> 0) % (i + 1);
+      [perm[i], perm[j]] = [perm[j], perm[i]];
+    }
+    const newOptions = {}, oldToNew = {};
+    perm.forEach((oldL, i) => { const newL = letters[i]; newOptions[newL] = q.options[oldL]; oldToNew[oldL] = newL; });
+    const newAnswer = oldToNew[q.answer] || q.answer;
+    const newExp = (q.explanation || '').replace(/^(Correct:\s*)([A-C])\b/, (_, pre, l) => `${pre}${oldToNew[l] || l}`);
+    const newDE = q.distractor_explanations
+      ? Object.fromEntries(Object.entries(q.distractor_explanations).map(([k, v]) => [oldToNew[k] || k, v]))
+      : undefined;
+    return { ...q, options: newOptions, answer: newAnswer, explanation: newExp, ...(newDE && { distractor_explanations: newDE }) };
+  });
+}
+
+// ── Item 5: Confidence calibration insights ───────────────────────────────────
+function getConfidenceInsights(history) {
+  const entries = history.flatMap(s => s.confidenceData || []);
+  if (entries.length < 10) return null;
+  const isHighConf = e => { const c = e.conf?.c; if (!c) return false; return typeof c === 'number' ? c >= 2 : (typeof c === 'string' && c !== 'low' && c !== '1'); };
+  const highConf = entries.filter(isHighConf);
+  if (highConf.length < 5) return null;
+  const wrongHigh = highConf.filter(e => !e.correct).length;
+  const rate = Math.round((wrongHigh / highConf.length) * 100);
+  const cMap = {};
+  highConf.filter(e => !e.correct).forEach(e => { if (e.concept) cMap[e.concept] = (cMap[e.concept] || 0) + 1; });
+  const topMiss = Object.entries(cMap).sort((a, b) => b[1] - a[1])[0]?.[0];
+  return { rate, highConfCount: highConf.length, topMiss };
+}
+
+// ── Item 8: Canvas rounded rect helper ───────────────────────────────────────
+function _rrFill(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h); ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r); ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath(); ctx.fill();
+}
+
 function getSessionFatigue(history){
   const byLength=history.filter(h=>h.total>=5);
   if(byLength.length<5)return null;
@@ -5777,6 +5826,11 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         .catch(()=>{setAiDebrief("PATTERN: Could not generate debrief.\nFIX: Review the wrong answers below.\nPRIORITY: \nTIME: \nCOACH: Every session is data — keep going.");})
         .finally(()=>setAiDebriefLoading(false));
     }
+    // Log wrong answers for community analytics (fire-and-forget)
+    if(authUserRef.current?.id&&wrongQs.length>0){
+      const wrongs=wrongQs.slice(0,20).map(q=>({topic:t,module:st,hash:String(q.id||"").slice(0,64),correct:String(q.options?.[q.answer]||q.answer||"").slice(0,200),wrong:String(q.options?.[ans[q.id]]||ans[q.id]||"").slice(0,200)}));
+      fetch(AI_PROXY_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({requestType:"log_wrongs",userId:authUserRef.current.id,wrongs})}).catch(()=>{});
+    }
   },[screen]);
 
   const ADMIN_EMAIL="sai.praneeth557@gmail.com";
@@ -6137,7 +6191,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             await new Promise(r=>setTimeout(r,300));
             setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
             setVignetteMode(false);
-            setQuestions(offlineQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+            setQuestions(fingerprintQuestions(offlineQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
             setScreen("quiz");
             setLoading(false);setLoadingProgress(0);generatingRef.current=false;
             return;
@@ -6196,7 +6250,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           await new Promise(r=>setTimeout(r,250));
           setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
           setVignetteMode(false);
-          setQuestions(finalQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+          setQuestions(fingerprintQuestions(finalQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
           setScreen("quiz");
           // Mark as seen immediately so abandoning session doesn't cause repeats
           setQdb(prev=>addToQDB(finalQs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
@@ -6293,7 +6347,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       await new Promise(r=>setTimeout(r,350));
       setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
       setVignetteMode(isVignette);
-      setQuestions(finalQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+      setQuestions(isVignette?finalQs:fingerprintQuestions(finalQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
       setScreen("quiz");
       // Mark as seen immediately — abandoning mid-session won't cause repeats
       setQdb(prev=>addToQDB(finalQs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
@@ -6320,7 +6374,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             await new Promise(r=>setTimeout(r,350));
             setTopic(t);setSubtopic(usedSt);setDifficulty(diff);setCount(cnt);setMode(m);
             setVignetteMode(false);
-            setQuestions(offlineQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+            setQuestions(fingerprintQuestions(offlineQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
             setScreen("quiz");
             setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
             return;
@@ -7628,6 +7682,36 @@ Return ONLY a JSON array — no prose, no markdown fences:
   })(), _navRootEl) : null;
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
+  const downloadProgressCard=()=>{
+    const canvas=document.createElement("canvas");
+    const DPR=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=600*DPR;canvas.height=320*DPR;
+    const ctx=canvas.getContext("2d");
+    ctx.scale(DPR,DPR);
+    ctx.fillStyle="#0a0a14";ctx.fillRect(0,0,600,320);
+    const grad=ctx.createLinearGradient(0,0,600,320);
+    grad.addColorStop(0,"rgba(99,102,241,0.13)");grad.addColorStop(1,"rgba(99,102,241,0.03)");
+    ctx.fillStyle=grad;_rrFill(ctx,12,12,576,296,18);
+    ctx.strokeStyle="rgba(99,102,241,0.27)";ctx.lineWidth=1;
+    try{ctx.beginPath();ctx.roundRect(12,12,576,296,18);ctx.stroke();}catch{}
+    ctx.font="bold 20px system-ui,-apple-system,sans-serif";ctx.fillStyle="#a5b4fc";ctx.fillText("ClearCFA",36,52);
+    ctx.font="500 12px system-ui,-apple-system,sans-serif";ctx.fillStyle="#64748b";ctx.fillText("AI-Powered CFA Exam Prep",36,72);
+    const prob=passProbability?.probability??null;
+    if(prob!==null){
+      ctx.font="bold 62px system-ui,-apple-system,sans-serif";ctx.fillStyle=passProbability?.color||"#22c55e";ctx.fillText(`${prob}%`,36,168);
+      ctx.font="bold 12px system-ui,-apple-system,sans-serif";ctx.fillStyle="#94a3b8";ctx.fillText("PASS PROBABILITY",36,192);
+    }
+    if(streak>0){ctx.font="bold 30px system-ui,-apple-system,sans-serif";ctx.fillStyle="#fcd34d";ctx.fillText(`${streak}d streak`,340,130);}
+    const lvlInfo=getLevel(getTotalXP(history));
+    ctx.font="bold 18px system-ui,-apple-system,sans-serif";ctx.fillStyle="#a5b4fc";ctx.fillText(lvlInfo.label,340,192);
+    ctx.font="500 12px system-ui,-apple-system,sans-serif";ctx.fillStyle="#64748b";ctx.fillText(`Level ${lvlInfo.level} · ${history.length} sessions`,340,214);
+    if(overallPct!=null){ctx.font="bold 18px system-ui,-apple-system,sans-serif";ctx.fillStyle=overallPct>=70?"#22c55e":"#ef4444";ctx.fillText(`${overallPct}% avg`,340,250);ctx.font="500 12px system-ui,-apple-system,sans-serif";ctx.fillStyle="#64748b";ctx.fillText("Score accuracy",340,270);}
+    const bt=`CFA Level ${cfaLevel}`;const bm=ctx.measureText(bt);
+    ctx.fillStyle="rgba(99,102,241,0.13)";_rrFill(ctx,36,272,bm.width+20,26,7);
+    ctx.font="bold 12px system-ui,-apple-system,sans-serif";ctx.fillStyle="#a5b4fc";ctx.fillText(bt,46,290);
+    ctx.font="500 10px system-ui,-apple-system,sans-serif";ctx.fillStyle="#374151";ctx.fillText("praneethgollamudi.github.io/ClearCFA",340,295);
+    const a=document.createElement("a");a.href=canvas.toDataURL("image/png");a.download=`clearcfa-${localDateKey()}.png`;a.click();
+  };
   // ════════════════════════════════════════
   // SCREEN: home
   // ════════════════════════════════════════
@@ -8136,6 +8220,39 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {history.length===0&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:14,opacity:0.7}}>Stats unlock after your first session</div>}
       </>
     )}
+    {/* Pass probability trend mini-sparkline */}
+    {passTrend.length>=3&&passProbability&&(()=>{
+      const vals=passTrend.map(p=>p.prob);
+      const minV=Math.max(0,Math.min(...vals)-5);
+      const maxV=Math.min(100,Math.max(...vals)+5);
+      const range=Math.max(maxV-minV,10);
+      const W=200,H=36,px=4,py=4;
+      const pts=vals.map((v,i)=>{
+        const x=px+((W-px*2)/Math.max(vals.length-1,1))*i;
+        const y=(H-py)-((v-minV)/range)*(H-py*2);
+        return[x,y];
+      });
+      const ptsStr=pts.map(p=>p.join(",")).join(" ");
+      const last=vals[vals.length-1];const first=vals[0];
+      const trend=last-first;const trendColor=trend>=0?C.easy:C.hard;
+      const fillPts=`${pts[0][0]},${H-py} ${ptsStr} ${pts[pts.length-1][0]},${H-py}`;
+      return(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:12}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:4,letterSpacing:"0.04em"}}>PASS PROB TREND</div>
+            <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{height:36,display:"block"}}>
+              <polygon points={fillPts} fill={trendColor} opacity="0.15"/>
+              <polyline points={ptsStr} fill="none" stroke={trendColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              {pts.map((p,i)=>i===pts.length-1?<circle key={i} cx={p[0]} cy={p[1]} r="3" fill={trendColor} stroke="#0a0a14" strokeWidth="1"/>:null)}
+            </svg>
+          </div>
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{fontSize:18,fontWeight:800,color:trendColor,lineHeight:1}}>{trend>=0?"+":""}{Math.round(trend)}%</div>
+            <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase"}}>vs {passTrend.length}d ago</div>
+          </div>
+        </div>
+      );
+    })()}
     {/* Pace prediction card */}
     {(()=>{
       const pace=getPaceStatus(levelHistory,passProbability,daysLeft);
@@ -8156,6 +8273,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:18,fontWeight:800,color:paceColor,lineHeight:1}}>{daysLeft}</div>
             <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em"}}>days left</div>
           </div>
+        </div>
+      );
+    })()}
+    {/* Confidence calibration insight */}
+    {(()=>{
+      const insight=getConfidenceInsights(history);
+      if(!insight)return null;
+      return(
+        <div style={{background:`${C.medium}10`,border:`1px solid ${C.medium}33`,borderRadius:12,padding:"11px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:800,color:C.medium}}>🎯 Calibration insight</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{insight.rate}% of high-confidence answers wrong{insight.topMiss?` — check ${insight.topMiss}`:""}</div>
+          </div>
+          <button onClick={()=>{
+            const concept=insight.topMiss||"";
+            const t=Object.keys(activeLOS).find(k=>concept&&(k.toLowerCase().includes(concept.toLowerCase().split(" ")[0])||concept.toLowerCase().includes(k.toLowerCase().split(" ")[0])))||Object.keys(activeLOS)[0];
+            const mods=Object.keys(activeLOS[t]?.modules||{});
+            generateQuestions(t,mods[0]||t,"Medium",10,"guided");
+          }} style={{fontSize:11,fontWeight:700,color:C.medium,background:`${C.medium}18`,border:`1px solid ${C.medium}44`,borderRadius:8,padding:"6px 10px",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>Drill →</button>
         </div>
       );
     })()}
@@ -8649,7 +8785,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {/* Referral card */}
     {authUser&&<div style={{textAlign:"center",fontSize:12,color:C.muted,marginBottom:8}}>🎓 <strong style={{color:C.text}}>{COMMUNITY_COUNT}+</strong> CFA candidates preparing for August 2026</div>}
     {authUser&&<ReferralCard userId={authUser.id} cfg={SB_CFG} setUpgradeModal={setUpgradeModal}/>}
-
+    {authUser&&history.length>=1&&(
+      <button onClick={downloadProgressCard} style={{width:"100%",marginBottom:10,padding:"11px",borderRadius:11,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+        📊 Share My Progress Card
+      </button>
+    )}
 
     {error&&(()=>{
       const canRetry=lastGenParamsRef.current&&error.includes("retry");

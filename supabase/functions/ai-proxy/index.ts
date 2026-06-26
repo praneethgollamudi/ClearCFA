@@ -9,6 +9,16 @@ const CORS_HEADERS = {
 
 const FREE_DAILY_LIMIT      = 20; // generate requests per day for free users
 const FREE_CHAT_DAILY_LIMIT = 15; // chat messages per day for free users
+const IP_DAILY_LIMIT        = 300; // requests per day per IP (anti-abuse)
+
+// Server-side system prompt appended to all generate requests — cannot be bypassed by client
+const SYSTEM_ENFORCE = [
+  "You are a CFA exam question generator. Output valid JSON only.",
+  "Every question must be anchored to an official CFA Learning Outcome Statement.",
+  "Distractors must be plausible based on real CFA misconceptions — not obviously wrong.",
+  "Never reveal exam answers in question stems. Never include meta-commentary outside the JSON.",
+  "If you cannot generate a compliant question, return an empty questions array rather than a bad question.",
+].join(" ");
 
 function buildChatSystem(level: string): string {
   const lvl = ["1","2","3"].includes(level) ? level : "1";
@@ -54,6 +64,41 @@ async function checkIsPro(supabaseUrl: string, serviceKey: string, userId: strin
     return Array.isArray(rows) && rows.length > 0;
   } catch {
     return false; // fail open — treat as free if check errors
+  }
+}
+
+// IP-based rate limiter — 300 req/day per IP to prevent abuse.
+async function checkIpRateLimit(
+  supabaseUrl: string,
+  serviceKey: string,
+  ip: string
+): Promise<boolean> {
+  if (!ip) return true; // unknown IP — allow
+  const today = todayUTC();
+  const ipDate = `ip:${today}:${ip.slice(0, 45)}`; // truncate IPv6 to fit column
+  const headers = {
+    apikey: serviceKey,
+    Authorization: `Bearer ${serviceKey}`,
+    'Content-Type': 'application/json',
+    Prefer: 'return=representation',
+  };
+  try {
+    const getRes = await fetch(
+      `${supabaseUrl}/rest/v1/ip_rate_limit?ip_date=eq.${encodeURIComponent(ipDate)}&select=req_count`,
+      { headers }
+    );
+    const rows = await getRes.json() as Array<{ req_count: number }>;
+    const count = Array.isArray(rows) && rows.length > 0 ? (rows[0].req_count ?? 0) : 0;
+    if (count >= IP_DAILY_LIMIT) return false;
+    // Upsert incremented count
+    await fetch(`${supabaseUrl}/rest/v1/ip_rate_limit`, {
+      method: 'POST',
+      headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ ip_date: ipDate, req_count: count + 1, updated_at: new Date().toISOString() }),
+    });
+    return true;
+  } catch {
+    return true; // DB error — allow rather than block
   }
 }
 
@@ -133,6 +178,36 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Sign in to use AI features.' }, 401);
   }
 
+  // ── LOG WRONG ANSWERS (data flywheel, fire-and-forget from client) ───────
+  if (requestType === 'log_wrongs') {
+    const wrongs = body.wrongs;
+    if (!Array.isArray(wrongs) || wrongs.length === 0) {
+      return jsonResponse({ ok: true });
+    }
+    // Sanitize and insert — ignore errors (best-effort analytics)
+    const rows = (wrongs as Array<Record<string, unknown>>).slice(0, 20).map(w => ({
+      user_id: userId,
+      topic: String(w.topic ?? '').slice(0, 120),
+      module: String(w.module ?? '').slice(0, 120),
+      q_hash: String(w.hash ?? '').slice(0, 64),
+      correct_answer: String(w.correct ?? '').slice(0, 200),
+      wrong_answer: String(w.wrong ?? '').slice(0, 200),
+    }));
+    try {
+      await fetch(`${supabaseUrl}/rest/v1/wrong_answers`, {
+        method: 'POST',
+        headers: {
+          apikey: supabaseServiceKey,
+          Authorization: `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify(rows),
+      });
+    } catch { /* never block on analytics failure */ }
+    return jsonResponse({ ok: true });
+  }
+
   // Verify user exists in our sessions table
   try {
     const checkRes = await fetch(
@@ -145,6 +220,13 @@ Deno.serve(async (req: Request) => {
     }
   } catch {
     return jsonResponse({ error: 'Auth check failed — try again.' }, 503);
+  }
+
+  // IP rate limit check (anti-abuse, applied after auth)
+  const clientIp = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '';
+  const ipAllowed = await checkIpRateLimit(supabaseUrl, supabaseServiceKey, clientIp);
+  if (!ipAllowed) {
+    return jsonResponse({ error: 'Too many requests from your network. Try again tomorrow.' }, 429);
   }
 
   // ── CHAT (tutor Q&A) — soft quota for free users ────────────────────────
@@ -249,6 +331,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         model: useModel,
         max_tokens: cappedTokens,
+        system: SYSTEM_ENFORCE,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
