@@ -2,6 +2,96 @@
 
 ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
+## Branding & Identity
+
+- **Creator:** GSP (initials). Never use "Praneeth" in user-facing strings — it was replaced.
+- **Admin email:** `sai.praneeth557@gmail.com` (functional only — auth gating, never displayed to users)
+- **Contact / support email:** `gspbuilds@gmail.com`
+- **Live URL:** https://praneethgollamudi.github.io/ClearCFA/
+
+## Supabase Infrastructure
+
+- **Project ref:** `uucxyuqxqjpbxecemdvf`
+- **Supabase URL:** `https://uucxyuqxqjpbxecemdvf.supabase.co` (hardcoded in `src/app.jsx` line ~17)
+- **Anon key:** hardcoded in `src/app.jsx` line ~18 (safe to be public — RLS enforced)
+- **Service role key / PAT:** stored as `SUPABASE_ACCESS_TOKEN` in GitHub Actions secrets
+
+### Edge Functions (in `supabase/functions/`)
+
+| Function | Purpose |
+|---|---|
+| `ai-proxy` | All Anthropic API calls — question generation + AI chat. Enforces quotas. |
+| `admin-stats` | Admin-only analytics dashboard data. Gated by admin email check. |
+
+### Migrations & Deployment (fully automated)
+
+SQL migrations in `supabase/migrations/*.sql` run automatically via the **"Deploy Supabase"** GitHub Actions workflow on every push to `main` that touches `supabase/**`. The workflow also redeploys all edge functions. **Never need to run migrations manually** — just push the `.sql` file.
+
+Edge functions are deployed with `supabase functions deploy <name> --project-ref uucxyuqxqjpbxecemdvf` via the same workflow.
+
+## Payment & Pricing
+
+Payment is **manual**: user pays via UPI, WhatsApp a screenshot, GSP manually inserts a row into the `subscriptions` Supabase table.
+
+```
+PAYMENT_UPI_ID      = '9493413121@upi'
+PAYMENT_WHATSAPP    = '919493413121'
+PAYMENT_CONTACT_EMAIL = 'gspbuilds@gmail.com'
+```
+
+### Pricing tiers (constants in `src/app.jsx` ~line 996)
+
+```javascript
+const PRICE_TIER1   = 799;   // launch price — first 10 slots
+const PRICE_TIER2   = 1199;  // next 20 slots
+const PRICE_REGULAR = 1499;  // regular price once all tiers fill
+const TIER1_SLOTS   = 10;
+const TIER2_SLOTS   = 20;
+const TIER1_TAKEN   = 0;     // ← update manually as subscribers join
+const TIER2_TAKEN   = 0;     // ← update manually as subscribers join
+```
+
+`ACTIVE_PRICE`, `ACTIVE_WAS`, `ACTIVE_TIER` are derived automatically — never hardcode ₹ amounts in UI strings, always use these constants.
+
+WhatsApp message template uses `` `₹${ACTIVE_PRICE}` `` — do not hardcode the price there.
+
+## Pro Status & Subscriptions
+
+`proStatus` (boolean, in CFAMock state) is determined by checking the `subscriptions` table:
+
+```
+subscriptions table: user_id, active (bool), valid_until (timestamptz)
+```
+
+Pro = row exists where `active=true AND valid_until >= now()`. Checked via `checkIsPro()` in `ai-proxy` edge function and via Supabase REST in the app on load.
+
+To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true` and `valid_until` 30 days out.
+
+## AI Quota System
+
+Free users are limited server-side in the `ai-proxy` edge function. Quotas tracked in the `ai_quota` table:
+
+```
+ai_quota table: user_id (PK), quota_date (TEXT), quota_count (INT)
+```
+
+| Request type | Quota date format | Free limit |
+|---|---|---|
+| Question generation (`requestType:"generate"`) | `"YYYY-MM-DD"` | 20/day |
+| AI chat (`requestType:"chat"`) | `"chat-YYYY-MM-DD"` | 15/day |
+
+The `"chat-"` prefix lets both live in the same table row-space without schema changes. String comparison `quota_date=lt.z` in PostgREST excludes chat rows from generate queries (because `'c' > '9'` in ASCII).
+
+Pro users bypass both limits entirely.
+
+## Referral System
+
+- Referral links: `?ref=<userId>` in URL → stored in sessionStorage → recorded to `referrals` table on sign-in
+- **Reward triggers on Pro upgrade, not sign-up** — a PostgreSQL trigger (`trg_referral_on_pro_upgrade` on the `subscriptions` table) fires when a referred user gets a subscription row inserted, automatically granting the referrer 1 free month per 2 paid referrals
+- `REFERRAL_THRESHOLD = 2` (friends who must subscribe per free month)
+- `recordReferral()` in `src/app.jsx` only records the relationship — it does NOT call `grantReferralPro` anymore
+- `getReferralStats(cfg, referrerId)` returns `{signups, paid}` — card shows paid count for progress, sign-up count as context
+
 ## Build & Deploy
 
 ```bash
@@ -15,8 +105,6 @@ git push origin main && git push origin main:claude/index-html-github-pages-cfa8
 # e.g. v=1784300000 → v=1784400000
 # Users won't see changes without this step
 ```
-
-Live URL: https://praneethgollamudi.github.io/ClearCFA/
 
 ## Architecture
 
