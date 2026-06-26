@@ -12,6 +12,8 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     # Never run when the bot itself pushes (prevents infinite loop)
     if: github.actor != 'github-actions[bot]'
     steps:
