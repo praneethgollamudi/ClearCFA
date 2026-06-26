@@ -1035,6 +1035,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
+// WN_VER:2026-06-26-c
+{version:"2026-06-26-c",slides:[
+{emoji:"📜",color:C.accentLight,bg:C.accentLight,title:"Cleaner Quiz Layout",sub:"UX · 2026-06-26 update",desc:"We've removed excess whitespace at the bottom of quiz screens and improved how questions display. This gives you more focused study space and a tighter, more professional interface.",tip:"Notice the extra breathing room when you're reviewing quiz questions—no more awkward empty space at the bottom."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Instant Question Scrolling",sub:"Speed · 2026-06-26 update",desc:"When you advance to the next quiz question, the screen now automatically scrolls to the top. You'll never miss the start of a new question or have to manually scroll up.",tip:"Tap Next and watch—you'll instantly see the full question without any manual scrolling."},
+{emoji:"🎨",color:C.medium,bg:C.medium,title:"Consistent Light Mode Colors",sub:"Bug Fix · 2026-06-26 update",desc:"We fixed the exit confirmation dialog to properly use light mode theme colors. Your interface now displays consistently whether you're in light or dark mode.",tip:"Exit a quiz in light mode and check the confirmation popup—it now matches your theme perfectly."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1053,6 +1059,12 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
+]},
+// AC_VER:2026-06-26
+{date:"2026-06-26",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
