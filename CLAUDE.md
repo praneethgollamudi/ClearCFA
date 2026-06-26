@@ -21,6 +21,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ### Edge Functions (in `supabase/functions/`)
 
+**`admin-stats` dashboard display**: The admin dashboard now displays user email in the "Recently active" section (field: `display` or fallback to truncated `user_id`). The "Revenue" card clarifies "Paid Pro subscribers" (from `subscriptions` table) and notes that the admin account itself is Pro via owner override and not counted in metrics.
+
+
+**`admin-stats` password login fallback**: When `accessToken` is undefined (password-based login), the function now accepts `userId` and `email` in the request body. It checks `ADMIN_USER_ID` environment secret first; if not set, it verifies `userId` exists in the `sessions` table and `email` matches `ADMIN_EMAIL`. Always send `{accessToken, userId, email}` from client for robustness.
+
+
 **`admin-stats` auth update**: Now accepts `userId` and `email` in request body as fallbacks for password-based logins (where `accessToken` is `undefined`). If `ADMIN_USER_ID` environment secret is set, it's checked first; otherwise falls back to verifying `userId` exists in `sessions` table + `email` matches `ADMIN_EMAIL`. Always send all three (`accessToken`, `userId`, `email`) from the client for robustness.
 
 
@@ -157,6 +163,9 @@ Use `grep "SCREEN:"` to get a full screen index with line numbers. Each screen b
 ```
 
 ## Key Patterns
+
+**Admin dashboard auto-fetch**: A `useEffect` hook watches the `screen` state and auto-calls `fetchAdminStats()` when navigating to `"adminDashboard"` if `isAdmin=true`, `adminStats` is empty, and not already loading — prevents blank initial load.
+
 
 **Admin access gate**: Check `isAdmin` at render time and call `setScreen("home")` if unauthorized — do NOT render admin content conditionally in JSX. This prevents hooks violations and ensures clean redirect behavior.
 
@@ -543,7 +552,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1786800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1786900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
