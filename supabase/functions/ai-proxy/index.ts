@@ -7,7 +7,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const FREE_DAILY_LIMIT = 10; // generate requests per day for free users
+const FREE_DAILY_LIMIT = 20; // generate requests per day for free users
 
 function buildChatSystem(level: string): string {
   const lvl = ["1","2","3"].includes(level) ? level : "1";
