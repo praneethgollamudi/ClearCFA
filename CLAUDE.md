@@ -113,9 +113,6 @@ Pro users bypass both limits entirely.
 
 ## Referral System
 
-- **Signup bonus**: Each friend who signs up (without subscribing) grants the referrer **+3 days Pro free**. This is immediate and independent of the subscription threshold. Displayed in ReferralCard as `+{signups*3}d Pro` when `signups > paid`.
-
-
 - Referral links: `?ref=<userId>` in URL → stored in sessionStorage → recorded to `referrals` table on sign-in
 - **Reward triggers on Pro upgrade, not sign-up** — a PostgreSQL trigger (`trg_referral_on_pro_upgrade` on the `subscriptions` table) fires when a referred user gets a subscription row inserted, automatically granting the referrer 1 free month per 2 paid referrals
 - `REFERRAL_THRESHOLD = 2` (friends who must subscribe per free month)
@@ -502,12 +499,6 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
-- **Question navigation scroll**: `currentQ` state changes now rely on a separate `useEffect` hook to scroll to top, not inline `window.scrollTo()` in `nextQ()` handler. This ensures the scroll fires reliably on re-render. Do not add scroll calls back to event handlers.
-
-
-- **Next button padding**: Quiz screen Next/See Results button row has `paddingRight:58` to avoid overlap with the calculator icon in the top-right corner. Do not remove this padding when refactoring button layouts.
-
-
 - **C before definition**: `C` is defined at ~line 976. Any module-level code using `C.*` color tokens must come after that line. Violating this causes a blank page — Babel won't catch it, but the pre-commit smoke check will.
 - **navPortal**: `wrap()` includes it automatically. Never add it manually to a screen.
 - **Cache bust**: Always increment `v=` in `index.html` before committing. Without this, users see the old cached version.
@@ -594,7 +585,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1788700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.

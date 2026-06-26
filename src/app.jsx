@@ -1046,12 +1046,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-26-d
-{version:"2026-06-26-d",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smoother Quiz Navigation",sub:"UX · 2026-06-26 update",desc:"Fixed layout overlap between quiz buttons and calculator icon, and improved page scrolling when advancing to the next question. Your quiz flow is now clean and distraction-free.",tip:"Tap through a quiz set — you'll notice button rows stay perfectly aligned without visual clipping."},
-{emoji:"🧠",color:C.reward,bg:C.reward,title:"Stronger Retention & Recall",sub:"Study Tools · 2026-06-26 update",desc:"Added six new differentiation and retention features to reinforce concept mastery. These tools help you lock in knowledge and distinguish between similar topics—critical for passing Level 1, 2, or 3.",tip:"Check your study dashboard for new flashcard and spaced-repetition options in your next session."},
-{emoji:"🎁",color:C.medium,bg:C.medium,title:"Earn Bonus on Referrals",sub:"Rewards · 2026-06-26 update",desc:"The referral card now displays your signup bonus clearly. Share ClearCFA with friends and unlock extra study credits or premium features for both of you.",tip:"Tap the referral card on your home screen to see your unique code and bonus details."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1075,12 +1069,6 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
@@ -5646,7 +5634,7 @@ function CFAMock(){
   const subtopicRef=useRef("");
   const difficultyRef=useRef("Medium");
   const modeRef=useRef("guided");
-  useEffect(()=>{window.scrollTo(0,0);document.body.scrollTop=0;document.documentElement.scrollTop=0;},[currentQ]);
+  useEffect(()=>{window.scrollTo(0,0);document.body.scrollTop=0;document.documentElement.scrollTop=0;const t=setTimeout(()=>{window.scrollTo(0,0);document.body.scrollTop=0;document.documentElement.scrollTop=0;window.scrollTo({top:0,left:0,behavior:'instant'});},100);return()=>clearTimeout(t);},[currentQ]);
   useEffect(()=>{questionsRef.current=questions;},[questions]);
   useEffect(()=>{answersRef.current=answers;},[answers]);
   useEffect(()=>{flaggedQRef.current=flaggedQ;},[flaggedQ]);
@@ -9671,7 +9659,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       )}
       {answered&&(
         <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",paddingRight:58}}>
-          <button onClick={nextQ} style={{flex:1,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>{isLast?"See Results →":"Next →"}</button>
+          <button type="button" onClick={nextQ} style={{flex:1,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",touchAction:"manipulation"}}>{isLast?"See Results →":"Next →"}</button>
           {answers[q.id]===q.answer&&(
             <button onClick={()=>setFlaggedQ(f=>({...f,[q.id]:!f[q.id]}))}
               title="Flag for SR even though correct"
