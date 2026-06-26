@@ -824,6 +824,7 @@ const DYNAMIC_FORMULAS_KEY = "cfa_dynamic_formulas_v1";
 const RESOLVED_GAPS_KEY = "cfa_resolved_gaps_v1";
 const LESSONS_KEY          = "cfa_lessons_v1";
 const REFRESHER_KEY        = "cfa_refresher_v1";
+const MISSION_KEY          = "cfa_mission_v1";
 const REMINDER_TIME_KEY    = "cfa_reminder_time_v1";
 const OFFLINE_QS_KEY       = "cfa_offline_qs_v1";
 const OFFLINE_SEED_KEY     = "cfa_offline_seed_seeded_v1";
@@ -2821,6 +2822,11 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const [expandedFormulaModule, setExpandedFormulaModule] = useState(null);
   const [expandedMistakeGroup, setExpandedMistakeGroup] = useState(null);
   const [lessonGenerating, setLessonGenerating] = useState({});
+  const [coachMsgs, setCoachMsgs] = useState([]);
+  const [coachInput, setCoachInput] = useState("");
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [coachTopic, setCoachTopic] = useState(null);
+  const coachMsgsEndRef = useRef(null);
 
   // Reset formula module accordion when topic changes
   useEffect(()=>{setExpandedFormulaModule(null);setExpandedFormula(null);},[selTopic]);
@@ -2946,6 +2952,33 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     }
   };
 
+  const startCoach = async (topic) => {
+    if(!userId||coachLoading) return;
+    setCoachTopic(topic);
+    setCoachMsgs([]);
+    setCoachInput("");
+    setCoachLoading(true);
+    const weak=Object.values(srDeck).filter(c=>c.topic===topic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,3).map(c=>c.concept||c.subtopic).filter(Boolean).join(", ");
+    const prompt=`CFA Level ${cfaLevel} concept coach. The student wants to understand "${topic}".${weak?` Their known weak areas: ${weak}.`:""}\n\nStart a short teaching dialogue. Begin with a key concept question to gauge their level. One question only — 2 sentences max.`;
+    const reply=await callAIChat(userId,[{role:"user",content:prompt}],200,cfaLevel);
+    if(reply) setCoachMsgs([{role:"assistant",content:reply}]);
+    setCoachLoading(false);
+    setTimeout(()=>coachMsgsEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
+  };
+
+  const sendCoach = async (text) => {
+    if(!userId||coachLoading||!text.trim()) return;
+    const newMsgs=[...coachMsgs,{role:"user",content:text}];
+    setCoachMsgs(newMsgs);
+    setCoachInput("");
+    setCoachLoading(true);
+    const system=`CFA Level ${cfaLevel} concept coach for topic "${coachTopic}". Teach through dialogue and Socratic questions. Keep responses to 2-3 sentences. If the student's answer shows understanding, advance to the next concept. If not, gently clarify.`;
+    const reply=await callAIChat(userId,[{role:"user",content:system},...newMsgs.slice(-8)],250,cfaLevel);
+    if(reply) setCoachMsgs(m=>[...m,{role:"assistant",content:reply}]);
+    setCoachLoading(false);
+    setTimeout(()=>coachMsgsEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
+  };
+
   const generateLesson = async (topic) => {
     if(lessonGenerating[topic]||topicLessons[topic]||!userId) return;
     setLessonGenerating(s=>({...s,[topic]:true}));
@@ -2979,9 +3012,9 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
 
       {/* Tab switcher */}
       <div style={{display:"flex",gap:0,marginBottom:14,background:C.surface,borderRadius:10,padding:3,border:`1px solid ${C.border}`}}>
-        {[["notes","📝 Notes"],["formulas","📐 Formulas"],["learn","🎓 Learn"]].map(([t,label])=>(
+        {[["notes","📝 Notes"],["formulas","📐 Formulas"],["learn","🎓 Learn"],["coach","🤖 Coach"]].map(([t,label])=>(
           <button key={t} onClick={()=>setTab(t)}
-            style={{flex:1,padding:"8px",borderRadius:8,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
+            style={{flex:1,padding:"8px",borderRadius:8,fontSize:11,fontWeight:700,border:"none",cursor:"pointer",
               background:tab===t?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.surface,
               color:tab===t?"#fff":C.muted,transition:"all 0.15s"}}>
             {label}
@@ -3503,6 +3536,99 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                 </button>
               )}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── COACH TAB ── */}
+      {tab==="coach"&&(
+        <div style={{animation:"fadeIn 0.2s ease"}}>
+          {/* Topic picker */}
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+            {Object.keys(activePowerNotes).map(t=>(
+              <button key={t} onClick={()=>{setSelTopic(t);if(coachTopic!==t){setCoachMsgs([]);setCoachTopic(null);}}}
+                style={{padding:"5px 11px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",
+                  border:selTopic===t?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,
+                  background:selTopic===t?C.accent+"22":C.surface,
+                  color:selTopic===t?C.accentLight:C.muted}}>
+                {t.split(" ")[0]}
+              </button>
+            ))}
+          </div>
+
+          {!isPro?(
+            <div style={{textAlign:"center",padding:"28px 0"}}>
+              <div style={{fontSize:32,marginBottom:10}}>🤖</div>
+              <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:6}}>AI Concept Coach</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:16,lineHeight:1.6}}>
+                A Socratic AI tutor that teaches CFA topics through<br/>interactive dialogue and comprehension checks.
+              </div>
+              <button onClick={()=>onUpgrade&&onUpgrade({reason:"coach"})}
+                style={{padding:"11px 28px",borderRadius:12,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                🚀 Unlock Concept Coach — Go Pro
+              </button>
+            </div>
+          ):(
+            <>
+              {!userId&&<div style={{textAlign:"center",padding:"24px",fontSize:12,color:C.muted}}>Sign in to use the Concept Coach.</div>}
+              {userId&&coachMsgs.length===0&&!coachLoading&&(
+                <div style={{textAlign:"center",padding:"28px 0"}}>
+                  <div style={{fontSize:28,marginBottom:10}}>🤖</div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:6}}>{selTopic}</div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:18,lineHeight:1.6}}>
+                    I'll teach this topic through dialogue — asking questions,<br/>checking your understanding, and building up concepts.
+                  </div>
+                  <button onClick={()=>startCoach(selTopic)}
+                    style={{padding:"11px 28px",borderRadius:12,fontSize:13,fontWeight:700,
+                      background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                    Start coaching session →
+                  </button>
+                </div>
+              )}
+              {(coachMsgs.length>0||coachLoading)&&(
+                <div>
+                  <div style={{background:"#0d0d20",border:`1px solid ${C.accent}33`,borderRadius:12,overflow:"hidden",marginBottom:10}}>
+                    <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.accent}22`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.accentLight}}>🤖 Coach · {selTopic}</div>
+                      <button onClick={()=>{setCoachMsgs([]);setCoachTopic(null);}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12}}>New session</button>
+                    </div>
+                    <div style={{padding:"12px 14px",maxHeight:320,overflowY:"auto",display:"flex",flexDirection:"column",gap:8}}>
+                      {coachMsgs.map((m,i)=>(
+                        <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+                          <div style={{maxWidth:"85%",padding:"9px 12px",
+                            borderRadius:m.role==="user"?"11px 11px 3px 11px":"11px 11px 11px 3px",
+                            background:m.role==="user"?`${C.accent}33`:"#1a1a2e",
+                            border:`1px solid ${m.role==="user"?C.accent+"44":C.border}`,
+                            fontSize:12,color:m.role==="user"?C.accentLight:C.textMid,lineHeight:1.65,wordBreak:"break-word"}}>
+                            {m.content}
+                          </div>
+                        </div>
+                      ))}
+                      {coachLoading&&(
+                        <div style={{display:"flex",justifyContent:"flex-start"}}>
+                          <div style={{padding:"9px 12px",borderRadius:"11px 11px 11px 3px",background:"#1a1a2e",border:`1px solid ${C.border}`,fontSize:12,color:C.muted,animation:"pulse 1.2s infinite"}}>Thinking…</div>
+                        </div>
+                      )}
+                      <div ref={coachMsgsEndRef}/>
+                    </div>
+                  </div>
+                  {!coachLoading&&(
+                    <div style={{display:"flex",gap:8,marginBottom:10}}>
+                      <input value={coachInput} onChange={e=>setCoachInput(e.target.value)}
+                        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendCoach(coachInput);}}}
+                        placeholder="Your answer or question…"
+                        style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 13px",fontSize:12,color:C.text,outline:"none"}}/>
+                      <button onClick={()=>sendCoach(coachInput)} disabled={!coachInput.trim()||coachLoading}
+                        style={{padding:"10px 16px",borderRadius:10,fontSize:12,fontWeight:700,
+                          background:coachInput.trim()?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"#1a1a2e",
+                          color:coachInput.trim()?"#fff":C.muted,border:"none",cursor:coachInput.trim()?"pointer":"default",flexShrink:0}}>
+                        Send
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -4942,6 +5068,12 @@ function CFAMock(){
   const [dailyRefresher,setDailyRefresher]=useState(()=>{try{const s=JSON.parse(localStorage.getItem(REFRESHER_KEY)||"null");if(s?.date===localDateKey()&&s?.concepts?.length)return s;}catch{}return null;});
   const [refresherFlipped,setRefresherFlipped]=useState(false);
   const [refresherRevealLoading,setRefresherRevealLoading]=useState(false);
+  const [socraticQ,setSocraticQ]=useState(null);
+  const [socraticMsgs,setSocraticMsgs]=useState([]);
+  const [socraticLoading,setSocraticLoading]=useState(false);
+  const [socraticInput,setSocraticInput]=useState("");
+  const [dailyMission,setDailyMission]=useState(()=>{try{const s=JSON.parse(localStorage.getItem(MISSION_KEY)||"null");if(s?.date===localDateKey())return s;}catch{}return null;});
+  const [missionGenerating,setMissionGenerating]=useState(false);
   const [refresherRevealError,setRefresherRevealError]=useState(null);
   const [walkthroughTopic, setWalkthroughTopic] = useState(Object.keys(LOS)[0]);
   const [walkthroughModule, setWalkthroughModule] = useState("");
@@ -6220,6 +6352,51 @@ Return ONLY a JSON array — no prose, no markdown fences:
       );
     }finally{setRefresherRevealLoading(false);}
   };
+
+  // Daily Mission Agent — generates once per day using weak-topic analysis
+  useEffect(()=>{
+    if(dailyMission||missionGenerating||!authUser?.id||!moduleReadiness.length)return;
+    const weakTopics=moduleReadiness.filter(m=>(m.accuracy||0)<70).sort((a,b)=>(a.accuracy||0)-(b.accuracy||0)).slice(0,3).map(m=>m.topic);
+    if(!weakTopics.length)return;
+    setMissionGenerating(true);
+    const recentStr=levelHistory.slice(0,5).map(h=>`${h.topic||""} ${h.pct||0}%`).join(", ")||"no recent sessions";
+    const prompt=`CFA Level ${cfaLevel} exam coach. Generate a specific daily study mission.\nWeak topics: ${weakTopics.join(", ")}\nRecent: ${recentStr}\n\nFormat EXACTLY:\nMISSION: [one actionable sentence]\nACTION: [specific task, e.g. "Do 10 Fixed Income questions on Modified Duration"]\nTIPP: [1 exam insight]\nTOPIC: [exact topic name]\n\nUnder 60 words total.`;
+    callAIChat(authUser.id,[{role:"user",content:prompt}],200,cfaLevel)
+      .then(reply=>{
+        if(!reply)return;
+        const lines=reply.split('\n');
+        const get=(p)=>lines.find(l=>l.startsWith(p))?.replace(p,"").trim()||"";
+        const entry={date:localDateKey(),mission:get("MISSION: "),action:get("ACTION: "),tip:get("TIPP: "),topic:get("TOPIC: ")};
+        if(!entry.mission)return;
+        setDailyMission(entry);
+        try{localStorage.setItem(MISSION_KEY,JSON.stringify(entry));}catch{}
+      }).catch(()=>{}).finally(()=>setMissionGenerating(false));
+  },[authUser?.id,moduleReadiness.length,cfaLevel]);
+
+  const startSocratic=async(q,userAnswer)=>{
+    if(!authUser?.id||socraticLoading)return;
+    setSocraticQ({...q,userAnswer});
+    setSocraticMsgs([]);
+    setSocraticInput("");
+    setSocraticLoading(true);
+    const prompt=`CFA Level ${cfaLevel} tutor. A student got this wrong.\nQuestion: "${q.question}"\nThey answered: "${userAnswer}" | Correct: "${q.answer}"\nExplanation: ${(q.explanation||"").slice(0,250)}\n\nAsk ONE short Socratic question to help them discover WHY they were wrong. Don't give the answer. 1-2 sentences only.`;
+    const reply=await callAIChat(authUser.id,[{role:"user",content:prompt}],200,cfaLevel);
+    if(reply) setSocraticMsgs([{role:"assistant",content:reply}]);
+    setSocraticLoading(false);
+  };
+
+  const sendSocratic=async(text,q)=>{
+    if(!authUser?.id||socraticLoading||!text.trim())return;
+    const newMsgs=[...socraticMsgs,{role:"user",content:text}];
+    setSocraticMsgs(newMsgs);
+    setSocraticInput("");
+    setSocraticLoading(true);
+    const system=`CFA Level ${cfaLevel} Socratic tutor. Question: "${q.question}". Correct: ${q.answer}. Guide with questions, don't give the answer directly. 1-2 sentences only.`;
+    const reply=await callAIChat(authUser.id,[{role:"user",content:system},...newMsgs.slice(-6)],250,cfaLevel);
+    if(reply) setSocraticMsgs(m=>[...m,{role:"assistant",content:reply}]);
+    setSocraticLoading(false);
+  };
+
   const studyPace=useMemo(()=>getStudyPace(levelHistory,daysLeft),[levelHistory,daysLeft]);
   const totalXP=useMemo(()=>getTotalXP(history),[history]);
   const levelInfo=useMemo(()=>getLevel(totalXP),[totalXP]);
@@ -7857,6 +8034,34 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
 
+    {/* Daily Mission Agent */}
+    {(dailyMission||missionGenerating)&&(
+      <div style={{background:`linear-gradient(135deg,${C.reward}14,${C.reward}06)`,border:`1px solid ${C.reward}33`,borderRadius:14,padding:"14px 16px",marginBottom:12,animation:"fadeIn 0.3s ease"}}>
+        {missionGenerating&&!dailyMission?(
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:16,height:16,border:`2px solid ${C.reward}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
+            <span style={{fontSize:12,color:C.muted}}>Generating your daily mission…</span>
+          </div>
+        ):(
+          <>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+              <div style={{fontSize:11,fontWeight:800,color:C.reward,letterSpacing:"0.05em",textTransform:"uppercase"}}>⚡ DAILY MISSION</div>
+              {dailyMission?.topic&&<span style={{fontSize:10,color:C.muted,background:C.surface,padding:"2px 8px",borderRadius:10,border:`1px solid ${C.border}`}}>{dailyMission.topic}</span>}
+            </div>
+            {dailyMission?.mission&&<div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:6,lineHeight:1.5}}>{dailyMission.mission}</div>}
+            {dailyMission?.action&&<div style={{fontSize:12,color:C.textMid,marginBottom:8,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.reward}55`}}>{dailyMission.action}</div>}
+            {dailyMission?.tip&&<div style={{fontSize:11,color:C.muted,marginBottom:10,lineHeight:1.6}}>💡 {dailyMission.tip}</div>}
+            {dailyMission?.topic&&(
+              <button onClick={()=>generateQuestions(dailyMission.topic,Object.keys(getActiveLOS(cfaLevel)[dailyMission.topic]?.modules||{})[0]||dailyMission.topic,"Medium",10,"guided")}
+                style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:`${C.reward}22`,color:C.reward,border:`1px solid ${C.reward}44`,cursor:"pointer"}}>
+                Start Mission →
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    )}
+
     {/* Daily Focus */}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",marginBottom:12}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
@@ -8923,6 +9128,69 @@ Return ONLY a JSON array — no prose, no markdown fences:
           }:null,q.concept||q.los_tested||"")}
           {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.muted}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
           {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
+        </div>
+      )}
+      {/* Socratic Wrong-Answer Tutor */}
+      {showExp&&(mode==="guided"||mode==="essay")&&answered&&answered!==q.answer&&(
+        <div style={{marginBottom:12,animation:"fadeIn 0.2s ease"}}>
+          {(!socraticQ||socraticQ.id!==q.id)?(
+            <div style={{background:`linear-gradient(135deg,${C.accent}10,${C.accent}05)`,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"12px 14px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.accentLight}}>🤔 Still unsure why?</div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:2}}>AI tutor guides you with questions, not answers</div>
+                </div>
+                {authUser?.id?(
+                  <button onClick={()=>startSocratic(q,answered)}
+                    style={{padding:"8px 14px",borderRadius:9,fontSize:12,fontWeight:700,
+                      background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,
+                      color:"#fff",border:"none",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,marginLeft:10}}>
+                    Ask tutor →
+                  </button>
+                ):(
+                  <span style={{fontSize:11,color:C.muted,flexShrink:0,marginLeft:10}}>Sign in to use</span>
+                )}
+              </div>
+            </div>
+          ):(
+            <div style={{background:"#0d0d20",border:`1px solid ${C.accent}44`,borderRadius:11,overflow:"hidden"}}>
+              <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.accent}22`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.accentLight,letterSpacing:"0.06em"}}>🎓 SOCRATIC TUTOR</div>
+                <button onClick={()=>{setSocraticQ(null);setSocraticMsgs([]);}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:14,lineHeight:1}}>✕</button>
+              </div>
+              <div style={{padding:"12px 14px",maxHeight:240,overflowY:"auto",display:"flex",flexDirection:"column",gap:8}}>
+                {socraticMsgs.map((m,i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+                    <div style={{maxWidth:"85%",padding:"9px 12px",borderRadius:m.role==="user"?"11px 11px 3px 11px":"11px 11px 11px 3px",
+                      background:m.role==="user"?`${C.accent}33`:"#1a1a2e",
+                      border:`1px solid ${m.role==="user"?C.accent+"44":C.border}`,
+                      fontSize:12,color:m.role==="user"?C.accentLight:C.textMid,lineHeight:1.65,wordBreak:"break-word"}}>
+                      {m.content}
+                    </div>
+                  </div>
+                ))}
+                {socraticLoading&&(
+                  <div style={{display:"flex",justifyContent:"flex-start"}}>
+                    <div style={{padding:"9px 12px",borderRadius:"11px 11px 11px 3px",background:"#1a1a2e",border:`1px solid ${C.border}`,fontSize:12,color:C.muted,animation:"pulse 1.2s infinite"}}>Thinking…</div>
+                  </div>
+                )}
+              </div>
+              {socraticMsgs.length>0&&!socraticLoading&&(
+                <div style={{padding:"10px 14px",borderTop:`1px solid ${C.accent}22`,display:"flex",gap:8}}>
+                  <input value={socraticInput} onChange={e=>setSocraticInput(e.target.value)}
+                    onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendSocratic(socraticInput,q);}}}
+                    placeholder="Your response…"
+                    style={{flex:1,background:"#1a1a2e",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 11px",fontSize:12,color:C.text,outline:"none"}}/>
+                  <button onClick={()=>sendSocratic(socraticInput,q)} disabled={!socraticInput.trim()||socraticLoading}
+                    style={{padding:"8px 14px",borderRadius:8,fontSize:12,fontWeight:700,
+                      background:socraticInput.trim()?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"#1a1a2e",
+                      color:socraticInput.trim()?"#fff":C.muted,border:"none",cursor:socraticInput.trim()?"pointer":"default",flexShrink:0}}>
+                    Send
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
       {answered&&(
