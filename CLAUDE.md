@@ -90,6 +90,9 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
+**Weekly Plan prompt level-awareness**: The `WEEKLY_PLAN_PROMPT` now accepts a `level` parameter ("1", "2", or "3") and injects it via `.split("{level}").join(cfaLevel)` at call time. Callers must pass `cfaLevel` from state; failure to do so defaults to Level 1 prompts.
+
+
 Free users are limited server-side in the `ai-proxy` edge function. Quotas tracked in the `ai_quota` table:
 
 ```
@@ -115,6 +118,9 @@ Pro users bypass both limits entirely.
 
 ## Build & Deploy
 
+**Deployment retry logic**: The GitHub Actions workflow now includes rebase+retry logic to automatically recover from push rejections caused by concurrent commits. Failed pushes retry automatically — you do not need manual intervention for concurrent CI runs.
+
+
 ```bash
 # Build
 node build.js          # Babel transforms src/app.jsx → app.js (~960KB, ~1-2s)
@@ -128,6 +134,9 @@ git push origin main && git push origin main:claude/index-html-github-pages-cfa8
 ```
 
 ## Architecture
+
+**Settings screen Cloud Sync UI**: Cloud Sync row button was removed from Settings. Sync status (sessions count, SR card count, sync button, status indicator) is now consolidated into the account footer text at the bottom of Settings — displayed inline and compact with a ☁ icon. The sync button remains clickable in the footer.
+
 
 **Settings screen UI folding**: Cloud Sync status (sessions count, SR card count, sync button) was moved from a dedicated row button into the account footer text in Settings. The sync UI is now inline and compact — always show sync status next to the email footer, not as a separate card.
 
@@ -558,7 +567,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1787000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1787100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
