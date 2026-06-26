@@ -1035,11 +1035,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
-// WN_VER:2026-06-26-c
-{version:"2026-06-26-c",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"New Performance Insights",sub:"Study Tools · 2026-06-26 update",desc:"We've added sparklines, confidence cards, and a wrong-answer flywheel to help you spot patterns in your performance and strengthen weak topics. Track which concepts trip you up most and focus your study time where it matters.",tip:"Check your confidence card after each quiz to identify trending weak spots."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother Quiz Navigation",sub:"UX · 2026-06-26 update",desc:"We've improved how the quiz flows when you advance between questions and cleaned up excess whitespace throughout the app. Your exam prep now feels faster and less cluttered, letting you focus on the content.",tip:"Notice how the page now automatically scrolls to the next question—no more hunting for where you are."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1058,12 +1053,6 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
@@ -9342,12 +9331,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:13,color:C.muted}}><span style={{color:C.accentLight,fontWeight:800}}>{currentQ+1}</span>/{questions.length}</span><Badge color={diffC[difficulty]}>{difficulty}</Badge></div>
       </div>
       {exitConfirm&&(
-        <div style={{background:"#12101a",border:`1px solid ${C.hard}44`,borderRadius:12,padding:"16px",marginBottom:14,animation:"fadeIn 0.15s ease"}}>
-          <div style={{fontSize:13,fontWeight:700,marginBottom:6}}>Exit session?</div>
+        <div style={{background:C.surface,border:`1px solid ${C.hard}44`,borderRadius:12,padding:"16px",marginBottom:14,animation:"fadeIn 0.15s ease"}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}}>Exit session?</div>
           <div style={{fontSize:12,color:C.muted,marginBottom:12}}>Progress will be lost. SR deck won't update for this session.</div>
           <div style={{display:"flex",gap:9}}>
-            <button onClick={()=>setExitConfirm(false)} style={{flex:1,padding:"9px",borderRadius:8,fontSize:13,fontWeight:600,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Continue</button>
-            <button onClick={()=>{clearInterval(timerRef.current);setExitConfirm(false);setScreen("home");setFocusSuggestions(null);}} style={{flex:1,padding:"9px",borderRadius:8,fontSize:13,fontWeight:700,background:"#400010",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>Exit</button>
+            <button onClick={()=>setExitConfirm(false)} style={{flex:1,padding:"9px",borderRadius:8,fontSize:13,fontWeight:600,background:C.surfaceHigh,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Continue</button>
+            <button onClick={()=>{clearInterval(timerRef.current);setExitConfirm(false);setScreen("home");setFocusSuggestions(null);}} style={{flex:1,padding:"9px",borderRadius:8,fontSize:13,fontWeight:700,background:`${C.hard}18`,border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>Exit</button>
           </div>
         </div>
       )}
