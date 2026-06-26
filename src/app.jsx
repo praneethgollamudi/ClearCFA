@@ -801,12 +801,18 @@ function getStudyPace(history, daysLeft) {
 function getPaceStatus(levelHistory, passProbability, daysLeft) {
   if (!passProbability || levelHistory.length < 3 || daysLeft <= 0) return null;
   const uniqueDays = new Set(levelHistory.map(h => h.dateKey)).size;
-  const avgSessionsPerDay = levelHistory.length / Math.max(uniqueDays, 1);
+  const avg = levelHistory.length / Math.max(uniqueDays, 1);
   const sessionsNeeded = passProbability.sessionsNeeded || 0;
-  if (!sessionsNeeded || !avgSessionsPerDay) return null;
-  const daysToComplete = Math.ceil(sessionsNeeded / avgSessionsPerDay);
-  const delta = daysLeft - daysToComplete;
-  return { delta, daysToComplete, avgSessionsPerDay: Math.round(avgSessionsPerDay * 10) / 10 };
+  if (!avg) return null;
+  // neededPerDay: how many sessions/day are required to cover remaining work by exam day
+  const neededPerDay = sessionsNeeded > 0 ? sessionsNeeded / daysLeft : 0;
+  const ahead = avg >= neededPerDay;
+  return {
+    avg: Math.round(avg * 10) / 10,
+    neededPerDay: Math.round(neededPerDay * 10) / 10,
+    sessionsNeeded,
+    ahead,
+  };
 }
 
 // ─── WEEKLY PLAN GENERATOR (AI-powered) ─────────────────────────────────────
@@ -1035,12 +1041,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
-// WN_VER:2026-06-26-c
-{version:"2026-06-26-c",slides:[
-{emoji:"📱",color:C.accentLight,bg:C.accentLight,title:"Cleaner, Compact Quiz Layout",sub:"UX · 2026-06-26 update",desc:"We've tightened up the quiz interface by reducing excess whitespace at the bottom of questions. This gives you more room to focus on the question itself and reduces unnecessary scrolling.",tip:"Notice how question cards now feel more compact and intentional—less wasted space means faster reading."},
-{emoji:"⬆️",color:C.medium,bg:C.medium,title:"Auto-Scroll to Next Question",sub:"Study Tools · 2026-06-26 update",desc:"When you advance to the next quiz question, the app now automatically scrolls to the top so you never miss the question stem. This keeps your flow smooth and eliminates confusion when jumping between questions.",tip:"Tap Next and watch the screen instantly position you at the top of the new question—no manual scrolling needed."},
-{emoji:"🎨",color:C.reward,bg:C.reward,title:"Improved Dark & Light Mode Consistency",sub:"UX · 2026-06-26 update",desc:"We've fixed visual inconsistencies in streak freeze controls and exit confirmation dialogs across both light and dark themes. Your app now looks polished and consistent no matter which theme you prefer.",tip:"Toggle between light and dark mode—everything should now render with the correct colors and contrast."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1059,12 +1059,6 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
@@ -8269,17 +8263,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {(()=>{
       const pace=getPaceStatus(levelHistory,passProbability,daysLeft);
       if(!pace)return null;
-      const ahead=pace.delta>=0;
-      const paceColor=ahead?C.easy:pace.delta<-14?C.hard:C.medium;
+      const paceColor=pace.ahead?C.easy:pace.neededPerDay-pace.avg>1?C.hard:C.medium;
+      const title=pace.sessionsNeeded<=3
+        ?"✅ Curriculum covered — maintain the habit"
+        :pace.ahead
+          ?`✅ ${pace.avg}/day avg · need ${pace.neededPerDay}/day`
+          :`⚠️ ${pace.avg}/day avg · need ${pace.neededPerDay}/day`;
+      const sub=pace.sessionsNeeded<=3
+        ?"Focus on SR cards and weak modules to stay sharp"
+        :pace.ahead
+          ?`${pace.sessionsNeeded} sessions of weak-area work left — you're on it`
+          :`${pace.sessionsNeeded} sessions of weak-area work remain — ramp up`;
       return(
         <div style={{background:`${paceColor}12`,border:`1px solid ${paceColor}33`,borderRadius:12,padding:"12px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:12,fontWeight:800,color:paceColor}}>
-              {ahead?`✅ ${pace.delta}d ahead of schedule`:`⚠️ ${Math.abs(pace.delta)}d behind schedule`}
-            </div>
-            <div style={{fontSize:11,color:C.muted,marginTop:2}}>
-              {ahead?`${pace.avgSessionsPerDay} sessions/day avg — keep it up`:`Need ~${Math.ceil(pace.avgSessionsPerDay*1.3)} sessions/day to catch up`}
-            </div>
+            <div style={{fontSize:12,fontWeight:800,color:paceColor}}>{title}</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{sub}</div>
           </div>
           <div style={{textAlign:"right",flexShrink:0}}>
             <div style={{fontSize:18,fontWeight:800,color:paceColor,lineHeight:1}}>{daysLeft}</div>
