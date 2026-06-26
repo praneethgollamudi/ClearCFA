@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Canvas utility helper**: `_rrFill(ctx, x, y, w, h, r)` draws rounded rectangles on canvas with radius `r`. Used by sparkline and confidence card visualizations for consistent rounded corners.
+
+
 - **Creator:** GSP (initials). Never use "Praneeth" in user-facing strings — it was replaced.
 - **Admin email:** `sai.praneeth557@gmail.com` (functional only — auth gating, never displayed to users)
 - **Contact / support email:** `gspbuilds@gmail.com`
@@ -90,6 +93,15 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
+**Pace status calculation**: `getPaceStatus(levelHistory, passProbability, daysLeft)` computes `{delta, daysToComplete, avgSessionsPerDay}` to warn if exam prep is behind schedule. Returns null if insufficient data (< 3 sessions or daysLeft ≤ 0).
+
+
+**Confidence calibration insights**: `getConfidenceInsights(history)` analyzes high-confidence wrong answers (≥10 entries required). Returns `{rate, highConfCount, topMiss}` to identify concept gaps. Used in confidence card to highlight overconfidence patterns.
+
+
+**Deterministic question option shuffling**: Questions are shuffled per-user via `fingerprintQuestions(qs, userId)` using a seed derived from the user's ID. This ensures consistent option order across sessions for the same user, preventing cheating via option memorization. Always call this on loaded questions before display.
+
+
 **Weekly Plan prompt level-awareness**: The `WEEKLY_PLAN_PROMPT` now accepts a `level` parameter ("1", "2", or "3") and injects it via `.split("{level}").join(cfaLevel)` at call time. Callers must pass `cfaLevel` from state; failure to do so defaults to Level 1 prompts.
 
 
@@ -117,6 +129,9 @@ Pro users bypass both limits entirely.
 - `getReferralStats(cfg, referrerId)` returns `{signups, paid}` — card shows paid count for progress, sign-up count as context
 
 ## Build & Deploy
+
+**Admin changelog tracking**: New `ADMIN_CHANGELOG` constant (marker: `// AC_S` ... `// AC_END`) documents internal-only infra changes (security fixes, retry logic, CI improvements). Updated automatically by `gen-whats-new.js` alongside user-facing `WHATS_NEW_SLIDES` — never displayed to users.
+
 
 **What's New slides versioning**: Added internal-only release notes versions (`2026-06-26-b`, `2026-06-26-c`, etc.) to document UX improvements and bug fixes. These appear in the What's New carousel and track product updates for users.
 
@@ -576,7 +591,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1787200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1787500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
