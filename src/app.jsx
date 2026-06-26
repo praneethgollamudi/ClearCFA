@@ -1035,6 +1035,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
+// WN_VER:2026-06-26-c
+{version:"2026-06-26-c",slides:[
+{emoji:"📱",color:C.accentLight,bg:C.accentLight,title:"Cleaner, Compact Quiz Layout",sub:"UX · 2026-06-26 update",desc:"We've tightened up the quiz interface by reducing excess whitespace at the bottom of questions. This gives you more room to focus on the question itself and reduces unnecessary scrolling.",tip:"Notice how question cards now feel more compact and intentional—less wasted space means faster reading."},
+{emoji:"⬆️",color:C.medium,bg:C.medium,title:"Auto-Scroll to Next Question",sub:"Study Tools · 2026-06-26 update",desc:"When you advance to the next quiz question, the app now automatically scrolls to the top so you never miss the question stem. This keeps your flow smooth and eliminates confusion when jumping between questions.",tip:"Tap Next and watch the screen instantly position you at the top of the new question—no manual scrolling needed."},
+{emoji:"🎨",color:C.reward,bg:C.reward,title:"Improved Dark & Light Mode Consistency",sub:"UX · 2026-06-26 update",desc:"We've fixed visual inconsistencies in streak freeze controls and exit confirmation dialogs across both light and dark themes. Your app now looks polished and consistent no matter which theme you prefer.",tip:"Toggle between light and dark mode—everything should now render with the correct colors and contrast."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1053,6 +1059,12 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
+]},
+// AC_VER:2026-06-26
+{date:"2026-06-26",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
