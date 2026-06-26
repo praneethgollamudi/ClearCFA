@@ -166,11 +166,44 @@ const wrap = (children, maxW=860) => (...);
 
 **wrap() automatically includes `{navPortal}` and a 70px bottom spacer.** Do NOT add `{navPortal}` or `<div style={{height:70}}/>` to screens manually.
 
-### navPortal
+### navPortal & activeTab map
 
-The bottom navigation bar, rendered via `ReactDOM.createPortal` into `#nav-root`. Defined inside `CFAMock` render after `wrap()` (search `const _navRootEl`). Included automatically by `wrap()`.
+The bottom navigation bar, rendered via `ReactDOM.createPortal` into `#nav-root`. Included automatically by `wrap()`. The `activeTab` map determines which nav tab is highlighted per screen:
 
-The `activeTab` map inside `navPortal` must include every screen name. Search `activeTab =` to find it.
+```javascript
+{
+  home:"home", setup:"practice", quiz:"practice", results:"practice",
+  revision:"practice", studyPath:"practice",
+  srReview:"drill", calcTrainer:"drill",
+  dashboard:"progress", readiness:"progress", losCoverage:"progress", masteryGrid:"progress",
+  adminDashboard:"home"
+}
+```
+
+Screens not in this map (e.g. `backup`, `walkthrough`) won't highlight any tab — add them if needed.
+
+### All screens (18 total)
+
+| Screen | Purpose |
+|--------|---------|
+| `home` | Main dashboard |
+| `setup` | Quiz configuration (topic, module, difficulty, count, mode) |
+| `quiz` | Active question screen |
+| `results` | Post-session results + AI debrief |
+| `srReview` | Spaced repetition card review |
+| `revision` | Notes / formulas / AI lessons per topic |
+| `studyPath` | Guided curriculum (learn → practice per topic) |
+| `readiness` | Module readiness + LOS coverage |
+| `losCoverage` | Topic/LOS coverage heatmap |
+| `masteryGrid` | Topic mastery grid |
+| `dashboard` | Score history + analytics |
+| `studyPlan` | Weekly study planner |
+| `calcTrainer` | CFA calculator practice (Pro) |
+| `walkthrough` | Concept walkthrough |
+| `review` | General review screen |
+| `adminDashboard` | Admin-only analytics (email-gated) |
+| `backup` | Data export/import |
+| `apiKey` | Dummy — redirects to home |
 
 ### Adding a new screen — checklist
 
@@ -250,6 +283,93 @@ WHATS_NEW_KEY      = "cfa_whats_new_v1"   — last seen What's New version (stri
 PRO_TOUR_KEY       = "cfa_pro_tour_v1"    — pro tour dismissed
 SCREEN_ONBOARD_KEY = "cfa_screen_onboard_v1" — per-screen first-visit flags
 ```
+
+## AI Functions — `callClaude` vs `callAIChat`
+
+Two distinct AI functions, never interchangeable:
+
+| | `callClaude()` | `callAIChat()` |
+|---|---|---|
+| **Use for** | Question generation, content generation, JSON output | Multi-turn chat (AI Coach, Socratic tutor, AI debrief) |
+| **Lives in** | `CFAMock` component (~line 5737) | Module-level function (~line 2251) |
+| **Returns** | Parsed JSON object | Plain string |
+| **requestType** | `"generate"` | `"chat"` |
+| **Free quota** | 20/day | 15/day |
+| **Model** | Always `claude-haiku-4-5-20251001` | Always `claude-haiku-4-5-20251001` |
+| **Error handling** | Retries (default 2×, 8s delay), logs to API_LOG_KEY | Propagates `quotaExceeded` errors — callers must catch and show `UpgradeModal` |
+
+`callAIChat` quota errors have `err.quotaExceeded = true`. Any call site must catch this and call `setUpgradeModal({reason:"chat_limit"})`.
+
+## UpgradeModal — All Trigger Reasons
+
+`setUpgradeModal({reason: "..."})` triggers the upgrade modal. Known reasons and where they fire:
+
+| Reason | Trigger |
+|--------|---------|
+| `"limit"` | Daily AI question limit reached (also passes `passProb`, `weakCount`, `streakDays`) |
+| `"chat_limit"` | Daily chat limit reached (15/day) |
+| `"learn"` | AI Lessons tab in RevisionScreen (Pro only) |
+| `"coach"` | AI Coach feature |
+| `"timed_mock"` | Timed mock exam |
+
+## Pro Status
+
+`proStatus` (boolean in CFAMock state) is set by `checkProFromServer(cfg, userId, email)`:
+1. Email in `OWNER_EMAILS` array → always Pro (admin/owner accounts)
+2. Cached status fresh in localStorage → return cached
+3. Supabase `subscriptions` table: `active=true AND valid_until >= now()`
+
+`OWNER_EMAILS` includes `sai.praneeth557@gmail.com` — that account is always Pro regardless of subscriptions table.
+
+## What's New System
+
+Slides are stored in `WHATS_NEW_SLIDES` array in `src/app.jsx` (~line 960), between `// WN_START` and `// WN_END` marker comments. Each entry:
+
+```javascript
+// WN_VER:2026-06-26          ← version tag (date, optionally +suffix: 2026-06-26-b)
+{emoji:"✨", color:C.easy, bg:"...", title:"...", sub:"...", desc:"...", tip:"..."}
+```
+
+`WHATS_NEW_VERSION` is auto-derived from the last entry's `WN_VER:` tag. Users see slides for versions newer than their `lastSeenWN` (stored in `WHATS_NEW_KEY` localStorage). The array is trimmed to the last 5 entries by `gen-whats-new.js`.
+
+### gen-whats-new.js script
+
+Automatically generates What's New slides from git commits using Claude Haiku. Run via the **"Generate What's New Slides"** GitHub Actions workflow (triggers on push to `main` that touches `src/**` or `supabase/functions/**`).
+
+```bash
+# Manual usage (dry-run — prints template):
+node gen-whats-new.js
+
+# Manual usage (write mode — appends to src/app.jsx, bumps cache version):
+ANTHROPIC_API_KEY=sk-ant-... node gen-whats-new.js --write
+```
+
+Never add `WN_VER:` entries manually — use the script so the array stays trimmed and versioning is consistent.
+
+## Offline Question Cache
+
+Questions are cached in localStorage under `OFFLINE_QS_KEY` (`"cfa_offline_qs_v1"`):
+
+```javascript
+// Structure:
+{ [topic]: { [module]: [question, question, ...] } }  // max 30 per topic/module
+```
+
+On first load, `OFFLINE_SEED_QS` (hardcoded fallback questions, ~3 per module) are seeded into the cache if empty. The seed runs once, gated by `OFFLINE_SEED_KEY` flag. The `catch` block in `generateQuestions` falls back to this cache automatically — never needs explicit handling.
+
+## Level-Aware Data Getters
+
+Always use these functions instead of accessing LOS data directly — they respect `cfaLevel`:
+
+```javascript
+getActiveLOS(level)            // → LOS | LOS_L2 | LOS_L3 object
+getActiveMisconceptions(level)
+getActiveFormulas(level)
+getActivePowerNotes(level)
+getActiveTopicMap(level)
+```
+
+`cfaLevel` is `"1"` | `"2"` | `"3"` (string, not number).
 
 ## Workflow Discipline
 
