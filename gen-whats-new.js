@@ -42,20 +42,55 @@ if (existingVers.includes(newVersion)) {
 console.log(`Last WHATS_NEW_VERSION: ${lastVersion}`);
 console.log(`New version will be:    ${newVersion}`);
 
+// ── Patterns that mark a commit as internal (never shown to users) ────────────
+const INTERNAL_PATTERNS = [
+  /admin.{0,30}(dashboard|stats|auth|tool)/i,
+  /dashboard.{0,30}admin/i,
+  /CLAUDE\.md/i,
+  /gen-whats-new/i,
+  /gen-claude-md/i,
+  /\.github\//i,
+  /workflow/i,
+  /deployment.{0,30}pipeline/i,
+  /edge.?function/i,
+  /supabase.{0,20}deploy/i,
+  /build\.js/i,
+  /pre.?commit/i,
+  /\[internal\]/i,
+  /\[infra\]/i,
+  /rebase.{0,20}(retry|push|fail)/i,
+  /What's New:.*slide/i,
+  /remove.*slide/i,
+];
+
+function isInternal(line) {
+  return INTERNAL_PATTERNS.some(p => p.test(line));
+}
+
 // ── Get commits since last version ────────────────────────────────────────────
 let commits = '';
 try {
-  commits = execSync(`git log --oneline --since="${lastVersion}" --no-merges 2>/dev/null`, {encoding:'utf8'}).trim();
-  // Filter out bot commits
-  commits = commits.split('\n').filter(l => !l.includes('[skip ci]') && !l.includes('github-actions')).join('\n').trim();
+  const raw = execSync(`git log --oneline --since="${lastVersion}" --no-merges 2>/dev/null`, {encoding:'utf8'}).trim();
+  commits = raw.split('\n')
+    .filter(l => l &&
+      !l.includes('[skip ci]') &&
+      !l.includes('github-actions') &&
+      !isInternal(l))
+    .join('\n').trim();
 } catch {}
 
 if (!commits) {
-  try { commits = execSync('git log --oneline -10 --no-merges', {encoding:'utf8'}).trim(); } catch {}
+  try {
+    const raw = execSync('git log --oneline -10 --no-merges', {encoding:'utf8'}).trim();
+    commits = raw.split('\n').filter(l => l && !isInternal(l)).join('\n').trim();
+  } catch {}
 }
 
-if (!commits) { console.error('No git history found.'); process.exit(1); }
-console.log(`\nCommits:\n${commits}\n`);
+if (!commits) {
+  console.log('No user-facing commits found — skipping What\'s New generation.');
+  process.exit(0);
+}
+console.log(`\nUser-facing commits:\n${commits}\n`);
 
 // ── Build prompt ──────────────────────────────────────────────────────────────
 const prompt = `You are writing release notes for ClearCFA, an AI-powered CFA Level 1/2/3 exam prep app for iOS/Android/web.
@@ -63,7 +98,7 @@ const prompt = `You are writing release notes for ClearCFA, an AI-powered CFA Le
 Recent git commits (since ${lastVersion}):
 ${commits}
 
-Write EXACTLY 3 "What's New" slides. Group related commits into themes. Focus on USER-FACING benefits — not implementation details.
+Write 1 to 3 "What's New" slides — one per distinct user-facing change. Do NOT pad to reach 3 if there are fewer real changes. Group related commits into a single slide when they form one theme. Focus on USER-FACING benefits only.
 
 Rules:
 - Title: 3-5 words, benefit-first (e.g. "Faster Quiz Generation" not "Optimised API calls")
@@ -71,7 +106,7 @@ Rules:
 - Desc: 2 sentences. What changed + why it helps the student preparing for CFA.
 - Tip: 1 sentence. A concrete action or thing to notice.
 - Use distinct emojis and varied color tokens.
-- If a commit is purely internal/infrastructure (CLAUDE.md, hooks, build, [skip ci]), omit it.
+- Strictly omit anything that is internal plumbing: CI fixes, deployment changes, admin tools, auth fixes, build system, database migrations, CLAUDE.md, workflow files.
 
 Available color tokens (use the raw token name as a string — the app substitutes them):
   C.accentLight, C.easy, C.medium, C.hard, C.reward
