@@ -5735,10 +5735,10 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
   const isAdmin=authUser?.email===ADMIN_EMAIL;
   const ADMIN_STATS_URL=`${SUPABASE_URL}/functions/v1/admin-stats`;
   const fetchAdminStats=async()=>{
-    if(!authUser?.accessToken||!isAdmin)return;
+    if(!authUser?.id||!isAdmin)return;
     setAdminStatsLoading(true);setAdminStatsError("");
     try{
-      const res=await fetch(ADMIN_STATS_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser.accessToken})});
+      const res=await fetch(ADMIN_STATS_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser.accessToken||undefined,userId:authUser.id})});
       const data=await res.json();
       if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`);
       setAdminStats(data);
@@ -5954,6 +5954,13 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
       generateWeeklyPlan();
     }
   },[history.length,weeklyPlan,authUser?.id,weeklyPlanLoading]); // eslint-disable-line
+
+  // Auto-fetch admin stats when navigating to the admin screen
+  useEffect(()=>{
+    if(screen==="adminDashboard"&&isAdmin&&!adminStats&&!adminStatsLoading){
+      fetchAdminStats();
+    }
+  },[screen]); // eslint-disable-line
 
   const generateInterleavedSession=async(diff,cnt)=>{
     if(generatingRef.current)return; generatingRef.current=true;

@@ -43,21 +43,42 @@ Deno.serve(async (req: Request) => {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return jsonResponse({ error: 'Invalid JSON' }, 400); }
 
-  const { accessToken } = body as { accessToken?: string };
-  if (!accessToken) return jsonResponse({ error: 'No access token' }, 401);
-
-  // Verify the token and gate on admin email
-  const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-    headers: { Authorization: `Bearer ${accessToken}`, apikey: serviceKey },
-  });
-  if (!userRes.ok) return jsonResponse({ error: 'Auth failed' }, 401);
-  const userInfo = await userRes.json() as { email?: string };
-  if (userInfo.email !== ADMIN_EMAIL) return jsonResponse({ error: 'Unauthorized' }, 403);
+  const { accessToken, userId } = body as { accessToken?: string; userId?: string };
+  if (!accessToken && !userId) return jsonResponse({ error: 'No credentials' }, 401);
 
   const svcHeaders: Record<string, string> = {
     apikey: serviceKey,
     Authorization: `Bearer ${serviceKey}`,
   };
+
+  let isAuthorized = false;
+
+  if (accessToken) {
+    // Supabase JWT path (magic link / OAuth)
+    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${accessToken}`, apikey: serviceKey },
+    });
+    if (!userRes.ok) return jsonResponse({ error: 'Auth failed' }, 401);
+    const userInfo = await userRes.json() as { email?: string };
+    if (userInfo.email === ADMIN_EMAIL) isAuthorized = true;
+  } else if (userId) {
+    // Password-based login path — look up stored email from sessions table
+    const sessRes = await fetch(
+      `${supabaseUrl}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&select=data&limit=1`,
+      { headers: svcHeaders }
+    );
+    if (sessRes.ok) {
+      const sessData = await sessRes.json() as Array<{ data?: string }>;
+      if (Array.isArray(sessData) && sessData.length > 0) {
+        try {
+          const parsed = JSON.parse(sessData[0].data || '{}') as { email?: string };
+          if (parsed.email === ADMIN_EMAIL) isAuthorized = true;
+        } catch { /* malformed data */ }
+      }
+    }
+  }
+
+  if (!isAuthorized) return jsonResponse({ error: 'Unauthorized' }, 403);
 
   // ── Anthropic cost report (uses existing ANTHROPIC_API_KEY) ──────────────
   const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
