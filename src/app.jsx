@@ -1046,11 +1046,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-26-d
-{version:"2026-06-26-d",slides:[
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Next Button Works Reliably",sub:"Bug Fix · 2026-06-26 update",desc:"Fixed multiple issues preventing the Next button from responding on iOS and Android, including conflicts with the lofi player and missing event handlers. You can now smoothly navigate through quiz questions without unexpected delays or freezes.",tip:"Tap Next after answering—it should now respond instantly on your device."},
-{emoji:"🎯",color:C.medium,bg:C.medium,title:"Cleaner Quiz Interface",sub:"UX · 2026-06-26 update",desc:"Removed the thumbs-down report button from the quiz answer row to reduce clutter and keep focus on learning. Your study flow is now less interrupted by interface elements.",tip:"Notice the simpler post-answer row—more space to review explanations and move forward."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1074,11 +1069,6 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
@@ -5899,9 +5889,10 @@ FIX: [1 specific action to take today — concrete and actionable]
 PRIORITY: [exact concept name from wrong list to drill first]
 TIME: [realistic time to close this gap, e.g. "20 min" or "1 hour"]
 COACH: [1 honest, direct sentence — no generic cheerleading]`;
+      const DEBRIEF_FALLBACK="PATTERN: Could not generate debrief.\nFIX: Review the wrong answers below.\nPRIORITY: \nTIME: \nCOACH: Every session is data — keep going.";
       callClaude(debriefPrompt,350,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_debrief"})
-        .then(r=>{setAiDebrief(typeof r==="string"?r:"");})
-        .catch(()=>{setAiDebrief("PATTERN: Could not generate debrief.\nFIX: Review the wrong answers below.\nPRIORITY: \nTIME: \nCOACH: Every session is data — keep going.");})
+        .then(r=>{const txt=typeof r==="string"&&r.trim()?r:DEBRIEF_FALLBACK;setAiDebrief(txt);})
+        .catch(()=>{setAiDebrief(DEBRIEF_FALLBACK);})
         .finally(()=>setAiDebriefLoading(false));
     }
     // Log wrong answers for community analytics (fire-and-forget)
@@ -9839,6 +9830,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             {aiDebriefLoading&&<span style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>Analysing session…</span>}
           </div>
           {aiDebriefLoading&&<Skeleton height={80} radius={6}/>}
+          {!aiDebriefLoading&&!aiDebrief&&<div style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>Analysing your session…</div>}
           {aiDebrief&&(()=>{
             const d=parseDebrief(aiDebrief);
             return(
