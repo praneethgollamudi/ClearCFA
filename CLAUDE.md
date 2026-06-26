@@ -152,6 +152,21 @@ Use `grep "SCREEN:"` to get a full screen index with line numbers. Each screen b
 
 ## Key Patterns
 
+**Sign-out state reset**: When signing out, all local state variables (not just localStorage) must be reset: `setCfaLevel("1")`, `setStudyGoal(null)`, `setPresets([])`, `setDailyMission(null)`, `setDailyRefresher(null)`, `setTopicLessons({})`, `setConfidenceLog({})`, `setWorkedExamples({})`, `setSessionDraft(null)`, `setQuestionFlags([])`, `setPersonalBests({})`. This prevents account-switch bleed.
+
+
+**SESSION_KEYS expansion**: Direct-localStorage keys (those without auto-prefixed "cfa_") must be explicitly listed in `SESSION_KEYS` for complete user isolation on sign-out. This now includes: `CFA_LEVEL_KEY`, `REFRESHER_KEY`, `LESSONS_KEY`, `STUDY_GOAL_KEY`, `PRESETS_KEY`, `MISSION_KEY`, `CONFIDENCE_KEY`, `WORKED_EX_KEY`, `DYNAMIC_PN_KEY`, `DYNAMIC_FORMULAS_KEY`, `STREAK_FREEZE_KEY`, `CALC_SNAP_KEY`, `SESSION_DRAFT_KEY`, `FLAGS_KEY`, `BESTS_KEY`, `RESOLVED_GAPS_KEY`, `REMINDER_TIME_KEY`. Always maintain this list when adding new localStorage state.
+
+
+**Admin state hydration**: `adminBudget` state (line ~5174) is hydrated from localStorage key `"cfa_admin_budget"` on mount. Wrap in try/catch to handle quota-exceeded errors. This should be added to `SESSION_KEYS` array if admin logout clears all budget data.
+
+
+**FixToPassScreen level awareness**: `FixToPassScreen` now accepts `cfaLevel` prop (defaults to "1") and uses it when calling `getActiveLOS(cfaLevel)` to fetch the correct curriculum for the user's exam level. Always pass `cfaLevel` from parent state when rendering this screen.
+
+
+**Level-aware prompts**: All AI prompt builders (`buildVignettePrompt()`, `buildFSAStatementPrompt()`, `WEEKLY_PLAN_PROMPT`) now accept a `level` parameter ("1", "2", or "3"). For `WEEKLY_PLAN_PROMPT`, use `.split("{level}").join(cfaLevel)` to inject the level. Always pass `cfaLevel` from state when calling these builders — failure to do so defaults to Level 1 prompts.
+
+
 **Complete user isolation on sign-out**: When a user signs out or switches accounts, `SESSION_KEYS` array now includes all direct-localStorage keys (those without "cfa_" prefix auto-added) like `CFA_LEVEL_KEY`, `REFRESHER_KEY`, `STUDY_GOAL_KEY`, etc. These are explicitly cleared alongside prefixed keys. Always maintain this list when adding new localStorage state — add both the key constant and the literal key name if it differs.
 
 
@@ -453,8 +468,8 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 - WhatsApp: `919493413121`
 - Manual grant: insert row into Supabase `subscriptions` table (active=true, valid_until=+30d)
 
-### Screens (17 total)
-`apiKey`, `backup`, `calcTrainer`, `dashboard`, `home`, `losCoverage`, `masteryGrid`, `quiz`, `readiness`, `results`, `review`, `revision`, `setup`, `srReview`, `studyPath`, `studyPlan`, `walkthrough`
+### Screens (18 total)
+`adminDashboard`, `apiKey`, `backup`, `calcTrainer`, `dashboard`, `home`, `losCoverage`, `masteryGrid`, `quiz`, `readiness`, `results`, `review`, `revision`, `setup`, `srReview`, `studyPath`, `studyPlan`, `walkthrough`
 
 ### activeTab map (current)
 ```
@@ -504,7 +519,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1786500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1786600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
