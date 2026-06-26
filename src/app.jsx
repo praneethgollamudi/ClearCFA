@@ -749,6 +749,17 @@ function getStudyPace(history, daysLeft) {
   return { sessionsPerWeek7, sessionsPerWeek30, qPerDay7, daysSinceLastSession, burnoutRisk };
 }
 
+function getPaceStatus(levelHistory, passProbability, daysLeft) {
+  if (!passProbability || levelHistory.length < 3 || daysLeft <= 0) return null;
+  const uniqueDays = new Set(levelHistory.map(h => h.dateKey)).size;
+  const avgSessionsPerDay = levelHistory.length / Math.max(uniqueDays, 1);
+  const sessionsNeeded = passProbability.sessionsNeeded || 0;
+  if (!sessionsNeeded || !avgSessionsPerDay) return null;
+  const daysToComplete = Math.ceil(sessionsNeeded / avgSessionsPerDay);
+  const delta = daysLeft - daysToComplete;
+  return { delta, daysToComplete, avgSessionsPerDay: Math.round(avgSessionsPerDay * 10) / 10 };
+}
+
 // ─── WEEKLY PLAN GENERATOR (AI-powered) ─────────────────────────────────────
 const WEEKLY_PLAN_PROMPT = `You are a CFA Level {level} study coach. Generate a practical weekly study plan.
 
@@ -1029,6 +1040,7 @@ const ACTIVE_WAS=ACTIVE_TIER===1?PRICE_TIER2:PRICE_REGULAR;
 const ACTIVE_SLOTS=ACTIVE_TIER===1?TIER1_SLOTS:TIER2_SLOTS;
 const ACTIVE_TAKEN=ACTIVE_TIER===1?TIER1_TAKEN:TIER2_TAKEN;
 const ACTIVE_LABEL=ACTIVE_TIER===1?"Early Bird":ACTIVE_TIER===2?"Founding Member":"Pro";
+const COMMUNITY_COUNT=50; // Update manually as user base grows
 // Pro status is validated server-side against the subscriptions table.
 // getCachedProStatus / setCachedProStatus cache the server response for 4 hours.
 function getCachedProStatus(userId){
@@ -5708,6 +5720,20 @@ function CFAMock(){
       }
       return prev;
     });
+    // Streak milestone toasts + longest streak tracking
+    const prevStreak=getStreak(newHistory.slice(1));
+    const newStreak=getStreak(newHistory);
+    const STREAK_MILESTONES=[7,14,30,60,100];
+    const hitMilestone=STREAK_MILESTONES.find(m=>prevStreak<m&&newStreak>=m);
+    if(hitMilestone)showToast("🏆",`${hitMilestone}-Day Streak!`,"You're building a real study habit.",true);
+    try{
+      const bests=JSON.parse(localStorage.getItem(BESTS_KEY)||'{}');
+      if(newStreak>(bests.longestStreak||0)){
+        bests.longestStreak=newStreak;
+        localStorage.setItem(BESTS_KEY,JSON.stringify(bests));
+        setPersonalBests(prev=>({...prev,longestStreak:newStreak}));
+      }
+    }catch{}
     // ─────────────────────────────────────────────────────────────────────
 
     // Auto-escalation
@@ -7914,6 +7940,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
       ) : (
         <MotivationalBanner daysLeft={daysLeft}/>
       )}
+      {/* Streak at-risk banner */}
+      {streak>0&&!history.some(h=>h.dateKey===localDateKey())&&(
+        <div style={{background:`linear-gradient(135deg,${C.reward}18,${C.reward}08)`,border:`1px solid ${C.reward}44`,borderRadius:12,padding:"11px 14px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:800,color:C.rewardLight}}>🔥 {streak}-day streak at risk</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>Study today to keep it alive — resets at midnight</div>
+          </div>
+          <button onClick={()=>{trackUsage("office_mode");setOmMode(true);const pick=pickNextSession(moduleReadiness,daysLeft,history)||{topic:moduleReadiness[0]?.topic,module:moduleReadiness[0]?.modules[0],difficulty:adaptiveOmDifficulty};generateQuestions(pick.topic,pick.module||moduleReadiness[0]?.modules[0],pick.difficulty||adaptiveOmDifficulty,omQCount,"guided");}} style={{padding:"8px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:C.reward+"33",border:`1px solid ${C.reward}66`,color:C.rewardLight,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+            Study →
+          </button>
+        </div>
+      )}
       {/* Resume interrupted session banner */}
       {sessionDraft&&(()=>{
         const mins=Math.round((Date.now()-sessionDraft.ts)/60000);
@@ -8098,6 +8136,29 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {history.length===0&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:14,opacity:0.7}}>Stats unlock after your first session</div>}
       </>
     )}
+    {/* Pace prediction card */}
+    {(()=>{
+      const pace=getPaceStatus(levelHistory,passProbability,daysLeft);
+      if(!pace)return null;
+      const ahead=pace.delta>=0;
+      const paceColor=ahead?C.easy:pace.delta<-14?C.hard:C.medium;
+      return(
+        <div style={{background:`${paceColor}12`,border:`1px solid ${paceColor}33`,borderRadius:12,padding:"12px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:800,color:paceColor}}>
+              {ahead?`✅ ${pace.delta}d ahead of schedule`:`⚠️ ${Math.abs(pace.delta)}d behind schedule`}
+            </div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>
+              {ahead?`${pace.avgSessionsPerDay} sessions/day avg — keep it up`:`Need ~${Math.ceil(pace.avgSessionsPerDay*1.3)} sessions/day to catch up`}
+            </div>
+          </div>
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{fontSize:18,fontWeight:800,color:paceColor,lineHeight:1}}>{daysLeft}</div>
+            <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em"}}>days left</div>
+          </div>
+        </div>
+      );
+    })()}
     {/* Office Mode — primary CTA */}
     {(()=>{
       const omSessions=history.filter(h=>h.isOfficeMode);
@@ -8586,6 +8647,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     })()}
 
     {/* Referral card */}
+    {authUser&&<div style={{textAlign:"center",fontSize:12,color:C.muted,marginBottom:8}}>🎓 <strong style={{color:C.text}}>{COMMUNITY_COUNT}+</strong> CFA candidates preparing for August 2026</div>}
     {authUser&&<ReferralCard userId={authUser.id} cfg={SB_CFG} setUpgradeModal={setUpgradeModal}/>}
 
 
@@ -8721,9 +8783,31 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <a
                 href={"data:text/plain;charset=utf-8,"+encodeURIComponent(csv)}
                 download={`clearcfa-anki-${new Date().toISOString().slice(0,10)}.txt`}
-                style={{display:"block",width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box"}}
+                style={{display:"block",width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box",marginBottom:8}}
               >
                 🃏 Export for Anki ({cards.length} cards)
+              </a>
+            );
+          })()}
+          {moduleReadiness.length>0&&(()=>{
+            const rows=moduleReadiness.map(r=>[
+              r.topic,
+              r.accuracy!=null?r.accuracy.toFixed(1):"",
+              r.sessions,
+              r.totalQs,
+              ((r.coverage||0)*100).toFixed(0)+"%",
+              r.lastSession||"",
+              r.readiness!=null?r.readiness.toFixed(0):"",
+            ]);
+            const header="topic,accuracy_%,sessions,total_questions,coverage,last_studied,readiness_score\n";
+            const csvData=header+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+            return(
+              <a
+                href={"data:text/csv;charset=utf-8,"+encodeURIComponent(csvData)}
+                download={`clearcfa-progress-${new Date().toISOString().slice(0,10)}.csv`}
+                style={{display:"block",width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",textAlign:"center",textDecoration:"none",boxSizing:"border-box"}}
+              >
+                📊 Export Progress Report (CSV)
               </a>
             );
           })()}
