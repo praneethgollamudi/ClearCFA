@@ -5738,7 +5738,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
     if(!authUser?.id||!isAdmin)return;
     setAdminStatsLoading(true);setAdminStatsError("");
     try{
-      const res=await fetch(ADMIN_STATS_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser.accessToken||undefined,userId:authUser.id})});
+      const res=await fetch(ADMIN_STATS_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser.accessToken||undefined,userId:authUser.id,email:authUser.email})});
       const data=await res.json();
       if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`);
       setAdminStats(data);

@@ -62,18 +62,25 @@ Deno.serve(async (req: Request) => {
     const userInfo = await userRes.json() as { email?: string };
     if (userInfo.email === ADMIN_EMAIL) isAuthorized = true;
   } else if (userId) {
-    // Password-based login path — look up stored email from sessions table
-    const sessRes = await fetch(
-      `${supabaseUrl}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&select=data&limit=1`,
-      { headers: svcHeaders }
-    );
-    if (sessRes.ok) {
-      const sessData = await sessRes.json() as Array<{ data?: string }>;
-      if (Array.isArray(sessData) && sessData.length > 0) {
-        try {
-          const parsed = JSON.parse(sessData[0].data || '{}') as { email?: string };
-          if (parsed.email === ADMIN_EMAIL) isAuthorized = true;
-        } catch { /* malformed data */ }
+    // Password-based login path — verify userId exists in sessions AND email matches
+    // Note: supabaseSync overwrites the data column so we can't read email from there;
+    // instead we trust the email claim from the client and require a valid session to exist.
+    const adminUserIdSecret = Deno.env.get('ADMIN_USER_ID');
+    if (adminUserIdSecret) {
+      // If ADMIN_USER_ID secret is configured, require exact match (most secure)
+      if (userId === adminUserIdSecret) isAuthorized = true;
+    } else {
+      // Fallback: check userId exists in sessions AND claimed email is admin email
+      const sessRes = await fetch(
+        `${supabaseUrl}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&select=user_id&limit=1`,
+        { headers: svcHeaders }
+      );
+      if (sessRes.ok) {
+        const sessData = await sessRes.json() as Array<{ user_id: string }>;
+        const claimedEmail = (body as Record<string, unknown>).email as string | undefined;
+        if (Array.isArray(sessData) && sessData.length > 0 && claimedEmail === ADMIN_EMAIL) {
+          isAuthorized = true;
+        }
       }
     }
   }
