@@ -971,6 +971,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.reward,bg:C.reward,title:"Daily Mission Agent",sub:"AI · June 2026 update",desc:"Every day, an AI coach analyses your weakest topics and your recent sessions to generate a specific, actionable study mission — with a task, an exam insight, and a one-tap Start button. Resets at midnight and adapts as your weak spots change.",tip:"The Daily Mission appears on your home screen automatically once you have some study history. No setup needed."},
 {emoji:"🤖",color:C.easy,bg:C.easy,title:"Multi-turn Concept Coach",sub:"AI · June 2026 update",desc:"Open Quick Revision → tap the new '🤖 Coach' tab. Pick any CFA topic and the AI teaches it through Socratic dialogue — one concept at a time, checking your understanding before advancing. It remembers the conversation and adapts to your answers.",tip:"Unlike the AI Debrief (which reviews what went wrong), the Concept Coach is proactive — use it before a topic to build a mental model, not just after to patch gaps."},
 ]},
+// WN_VER:2026-06-26-b
+{version:"2026-06-26-b",slides:[
+{emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
+{emoji:"🛡️",color:C.medium,bg:C.medium,title:"More Reliable Admin Tools",sub:"Bug Fix · 2026-06-26 update",desc:"Fixed critical authentication and display issues in the admin dashboard that caused blank pages and login failures. Teachers and admins can now reliably manage accounts and track student progress without technical roadblocks.",tip:"If you're an instructor, log in to the admin dashboard to verify your student roster now loads correctly."},
+{emoji:"🔄",color:C.reward,bg:C.reward,title:"Smarter Deployment Pipeline",sub:"Speed · 2026-06-26 update",desc:"Our build system now automatically retries failed pushes when multiple commits happen at once, reducing deployment delays. You'll get bug fixes and new features pushed to your device faster and more reliably.",tip:"Updates may arrive more frequently now—keep your app up to date for the latest exam content."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
