@@ -9648,23 +9648,65 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <Row label="Total cost today" value={fmtCur(s.cost?.totalToday)} color={C.reward}/>
           <Row label="Total cost (7d/14d)" value={fmtCur(s.cost?.totalWeek)} color={C.reward}/>
           <Row label="Avg daily rate" value={fmtCur(s.cost?.dailyRate)} sub="based on last 7d"/>
-          <div style={{marginTop:10,background:C.bg,borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.reward,marginBottom:8}}>💳 Budget Runway</div>
-            <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
-              <span style={{fontSize:11,color:C.muted,whiteSpace:"nowrap"}}>Remaining credits ($):</span>
-              <input type="number" min="0" step="0.01" value={budget} onChange={e=>saveBudget(e.target.value)}
-                placeholder="e.g. 4.80"
-                style={{flex:1,padding:"5px 8px",borderRadius:7,border:`1px solid ${C.border}`,background:C.surface,color:C.text,fontSize:12}}/>
-            </div>
-            {budget&&parseFloat(budget)>0&&s.cost?.dailyRate>0?(
-              <div style={{fontSize:13,fontWeight:800,color:parseFloat(budget)/s.cost.dailyRate>7?C.easy:C.hard}}>
-                ~{Math.floor(parseFloat(budget)/s.cost.dailyRate)} days remaining
-                <span style={{fontSize:10,fontWeight:400,color:C.muted,marginLeft:6}}>at ${s.cost.dailyRate}/day</span>
+          {/* Budget runway — uses Anthropic Admin API data if available */}
+          {(()=>{
+            const ant=s.anthropic;
+            const hasAnt=ant?.fetched;
+            // Best daily rate: prefer Anthropic-reported, fall back to our estimate
+            const bestRate=hasAnt&&ant.dailyRate>0?ant.dailyRate:s.cost?.dailyRate||0;
+            return(
+              <div style={{marginTop:10,background:C.bg,borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <span style={{fontSize:11,fontWeight:700,color:C.reward}}>💳 Budget Runway</span>
+                  {hasAnt?(
+                    <span style={{fontSize:10,fontWeight:700,color:C.easy,background:C.easy+"18",padding:"2px 7px",borderRadius:10}}>✓ Anthropic verified</span>
+                  ):(
+                    <span style={{fontSize:10,color:C.muted}}>{ant?.error?"⚠️ Admin key error":"No admin key set"}</span>
+                  )}
+                </div>
+                {ant?.error&&<div style={{fontSize:10,color:C.hard,marginBottom:8,wordBreak:"break-all"}}>{ant.error}</div>}
+                {hasAnt&&(
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
+                    {[["Anthropic spend (7d)",`$${ant.spend7d}`],["Anthropic spend (30d)",`$${ant.spend30d}`]].map(([l,v])=>(
+                      <div key={l} style={{background:C.surface,borderRadius:8,padding:"7px 9px"}}>
+                        <div style={{fontSize:10,color:C.muted,marginBottom:2}}>{l}</div>
+                        <div style={{fontSize:13,fontWeight:800,color:C.reward}}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
+                  <span style={{fontSize:11,color:C.muted,whiteSpace:"nowrap"}}>Total credits purchased ($):</span>
+                  <input type="number" min="0" step="0.01" value={budget} onChange={e=>saveBudget(e.target.value)}
+                    placeholder="e.g. 10.00"
+                    style={{flex:1,padding:"5px 8px",borderRadius:7,border:`1px solid ${C.border}`,background:C.surface,color:C.text,fontSize:12}}/>
+                </div>
+                {budget&&parseFloat(budget)>0&&bestRate>0?(()=>{
+                  const total=parseFloat(budget);
+                  const spent=hasAnt?ant.spend30d:0;
+                  const remaining=Math.max(0,total-spent);
+                  const days=Math.floor(remaining/bestRate);
+                  return(
+                    <div>
+                      {hasAnt&&<div style={{fontSize:11,color:C.muted,marginBottom:4}}>Remaining (total − Anthropic 30d spend): <b style={{color:C.text}}>${remaining.toFixed(2)}</b></div>}
+                      <div style={{fontSize:15,fontWeight:800,color:days>14?C.easy:days>7?C.medium:C.hard}}>
+                        ~{days} days remaining
+                        <span style={{fontSize:10,fontWeight:400,color:C.muted,marginLeft:6}}>at ${bestRate}/day {hasAnt?"(Anthropic rate)":"(est.)"}</span>
+                      </div>
+                    </div>
+                  );
+                })():budget&&parseFloat(budget)>0?(
+                  <div style={{fontSize:11,color:C.muted}}>Not enough usage data yet for daily rate.</div>
+                ):!ant&&(
+                  <div style={{fontSize:11,color:C.muted,marginTop:4}}>
+                    Set <code>ANTHROPIC_ADMIN_KEY</code> secret in Supabase for real spend data.<br/>
+                    Console → Settings → API Keys → Create Admin Key (<code>sk-ant-admin01-...</code>)<br/>
+                    Then: <code>supabase secrets set ANTHROPIC_ADMIN_KEY=sk-ant-admin01-...</code>
+                  </div>
+                )}
               </div>
-            ):budget&&parseFloat(budget)>0?(
-              <div style={{fontSize:11,color:C.muted}}>Not enough data yet to estimate daily rate.</div>
-            ):null}
-          </div>
+            );
+          })()}
         </Card>
 
         {/* Revenue */}

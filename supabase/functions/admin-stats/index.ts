@@ -59,6 +59,45 @@ Deno.serve(async (req: Request) => {
     Authorization: `Bearer ${serviceKey}`,
   };
 
+  // ── Anthropic cost report (requires ANTHROPIC_ADMIN_KEY secret) ───────────
+  const adminKey = Deno.env.get('ANTHROPIC_ADMIN_KEY') ?? '';
+  let anthropicData: { spend30d: number; spend7d: number; dailyRate: number; fetched: boolean; error?: string } | null = null;
+  if (adminKey) {
+    try {
+      const now0 = new Date();
+      const d30ago = new Date(now0.getTime() - 30 * 86400000).toISOString();
+      const d7ago  = new Date(now0.getTime() -  7 * 86400000).toISOString();
+      const nowStr = now0.toISOString();
+
+      // Try cost_report endpoint first (returns dollar amounts directly)
+      const costRes = await fetch(
+        `https://api.anthropic.com/v1/organizations/cost_report?starting_at=${encodeURIComponent(d30ago)}&ending_at=${encodeURIComponent(nowStr)}&bucket_width=1d`,
+        { headers: { 'x-api-key': adminKey, 'anthropic-version': '2023-06-01' } }
+      );
+
+      if (costRes.ok) {
+        const costJson = await costRes.json() as { data?: Array<{ total_cost?: number; cost?: number; date?: string; timestamp?: string }> };
+        const items = Array.isArray(costJson?.data) ? costJson.data : [];
+        const spend30d = items.reduce((s, r) => s + (r.total_cost ?? r.cost ?? 0), 0);
+        // Last 7 days subset
+        const cutoff = d7ago.slice(0, 10);
+        const spend7d  = items.filter(r => (r.date ?? r.timestamp ?? '') >= cutoff)
+                              .reduce((s, r) => s + (r.total_cost ?? r.cost ?? 0), 0);
+        anthropicData = {
+          spend30d: Math.round(spend30d * 10000) / 10000,
+          spend7d:  Math.round(spend7d  * 10000) / 10000,
+          dailyRate: Math.round(spend30d / 30 * 10000) / 10000,
+          fetched: true,
+        };
+      } else {
+        const errText = await costRes.text().catch(() => costRes.status.toString());
+        anthropicData = { spend30d: 0, spend7d: 0, dailyRate: 0, fetched: false, error: `${costRes.status}: ${errText.slice(0, 120)}` };
+      }
+    } catch (e: unknown) {
+      anthropicData = { spend30d: 0, spend7d: 0, dailyRate: 0, fetched: false, error: String(e).slice(0, 120) };
+    }
+  }
+
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const d14 = new Date(now.getTime() - 13 * 86400000).toISOString().slice(0, 10);
@@ -177,6 +216,7 @@ Deno.serve(async (req: Request) => {
     revenue:  { proCount, freeCount: Math.max(0, totalUsers - proCount), conversionRate, referrals: referralTotal },
     feedback: { total: fbAll.length, avgRating, byCategory, recent: feedbackRecent },
     flags:    { total: flagRows.length, items: flagRows.slice(0, 50) },
+    anthropic: anthropicData,
     generatedAt: now.toISOString(),
   });
 });
