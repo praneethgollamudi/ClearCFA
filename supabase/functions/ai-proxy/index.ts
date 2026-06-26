@@ -7,7 +7,8 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const FREE_DAILY_LIMIT = 20; // generate requests per day for free users
+const FREE_DAILY_LIMIT      = 20; // generate requests per day for free users
+const FREE_CHAT_DAILY_LIMIT = 15; // chat messages per day for free users
 
 function buildChatSystem(level: string): string {
   const lvl = ["1","2","3"].includes(level) ? level : "1";
@@ -146,10 +147,33 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Auth check failed — try again.' }, 503);
   }
 
-  // ── CHAT (tutor Q&A) — no quota, counted separately ─────────────────────
+  // ── CHAT (tutor Q&A) — soft quota for free users ────────────────────────
   if (requestType === 'chat') {
     if (!Array.isArray(messages) || (messages as unknown[]).length === 0) {
       return jsonResponse({ error: 'No messages provided.' }, 400);
+    }
+
+    // Enforce daily chat limit for free users
+    const isChatPro = await checkIsPro(supabaseUrl, supabaseServiceKey, userId as string);
+    if (!isChatPro) {
+      const today = todayUTC();
+      const chatDate = `chat-${today}`;
+      try {
+        const getRes = await fetch(
+          `${supabaseUrl}/rest/v1/ai_quota?user_id=eq.${encodeURIComponent(userId as string)}&quota_date=eq.${chatDate}&select=quota_count`,
+          { headers: { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}` } }
+        );
+        const rows = await getRes.json() as Array<{ quota_count: number }>;
+        const used = Array.isArray(rows) && rows.length > 0 ? (rows[0].quota_count ?? 0) : 0;
+        if (used >= FREE_CHAT_DAILY_LIMIT) {
+          return jsonResponse({
+            error: `Daily chat limit reached (${FREE_CHAT_DAILY_LIMIT} messages/day on free plan). Upgrade to Pro for unlimited AI tutoring.`,
+            quotaExceeded: true,
+            used,
+            limit: FREE_CHAT_DAILY_LIMIT,
+          }, 429);
+        }
+      } catch { /* DB error — allow rather than block */ }
     }
 
     const trimmed = (messages as Array<{role: string; content: string}>)
@@ -173,7 +197,7 @@ Deno.serve(async (req: Request) => {
 
     const data = await res.json();
 
-    // Track chat calls in ai_quota using "chat-YYYY-MM-DD" date key (no quota limit, analytics only)
+    // Increment chat counter in ai_quota (analytics + quota tracking)
     if (res.ok) {
       const chatDate = `chat-${todayUTC()}`;
       try {
@@ -191,7 +215,7 @@ Deno.serve(async (req: Request) => {
           },
           body: JSON.stringify({ user_id: userId, quota_date: chatDate, quota_count: chatCount }),
         });
-      } catch { /* analytics — never block the response */ }
+      } catch { /* never block on analytics failure */ }
     }
 
     return jsonResponse(data, res.ok ? 200 : res.status);

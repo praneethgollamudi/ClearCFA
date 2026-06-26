@@ -2251,7 +2251,14 @@ async function callAIChat(userId, messages, maxTokens=450, level="1", {throws=fa
     });
     if(!res.ok){
       const body=await res.json().catch(()=>({}));
-      const msg=body?.error?.message||`Server error ${res.status}`;
+      if(body?.quotaExceeded){
+        const err=new Error(body.error||"Chat limit reached");
+        err.quotaExceeded=true;
+        err.used=body.used;
+        err.limit=body.limit;
+        throw err;
+      }
+      const msg=body?.error||`Server error ${res.status}`;
       if(throws)throw new Error(msg);
       return null;
     }
@@ -2259,6 +2266,7 @@ async function callAIChat(userId, messages, maxTokens=450, level="1", {throws=fa
     if(data.error){const msg=data.error?.message||"AI error";if(throws)throw new Error(msg);return null;}
     return data.content?.map(i=>i.text||"").join("").trim()||null;
   }catch(e){
+    if(e.quotaExceeded){throw e;} // always propagate quota errors
     if(throws)throw e;
     return null;
   }
@@ -2574,6 +2582,7 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
   const [copied,setCopied]=useState(false);
   const headers={
     limit:{icon:"⚡",title:"Daily limit reached",sub:`You've used your ${FREE_DAILY_AI_LIMIT} free questions today. Resets at midnight.`},
+    chat_limit:{icon:"💬",title:"Chat limit reached",sub:"You've used your 15 free AI chat messages today. Upgrade to Pro for unlimited AI tutoring. Resets at midnight."},
     coach:{icon:"🤖",title:"Pro feature",sub:"AI Coach is available on the Pro plan."},
     plan:{icon:"🗓",title:"Pro feature",sub:"Weekly AI study plans are available on Pro."},
     l2l3:{icon:"📚",title:"Pro feature",sub:"Full CFA L2 & L3 support is available on Pro."},
@@ -2892,16 +2901,24 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
   const drillCard = drillData[drillIdx] || null;
   const drillProgress = Object.keys(drillResult).length;
 
+  const _revChatQuotaMsg=(e)=>{
+    setAiPanel(null);
+    // bubble up via a thrown error so callers can optionally handle; just show a message in the panel
+    const msg=e?.message||"Daily chat limit reached. Upgrade to Pro for unlimited AI tutoring.";
+    setAiPanel(p=>p?{...p,messages:[...(aiMsgsRef.current||[]),{role:"assistant",content:`⚠️ ${msg}`}]}:null);
+  };
   const openAI = async (context, firstPrompt) => {
     const userMsg = {role:"user", content:firstPrompt};
     aiMsgsRef.current = [userMsg];
     setAiPanel({context, messages:[userMsg]});
     setAiInput("");
     setAiLoading(true);
-    const reply = await callAIChat(userId, [userMsg]);
-    const withReply = [...aiMsgsRef.current, {role:"assistant", content:reply||"No response — check your API key in Settings."}];
-    aiMsgsRef.current = withReply;
-    setAiPanel(p=>p?{...p, messages:withReply}:null);
+    try{
+      const reply = await callAIChat(userId, [userMsg]);
+      const withReply = [...aiMsgsRef.current, {role:"assistant", content:reply||"No response — check your API key in Settings."}];
+      aiMsgsRef.current = withReply;
+      setAiPanel(p=>p?{...p, messages:withReply}:null);
+    }catch(e){_revChatQuotaMsg(e);}
     setAiLoading(false);
   };
 
@@ -2913,10 +2930,12 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     setAiPanel(p=>p?{...p, messages:msgs}:null);
     setAiInput("");
     setAiLoading(true);
-    const reply = await callAIChat(userId, msgs);
-    const withReply = [...msgs, {role:"assistant", content:reply||"No response — check your API key in Settings."}];
-    aiMsgsRef.current = withReply;
-    setAiPanel(p=>p?{...p, messages:withReply}:null);
+    try{
+      const reply = await callAIChat(userId, msgs);
+      const withReply = [...msgs, {role:"assistant", content:reply||"No response — check your API key in Settings."}];
+      aiMsgsRef.current = withReply;
+      setAiPanel(p=>p?{...p, messages:withReply}:null);
+    }catch(e){_revChatQuotaMsg(e);}
     setAiLoading(false);
   };
 
@@ -6481,16 +6500,23 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const [reviewAiLoading,setReviewAiLoading]=useState(false);
   const reviewAiMsgsRef=useRef([]);
 
+  const _chatQuotaMsg=(e)=>{
+    const limitMsg=e?.message||"Daily chat limit reached. Upgrade to Pro for unlimited AI tutoring.";
+    showToast("⚠️","Chat limit reached",limitMsg,4000);
+    setUpgradeModal({reason:"chat_limit"});
+  };
   const openReviewAI=async(context,firstPrompt)=>{
     const userMsg={role:"user",content:firstPrompt};
     reviewAiMsgsRef.current=[userMsg];
     setReviewAiPanel({context,messages:[userMsg]});
     setReviewAiInput("");
     setReviewAiLoading(true);
-    const reply=await callAIChat(authUser?.id||"",[userMsg]);
-    const withReply=[...reviewAiMsgsRef.current,{role:"assistant",content:reply||"No response — sign in and try again."}];
-    reviewAiMsgsRef.current=withReply;
-    setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
+    try{
+      const reply=await callAIChat(authUser?.id||"",[userMsg]);
+      const withReply=[...reviewAiMsgsRef.current,{role:"assistant",content:reply||"No response — sign in and try again."}];
+      reviewAiMsgsRef.current=withReply;
+      setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
+    }catch(e){if(e.quotaExceeded){setReviewAiPanel(null);_chatQuotaMsg(e);}else{setReviewAiPanel(p=>p?{...p,messages:[...reviewAiMsgsRef.current,{role:"assistant",content:"Error — try again."}]}:null);}}
     setReviewAiLoading(false);
   };
   const sendReviewAI=async()=>{
@@ -6501,10 +6527,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setReviewAiPanel(p=>p?{...p,messages:msgs}:null);
     setReviewAiInput("");
     setReviewAiLoading(true);
-    const reply=await callAIChat(authUser?.id||"",msgs);
-    const withReply=[...msgs,{role:"assistant",content:reply||"No response — sign in and try again."}];
-    reviewAiMsgsRef.current=withReply;
-    setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
+    try{
+      const reply=await callAIChat(authUser?.id||"",msgs);
+      const withReply=[...msgs,{role:"assistant",content:reply||"No response — sign in and try again."}];
+      reviewAiMsgsRef.current=withReply;
+      setReviewAiPanel(p=>p?{...p,messages:withReply}:null);
+    }catch(e){if(e.quotaExceeded){setReviewAiPanel(null);_chatQuotaMsg(e);}else{setReviewAiPanel(p=>p?{...p,messages:[...msgs,{role:"assistant",content:"Error — try again."}]}:null);}}
     setReviewAiLoading(false);
   };
   const ReviewAIChatPanel=()=>reviewAiPanel?(
