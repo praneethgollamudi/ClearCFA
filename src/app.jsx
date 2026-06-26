@@ -5544,19 +5544,31 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         const userId=typeof authUser!=="undefined"&&authUser?.id?authUser.id:"";
         const res=await fetch(AI_PROXY_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},signal:controller.signal,body:JSON.stringify({requestType:"generate",userId,prompt,maxTokens:currentMaxTokens,model:modelName})});
         clearTimeout(timeout);
-        // Rate limit: 429 or 529 — retry
-        if(res.status===429||res.status===529){
+        // Quota exceeded (our server-side daily limit) — do NOT retry
+        if(res.status===429){
+          const body=await res.json().catch(()=>({}));
+          if(body?.quotaExceeded){
+            throw new Error(body.error||"Daily AI question limit reached. Upgrade to Pro for unlimited access.");
+          }
+          // Anthropic rate limit — retry with backoff
           const retryAfter=res.headers.get("retry-after");
           const waitMs=retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt);
           lastError=new Error(`Rate limit — waiting ${Math.round(waitMs/1000)}s before retry`);
           setLoadingMsg(`Rate limit hit — waiting ${Math.round(waitMs/1000)}s...`);
-          clearTimeout(timeout);
+          await new Promise(r=>setTimeout(r,waitMs));
+          continue;
+        }
+        if(res.status===529){
+          const retryAfter=res.headers.get("retry-after");
+          const waitMs=retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt);
+          lastError=new Error(`Rate limit — waiting ${Math.round(waitMs/1000)}s before retry`);
+          setLoadingMsg(`Rate limit hit — waiting ${Math.round(waitMs/1000)}s...`);
           await new Promise(r=>setTimeout(r,waitMs));
           continue;
         }
         if(!res.ok){
           const body=await res.json().catch(()=>({}));
-          throw new Error(body?.error?.message||`API error ${res.status}`);
+          throw new Error(body?.error?.message||body?.error||`API error ${res.status}`);
         }
         const data=await res.json();
         if(data.error) throw new Error(`Claude error: ${data.error.message||JSON.stringify(data.error)}`);
