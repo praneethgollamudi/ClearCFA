@@ -1046,12 +1046,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-26-d
-{version:"2026-06-26-d",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother Quiz Navigation",sub:"UX · 2026-06-26 update",desc:"The Next button now responds instantly and scrolls to the top of the screen without lag on iOS. You'll spend less time waiting and more time learning as you progress through practice questions.",tip:"Tap Next and watch the page jump to the top immediately—no more manual scrolling between questions."},
-{emoji:"🎯",color:C.reward,bg:C.reward,title:"Updated Referral Rewards",sub:"Study Tools · 2026-06-26 update",desc:"Our referral program now highlights an improved signup bonus to reward you for inviting study partners. Share ClearCFA with friends and unlock extra prep time or features together.",tip:"Check the referral card in your account to see the new bonus and start sharing your unique code."},
-{emoji:"🔧",color:C.medium,bg:C.medium,title:"Fixed Quiz Layout Issues",sub:"Bug Fix · 2026-06-26 update",desc:"Resolved an overlap between quiz buttons and the calculator icon that was obscuring content on smaller screens. Your practice questions now display clearly without any visual interference.",tip:"Open a quiz on mobile and notice the calculator icon sits neatly without covering the answer buttons."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1075,12 +1069,6 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
@@ -6819,7 +6807,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px 0",display:"flex",flexDirection:"column",alignItems:"center"}}>
         <div style={{maxWidth:maxW,width:"100%",animation:"fadeIn 0.2s ease"}}>
           {children}
-          <div style={{height:62}}/>
+          <div style={{height:"calc(72px + env(safe-area-inset-bottom, 0px))"}}/>
         </div>
       </div>
       {calcMiniWidget}
@@ -9671,7 +9659,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       )}
       {answered&&(
         <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",paddingRight:58}}>
-          <button type="button" onClick={nextQ} style={{flex:1,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",touchAction:"manipulation"}}>{isLast?"See Results →":"Next →"}</button>
+          <button type="button" onClick={nextQ} onTouchEnd={(e)=>{e.preventDefault();nextQ();}} style={{flex:1,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",touchAction:"manipulation"}}>{isLast?"See Results →":"Next →"}</button>
           {answers[q.id]===q.answer&&(
             <button onClick={()=>setFlaggedQ(f=>({...f,[q.id]:!f[q.id]}))}
               title="Flag for SR even though correct"
