@@ -1041,12 +1041,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
-// WN_VER:2026-06-26-c
-{version:"2026-06-26-c",slides:[
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Clearer Study Pace Insights",sub:"Study Tools · 2026-06-26 update",desc:"The pace card now shows your daily sessions compared to your target, replacing vague 'days ahead' messaging. This gives you an instant, honest view of whether you're on track or need to adjust your study schedule.",tip:"Check your pace card before each study session to stay aligned with your exam prep timeline."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Smoother Quiz Navigation",sub:"UX · 2026-06-26 update",desc:"The quiz screen now automatically scrolls to the top when you advance to the next question, ensuring you always see the full question first. No more accidentally scrolling past the stem or spending time hunting for context.",tip:"Notice how the screen resets as you move through questions—keeps you focused on one question at a time."},
-{emoji:"🎨",color:C.reward,bg:C.reward,title:"Consistent Theme Across App",sub:"UX · 2026-06-26 update",desc:"UI elements like streak freeze buttons and exit confirmations now properly use the app's design tokens in all lighting modes. Study sessions feel more polished and responsive, regardless of your device settings.",tip:"Try switching between light and dark mode—you'll see consistent, crisp colors throughout the app."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1065,12 +1059,6 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
@@ -8267,34 +8255,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{textAlign:"right",flexShrink:0}}>
             <div style={{fontSize:18,fontWeight:800,color:trendColor,lineHeight:1}}>{trend>=0?"+":""}{Math.round(trend)}%</div>
             <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase"}}>vs {passTrend.length}d ago</div>
-          </div>
-        </div>
-      );
-    })()}
-    {/* Pace prediction card */}
-    {(()=>{
-      const pace=getPaceStatus(levelHistory,passProbability,daysLeft);
-      if(!pace)return null;
-      const paceColor=pace.ahead?C.easy:pace.neededPerDay-pace.avg>1?C.hard:C.medium;
-      const title=pace.sessionsNeeded<=3
-        ?"✅ Curriculum covered — maintain the habit"
-        :pace.ahead
-          ?`✅ ${pace.avg}/day avg · need ${pace.neededPerDay}/day`
-          :`⚠️ ${pace.avg}/day avg · need ${pace.neededPerDay}/day`;
-      const sub=pace.sessionsNeeded<=3
-        ?"Focus on SR cards and weak modules to stay sharp"
-        :pace.ahead
-          ?`${pace.sessionsNeeded} sessions of weak-area work left — you're on it`
-          :`${pace.sessionsNeeded} sessions of weak-area work remain — ramp up`;
-      return(
-        <div style={{background:`${paceColor}12`,border:`1px solid ${paceColor}33`,borderRadius:12,padding:"12px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:12,fontWeight:800,color:paceColor}}>{title}</div>
-            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{sub}</div>
-          </div>
-          <div style={{textAlign:"right",flexShrink:0}}>
-            <div style={{fontSize:18,fontWeight:800,color:paceColor,lineHeight:1}}>{daysLeft}</div>
-            <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em"}}>days left</div>
           </div>
         </div>
       );
