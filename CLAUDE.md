@@ -4,9 +4,6 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
-**Community counter constant**: `COMMUNITY_COUNT = 50` tracks approximate active users in the app. Update manually as the user base grows — displayed in community engagement cards.
-
-
 - **Creator:** GSP (initials). Never use "Praneeth" in user-facing strings — it was replaced.
 - **Admin email:** `sai.praneeth557@gmail.com` (functional only — auth gating, never displayed to users)
 - **Contact / support email:** `gspbuilds@gmail.com`
@@ -78,12 +75,6 @@ WhatsApp message template uses `` `₹${ACTIVE_PRICE}` `` — do not hardcode th
 
 ## Pro Status & Subscriptions
 
-**Pace status calculation**: `getPaceStatus(levelHistory, passProbability, daysLeft)` computes daily session rate vs. sessions needed to pass, returning `{delta, daysToComplete, avgSessionsPerDay}`. Requires ≥3 history entries and valid `passProbability`. Null if insufficient data or `daysLeft <= 0`.
-
-
-**Streak milestones & longest streak tracking**: When a session completes, the app checks for milestone hits (7, 14, 30, 60, 100 days) and shows celebratory toasts. Longest streak is persisted in `localStorage` under the `BESTS_KEY` and synced to `personalBests` state.
-
-
 **Admin account Pro override**: The admin account (email: `sai.praneeth557@gmail.com`) is Pro via owner override and is **excluded from all Pro subscriber counts** in the admin dashboard. When inserting manual Pro grants to the `subscriptions` table, the admin row should not be counted in `revenue.proCount` metrics.
 
 
@@ -98,12 +89,6 @@ Pro = row exists where `active=true AND valid_until >= now()`. Checked via `chec
 To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true` and `valid_until` 30 days out.
 
 ## AI Quota System
-
-**Confidence calibration insights**: `getConfidenceInsights(history)` analyzes wrong answers marked with high confidence (≥5 entries). Returns `{rate, highConfCount, topMiss}` to surface miscalibrated topics. Used in insights cards; requires ≥10 confidence entries to return non-null.
-
-
-**Deterministic option shuffling**: `fingerprintQuestions(qs, userId)` shuffles question option order deterministically per user + question index using a seeded PRNG. This prevents answer-pattern memorization across users. Always call this on loaded questions before rendering if `userId` is available.
-
 
 **Weekly Plan prompt level-awareness**: The `WEEKLY_PLAN_PROMPT` now accepts a `level` parameter ("1", "2", or "3") and injects it via `.split("{level}").join(cfaLevel)` at call time. Callers must pass `cfaLevel` from state; failure to do so defaults to Level 1 prompts.
 
@@ -591,7 +576,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1787600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1787200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.

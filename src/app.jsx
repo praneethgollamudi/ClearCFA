@@ -1035,12 +1035,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
-// WN_VER:2026-06-26-c
-{version:"2026-06-26-c",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Track Progress with New Cards",sub:"Study Tools · 2026-06-26 update",desc:"We've added a confidence card, pace card, and community counter to help you monitor your study momentum and see how you compare with other CFA candidates. Stay motivated by watching your streak grow and your pace accelerate toward exam day.",tip:"Check your confidence card after each quiz session to identify your weakest topics early."},
-{emoji:"🧠",color:C.hard,bg:C.hard,title:"Learn from Wrong Answers Faster",sub:"AI · 2026-06-26 update",desc:"Our new wrong-answer flywheel surfaces questions you've struggled with most, so you spend less time on easy material and more on what actually moves the needle. The app now intelligently resurfaces tough concepts to cement them in memory.",tip:"Notice how frequently your toughest questions reappear—that's the system working to close your knowledge gaps."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Interface, Better Focus",sub:"UX · 2026-06-26 update",desc:"We've removed excess whitespace at the bottom of screens so you can see more content at once and stay in flow. Your study session now feels less cluttered and more intentional.",tip:"Scroll through a quiz—you'll notice the interface breathes better without wasted space."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1059,14 +1053,6 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Admin changelog: internal-only deployment log in admin dashboard [skip ci]",
-"gen-whats-new: hard-filter internal commits before Claude, allow 1-3 slides [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"What's New: remove internal-only slides (admin dashboard fix, CI pipeline)",
 ]},
 // AC_END
 ];
@@ -6750,10 +6736,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
   const wrap=(children,maxW=860)=>(
     <>
-      <div style={{background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <div style={{background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px 0",display:"flex",flexDirection:"column",alignItems:"center"}}>
         <div style={{maxWidth:maxW,width:"100%",animation:"fadeIn 0.2s ease"}}>
           {children}
-          <div style={{height:70}}/>
+          <div style={{height:62}}/>
         </div>
       </div>
       {calcMiniWidget}
