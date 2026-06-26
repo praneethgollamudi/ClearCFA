@@ -121,6 +121,9 @@ Pro users bypass both limits entirely.
 
 ## Build & Deploy
 
+**iOS safe-area & Next button fixes**: Bottom spacer in QuizScreen now uses `calc(72px + env(safe-area-inset-bottom, 0px))` to account for notches/home indicators on iOS. Next button row has symmetric `paddingLeft:58` and `paddingRight:58` to center it, and includes `onTouchEnd` handler to prevent iOS touch delay. Report question button (👎) removed from quiz UI.
+
+
 **UpgradeModal USD pricing**: Added approximate USD conversion display (`~${Math.round(ACTIVE_PRICE/85)} USD`) below INR amount using fixed 85 INR/USD rate for reference. Always update CLAUDE.md if exchange rate assumption changes.
 
 
@@ -585,7 +588,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1789100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
