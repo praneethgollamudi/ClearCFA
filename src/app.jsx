@@ -1035,12 +1035,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
-// WN_VER:2026-06-26-c
-{version:"2026-06-26-c",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Track Your Study Momentum",sub:"Study Tools · 2026-06-26 update",desc:"New cards show your current streak, study pace, and progress over time—plus export your performance data as CSV for deeper analysis. Stay motivated by seeing your consistency and adjust your study schedule based on real data.",tip:"Check your Pace Card to ensure you're on track to finish before exam day."},
-{emoji:"🧠",color:C.hard,bg:C.hard,title:"Learn From Every Wrong Answer",sub:"AI · 2026-06-26 update",desc:"The app now surfaces your most frequently missed concepts in a dedicated flywheel, helping you focus study time on your weakest areas. AI-powered confidence scoring shows which topics you need to revisit before test day.",tip:"Use the Confidence Card to identify which topic areas need another review session."},
-{emoji:"🤝",color:C.medium,bg:C.medium,title:"See How You Stack Up",sub:"Community · 2026-06-26 update",desc:"A live community counter shows how many CFA candidates are studying with you right now, and you can share your progress and performance snapshots with study partners. Staying connected to the wider CFA prep community keeps you motivated.",tip:"Share your progress card with a study partner to compare streaks and keep each other accountable."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1059,14 +1053,6 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"Admin changelog: internal-only deployment log in admin dashboard [skip ci]",
-"gen-whats-new: hard-filter internal commits before Claude, allow 1-3 slides [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"What's New: remove internal-only slides (admin dashboard fix, CI pipeline)",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
@@ -6750,7 +6736,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
   const wrap=(children,maxW=860)=>(
     <>
-      <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <div style={{background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
         <div style={{maxWidth:maxW,width:"100%",animation:"fadeIn 0.2s ease"}}>
           {children}
           <div style={{height:70}}/>
