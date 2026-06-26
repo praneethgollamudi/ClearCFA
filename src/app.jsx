@@ -993,9 +993,9 @@ const PAYMENT_CONTACT_EMAIL='gspbuilds@gmail.com';
 const PAYMENT_WHATSAPP='919493413121'; // WhatsApp number with country code, no +
 // ── Price ladder — update TIER_TAKEN as slots fill ────────────────────────────
 // Tier 1 → Tier 2 → Regular (price rises as spots fill)
-const PRICE_REGULAR=1199;   // regular price once all tiers fill
-const PRICE_TIER2=799;      // tier-2 price (shown crossed-out when tier 1 active)
-const PRICE_TIER1=499;      // tier-1 price — the current launch price
+const PRICE_REGULAR=1499;   // regular price once all tiers fill
+const PRICE_TIER2=1199;     // tier-2 price (shown crossed-out when tier 1 active)
+const PRICE_TIER1=799;      // tier-1 price — the current launch price
 const TIER1_SLOTS=10;       // number of tier-1 spots
 const TIER1_TAKEN=0;        // update manually as tier-1 subscribers join
 const TIER2_SLOTS=20;       // number of tier-2 spots
