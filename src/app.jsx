@@ -1035,12 +1035,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
-// WN_VER:2026-06-26-c
-{version:"2026-06-26-c",slides:[
-{emoji:"✨",color:C.reward,bg:C.reward,title:"New Study Insights & Streak Tracking",sub:"Study Tools · 2026-06-26 update",desc:"We've added sparkline charts, confidence scoring, community progress counters, and streak nudges to keep you motivated and informed. Track your pace, see what others are studying, and download your progress as CSV for deeper analysis.",tip:"Check your confidence card after quizzes to identify weak topics before exam day."},
-{emoji:"📲",color:C.accentLight,bg:C.accentLight,title:"Cleaner, More Focused Interface",sub:"UX · 2026-06-26 update",desc:"We've removed excess whitespace and tightened the layout for a streamlined, distraction-free study experience. Every pixel now counts toward your prep.",tip:"You'll notice more content visible per screen—scroll less, study more."},
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Learn From Wrong Answers Faster",sub:"AI · 2026-06-26 update",desc:"Wrong answers now feed directly into a smarter review loop that prioritizes your mistake patterns. The app learns what trips you up and surfaces those concepts when you need them most.",tip:"Pay attention to flagged wrong-answer topics in your next study session."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1059,13 +1053,6 @@ const ADMIN_CHANGELOG=[
 "gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
 "Settings: remove redundant Cloud Sync row, fold status into account footer",
 "Settings: remove redundant 'sessions saved locally' line",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Admin changelog: internal-only deployment log in admin dashboard [skip ci]",
-"gen-whats-new: hard-filter internal commits before Claude, allow 1-3 slides [skip ci]",
 ]},
 // AC_END
 ];
@@ -6492,7 +6479,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const qId=questions[currentQ]?.id;
     if(qId&&quizConfidence){const correct=answers[qId]===questions[currentQ]?.answer;setConfidenceLog(c=>{const u={...c,[qId]:{c:quizConfidence,ok:correct}};try{localStorage.setItem(CONFIDENCE_KEY,JSON.stringify(u));}catch{}return u;});}
     setQuizConfidence(null);
-    if(currentQ<questions.length-1){setCurrentQ(q=>q+1);setShowExp(false);}else endQuiz();
+    if(currentQ<questions.length-1){setCurrentQ(q=>q+1);setShowExp(false);window.scrollTo({top:0,behavior:'instant'});}else endQuiz();
   };
 
   // ── DERIVED DATA ──
