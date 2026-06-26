@@ -90,6 +90,9 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
+**Study pace card (`getPaceStatus`)**: Returns `{avg, neededPerDay, sessionsNeeded, ahead}` instead of delta-based metrics. `avg` = sessions/day user has been doing; `neededPerDay` = sessions/day required to cover remaining work by exam day; `ahead` = boolean indicating if current pace exceeds required pace. Used by pace status card to show comparative metrics rather than days ahead/behind.
+
+
 **Weekly Plan prompt level-awareness**: The `WEEKLY_PLAN_PROMPT` now accepts a `level` parameter ("1", "2", or "3") and injects it via `.split("{level}").join(cfaLevel)` at call time. Callers must pass `cfaLevel` from state; failure to do so defaults to Level 1 prompts.
 
 
@@ -490,6 +493,12 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+- **Theme token usage in inline styles**: Recent fixes applied `C.accent`, `C.accentLight`, `C.surfaceHigh`, `C.border` to streak freeze buttons and similar UI elements. Always use theme tokens from the color scheme (`C.*`) for backgrounds, borders, and text colors — do not hardcode hex values like `#7c3aed` or `#1a1a2e`.
+
+
+- **Pace card messaging logic**: When `sessionsNeeded <= 3`, show curriculum-complete messaging (not pace comparison). When `sessionsNeeded > 3` and `ahead=true`, show current vs. required pace. When `ahead=false`, show urgency message with deficit. Always derive color from `pace.ahead` and deficit gap, not from delta values.
+
+
 - **C before definition**: `C` is defined at ~line 976. Any module-level code using `C.*` color tokens must come after that line. Violating this causes a blank page — Babel won't catch it, but the pre-commit smoke check will.
 - **navPortal**: `wrap()` includes it automatically. Never add it manually to a screen.
 - **Cache bust**: Always increment `v=` in `index.html` before committing. Without this, users see the old cached version.
@@ -576,7 +585,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1787200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1788100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
