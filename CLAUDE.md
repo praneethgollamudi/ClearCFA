@@ -11,6 +11,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Supabase Infrastructure
 
+**Admin stats edge function update**: `admin-stats` now accepts `userId` in the request body in addition to `accessToken` (which may be `undefined` for password-based logins). The function uses `userId` as a fallback for auth when `accessToken` is missing.
+
+
 - **Project ref:** `uucxyuqxqjpbxecemdvf`
 - **Supabase URL:** `https://uucxyuqxqjpbxecemdvf.supabase.co` (hardcoded in `src/app.jsx` line ~17)
 - **Anon key:** hardcoded in `src/app.jsx` line ~18 (safe to be public — RLS enforced)
@@ -151,6 +154,15 @@ Use `grep "SCREEN:"` to get a full screen index with line numbers. Each screen b
 ```
 
 ## Key Patterns
+
+**State reset on sign-out/switch**: Beyond localStorage cleanup, ALL user-specific React state variables must be explicitly reset: `setCfaLevel("1")`, `setStudyGoal(null)`, `setPresets([])`, `setDailyMission(null)`, `setDailyRefresher(null)`, `setTopicLessons({})`, `setConfidenceLog({})`, `setWorkedExamples({})`, `setSessionDraft(null)`, `setQuestionFlags([])`, `setPersonalBests({})`, `setWeeklyPlan(null)`, `setDiagWeak([])`. Failure to reset state causes data bleed across account switches.
+
+
+**SESSION_KEYS completeness**: The `SESSION_KEYS` array in the sign-out logic must explicitly list ALL direct-localStorage keys (those without auto-prefixed "cfa_") to ensure complete user isolation on account switch. Current list includes: `CFA_LEVEL_KEY`, `REFRESHER_KEY`, `LESSONS_KEY`, `STUDY_GOAL_KEY`, `PRESETS_KEY`, `MISSION_KEY`, `CONFIDENCE_KEY`, `WORKED_EX_KEY`, `DYNAMIC_PN_KEY`, `DYNAMIC_FORMULAS_KEY`, `STREAK_FREEZE_KEY`, `CALC_SNAP_KEY`, `SESSION_DRAFT_KEY`, `FLAGS_KEY`, `BESTS_KEY`, `RESOLVED_GAPS_KEY`, `REMINDER_TIME_KEY`. Adding new direct-localStorage keys requires updating this array in both the auth effect and the sign-out handler.
+
+
+**Admin dashboard auto-fetch**: The admin stats dashboard now auto-fetches data when navigating to the `adminDashboard` screen (via useEffect listening to `screen`), but only if `isAdmin && !adminStats && !adminStatsLoading`. The `fetchAdminStats()` call now accepts both password-based login (no `accessToken`) and token-based login — it passes `userId` always and `accessToken` only if present.
+
 
 **Sign-out state reset**: When signing out, all local state variables (not just localStorage) must be reset: `setCfaLevel("1")`, `setStudyGoal(null)`, `setPresets([])`, `setDailyMission(null)`, `setDailyRefresher(null)`, `setTopicLessons({})`, `setConfidenceLog({})`, `setWorkedExamples({})`, `setSessionDraft(null)`, `setQuestionFlags([])`, `setPersonalBests({})`. This prevents account-switch bleed.
 
@@ -519,7 +531,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1786600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1786700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
