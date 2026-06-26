@@ -69,28 +69,32 @@ function isInternal(line) {
 
 // ── Get commits since last version ────────────────────────────────────────────
 let commits = '';
+let internalCommits = [];
 try {
   const raw = execSync(`git log --oneline --since="${lastVersion}" --no-merges 2>/dev/null`, {encoding:'utf8'}).trim();
-  commits = raw.split('\n')
-    .filter(l => l &&
-      !l.includes('[skip ci]') &&
-      !l.includes('github-actions') &&
-      !isInternal(l))
-    .join('\n').trim();
+  const lines = raw.split('\n').filter(l => l && !l.includes('[skip ci]') && !l.includes('github-actions'));
+  internalCommits = lines.filter(l => isInternal(l)).map(l => l.replace(/^[a-f0-9]+ /, '').trim());
+  commits = lines.filter(l => !isInternal(l)).join('\n').trim();
 } catch {}
 
 if (!commits) {
   try {
     const raw = execSync('git log --oneline -10 --no-merges', {encoding:'utf8'}).trim();
-    commits = raw.split('\n').filter(l => l && !isInternal(l)).join('\n').trim();
+    const lines = raw.split('\n').filter(Boolean);
+    internalCommits = lines.filter(l => isInternal(l)).map(l => l.replace(/^[a-f0-9]+ /, '').trim());
+    commits = lines.filter(l => !isInternal(l)).join('\n').trim();
   } catch {}
 }
 
+console.log(`\nUser-facing commits:\n${commits||"(none)"}`);
+console.log(`\nInternal commits (admin changelog only):\n${internalCommits.join('\n')||"(none)"}\n`);
+
 if (!commits) {
   console.log('No user-facing commits found — skipping What\'s New generation.');
+  // Still write internal commits to admin changelog if any
+  if (WRITE_MODE && internalCommits.length) writeAdminChangelog(internalCommits, today);
   process.exit(0);
 }
-console.log(`\nUser-facing commits:\n${commits}\n`);
 
 // ── Build prompt ──────────────────────────────────────────────────────────────
 const prompt = `You are writing release notes for ClearCFA, an AI-powered CFA Level 1/2/3 exam prep app for iOS/Android/web.
@@ -131,8 +135,12 @@ if (!apiKey) {
 console.log('Calling Claude Haiku...');
 callAnthropic(apiKey, prompt)
   .then(slides => {
-    if (WRITE_MODE) writeToSource(slides, newVersion);
-    else printResult(slides, newVersion);
+    if (WRITE_MODE) {
+      writeToSource(slides, newVersion);
+      if (internalCommits.length) writeAdminChangelog(internalCommits, today);
+    } else {
+      printResult(slides, newVersion);
+    }
   })
   .catch(e => {
     console.error('API error:', e.message);
@@ -180,6 +188,29 @@ function writeToSource(slides, version) {
   }
 
   console.log('\nNext: node build.js && git add src/app.jsx app.js index.html && git commit -m "What\'s New: ' + version + ' [skip ci]"');
+}
+
+// ── Admin changelog writer ────────────────────────────────────────────────────
+const MAX_AC_ENTRIES = 10;
+
+function writeAdminChangelog(entries, date) {
+  if (!entries.length) return;
+  let appSrc = fs.readFileSync('src/app.jsx', 'utf8');
+  const acBlockRe = /(\/\/ AC_START\n)([\s\S]*?)(\/\/ AC_END)/;
+  const match = appSrc.match(acBlockRe);
+  if (!match) { console.warn('⚠️  Could not find // AC_START ... // AC_END markers — skipping admin changelog'); return; }
+
+  const entryLines = entries.map(e => `"${e.replace(/"/g, '\\"')}"`).join(',\n');
+  const newEntry = `// AC_VER:${date}\n{date:${JSON.stringify(date)},entries:[\n${entryLines},\n]},\n`;
+
+  const existingBlock = match[2];
+  const chunks = existingBlock.split(/(?=\/\/ AC_VER:)/).filter(c => c.trim());
+  const kept = chunks.slice(-(MAX_AC_ENTRIES - 1));
+  const newBlock = kept.join('') + newEntry;
+
+  appSrc = appSrc.replace(acBlockRe, `$1${newBlock}$3`);
+  fs.writeFileSync('src/app.jsx', appSrc);
+  console.log(`✅ ADMIN_CHANGELOG updated — ${entries.length} internal entries for ${date}`);
 }
 
 // ── Print helpers ─────────────────────────────────────────────────────────────

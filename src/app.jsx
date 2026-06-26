@@ -975,21 +975,27 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
 ]},
-// WN_VER:2026-06-26-c
-{version:"2026-06-26-c",slides:[
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings Experience",sub:"UX · 2026-06-26 update",desc:"We've streamlined your Settings page by removing redundant information and consolidating sync status into your account footer. You now see exactly what matters—your progress and account info—without clutter.",tip:"Check your account footer to see your sync and session status at a glance."},
-{emoji:"🔐",color:C.hard,bg:C.hard,title:"Stronger Admin Security",sub:"Bug Fix · 2026-06-26 update",desc:"We fixed authentication issues in the admin dashboard that were preventing proper session verification. This ensures your study data stays secure and admin features work reliably.",tip:"No action needed—this update runs silently in the background to protect your account."},
-{emoji:"⚙️",color:C.medium,bg:C.medium,title:"More Reliable Syncing",sub:"Speed · 2026-06-26 update",desc:"Our backend now handles concurrent updates better with improved retry logic, so your progress syncs smoothly even during heavy usage. Study without worrying about lost sessions or data conflicts.",tip:"Your progress saves seamlessly—focus on your exam prep instead of managing sync."},
-]},
-// WN_VER:2026-06-26-d
-{version:"2026-06-26-d",slides:[
-{emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've streamlined your Settings screen by removing redundant sync labels and consolidating account information into a single footer. Your study space is now less cluttered so you can focus on what matters—your exam prep.",tip:"Open Settings to see your account status at the bottom in one glance."},
-{emoji:"🔒",color:C.easy,bg:C.easy,title:"More Reliable Cloud Updates",sub:"Speed · 2026-06-26 update",desc:"We've improved our backend infrastructure to handle simultaneous updates better, reducing the chance of sync conflicts when you're studying across multiple devices. Your progress now syncs more smoothly without interruptions.",tip:"Keep studying without worrying—your sessions will save reliably even during peak usage times."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Enhanced Admin Insights",sub:"Study Tools · 2026-06-26 update",desc:"Behind the scenes, we've improved how our team tracks Pro user engagement and app health, ensuring ClearCFA stays fast and reliable for your exam preparation. These refinements help us spot and fix issues before they affect you.",tip:"You'll notice even better performance and faster response times as we leverage these insights."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
+
+// Admin-only changelog — internal/infra changes not shown to regular users
+// Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
+const ADMIN_CHANGELOG=[
+// AC_START
+// AC_VER:2026-06-26
+{date:"2026-06-26",entries:[
+"Admin dashboard: fix blank page (auth guard was blocking on accessToken for password logins)",
+"Admin dashboard: fix Unauthorized error — pass userId+email as fallback when no JWT",
+"Admin stats edge function: add userId auth path, extract emails from session data column",
+"CI gen-whats-new.yml: add rebase+retry loop to prevent push rejection on concurrent commits",
+"CI gen-claude-md.yml: same rebase+retry fix",
+"gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
+"Settings: remove redundant Cloud Sync row, fold status into account footer",
+"Settings: remove redundant 'sessions saved locally' line",
+]},
+// AC_END
+];
 const diffC={Easy:C.easy,Medium:C.medium,Hard:C.hard};
 const urgencyColor={high:C.hard,medium:C.medium,low:C.easy};
 function _applyTheme(t){
@@ -9846,6 +9852,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"16px 0"}}>No flagged questions yet.</div>
           )}
         </Card>
+
+        {/* Admin changelog — internal deployments */}
+        {ADMIN_CHANGELOG.length>0&&(
+          <Card title="Recent Deployments" icon="🔧" accent={C.muted}>
+            {ADMIN_CHANGELOG.slice().reverse().map((entry,ei)=>(
+              <div key={ei} style={{marginBottom:ei<ADMIN_CHANGELOG.length-1?14:0}}>
+                <div style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.06em"}}>{entry.date}</div>
+                {entry.entries.map((e,i)=>(
+                  <div key={i} style={{fontSize:11,color:C.textMid,lineHeight:1.6,paddingLeft:10,marginBottom:2,position:"relative"}}>
+                    <span style={{position:"absolute",left:0,color:C.muted}}>·</span>{e}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </Card>
+        )}
       </>)}
     </>);
   })());
