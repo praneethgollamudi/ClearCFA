@@ -1063,13 +1063,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-30
-{version:"2026-06-30",slides:[
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother Question Navigation",sub:"UX · 2026-06-30 update",desc:"The Next button now responds instantly on all devices and no longer gets blocked by floating elements. Your quiz flow is faster and more reliable, letting you focus on learning instead of fighting the UI.",tip:"Try rapid-fire question sessions on mobile—you'll notice the difference immediately."},
-{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"AI Debrief Always Ready",sub:"AI · 2026-06-30 update",desc:"AI explanations now load reliably every time you ask for a debrief on a question. You'll never see empty explanations again, giving you instant clarity on why an answer is correct.",tip:"Use the debrief feature liberally after tricky questions—it's now bulletproof."},
-{emoji:"🎯",color:C.medium,bg:C.medium,title:"Progress Persists Across Refresh",sub:"Study Tools · 2026-06-30 update",desc:"Your progress and revision screen state now stays intact if you refresh the page or close and reopen the app. No more lost progress—pick up exactly where you left off.",tip:"Refresh mid-session without worry; your spot and answers are saved."},
-{emoji:"📐",color:C.hard,bg:C.hard,title:"Better Formula & Formula Trainer",sub:"Study Tools · 2026-06-30 update",desc:"Formulas now display without overflow, and the Calc Trainer includes keystroke guidance so you learn the calculator shortcuts that count. Master the technical details faster with clearer visuals and real-time hints.",tip:"Check out the Formula Trainer for any formula you struggle with—keystroke guidance makes it stick."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1095,10 +1088,6 @@ const ADMIN_CHANGELOG=[
 "docs: add complete user-facing features inventory to CLAUDE.md",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"docs: add complete user-facing features inventory to CLAUDE.md",
 ]},
 // AC_END
 ];
@@ -3041,7 +3030,10 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     dynSeenNames.add(nk);
     return true;
   });
-  const formulaData = [...staticFormulas, ...dynamicFormulaData];
+  const formulaData = [
+    ...staticFormulas,
+    ...dynamicFormulaData.map(f=>({...f, _aiGen:true, module:"✦ From Your Mistakes"})),
+  ];
   const allFormulas = Object.values(FORMULAS).flat();
   // Enrich formulaData with module groupings; build ordered module list
   const _fModLookup = FORMULA_MODULES[selTopic] || {};
@@ -3139,7 +3131,8 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
       try{localStorage.setItem(DYNAMIC_FORMULAS_KEY,JSON.stringify(updated));}catch{}
       markGapResolved(key);
     }catch(e){
-      setFormulaGenError(s=>({...s,[key]:e.message||"Generation failed — try again."}));
+      const msg=typeof e?.message==="string"?e.message:typeof e==="string"?e:"Generation failed — try again.";
+      setFormulaGenError(s=>({...s,[key]:msg}));
     }finally{
       setFormulaGenerating(s=>({...s,[key]:false}));
     }
@@ -3543,13 +3536,14 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                   {_fModOrder.map((modName)=>{
                     const isModOpen=expandedFormulaModule===modName;
                     const mFormulas=_fModMap[modName];
+                    const isAISection=modName==="✦ From Your Mistakes";
                     return(
-                      <div key={modName} style={{background:C.surface,border:`1px solid ${isModOpen?C.accent+"55":C.border}`,borderRadius:12,overflow:"hidden",transition:"border-color 0.15s"}}>
+                      <div key={modName} style={{background:isAISection?"#0a0818":C.surface,border:`1px solid ${isModOpen?(isAISection?"#8040c088":C.accent+"55"):(isAISection?"#8040c033":C.border)}`,borderRadius:12,overflow:"hidden",transition:"border-color 0.15s"}}>
                         <button onClick={()=>setExpandedFormulaModule(isModOpen?null:modName)}
-                          style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",background:isModOpen?`${C.accent}0a`:"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
+                          style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",background:isModOpen?(isAISection?"#8040c018":`${C.accent}0a`):"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
                           <div>
-                            <div style={{fontSize:13,fontWeight:700,color:C.text}}>{modName}</div>
-                            <div style={{fontSize:10,color:C.muted,marginTop:2}}>{mFormulas.length} formula{mFormulas.length!==1?"s":""}</div>
+                            <div style={{fontSize:13,fontWeight:700,color:isAISection?"#c090f0":C.text}}>{modName}</div>
+                            <div style={{fontSize:10,color:C.muted,marginTop:2}}>{mFormulas.length} formula{mFormulas.length!==1?"s":""} · AI-generated from your mistakes</div>
                           </div>
                           <span style={{fontSize:11,color:C.muted}}>{isModOpen?"▲":"▼"}</span>
                         </button>
@@ -3586,7 +3580,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                   })}
                 </div>
               )}
-              <div style={{marginTop:10,fontSize:11,color:C.muted,textAlign:"center"}}>{formulaData.length} formulas across {_fModOrder.length} subtopics · switch topic above</div>
+              <div style={{marginTop:10,fontSize:11,color:C.muted,textAlign:"center"}}>{staticFormulas.length} formulas across {_fModOrder.filter(m=>m!=="✦ From Your Mistakes").length} subtopics · switch topic above</div>
             </>
           )}
 
