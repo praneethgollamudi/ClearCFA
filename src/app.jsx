@@ -1063,12 +1063,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-30
-{version:"2026-06-30",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"AI Questions Now Fully Accurate",sub:"AI · 2026-06-30 update",desc:"We fixed mismatches between AI-generated question explanations and answer options, plus issues where worked examples wouldn't display. Your AI practice questions are now reliable and complete.",tip:"Generate a new AI question and verify the explanation matches all four options—no more confusion."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother Navigation & Faster Taps",sub:"UX · 2026-06-30 update",desc:"We optimised the Next button across all devices—especially iOS—so quizzes flow seamlessly without lag or overlapping interface elements. Your study rhythm stays uninterrupted.",tip:"Notice how the Next button responds instantly now; tap through a quiz and your scroll position is preserved perfectly."},
-{emoji:"🧠",color:C.medium,bg:C.medium,title:"Better Study Session Persistence",sub:"Study Tools · 2026-06-30 update",desc:"Progress and revision screens now stay exactly where you left them, even after a page refresh. No more losing your place or duplicate question issues.",tip:"Refresh mid-quiz or switch apps—your screen state and all answers are waiting for you when you return."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1094,10 +1088,6 @@ const ADMIN_CHANGELOG=[
 "docs: add complete user-facing features inventory to CLAUDE.md",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"docs: add complete user-facing features inventory to CLAUDE.md",
 ]},
 // AC_END
 ];
@@ -5266,6 +5256,7 @@ function CFAMock(){
   const [essayRevealed,setEssayRevealed]=useState({});
   const [weeklyPlan,setWeeklyPlan]=useState(()=>{try{const p=localStorage.getItem(PLAN_KEY);return p?JSON.parse(p):null;}catch{return null;}});
   const [todayStarted,setTodayStarted]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_today_started")||"{}");}catch{return {};}});
+  const [focusDone,setFocusDone]=useState(()=>{try{const s=JSON.parse(localStorage.getItem("cfa_focus_done")||"null");if(s&&s.date===localDateKey())return s.done||{};}catch{}return {};});
   const [weeklyPlanLoading,setWeeklyPlanLoading]=useState(false);
   const [weeklyPlanError,setWeeklyPlanError]=useState("");
   const [hoursThisWeek,setHoursThisWeek]=useState(7); // default 1hr/day
@@ -5785,6 +5776,7 @@ function CFAMock(){
   const weeklyPlanAutoRef=useRef(false);
   const confidenceLogRef=useRef({});
   const pendingPlanKeyRef=useRef(null);
+  const pendingFocusKeyRef=useRef(null);
   useEffect(()=>{
     if(screen!=="results"){
       sessionCommittedRef.current=false;
@@ -5802,6 +5794,13 @@ function CFAMock(){
       const planKey=pendingPlanKeyRef.current;
       pendingPlanKeyRef.current=null;
       setTodayStarted(prev=>{const n={...prev,[planKey]:true};try{localStorage.setItem("cfa_today_started",JSON.stringify(n));}catch{}return n;});
+    }
+
+    // Mark Today's Focus suggestion done now that the quiz actually completed
+    if(pendingFocusKeyRef.current){
+      const fKey=pendingFocusKeyRef.current;
+      pendingFocusKeyRef.current=null;
+      setFocusDone(prev=>{const n={...prev,[fKey]:true};try{localStorage.setItem("cfa_focus_done",JSON.stringify({date:localDateKey(),done:n}));}catch{}return n;});
     }
 
     // Read everything from refs — guaranteed current values
@@ -6082,7 +6081,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         const leechTopics={};
         leeches.forEach(c=>{const k=c.topic+"|"+c.subtopic;leechTopics[k]=(leechTopics[k]||{topic:c.topic,module:c.subtopic,count:0,wrongCount:0});leechTopics[k].count++;leechTopics[k].wrongCount+=(c.wrongCount||0);});
         Object.values(leechTopics).sort((a,b)=>b.wrongCount-a.wrongCount).slice(0,2).forEach(l=>{
-          candidates.push({topic:l.topic,module:l.module,difficulty:"Medium",reason:`You have ${l.count} leech card${l.count>1?"s":""} here (missed ${l.wrongCount}+ times) — targeted drilling needed.`,urgency:"high",count:10,mode:"guided",_score:1000+l.wrongCount});
+          candidates.push({topic:l.topic,module:l.module,difficulty:"Medium",reason:`You have ${l.count} leech card${l.count>1?"s":""} here (missed ${l.wrongCount}+ times) — targeted drilling needed.`,urgency:"high",count:10,mode:"guided",_score:1000+l.wrongCount,_type:"leech"});
         });
 
         // 2. SR cards due today
@@ -6091,7 +6090,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         due.forEach(c=>{const k=c.topic+"|"+c.subtopic;dueByModule[k]=(dueByModule[k]||{topic:c.topic,module:c.subtopic,count:0});dueByModule[k].count++;});
         Object.values(dueByModule).sort((a,b)=>b.count-a.count).slice(0,2).forEach(d=>{
           if(!candidates.find(c=>c.topic===d.topic&&c.module===d.module))
-            candidates.push({topic:d.topic,module:d.module,difficulty:"Medium",reason:`${d.count} spaced-repetition card${d.count>1?"s are":" is"} due today — review now to lock in retention.`,urgency:"high",count:d.count,mode:"sr_review",_score:800+d.count*10});
+            candidates.push({topic:d.topic,module:d.module,difficulty:"Medium",reason:`${d.count} spaced-repetition card${d.count>1?"s are":" is"} due today — review now to lock in retention.`,urgency:"high",count:d.count,mode:"sr_review",_score:800+d.count*10,_type:"sr"});
         });
 
         // 3. Weak accuracy on high-weight topics (<65%)
@@ -6102,7 +6101,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
           .slice(0,3).forEach(m=>{
             const firstMod=m.modulesCovered[0]||Object.keys(activeLOS[m.topic]?.modules||{})[0]||"Intro";
             if(!candidates.find(c=>c.topic===m.topic))
-              candidates.push({topic:m.topic,module:firstMod,difficulty:daysLeft<30?"Hard":m.accuracy<50?"Easy":"Medium",reason:`Accuracy is ${m.accuracy}% on ${m.topic} (${m.weight}% of exam) — below the passing threshold.`,urgency:m.weight>=11?"high":"medium",count:10,mode:"guided",_score:600+(m.weight*10)+(65-m.accuracy)});
+              candidates.push({topic:m.topic,module:firstMod,difficulty:daysLeft<30?"Hard":m.accuracy<50?"Easy":"Medium",reason:`Accuracy is ${m.accuracy}% on ${m.topic} (${m.weight}% of exam) — below the passing threshold.`,urgency:m.weight>=11?"high":"medium",count:10,mode:"guided",_score:600+(m.weight*10)+(65-m.accuracy),_type:"weak"});
           });
 
         // 4. Untested high-weight modules
@@ -6116,23 +6115,41 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
           if(seenUntestedTopics.has(topic)) continue;
           seenUntestedTopics.add(topic);
           untestedAdded++;
-          candidates.push({topic,module:mod,difficulty:"Easy",reason:`Not yet attempted — ${weight}% topic weight. First exposure builds the mental map.`,urgency:weight>=11?"high":weight>=8?"medium":"low",count:10,mode:"guided",_score:400+weight*5});
+          candidates.push({topic,module:mod,difficulty:"Easy",reason:`Not yet attempted — ${weight}% topic weight. First exposure builds the mental map.`,urgency:weight>=11?"high":weight>=8?"medium":"low",count:10,mode:"guided",_score:400+weight*5,_type:"untested"});
         }
 
         // 5. Recently weak sessions
         levelHistory.slice(0,10).filter(h=>h.pct<75).forEach(h=>{
           if(!candidates.find(c=>c.topic===h.topic&&c.module===h.subtopic))
-            candidates.push({topic:h.topic,module:h.subtopic,difficulty:h.pct<55?"Easy":"Medium",reason:`Last session scored ${h.pct}% here — a follow-up session cements weak spots.`,urgency:"low",count:5,mode:"guided",_score:200});
+            candidates.push({topic:h.topic,module:h.subtopic,difficulty:h.pct<55?"Easy":"Medium",reason:`Last session scored ${h.pct}% here — a follow-up session cements weak spots.`,urgency:"low",count:5,mode:"guided",_score:200,_type:"recent"});
         });
 
         // 6. Fallback for brand new users
         if(candidates.length===0){
           [["Ethics","Code of Ethics & Standards"],["Financial Statement Analysis","Income Statement Analysis"],["Equity","Market Efficiency"]].forEach(([t,m],i)=>{
-            candidates.push({topic:t,module:m,difficulty:"Easy",reason:"High-weight topic — a strong start here pays off across 13–15% of exam marks.",urgency:i===0?"high":"medium",count:10,mode:"guided",_score:100-i});
+            candidates.push({topic:t,module:m,difficulty:"Easy",reason:"High-weight topic — a strong start here pays off across 13–15% of exam marks.",urgency:i===0?"high":"medium",count:10,mode:"guided",_score:100-i,_type:"fallback"});
           });
         }
 
-        const suggestions=candidates.sort((a,b)=>b._score-a._score).slice(0,3).map(({_score,...rest})=>rest);
+        // Diversity-aware selection: cap leech+SR-due combined at 2 of the 3 slots so
+        // weak-accuracy/untested/recent suggestions aren't crowded out by review-only items.
+        const sortedCandidates=candidates.sort((a,b)=>b._score-a._score);
+        const finalPicks=[];
+        let reviewTypeCount=0;
+        for(const c of sortedCandidates){
+          if(finalPicks.length>=3) break;
+          if((c._type==="leech"||c._type==="sr")&&reviewTypeCount>=2) continue;
+          finalPicks.push(c);
+          if(c._type==="leech"||c._type==="sr") reviewTypeCount++;
+        }
+        if(finalPicks.length<3){
+          for(const c of sortedCandidates){
+            if(finalPicks.length>=3) break;
+            if(finalPicks.includes(c)) continue;
+            finalPicks.push(c);
+          }
+        }
+        const suggestions=finalPicks.map(({_score,_type,...rest})=>rest);
         setFocusSuggestions(suggestions);
         if(history.length===0) setSelectedFocus(0);
         setFocusLastGenerated(Date.now());
@@ -8632,12 +8649,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
         if(!items.length) return null;
         return(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {items.slice(0,3).map((s,i)=>(
+            {items.slice(0,3).map((s,i)=>{
+              const fKey=`${s.topic}|||${s.module}`;
+              const done=!!focusDone[fKey];
+              return(
               <div key={i} onClick={()=>setSelectedFocus(selectedFocus===i?null:i)}
-                style={{border:`1.5px solid ${selectedFocus===i?urgencyColor[s.urgency]:C.border}`,borderRadius:12,padding:"13px 14px",cursor:"pointer",background:selectedFocus===i?urgencyColor[s.urgency]+"12":C.surfaceHigh,transition:"all 0.15s"}}>
+                style={{border:`1.5px solid ${selectedFocus===i?urgencyColor[s.urgency]:done?"rgba(34,197,94,0.2)":C.border}`,borderRadius:12,padding:"13px 14px",cursor:"pointer",background:selectedFocus===i?urgencyColor[s.urgency]+"12":done?"rgba(34,197,94,0.05)":C.surfaceHigh,transition:"all 0.15s"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:5}}>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.text}}>{s.module}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      {done&&<span style={{fontSize:12,color:C.easy}}>✓</span>}
+                      <div style={{fontSize:13,fontWeight:700,color:done?C.muted:C.text}}>{s.module}</div>
+                    </div>
                     <div style={{fontSize:11,color:C.muted,marginTop:1}}>{s.topic}</div>
                   </div>
                   <div style={{display:"flex",gap:5,flexShrink:0,marginLeft:8}}>
@@ -8656,14 +8679,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
                         </button>
                       ))}
                     </div>}
-                    <button onClick={e=>{e.stopPropagation();if(s.mode==="sr_review"){const cards=dueCards.filter(c=>c.topic===s.topic&&c.subtopic===s.module).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));if(cards.length){trackUsage("sr_review");setSrQueue(cards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}else{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}}else{generateQuestions(s.topic,s.module,s.difficulty,focusCount,s.mode||"guided");}}}
+                    <button onClick={e=>{e.stopPropagation();if(s.mode==="sr_review"){const cards=dueCards.filter(c=>c.topic===s.topic&&c.subtopic===s.module).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));const queue=cards.length?cards:[...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20);trackUsage("sr_review");setFocusDone(prev=>{const n={...prev,[fKey]:true};try{localStorage.setItem("cfa_focus_done",JSON.stringify({date:localDateKey(),done:n}));}catch{}return n;});setSrQueue(queue);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}else{pendingFocusKeyRef.current=fKey;generateQuestions(s.topic,s.module,s.difficulty,focusCount,s.mode||"guided");}}}
                       style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 12px ${C.accent}44`}}>
-                      {s.mode==="sr_review"?`Review ${s.count} SR Card${s.count!==1?"s":""}  →`:`Start ${focusCount} Questions →`}
+                      {done?"Again — ":""}{s.mode==="sr_review"?`Review ${s.count} SR Card${s.count!==1?"s":""}  →`:`Start ${focusCount} Questions →`}
                     </button>
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         );
       })()}
