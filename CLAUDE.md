@@ -121,15 +121,6 @@ Pro users bypass both limits entirely.
 
 ## Build & Deploy
 
-**Formula name text overflow**: Formula names in the Formulas tab now have `maxWidth:140px`, `overflow:hidden`, `textOverflow:ellipsis` to prevent layout breaking on long AI-generated formula names.
-
-
-**RevisionScreen tab switching**: The LOS tab now has auto-correction logic — when switching tabs, `selTopic` is validated against the new tab's data source (`activeLOSR`, `activeFormulas`, or `activePowerNotes`). If the topic doesn't exist in that source, it snaps to the first available key. This prevents "No data" states when topic names differ across tabs (e.g. daily-mission "Ethics & Professional Standards" vs. LOS "Ethics").
-
-
-**Question ID collision fix**: `expandQuestionKeys()` and `fingerprintQuestions()` now prefix question IDs with an index (`${i}_${q.id}`) to guarantee uniqueness even when cache batches are concatenated across sessions. This prevents answer state from leaking between distinct questions. Always ensure AI question responses and interleaved/FSA question arrays use this indexing pattern.
-
-
 **UpgradeModal USD pricing**: Added approximate USD conversion display (`~${Math.round(ACTIVE_PRICE/85)} USD`) below INR amount using fixed 85 INR/USD rate for reference. Always update CLAUDE.md if exchange rate assumption changes.
 
 
@@ -594,7 +585,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1789500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.

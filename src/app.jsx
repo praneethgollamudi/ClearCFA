@@ -921,6 +921,8 @@ const WHATS_NEW_KEY        = "cfa_whats_new_v1";
 const PRO_TOUR_KEY         = "cfa_pro_tour_v1";
 const SCREEN_ONBOARD_KEY   = "cfa_screen_onboard_v1";
 const CHECKLIST_KEY        = "cfa_checklist_done";
+const LAST_SCREEN_KEY      = "cfa_last_screen_v1";
+const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","masteryGrid","studyPlan","revision","studyPath","calcTrainer","backup","srReview"]);
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
@@ -1061,12 +1063,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-30
-{version:"2026-06-30",slides:[
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Quiz Questions Load Fresh",sub:"Bug Fix · 2026-06-30 update",desc:"Fixed an issue where new quiz questions were incorrectly marked as pre-answered, and the AI debrief was sometimes empty. Now every question starts clean and your AI feedback loads reliably.",tip:"If a question felt pre-filled before, try a fresh quiz now—it should reset properly."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smoother Navigation & Tapping",sub:"UX · 2026-06-30 update",desc:"Improved the Next button responsiveness on iOS and Android, fixed layout conflicts with the calculator, and enhanced scroll-to-top behavior. Moving between questions is now faster and more reliable across all devices.",tip:"Notice how the Next button responds instantly—especially on mobile—even when the calculator is open."},
-{emoji:"📐",color:C.medium,bg:C.medium,title:"Calc Trainer Keystroke Help",sub:"Study Tools · 2026-06-30 update",desc:"Added on-screen keystroke guidance in the Calc Trainer and fixed formula text that was overflowing. Learning calculator shortcuts is now clearer and less frustrating.",tip:"Open Calc Trainer and look for the keystroke hints above the keypad to build muscle memory faster."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1092,10 +1088,6 @@ const ADMIN_CHANGELOG=[
 "docs: add complete user-facing features inventory to CLAUDE.md",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"docs: add complete user-facing features inventory to CLAUDE.md",
 ]},
 // AC_END
 ];
@@ -5183,7 +5175,10 @@ function StudyHeatmap({history}){
 }
 
 function CFAMock(){
-  const [screen,setScreen]=useState("home");
+  const [screen,setScreen]=useState(()=>{
+    try{const s=localStorage.getItem(LAST_SCREEN_KEY);if(s&&RESTORABLE_SCREENS.has(s))return s;}catch{}
+    return "home";
+  });
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
   const [difficulty,setDifficulty]=useState("Medium");const [count,setCount]=useState(10);const [mode,setMode]=useState("guided");
   const [questions,setQuestions]=useState([]);const [answers,setAnswers]=useState({});
@@ -5482,7 +5477,7 @@ function CFAMock(){
             PRESETS_KEY,MISSION_KEY,CONFIDENCE_KEY,WORKED_EX_KEY,
             DYNAMIC_PN_KEY,DYNAMIC_FORMULAS_KEY,STREAK_FREEZE_KEY,
             CALC_SNAP_KEY,SESSION_DRAFT_KEY,FLAGS_KEY,
-            BESTS_KEY,RESOLVED_GAPS_KEY,REMINDER_TIME_KEY,
+            BESTS_KEY,RESOLVED_GAPS_KEY,REMINDER_TIME_KEY,LAST_SCREEN_KEY,
           ];
           SESSION_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch{}});
           setHistory([]);historyRef.current=[];
@@ -5690,6 +5685,7 @@ function CFAMock(){
   useEffect(()=>{modeRef.current=mode;},[mode]);
   useEffect(()=>{confidenceLogRef.current=confidenceLog;},[confidenceLog]);
   useEffect(()=>{if(screen==="home")setError("");},[screen]);
+  useEffect(()=>{try{if(RESTORABLE_SCREENS.has(screen))localStorage.setItem(LAST_SCREEN_KEY,screen);else localStorage.removeItem(LAST_SCREEN_KEY);}catch{}},[screen]);
   useEffect(()=>{
     if(screen==="readiness"&&!clVisitedReadiness){setClVisitedReadiness(true);try{localStorage.setItem("cfa_cl_readiness","1");}catch{}}
     if(screen==="revision"&&!clVisitedRevision){setClVisitedRevision(true);try{localStorage.setItem("cfa_cl_revision","1");}catch{}}
@@ -8049,7 +8045,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 PRESETS_KEY,MISSION_KEY,CONFIDENCE_KEY,WORKED_EX_KEY,
                 DYNAMIC_PN_KEY,DYNAMIC_FORMULAS_KEY,STREAK_FREEZE_KEY,
                 CALC_SNAP_KEY,SESSION_DRAFT_KEY,FLAGS_KEY,
-                BESTS_KEY,RESOLVED_GAPS_KEY,REMINDER_TIME_KEY,
+                BESTS_KEY,RESOLVED_GAPS_KEY,REMINDER_TIME_KEY,LAST_SCREEN_KEY,
                 LAST_UID_KEY,"cfa_pro_cache","cfa_cfa_focus_cache","cfa_cfa_exam_date","cfa_daily_ai",
               ].forEach(k=>{try{localStorage.removeItem(k);}catch{}});
               // Reset all user-specific React state
