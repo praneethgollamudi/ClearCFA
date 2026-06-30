@@ -1042,11 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-26-c
-{version:"2026-06-26-c",slides:[
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
-{emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
-]},
 // WN_VER:2026-06-30
 {version:"2026-06-30",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Today's Focus now diversifies recommendations across topics and tracks your completion progress. You'll see varied study suggestions instead of repetitive topics, keeping your prep balanced and engaging.",tip:"Check Today's Focus each session to see which recommendations you've completed and which new areas need attention."},
@@ -1072,6 +1067,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🛠",color:C.medium,bg:C.medium,title:"Formulas Tab Now Displays Correctly",sub:"Bug Fix · 2026-06-30 update",desc:"Formula columns no longer collapse into single characters, making the Formulas reference tab readable and useful again. You can now quickly scan and study key equations without squinting or reformatting.",tip:"Open the Formulas tab to see full variable names and expressions side-by-side clearly."},
 {emoji:"✨",color:C.reward,bg:C.reward,title:"AI Debrief Always Available",sub:"AI · 2026-06-30 update",desc:"The AI debrief feature no longer fails when you've exhausted your daily question quota. You can always review your performance and get personalized feedback, even after hitting your limit.",tip:"If a debrief previously timed out, try again—it should now load smoothly every time."},
 ]},
+// WN_VER:2026-06-30-e
+{version:"2026-06-30-e",slides:[
+{emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Debrief Now More Reliable",sub:"AI · 2026-06-30 update",desc:"We fixed AI debrief failures that occurred when you hit your daily question quota, and added clearer error messages so you know exactly what happened. You can now retry without confusion and keep learning without interruption.",tip:"If a debrief fails, you'll see a helpful message explaining why—tap retry once your quota resets."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Formula Values Display Correctly",sub:"Study Tools · 2026-06-30 update",desc:"Formula columns in the Formulas tab were collapsing to single characters, making them unreadable. We've restored proper column widths so you can see full values and symbols at a glance.",tip:"Open the Formulas tab and notice how formula values now display with proper spacing."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Revision Interface",sub:"UX · 2026-06-30 update",desc:"The topic picker was appearing twice on Revision Learn and Coach tabs, creating visual clutter and confusion. We've removed the duplicate so your study interface is clean and focused.",tip:"Switch to Revision mode and you'll see just one topic picker—select your topic and start studying immediately."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1095,6 +1096,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-06-30
+{date:"2026-06-30",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
