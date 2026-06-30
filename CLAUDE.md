@@ -121,6 +121,15 @@ Pro users bypass both limits entirely.
 
 ## Build & Deploy
 
+**Formula generation error handling**: Error messages from formula generation now gracefully handle both `Error` objects and raw string errors; message extraction uses `typeof e?.message === 'string' ? e.message : typeof e === 'string' ? e : 'Generation failed...'` to prevent display of `[object Object]`.
+
+
+**AI-generated formula grouping**: Formulas generated from mistakes are now tagged with `_aiGen:true` and grouped under a special "✦ From Your Mistakes" module in the Formulas tab with purple accent styling and a subtitle noting they are AI-generated. Static formula count display excludes this AI section.
+
+
+**Screen persistence across page refresh**: App now restores the last visited screen (e.g. revision, dashboard, studyPlan) on page load via `LAST_SCREEN_KEY`. Only screens in `RESTORABLE_SCREENS` set are restored; home is fallback. Screen is saved to localStorage whenever `screen` state changes.
+
+
 **UpgradeModal USD pricing**: Added approximate USD conversion display (`~${Math.round(ACTIVE_PRICE/85)} USD`) below INR amount using fixed 85 INR/USD rate for reference. Always update CLAUDE.md if exchange rate assumption changes.
 
 
@@ -582,10 +591,11 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_pro_tour_v1` | `PRO_TOUR_KEY` |
 | `cfa_screen_onboard_v1` | `SCREEN_ONBOARD_KEY` |
 | `cfa_checklist_done` | `CHECKLIST_KEY` |
+| `cfa_last_screen_v1` | `LAST_SCREEN_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1789700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
