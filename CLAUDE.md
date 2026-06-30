@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New slides versioning**: WHATS_NEW_SLIDES is a versioned array with `version` (e.g. "2026-06-30", "2026-06-30-b") and `slides` array. Versions with `-b`, `-c` suffixes are refinements of the same date. New versions are prepended at `// WN_START` marker. Use concise, emoji-led titles and actionable tip text; avoid vague marketing language.
+
+
 - **Creator:** GSP (initials). Never use "Praneeth" in user-facing strings — it was replaced.
 - **Admin email:** `sai.praneeth557@gmail.com` (functional only — auth gating, never displayed to users)
 - **Contact / support email:** `gspbuilds@gmail.com`
@@ -92,6 +95,12 @@ Pro = row exists where `active=true AND valid_until >= now()`. Checked via `chec
 To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true` and `valid_until` 30 days out.
 
 ## AI Quota System
+
+**Numeric validation in AI questions**: AI question generation now validates that numeric values in explanations (e.g. "= X", "X%", "X basis points/bps") match the marked correct option exactly. Questions with explanations contradicting all options or matching wrong options are rejected. Always ensure computed/concluding values (DIFFERENCE/CHANGE/RESULT/GAP/DELTA/SPREAD statements) align with the correct answer, accounting for unit conversions (e.g. 2.5% = 250 bps).
+
+
+**Focus completion tracking**: Today's Focus suggestions now persist a completion history in `localStorage` under `cfa_focus_done` with structure `{date: "YYYY-MM-DD", done: {focusKey: true}}`. When a quiz/practice session triggered by a Today's Focus suggestion completes, `pendingFocusKeyRef.current` is checked and marked done. Always set `pendingFocusKeyRef.current` before launching a session from a Today's Focus card to enable proper completion tracking.
+
 
 **Focus suggestion type diversity**: Focus candidates now include a `_type` field (e.g., `"leech"` for high-miss cards) to track suggestion source. The UI filters out suggestions already marked done in `focusDone` state to prevent repetitive recommendations. When building focus candidates in `buildTodaysFocus()`, always include `_type` so completion tracking can diversify future suggestions.
 
@@ -610,7 +619,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1790100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1790200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
