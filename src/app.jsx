@@ -1063,6 +1063,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
+// WN_VER:2026-06-30
+{version:"2026-06-30",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Today's Focus now diversifies recommendations across topics and tracks your completion progress. You'll see varied study suggestions instead of repetitive topics, keeping your prep balanced and engaging.",tip:"Check Today's Focus each session to see which recommendations you've completed and which new areas need attention."},
+{emoji:"✨",color:C.reward,bg:C.reward,title:"AI Questions Now Accurate",sub:"AI · 2026-06-30 update",desc:"Fixed critical bugs where AI-generated questions had mismatched explanations, missing worked examples, and formula grouping errors. Your AI questions are now reliable study partners with correct answers and clear walkthroughs.",tip:"Generate a new AI question and notice how explanations now match the answer choices perfectly."},
+{emoji:"📱",color:C.medium,bg:C.medium,title:"Smoother Navigation on Mobile",sub:"UX · 2026-06-30 update",desc:"The Next button now responds instantly on iOS and Android, scrolls to the top of new questions, and no longer gets blocked by overlays or safe-area spacing. Moving through questions feels fast and friction-free.",tip:"Tap Next on your phone—notice the instant response and smooth scroll to the question stem."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
