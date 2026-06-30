@@ -3214,7 +3214,8 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
         ))}
       </div>
 
-      {/* Topic picker */}
+      {/* Topic picker — notes/formulas/los only; learn/coach render their own below */}
+      {(tab==="notes"||tab==="formulas"||tab==="los")&&(
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
         {Object.keys(tab==="los"?activeLOSR:tab==="notes"?POWER_NOTES:FORMULAS).map(t=>{
           const w=activeLOSR[t]?.weight||0;
@@ -3231,6 +3232,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
           );
         })}
       </div>
+      )}
 
       {/* ── WRONG ANSWERS FOR THIS TOPIC ── */}
       {tab==="notes" && (()=>{
