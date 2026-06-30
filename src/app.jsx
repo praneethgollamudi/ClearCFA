@@ -1063,13 +1063,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-30
-{version:"2026-06-30",slides:[
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother Next Button Experience",sub:"UX · 2026-06-30 update",desc:"We've fixed multiple issues with the Next button—it now responds instantly on iOS, scrolls to the top reliably, and won't get blocked by floating elements. You can move through questions faster without frustrating delays or taps that don't register.",tip:"Try tapping Next on iOS: you'll notice snappier responses and the page jumping to the question top immediately."},
-{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"AI Debrief Always Ready",sub:"AI · 2026-06-30 update",desc:"The AI debrief now loads reliably every time you finish a question, even if the connection hiccups. You'll always get instant explanations and learning tips without blank screens.",tip:"Check the debrief section after your next wrong answer—it should fill instantly with personalized insights."},
-{emoji:"🎓",color:C.medium,bg:C.medium,title:"Better Formula Organization & Calc Guidance",sub:"Study Tools · 2026-06-30 update",desc:"Formulas now group logically by topic in the AI section, text no longer overflows, and the Calc Trainer shows you exactly which keystrokes to use. Finding the right formula and mastering your calculator is now clearer and faster.",tip:"Open Calc Trainer or the formula reference on your next calculation question to see the keystroke guides and improved grouping."},
-{emoji:"🔄",color:C.hard,bg:C.hard,title:"Progress Saved Across Refresh",sub:"Bug Fix · 2026-06-30 update",desc:"Your progress and revision screen state now persist if you refresh the page or switch tabs. You won't lose your place or have to re-answer questions you've already completed.",tip:"Refresh the page while on a revision or progress screen—you'll stay right where you left off."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1095,10 +1088,6 @@ const ADMIN_CHANGELOG=[
 "docs: add complete user-facing features inventory to CLAUDE.md",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"docs: add complete user-facing features inventory to CLAUDE.md",
 ]},
 // AC_END
 ];
@@ -9479,10 +9468,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   setWorkedExLoading(true);
                   const k=`${topic}__${subtopic}`;
                   try{
-                    const result=await callClaude(`CFA Level ${cfaLevel}. Topic: ${topic}. Module: ${subtopic}.\n\nProvide one worked example in this exact format (no extra text):\n\nQUESTION: [realistic 2-sentence CFA exam question]\nA) [option]\nB) [option]\nC) [option]\nANSWER: [letter only]\nWALK-THROUGH: [3-sentence step-by-step reasoning explaining why the answer is correct and why the others are wrong]`,350,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"worked_example"});
-                    const text=typeof result==="string"?result:"";
-                    setWorkedExamples(e=>{const u={...e,[k]:text};try{localStorage.setItem(WORKED_EX_KEY,JSON.stringify(u));}catch{}return u;});
-                  }catch(err){setWorkedExDismissedKey(k);}
+                    const result=await callClaude(`CFA Level ${cfaLevel}. Topic: ${topic}. Module: ${subtopic}.\n\nProvide one worked example. Output ONLY plain text — no JSON, no markdown.\n\nQUESTION: [realistic 2-sentence CFA exam question]\nA) [option]\nB) [option]\nC) [option]\nANSWER: [letter only]\nWALK-THROUGH: [3-sentence step-by-step reasoning]`,350,{model:"claude-haiku-4-5-20251001",retries:2,retryDelay:2000,feature:"worked_example"});
+                    // callClaude may return a parsed JSON object if the response contained JSON-like text;
+                    // coerce to string so the example always shows.
+                    let text="";
+                    if(typeof result==="string") text=result.trim();
+                    else if(result&&typeof result==="object") text=Object.entries(result).map(([rk,rv])=>`${rk.toUpperCase()}: ${typeof rv==="object"?Object.entries(rv).map(([k2,v2])=>`${k2}) ${v2}`).join("\n"):rv}`).join("\n\n").trim();
+                    if(text) setWorkedExamples(e=>{const u={...e,[k]:text};try{localStorage.setItem(WORKED_EX_KEY,JSON.stringify(u));}catch{}return u;});
+                    else setWorkedExamples(e=>{const u={...e,[k]:"__err__Generation returned empty — tap Retry."};try{localStorage.setItem(WORKED_EX_KEY,JSON.stringify(u));}catch{}return u;});
+                  }catch(err){
+                    const m=typeof err?.message==="string"?err.message:"Generation failed.";
+                    setWorkedExamples(e=>{const u={...e,[k]:"__err__"+m};try{localStorage.setItem(WORKED_EX_KEY,JSON.stringify(u));}catch{}return u;});
+                  }
                   setWorkedExLoading(false);
                 }} style={{flex:2,padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
                   🎓 Show me an example →
@@ -9496,11 +9493,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
           {workedExLoading&&<div style={{fontSize:12,color:C.muted,padding:"4px 0"}}>⏳ Generating example…</div>}
           {workedExamples[`${topic}__${subtopic}`]&&!workedExLoading&&(
             <>
+              {workedExamples[`${topic}__${subtopic}`].startsWith("__err__")?(
+                <div style={{fontSize:12,color:C.hard,padding:"4px 0"}}>
+                  ⚠️ {workedExamples[`${topic}__${subtopic}`].replace("__err__","")}{" "}
+                  <button onClick={()=>{const k=`${topic}__${subtopic}`;const u={...workedExamples};delete u[k];setWorkedExamples(u);try{localStorage.setItem(WORKED_EX_KEY,JSON.stringify(u));}catch{};}} style={{fontSize:11,color:C.accentLight,background:"none",border:"none",cursor:"pointer",padding:0,textDecoration:"underline"}}>Retry</button>
+                </div>
+              ):(
+              <>
               <div style={{fontSize:10,fontWeight:700,color:C.accentLight,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:10}}>🎓 Worked Example</div>
               <div style={{fontSize:12,color:C.text,lineHeight:1.85,whiteSpace:"pre-line"}}>{workedExamples[`${topic}__${subtopic}`]}</div>
               <button onClick={()=>setWorkedExDismissedKey(`${topic}__${subtopic}`)} style={{marginTop:12,width:"100%",padding:"10px",borderRadius:9,fontSize:12,fontWeight:700,background:`${C.accent}22`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                 Got it — start the questions →
               </button>
+            </>
+            )}
             </>
           )}
         </div>
