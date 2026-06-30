@@ -5965,8 +5965,8 @@ PRIORITY: [exact concept name from wrong list to drill first]
 TIME: [realistic time to close this gap, e.g. "20 min" or "1 hour"]
 COACH: [1 honest, direct sentence — no generic cheerleading]`;
       const DEBRIEF_FALLBACK="PATTERN: Could not generate debrief.\nFIX: Review the wrong answers below.\nPRIORITY: \nTIME: \nCOACH: Every session is data — keep going.";
-      callClaude(debriefPrompt,350,{model:"claude-haiku-4-5-20251001",retries:1,retryDelay:2000,feature:"ai_debrief"})
-        .then(r=>{const txt=typeof r==="string"&&r.trim()?r:DEBRIEF_FALLBACK;setAiDebrief(txt);})
+      callAIChat(authUserRef.current.id,[{role:"user",content:debriefPrompt}],350,cfaLevel)
+        .then(r=>{const txt=r&&r.trim()?r:DEBRIEF_FALLBACK;setAiDebrief(txt);})
         .catch(()=>{setAiDebrief(DEBRIEF_FALLBACK);})
         .finally(()=>setAiDebriefLoading(false));
     }
