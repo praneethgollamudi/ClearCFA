@@ -24,6 +24,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ### Edge Functions (in `supabase/functions/`)
 
+**`ai-proxy` numeric validation**: AI question generation now validates that numeric values in explanations (e.g., "= X", "X%", "X basis points/bps") match the marked correct option exactly. Questions with explanations contradicting all options or matching wrong options are rejected. Always ensure computed/concluding values align with the correct answer, accounting for unit conversions (e.g., 2.5% = 250 bps).
+
+
 **`admin-stats` dashboard display**: The admin dashboard now displays user email in the "Recently active" section (field: `display` or fallback to truncated `user_id`). The "Revenue" card clarifies "Paid Pro subscribers" (from `subscriptions` table) and notes that the admin account itself is Pro via owner override and not counted in metrics.
 
 
@@ -95,6 +98,12 @@ Pro = row exists where `active=true AND valid_until >= now()`. Checked via `chec
 To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true` and `valid_until` 30 days out.
 
 ## AI Quota System
+
+**AI Debrief graceful degradation**: When daily AI question quota is exhausted, AI Debrief now gracefully skips Socratic follow-up prompts and shows standard explanation only instead of failing. Always check `proStatus` and remaining quota before offering AI Debrief buttons to free users.
+
+
+**Focus completion tracking & diversity**: Today's Focus suggestions now persist completion history in `localStorage` under `cfa_focus_done` with structure `{date: "YYYY-MM-DD", done: {focusKey: true}}`. Suggestions include a `_type` field (e.g., `"leech"`, `"weak"`) to track source. UI filters out already-done suggestions to prevent repetition and ensure daily diversity. When a quiz session triggered by a Today's Focus suggestion completes, check `pendingFocusKeyRef.current` and mark that focus key as done.
+
 
 **Focus completion on session end**: When a quiz/practice session completes, check `pendingFocusKeyRef.current` — if set, mark that focus key as done in localStorage and update `focusDone` state. Always set `pendingFocusKeyRef.current` before launching a practice session triggered by a Today's Focus suggestion card.
 
@@ -628,7 +637,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1790300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1790400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
