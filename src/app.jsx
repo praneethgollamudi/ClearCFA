@@ -1042,10 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-26-b
-{version:"2026-06-26-b",slides:[
-{emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
-]},
 // WN_VER:2026-06-26-c
 {version:"2026-06-26-c",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
@@ -1070,6 +1066,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎲",color:C.reward,bg:C.reward,title:"Smarter Daily Focus Topics",sub:"AI · 2026-06-30 update",desc:"Today's Focus now suggests a more diverse range of topics and tracks what you've completed, preventing repetition and keeping your study plan fresh. You'll cover more ground and spend less time reviewing the same concepts.",tip:"Notice how your daily suggestions vary more—the app learns what you've already focused on to maximize learning efficiency."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"AI Questions Now Accurate",sub:"Bug Fix · 2026-06-30 update",desc:"AI-generated practice questions now have explanations that match their answer options, eliminating confusing mismatches. You can trust the feedback you receive and learn the correct reasoning every time.",tip:"Review any AI questions you flagged as confusing—they should now make clear sense with aligned explanations."},
 ]},
+// WN_VER:2026-06-30-d
+{version:"2026-06-30-d",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Your daily question recommendations now diversify across topics instead of repeating the same focus area. This keeps your prep balanced and helps you build breadth across the curriculum faster.",tip:"Check your Today's Focus card—you'll notice it suggests different topics day to day now."},
+{emoji:"🛠",color:C.medium,bg:C.medium,title:"Formulas Tab Now Displays Correctly",sub:"Bug Fix · 2026-06-30 update",desc:"Formula columns no longer collapse into single characters, making the Formulas reference tab readable and useful again. You can now quickly scan and study key equations without squinting or reformatting.",tip:"Open the Formulas tab to see full variable names and expressions side-by-side clearly."},
+{emoji:"✨",color:C.reward,bg:C.reward,title:"AI Debrief Always Available",sub:"AI · 2026-06-30 update",desc:"The AI debrief feature no longer fails when you've exhausted your daily question quota. You can always review your performance and get personalized feedback, even after hitting your limit.",tip:"If a debrief previously timed out, try again—it should now load smoothly every time."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1093,6 +1095,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-06-30
+{date:"2026-06-30",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
