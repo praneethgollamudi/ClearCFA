@@ -1061,6 +1061,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
+// WN_VER:2026-06-30
+{version:"2026-06-30",slides:[
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Quiz Questions Load Fresh",sub:"Bug Fix · 2026-06-30 update",desc:"Fixed an issue where new quiz questions were incorrectly marked as pre-answered, and the AI debrief was sometimes empty. Now every question starts clean and your AI feedback loads reliably.",tip:"If a question felt pre-filled before, try a fresh quiz now—it should reset properly."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smoother Navigation & Tapping",sub:"UX · 2026-06-30 update",desc:"Improved the Next button responsiveness on iOS and Android, fixed layout conflicts with the calculator, and enhanced scroll-to-top behavior. Moving between questions is now faster and more reliable across all devices.",tip:"Notice how the Next button responds instantly—especially on mobile—even when the calculator is open."},
+{emoji:"📐",color:C.medium,bg:C.medium,title:"Calc Trainer Keystroke Help",sub:"Study Tools · 2026-06-30 update",desc:"Added on-screen keystroke guidance in the Calc Trainer and fixed formula text that was overflowing. Learning calculator shortcuts is now clearer and less frustrating.",tip:"Open Calc Trainer and look for the keystroke hints above the keypad to build muscle memory faster."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1086,6 +1092,10 @@ const ADMIN_CHANGELOG=[
 "docs: add complete user-facing features inventory to CLAUDE.md",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-06-30
+{date:"2026-06-30",entries:[
+"docs: add complete user-facing features inventory to CLAUDE.md",
 ]},
 // AC_END
 ];
