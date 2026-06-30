@@ -286,7 +286,7 @@ Rules:
 - 3 options only (A,B,C). Each wrong option exploits a misconception. Spread questions across different LOS.
 - Add "distractor_explanations" with one sentence per wrong option explaining the specific error it tests (e.g. "Divides by equity multiplier instead of multiplying").
 - CRITICAL for numerical questions: FIRST compute the exact correct answer (show full precision), THEN include that exact value as one of the options. NEVER describe any option as "closest", "nearest", "best approximation", or "closest when accounting for rounding" — if you use such language in the explanation, the question will be discarded. If rounding is needed for a clean option, round the answer FIRST, then build all three options around that rounded figure. The correct computed result must appear verbatim as exactly one of A, B, or C — no approximations. Wrong options must use recognisable formula errors (wrong rate, wrong periods, missing compounding step).
-- The "answer" field must match the letter whose option text equals the correct computed result. The explanation MUST begin with "Correct: [letter]. " (e.g. "Correct: B. Sample variance = 30/4 = 7.5") — questions whose explanation does not start with "Correct: A/B/C" will be discarded. The explanation must be a single clean final solution — NO chain-of-thought, NO intermediate recalculations, NO self-corrections, NO alternative attempts, NO phrases like "recalc needed", "revising", "reinspecting" or "incorrect" near the correct answer value.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
+- The "answer" field must match the letter whose option text equals the correct computed result. The explanation MUST begin with "Correct: [letter]. " (e.g. "Correct: B. Sample variance = 30/4 = 7.5") — questions whose explanation does not start with "Correct: A/B/C" will be discarded. The explanation must be a single clean final solution — NO chain-of-thought, NO intermediate recalculations, NO self-corrections, NO alternative attempts, NO "reinterpreting"/"however" pivots, NO phrases like "recalc needed", "revising", "reinspecting" or "incorrect" near the correct answer value. Double-check units before finalizing (basis points vs. percent vs. decimal) — the final numeric value stated in the explanation MUST equal, in the same units, the option text marked correct; mismatched units (e.g. explanation says "250 basis points" but the correct option reads "2.5%") will cause the question to be discarded.${level!=="1"?" Every question must include realistic scenario context (named entity, numbers, specific situation).":" Ethics=scenario with named person+Standard number. Quant Medium/Hard=specific numbers."}`;
 }
 
 // Expand compact JSON keys returned by optimised prompt
@@ -1063,12 +1063,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-30
-{version:"2026-06-30",slides:[
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Worked Examples Load Reliably",sub:"Study Tools · 2026-06-30 update",desc:"Fixed a critical bug where worked examples would fail to appear after generation, leaving you stuck without the step-by-step walkthroughs you need. Now every generated example displays instantly so you can learn the concept immediately.",tip:"Try generating a worked example in any topic—it will appear every time without delay."},
-{emoji:"🎯",color:C.medium,bg:C.medium,title:"Smoother Quiz Navigation on Mobile",sub:"UX · 2026-06-30 update",desc:"Improved the Next button on iOS and Android with better spacing, faster responsiveness, and smarter scrolling—so you spend less time fighting the UI and more time answering questions. The button now responds instantly to taps and won't be hidden by other controls.",tip:"On mobile, tap Next and notice how snappily the page advances to the next question."},
-{emoji:"🧠",color:C.hard,bg:C.hard,title:"AI Debriefs Always Ready",sub:"AI · 2026-06-30 update",desc:"Fixed an issue where AI debriefs would appear empty or blank after answering a question, leaving you without personalized feedback. Now every debrief generates and displays correctly so you get instant insights into your mistakes.",tip:"Answer a question and check the AI debrief section—you'll see detailed feedback every time."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1094,10 +1088,6 @@ const ADMIN_CHANGELOG=[
 "docs: add complete user-facing features inventory to CLAUDE.md",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"docs: add complete user-facing features inventory to CLAUDE.md",
 ]},
 // AC_END
 ];
@@ -6428,19 +6418,31 @@ Return ONLY a JSON array — no prose, no markdown fences:
         // Reject if explanation says "correct answer is [value]" that doesn't match options[answer]
         const vm=(q.explanation||"").match(/correct answer is\s+([^\.\n]{2,40})/i);
         if(vm){const norm=s=>s.toLowerCase().replace(/\s+/g,"").replace(/[^0-9a-z.%]/g,"");const stated=norm(vm[1]);const ansOpt=norm(q.options[q.answer]||"");if(stated.length>1&&ansOpt.length>1&&stated!==ansOpt&&!ansOpt.includes(stated)&&!stated.includes(ansOpt))return false;}
-        // Numeric cross-check: scan "= X.X[X]" and standalone "X.X[X]%" in explanation;
-        // if a result matches a non-answer option, the answer key is wrong — reject
+        // Numeric cross-check: scan "= X[.X]", standalone "X[.X]%", and "X[.X] basis points/bps"
+        // in explanation; if a result matches a non-answer option, the answer key is wrong — reject
         const optVals=Object.entries(q.options).map(([k,v])=>({k,v:parseFloat(String(v).replace(/[^0-9.-]/g,""))})).filter(o=>!isNaN(o.v));
         if(optVals.length>=2){
           const ansVal=parseFloat(String(q.options[q.answer]||"").replace(/[^0-9.-]/g,""));
           const eqNums=[
-            ...[...expU.matchAll(/=\s*([\d]+\.[\d]+)/g)].map(m=>parseFloat(m[1])),
-            ...[...expU.matchAll(/([\d]+\.[\d]+)\s*%/g)].map(m=>parseFloat(m[1])),
+            ...[...expU.matchAll(/=\s*([\d]+(?:\.[\d]+)?)/g)].map(m=>parseFloat(m[1])),
+            ...[...expU.matchAll(/([\d]+(?:\.[\d]+)?)\s*%/g)].map(m=>parseFloat(m[1])),
+            ...[...expU.matchAll(/([\d]+(?:\.[\d]+)?)\s*(?:BASIS POINTS|BPS)/g)].map(m=>parseFloat(m[1])),
           ];
           for(const n of eqNums){
             if(!isNaN(n)&&Math.abs(n-ansVal)>0.02){
               const matchesOther=optVals.find(o=>o.k!==qAns&&Math.abs(o.v-n)<0.02);
               if(matchesOther)return false;
+            }
+          }
+          // Reject if the explanation's concluding stated value (difference/change/result/gap)
+          // doesn't match ANY option — means the explanation's own math contradicts every choice
+          const concludeMatches=[...expU.matchAll(/(?:DIFFERENCE|CHANGE|RESULT|GAP|DELTA|SPREAD)[^=]{0,40}(?:IS|EQUALS|=)\s*([\d]+(?:\.[\d]+)?)\s*(?:BASIS POINTS|BPS|%)?/g)];
+          if(concludeMatches.length){
+            const cVal=parseFloat(concludeMatches[concludeMatches.length-1][1]);
+            if(!isNaN(cVal)){
+              const tol=Math.max(0.02,Math.abs(cVal)*0.02);
+              const matchesAny=optVals.some(o=>Math.abs(o.v-cVal)<tol);
+              if(!matchesAny)return false;
             }
           }
         }
