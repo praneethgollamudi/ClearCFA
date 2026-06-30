@@ -416,8 +416,10 @@ function flattenVignettes(rawVignettes,topic,module){
 }
 
 function expandQuestionKeys(qs){
-  return qs.map(q=>({
-    id:q.id,
+  // Index-prefix the id so duplicate/colliding ids from the AI response never
+  // alias two distinct questions to the same `answers[id]` slot mid-session.
+  return qs.map((q,i)=>({
+    id:`${i}_${q.id??i}`,
     question:q.q||q.question||"",
     options:q.o||q.options||{},
     answer:q.a||q.answer||"A",
@@ -479,7 +481,20 @@ function computeCalibration(qs,ans,confidenceLog){
 
 // ── Item 10: Deterministic option-order fingerprint per user ─────────────────
 function fingerprintQuestions(qs, userId) {
-  if (!userId || !qs.length) return qs;
+  if (!qs.length) return qs;
+  // Guarantee unique ids even when cache batches were concatenated across sessions —
+  // a duplicate id makes answers[id] from one question leak onto a different question.
+  const seenIds = new Set();
+  qs = qs.map((q, qi) => {
+    if (q.id == null || seenIds.has(q.id)) {
+      const id = `${qi}_${q.id ?? qi}`;
+      seenIds.add(id);
+      return { ...q, id };
+    }
+    seenIds.add(q.id);
+    return q;
+  });
+  if (!userId) return qs;
   const seed = userId.split('').reduce((s, c, i) => (s * 31 + c.charCodeAt(0) * (i + 1)) & 0xfffffff, 0);
   return qs.map((q, qi) => {
     if (!q.options || !q.answer) return q;
@@ -1046,11 +1061,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-26-d
-{version:"2026-06-26-d",slides:[
-{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"AI Debrief Always Works Now",sub:"AI · 2026-06-26 update",desc:"Fixed a bug where AI explanations would appear blank after answering questions. Your instant AI debrief will now load reliably every time, helping you understand why you got a question right or wrong.",tip:"Try answering a practice question—you'll see the AI debrief appear immediately below your answer."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother Question Navigation",sub:"UX · 2026-06-26 update",desc:"Improved the Next button so it works instantly without delays or interference from other interface elements. You can now move through your practice questions faster and stay in study flow.",tip:"On iOS, you'll notice the Next button sits perfectly above the safe area—tap it anytime to advance."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1074,11 +1084,6 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
@@ -6168,7 +6173,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 [{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic name from list above>","_subtopic":"<module name>"}]`;
       const qs=await callClaude(prompt,Math.min(cnt*250+400,3200),{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"interleaved"});
       if(!Array.isArray(qs)||qs.length===0)throw new Error("Invalid interleaved response — no questions returned");
-      const tagged=qs.map((q,i)=>({...q,id:q.id||`il_${Date.now()}_${i}`}));
+      const tagged=qs.map((q,i)=>({...q,id:`${i}_${q.id||"il"+i}`}));
       setLoadingProgress(100);await new Promise(r=>setTimeout(r,200));
       const mainTopic=pool[0]?.topic||"Mixed";
       setTopic(mainTopic);setSubtopic(`Interleaved (${pool.map(m=>m.topic.split(" ")[0]).join("·")})`);setDifficulty(diff);
@@ -6190,9 +6195,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       clearInterval(progressInterval);
       if(!raw||!raw.questions)throw new Error("Invalid FSA vignette format");
       const stmtText=formatStatements(raw);
-      const qs=raw.questions.map(q=>({
+      const qs=raw.questions.map((q,i)=>({
         ...q,
-        id:`fsa_${Date.now()}_${q.id}`,
+        id:`fsa_${i}_${q.id||i}`,
         question:`**${raw.company} (${raw.year}) — ${raw.scenario}**\n\n${stmtText}\n\n${q.question}`,
         _isFSAVignette:true,
       }));
