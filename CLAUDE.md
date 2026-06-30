@@ -93,6 +93,9 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
+**Focus suggestion generation**: Today's Focus suggestions now track a `_type` field (e.g., `"leech"` for high-miss cards) to diversify recommendations and prevent suggesting the same module repeatedly. Always include `_type` when building focus candidates so the UI can filter by completion history.
+
+
 **Numeric validation in questions**: AI question generation now validates that numeric values in explanations (including basis points/bps format) match the marked correct option. Explanations using "= X", "X%", or "X basis points/bps" patterns are parsed and cross-checked against option values. Questions are rejected if a stated numeric result matches a wrong option or if a concluding statement (DIFFERENCE/CHANGE/RESULT/GAP/DELTA/SPREAD) contradicts all options. Always ensure computed values in explanations match the correct option exactly, accounting for unit conversions (e.g., 2.5% = 250 bps).
 
 
@@ -123,6 +126,9 @@ Pro users bypass both limits entirely.
 - `getReferralStats(cfg, referrerId)` returns `{signups, paid}` — card shows paid count for progress, sign-up count as context
 
 ## Build & Deploy
+
+**Today's Focus completion tracking**: New state `focusDone` (localStorage key `cfa_focus_done`) tracks which Today's Focus suggestions have been completed. Format: `{date: localDateKey(), done: {[focusKey]: true}}`. When a quiz completes after a focus suggestion, `pendingFocusKeyRef` marks that focus as done. Focus suggestions are diversified by type (`_type: "leech"` for leech cards, others for spaced review/weak topics) to avoid repetition.
+
 
 **Screen persistence across refresh**: Progress and revision screens (including selected tab like `los`, Notes, Formulas) now persist across page refresh via localStorage. The screen name and active tab are saved/restored automatically — no special handling required in new features.
 
@@ -595,7 +601,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1789900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1790000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
