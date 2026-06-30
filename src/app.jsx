@@ -1042,12 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-30
-{version:"2026-06-30",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Today's Focus now diversifies recommendations across topics and tracks your completion progress. You'll see varied study suggestions instead of repetitive topics, keeping your prep balanced and engaging.",tip:"Check Today's Focus each session to see which recommendations you've completed and which new areas need attention."},
-{emoji:"✨",color:C.reward,bg:C.reward,title:"AI Questions Now Accurate",sub:"AI · 2026-06-30 update",desc:"Fixed critical bugs where AI-generated questions had mismatched explanations, missing worked examples, and formula grouping errors. Your AI questions are now reliable study partners with correct answers and clear walkthroughs.",tip:"Generate a new AI question and notice how explanations now match the answer choices perfectly."},
-{emoji:"📱",color:C.medium,bg:C.medium,title:"Smoother Navigation on Mobile",sub:"UX · 2026-06-30 update",desc:"The Next button now responds instantly on iOS and Android, scrolls to the top of new questions, and no longer gets blocked by overlays or safe-area spacing. Moving through questions feels fast and friction-free.",tip:"Tap Next on your phone—notice the instant response and smooth scroll to the question stem."},
-]},
 // WN_VER:2026-06-30-b
 {version:"2026-06-30-b",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Today's Focus now suggests a more diverse mix of topics instead of repeating the same areas, and tracks which suggestions you've completed. This keeps your prep varied and prevents knowledge gaps from being overlooked.",tip:"Check Today's Focus regularly—you'll see a fresh set of recommendations each day."},
@@ -1073,6 +1067,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Formula Values Display Correctly",sub:"Study Tools · 2026-06-30 update",desc:"Formula columns in the Formulas tab were collapsing to single characters, making them unreadable. We've restored proper column widths so you can see full values and symbols at a glance.",tip:"Open the Formulas tab and notice how formula values now display with proper spacing."},
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Revision Interface",sub:"UX · 2026-06-30 update",desc:"The topic picker was appearing twice on Revision Learn and Coach tabs, creating visual clutter and confusion. We've removed the duplicate so your study interface is clean and focused.",tip:"Switch to Revision mode and you'll see just one topic picker—select your topic and start studying immediately."},
 ]},
+// WN_VER:2026-06-30-f
+{version:"2026-06-30-f",slides:[
+{emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Debrief Now More Reliable",sub:"AI · 2026-06-30 update",desc:"AI debrief no longer crashes when you've exhausted your daily question quota, and now shows a clear error message if something goes wrong. You'll get helpful guidance on what to do next instead of a blank screen.",tip:"If a debrief fails, tap Retry to try again—the error message will tell you exactly why."},
+{emoji:"📐",color:C.medium,bg:C.medium,title:"Formula Values Display Correctly",sub:"UX · 2026-06-30 update",desc:"Fixed a display bug in the Formulas tab where numbers were collapsing into single-character columns, making them unreadable. Formula values now render clearly so you can study without squinting.",tip:"Open the Formulas tab and scroll through—you'll see multi-digit values fully visible now."},
+{emoji:"🧮",color:C.accentLight,bg:C.accentLight,title:"Calculator Always at Hand",sub:"Study Tools · 2026-06-30 update",desc:"Added a calculator button to the Short Rate review screen so you can quickly compute values while drilling. No more switching between apps mid-review.",tip:"Look for the calculator icon on the SR review screen—tap it to solve calculations on the spot."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1096,6 +1096,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-06-30
+{date:"2026-06-30",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
