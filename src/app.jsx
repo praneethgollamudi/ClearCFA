@@ -1042,12 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-26-ai
-{version:"2026-06-26-ai",slides:[
-{emoji:"🤔",color:C.accentLight,bg:C.accent,title:"Socratic Wrong-Answer Tutor",sub:"AI · June 2026 update",desc:"When you get a quiz question wrong, a new 'Ask tutor →' button appears below the explanation. The AI doesn't just re-explain — it asks you Socratic questions to help you discover the gap yourself. Multi-turn dialogue, no extra quota used.",tip:"The Socratic method is proven to build deeper understanding than re-reading explanations. Try it on your next wrong answer."},
-{emoji:"⚡",color:C.reward,bg:C.reward,title:"Daily Mission Agent",sub:"AI · June 2026 update",desc:"Every day, an AI coach analyses your weakest topics and your recent sessions to generate a specific, actionable study mission — with a task, an exam insight, and a one-tap Start button. Resets at midnight and adapts as your weak spots change.",tip:"The Daily Mission appears on your home screen automatically once you have some study history. No setup needed."},
-{emoji:"🤖",color:C.easy,bg:C.easy,title:"Multi-turn Concept Coach",sub:"AI · June 2026 update",desc:"Open Quick Revision → tap the new '🤖 Coach' tab. Pick any CFA topic and the AI teaches it through Socratic dialogue — one concept at a time, checking your understanding before advancing. It remembers the conversation and adapts to your answers.",tip:"Unlike the AI Debrief (which reviews what went wrong), the Concept Coach is proactive — use it before a topic to build a mental model, not just after to patch gaps."},
-]},
 // WN_VER:2026-06-26-b
 {version:"2026-06-26-b",slides:[
 {emoji:"⚙️",color:C.accentLight,bg:C.accentLight,title:"Cleaner Settings & Account",sub:"UX · 2026-06-26 update",desc:"We've simplified your Settings screen by removing redundant Cloud Sync controls and consolidating sync status into your account footer. Your exam prep workspace is now less cluttered so you can focus on what matters—studying.",tip:"Check your account footer to see your current sync status at a glance."},
@@ -1069,6 +1063,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Accurate AI-Generated Questions",sub:"AI · 2026-06-30 update",desc:"Fixed a critical issue where AI-generated question explanations didn't match the answer options shown. Questions are now reliable for studying, so you can trust the content and learn the right concepts.",tip:"Re-try any AI-generated questions from recent sessions—they're now correct."},
 {emoji:"🔄",color:C.medium,bg:C.medium,title:"Worked Examples Always Load",sub:"Bug Fix · 2026-06-30 update",desc:"Resolved an issue where newly generated worked examples would not appear on screen. You'll now see step-by-step solutions every time you generate them during revision.",tip:"Generate a worked example in Revision mode to see it appear instantly."},
 {emoji:"🛠️",color:C.hard,bg:C.hard,title:"Cleaner Revision Interface",sub:"UX · 2026-06-30 update",desc:"Removed a duplicate topic picker that was cluttering the Learn and Coach tabs in Revision mode. The interface is now cleaner and faster to navigate.",tip:"Open Revision and switch to Learn or Coach—notice the streamlined topic selection."},
+]},
+// WN_VER:2026-06-30-c
+{version:"2026-06-30-c",slides:[
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Formula Display Fixed",sub:"UX · 2026-06-30 update",desc:"Formula values in the Formulas tab no longer collapse into single-character columns, making complex equations readable at a glance. This ensures you can quickly reference and study financial formulas without squinting or reformatting.",tip:"Check the Formulas tab—your multi-variable equations should now display cleanly across full width."},
+{emoji:"🎲",color:C.reward,bg:C.reward,title:"Smarter Daily Focus Topics",sub:"AI · 2026-06-30 update",desc:"Today's Focus now suggests a more diverse range of topics and tracks what you've completed, preventing repetition and keeping your study plan fresh. You'll cover more ground and spend less time reviewing the same concepts.",tip:"Notice how your daily suggestions vary more—the app learns what you've already focused on to maximize learning efficiency."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"AI Questions Now Accurate",sub:"Bug Fix · 2026-06-30 update",desc:"AI-generated practice questions now have explanations that match their answer options, eliminating confusing mismatches. You can trust the feedback you receive and learn the correct reasoning every time.",tip:"Review any AI questions you flagged as confusing—they should now make clear sense with aligned explanations."},
 ]},
 // WN_END
 ];
@@ -1093,6 +1093,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-06-30
+{date:"2026-06-30",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
