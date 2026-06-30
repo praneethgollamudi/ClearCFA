@@ -121,6 +121,15 @@ Pro users bypass both limits entirely.
 
 ## Build & Deploy
 
+**Formula name text overflow**: Formula names in the Formulas tab now truncate with ellipsis (`maxWidth: 140px`, `textOverflow: "ellipsis"`) to prevent layout breaks with long formula names. Minimum width is 80px.
+
+
+**RevisionScreen LOS tab key mismatch fix**: The LOS tab now auto-corrects `selTopic` when switching tabs if the topic doesn't exist in that tab's data source. This prevents "No LOS data" errors when a topic from Notes doesn't match an LOS module key. Formula and Notes tabs similarly auto-correct to their first available topic on tab switch.
+
+
+**Screen persistence across page refresh**: The app now persists the current screen in `localStorage` (key: `LAST_SCREEN_KEY = "cfa_last_screen_v1"`) and restores it on reload. Only screens in `RESTORABLE_SCREENS = {"readiness", "dashboard", "losCoverage", "masteryGrid", "studyPlan", "revision", "studyPath", "calcTrainer", "backup", "srReview"}` are persisted; home/onboarding screens always reset. Clear `LAST_SCREEN_KEY` when resetting user data.
+
+
 **UpgradeModal USD pricing**: Added approximate USD conversion display (`~${Math.round(ACTIVE_PRICE/85)} USD`) below INR amount using fixed 85 INR/USD rate for reference. Always update CLAUDE.md if exchange rate assumption changes.
 
 
@@ -582,10 +591,11 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_pro_tour_v1` | `PRO_TOUR_KEY` |
 | `cfa_screen_onboard_v1` | `SCREEN_ONBOARD_KEY` |
 | `cfa_checklist_done` | `CHECKLIST_KEY` |
+| `cfa_last_screen_v1` | `LAST_SCREEN_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1789600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
