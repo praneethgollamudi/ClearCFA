@@ -93,12 +93,6 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
-**AI debrief fallback**: When `callClaude()` returns a non-string response or empty string for the debrief prompt, the session now displays a standard fallback message (`DEBRIEF_FALLBACK`) instead of an empty debrief card. Always ensure debrief responses are type-checked and trimmed before display.
-
-
-**Question ID collisions**: All question generation (standard, interleaved, FSA vignettes) now prefixes question IDs with an index (`${i}_${q.id}`) to prevent duplicate IDs from different AI batches aliasing to the same answer slot mid-session. The `expandQuestionKeys()` and `fingerprintQuestions()` functions both enforce unique IDs — never rely on AI-generated IDs alone to be globally unique.
-
-
 **Weekly Plan prompt level-awareness**: The `WEEKLY_PLAN_PROMPT` now accepts a `level` parameter ("1", "2", or "3") and injects it via `.split("{level}").join(cfaLevel)` at call time. Callers must pass `cfaLevel` from state; failure to do so defaults to Level 1 prompts.
 
 
@@ -591,7 +585,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1789400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.

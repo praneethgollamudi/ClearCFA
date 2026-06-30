@@ -1061,12 +1061,6 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Pace Tracking",sub:"Study Tools · 2026-06-26 update",desc:"Your daily session comparison now shows realistic progress metrics instead of speculative predictions. We removed the misleading pace forecast so you can focus on what actually matters: consistent study habits.",tip:"Check your Pace card to see how your daily sessions compare to your study plan—no guesswork involved."},
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"6 New Learning Features",sub:"AI · 2026-06-26 update",desc:"We've added six retention and differentiation features designed to help you retain concepts longer and distinguish between similar topics. These new tools integrate directly into your quiz and lesson workflow.",tip:"Look for new retention prompts and concept-comparison tools the next time you review a topic you've studied before."},
 ]},
-// WN_VER:2026-06-30
-{version:"2026-06-30",slides:[
-{emoji:"🐛",color:C.easy,bg:C.easy,title:"Quiz Experience More Reliable",sub:"Bug Fix · 2026-06-30 update",desc:"Fixed several issues that were blocking your quiz flow: duplicate questions no longer appear pre-answered, the Next button now responds instantly on all devices, and AI debriefs load correctly every time. You can now move through questions without friction.",tip:"Try a quiz now—you'll notice the Next button feels snappier, especially on iOS."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Clearer Pace & Progress Insights",sub:"Study Tools · 2026-06-30 update",desc:"We replaced misleading pace predictions with honest metrics: you now see your actual sessions per day compared to what's recommended, giving you a real picture of your study rhythm. This helps you set sustainable goals instead of false expectations.",tip:"Check your progress card in the dashboard to see your daily session rate vs. recommended pace."},
-{emoji:"🧠",color:C.reward,bg:C.reward,title:"Six New Ways to Retain Knowledge",sub:"Study Tools · 2026-06-30 update",desc:"Added six retention and differentiation features that reinforce what you've learned and help you distinguish between similar concepts. These tools are designed to stick concepts in long-term memory so they stay with you on exam day.",tip:"Look for these new features in your study sessions—they appear alongside your regular quiz questions."},
-]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1092,10 +1086,6 @@ const ADMIN_CHANGELOG=[
 "docs: add complete user-facing features inventory to CLAUDE.md",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"docs: add complete user-facing features inventory to CLAUDE.md",
 ]},
 // AC_END
 ];
@@ -2945,9 +2935,28 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     if(initialTab==="formulas"&&(getActiveFormulas(cfaLevel)[base]||[]).length===0){
       return Object.keys(getActiveFormulas(cfaLevel)).find(t=>(getActiveFormulas(cfaLevel)[t]||[]).length>0)||base;
     }
+    if(initialTab==="los"&&!getActiveLOS(cfaLevel)[base]?.modules){
+      return Object.keys(getActiveLOS(cfaLevel)).find(t=>getActiveLOS(cfaLevel)[t]?.modules)||base;
+    }
     return base;
   });
-  const [tab, setTab] = useState(initialTab); // "notes" | "formulas"
+  const [tab, setTab] = useState(initialTab); // "notes" | "formulas" | "los" | "learn" | "coach"
+  // Auto-correct selTopic to a valid key for the active tab's data source.
+  // Prevents "No LOS data" when selTopic was set under a different tab's key space
+  // (e.g. daily-mission topic "Ethics & Professional Standards" doesn't match LOS "Ethics").
+  useEffect(()=>{
+    if(tab==="los"&&!activeLOSR[selTopic]?.modules){
+      const first=Object.keys(activeLOSR).find(t=>activeLOSR[t]?.modules);
+      if(first)setSelTopic(first);
+    }else if(tab==="formulas"&&!(activeFormulas[selTopic]?.length)){
+      const first=Object.keys(activeFormulas).find(t=>activeFormulas[t]?.length);
+      if(first)setSelTopic(first);
+    }else if((tab==="notes"||tab==="learn")&&!activePowerNotes[selTopic]){
+      const first=Object.keys(activePowerNotes)[0];
+      if(first)setSelTopic(first);
+    }
+  },[tab]);
+
   const [expandedModule, setExpandedModule] = useState(0);
   const [drillMode, setDrillMode] = useState(false);
   const [drillIdx, setDrillIdx] = useState(0);
@@ -3539,7 +3548,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
                                 <div key={f._fi} id={`formula-${f._fi}`} style={{borderBottom:i<mFormulas.length-1?`1px solid ${C.border}`:"none"}}>
                                   <div onClick={()=>setExpandedFormula(isExp?null:f._fi)}
                                     style={{display:"flex",gap:10,alignItems:"flex-start",padding:"11px 16px",cursor:"pointer",background:isExp?`${C.accent}08`:"transparent",transition:"background 0.15s"}}>
-                                    <div style={{fontSize:11,color:f._aiGen?"#a060e0":C.muted,minWidth:96,flexShrink:0,lineHeight:1.4,paddingTop:2}}>{f.name}{f._aiGen&&<span style={{fontSize:9,color:"#7c5cbf",marginLeft:4}}>✦ AI</span>}</div>
+                                    <div style={{fontSize:11,color:f._aiGen?"#a060e0":C.muted,minWidth:80,maxWidth:140,flexShrink:0,lineHeight:1.4,paddingTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}{f._aiGen&&<span style={{fontSize:9,color:"#7c5cbf",marginLeft:4}}>✦ AI</span>}</div>
                                     <div style={{fontSize:13,color:C.accentLight,fontFamily:"monospace",lineHeight:f.parts?2:1.6,flex:1,wordBreak:"break-word"}}>{f.parts?<FracFormula parts={f.parts}/>:f.f}</div>
                                     <span style={{fontSize:10,color:C.muted,flexShrink:0,paddingTop:3}}>{isExp?"▲":"▼"}</span>
                                   </div>
@@ -11093,7 +11102,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(!authUser?.id){setCalcError("Sign in to use Calc Trainer.");return;}
       setCalcLoading(true);setCalcError("");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});
       try{
-        const rawCalc=await callAIChat(authUser.id,[{role:"user",content:`Generate a CFA Level ${cfaLevel} multi-step calculation problem for: ${calcTopic} (${calcDifficulty}).\n\nReturn JSON:\n{\n  "problem": "Full problem statement with all given data",\n  "steps": [\n    {"step_num": 1, "instruction": "Calculate X first", "answer": "exact numerical answer", "formula": "formula used", "explanation": "why this step"},\n    {"step_num": 2, "instruction": "...", "answer": "...", "formula": "...", "explanation": "..."}\n  ],\n  "final_answer": "final answer with units",\n  "concept": "what is being tested",\n  "los_tested": "relevant CFA LOS"\n}\n\nMake it 3-5 steps. Use realistic CFA exam numbers. Output ONLY valid JSON.`}],800,cfaLevel);
+        const rawCalc=await callAIChat(authUser.id,[{role:"user",content:`Generate a CFA Level ${cfaLevel} multi-step calculation problem for: ${calcTopic} (${calcDifficulty}).\n\nReturn JSON:\n{\n  "problem": "Full problem statement with all given data",\n  "steps": [\n    {"step_num": 1, "instruction": "Calculate X first", "answer": "exact numerical answer", "formula": "formula used", "calculator_keys": "exact BA II Plus keystroke sequence, e.g. '1000 [PV], 5 [I/Y], 10 [N], [CPT] [FV]'", "explanation": "why this step"},\n    {"step_num": 2, "instruction": "...", "answer": "...", "formula": "...", "calculator_keys": "...", "explanation": "..."}\n  ],\n  "final_answer": "final answer with units",\n  "concept": "what is being tested",\n  "los_tested": "relevant CFA LOS"\n}\n\nFor calculator_keys: provide the exact sequence of BA II Plus button presses using bracket notation for function keys, e.g. '100 [+/-] [PV], 8 [I/Y], 5 [N], [CPT] [FV]' or '[2ND] [P/Y] 4 [ENTER] [2ND] [QUIT]'. If a step is arithmetic only, write 'Manual: (formula)'. Make it 3-5 steps. Use realistic CFA exam numbers. Output ONLY valid JSON.`}],800,cfaLevel);
         let result=null;
         if(rawCalc){try{result=JSON.parse(rawCalc.replace(/```json\n?|```/g,"").trim());}catch{const m=rawCalc.match(/\{[\s\S]*\}/);if(m)try{result=JSON.parse(m[0]);}catch{}}}
         if(result&&result.steps){setCalcProblem(result);setCalcSteps(result.steps||[]);}
@@ -11164,7 +11173,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           {calcSteps.map((step,idx)=>(
             <div key={idx} style={{background:C.surface,border:`1px solid ${calcChecked[idx]==="correct"?C.easy+"55":calcChecked[idx]==="wrong"?C.hard+"55":C.border}`,borderRadius:12,padding:"14px",marginBottom:10,transition:"border-color 0.2s"}}>
               <div style={{fontSize:11,fontWeight:800,color:C.accentLight,marginBottom:6}}>Step {step.step_num}: {step.instruction}</div>
-              {step.formula&&<div style={{fontSize:11,color:C.muted,fontFamily:"monospace",marginBottom:8,background:C.dim,padding:"5px 9px",borderRadius:6}}>Formula: {step.formula}</div>}
+              {step.formula&&<div style={{fontSize:11,color:C.muted,fontFamily:"monospace",marginBottom:6,background:C.dim,padding:"5px 9px",borderRadius:6}}>Formula: {step.formula}</div>}
+              {step.calculator_keys&&<div style={{fontSize:11,color:"#93c5fd",fontFamily:"monospace",marginBottom:8,background:"#0d1117",border:`1px solid ${C.accent}33`,padding:"5px 9px",borderRadius:6}}>🧮 {step.calculator_keys}</div>}
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <input
                   type="text"
