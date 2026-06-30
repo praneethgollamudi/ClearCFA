@@ -5224,7 +5224,7 @@ function CFAMock(){
   const [examSession,setExamSession]=useState(1); // 1=AM, 2=PM for split exam
   const [examBreak,setExamBreak]=useState(false); // showing break screen between sessions
   const [vignetteMode,setVignetteMode]=useState(false);
-  const [aiDebrief,setAiDebrief]=useState(null);const [aiDebriefLoading,setAiDebriefLoading]=useState(false);
+  const [aiDebrief,setAiDebrief]=useState(null);const [aiDebriefLoading,setAiDebriefLoading]=useState(false);const [aiDebriefError,setAiDebriefError]=useState(null);
   const [aiCoachScreen,setAiCoachScreen]=useState(false);const [aiCoachMessages,setAiCoachMessages]=useState([]);const [aiCoachInput,setAiCoachInput]=useState("");const [aiCoachLoading,setAiCoachLoading]=useState(false);
   const [formulaDrillMode,setFormulaDrillMode]=useState(false);const [formulaDrillIdx,setFormulaDrillIdx]=useState(0);const [formulaFlipped,setFormulaFlipped]=useState(false);const [formulaDrillTopic,setFormulaDrillTopic]=useState("Quantitative Methods");
   const timerRef=useRef(null);const startRef=useRef(null);
@@ -5806,6 +5806,15 @@ function CFAMock(){
   const confidenceLogRef=useRef({});
   const pendingPlanKeyRef=useRef(null);
   const pendingFocusKeyRef=useRef(null);
+  const debriefPromptRef=useRef(null);
+  const retryDebrief=()=>{
+    if(!debriefPromptRef.current||!authUser?.id)return;
+    setAiDebrief(null);setAiDebriefError(null);setAiDebriefLoading(true);
+    callAIChat(authUser.id,[{role:"user",content:debriefPromptRef.current}],350,cfaLevel)
+      .then(r=>{const txt=r&&r.trim();if(txt)setAiDebrief(txt);else setAiDebriefError("error");})
+      .catch(e=>{setAiDebriefError(e.quotaExceeded?"quota":"error");})
+      .finally(()=>setAiDebriefLoading(false));
+  };
   useEffect(()=>{
     if(screen!=="results"){
       sessionCommittedRef.current=false;
@@ -5972,10 +5981,11 @@ FIX: [1 specific action to take today — concrete and actionable]
 PRIORITY: [exact concept name from wrong list to drill first]
 TIME: [realistic time to close this gap, e.g. "20 min" or "1 hour"]
 COACH: [1 honest, direct sentence — no generic cheerleading]`;
-      const DEBRIEF_FALLBACK="PATTERN: Could not generate debrief.\nFIX: Review the wrong answers below.\nPRIORITY: \nTIME: \nCOACH: Every session is data — keep going.";
+      debriefPromptRef.current=debriefPrompt;
+      setAiDebriefError(null);
       callAIChat(authUserRef.current.id,[{role:"user",content:debriefPrompt}],350,cfaLevel)
-        .then(r=>{const txt=r&&r.trim()?r:DEBRIEF_FALLBACK;setAiDebrief(txt);})
-        .catch(()=>{setAiDebrief(DEBRIEF_FALLBACK);})
+        .then(r=>{const txt=r&&r.trim();if(txt)setAiDebrief(txt);else setAiDebriefError("error");})
+        .catch(e=>{setAiDebriefError(e.quotaExceeded?"quota":"error");})
         .finally(()=>setAiDebriefLoading(false));
     }
     // Log wrong answers for community analytics (fire-and-forget)
@@ -9967,7 +9977,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
             {aiDebriefLoading&&<span style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>Analysing session…</span>}
           </div>
           {aiDebriefLoading&&<Skeleton height={80} radius={6}/>}
-          {!aiDebriefLoading&&!aiDebrief&&<div style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>Analysing your session…</div>}
+          {!aiDebriefLoading&&!aiDebrief&&!aiDebriefError&&<div style={{fontSize:12,color:C.muted,fontStyle:"italic"}}>Analysing your session…</div>}
+          {!aiDebriefLoading&&aiDebriefError&&(
+            <div style={{textAlign:"center",padding:"10px 0"}}>
+              {aiDebriefError==="quota"
+                ?<div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>Daily AI limit reached — upgrade for unlimited debriefs.<br/><button onClick={()=>setUpgradeModal({reason:"chat_limit"})} style={{marginTop:6,fontSize:12,fontWeight:700,color:C.accentLight,background:"none",border:`1px solid ${C.accent}44`,borderRadius:8,padding:"4px 12px",cursor:"pointer"}}>Upgrade to Pro →</button></div>
+                :<div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>Debrief unavailable — check connection.<br/><button onClick={retryDebrief} style={{marginTop:6,fontSize:12,fontWeight:700,color:C.accentLight,background:"none",border:`1px solid ${C.accent}44`,borderRadius:8,padding:"4px 12px",cursor:"pointer"}}>↺ Retry</button></div>
+              }
+            </div>
+          )}
           {aiDebrief&&(()=>{
             const d=parseDebrief(aiDebrief);
             return(
