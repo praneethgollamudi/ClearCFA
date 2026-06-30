@@ -1042,12 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-26
-{version:"2026-06-26",slides:[
-{emoji:"📦",color:C.easy,bg:C.easy,title:"Study Without Sign-In",sub:"Offline Mode · June 2026 update",desc:"ClearCFA now ships with 30 starter questions across all 10 CFA Level 1 topics — ready before you create an account. If the AI is busy or you're offline, your last 30 questions per topic are always available as an instant fallback.",tip:"Sign in to unlock AI-personalised questions and track your progress. The offline bank is just your starting point."},
-{emoji:"🔥",color:C.reward,bg:C.reward,title:"Streak Protection Alerts",sub:"Motivation · June 2026 update",desc:"When you hit the daily free question limit, ClearCFA now shows exactly how many streak days you're protecting — and puts your streak count front and centre in the upgrade prompt. No vague sales pitch, just the truth about what's at stake.",tip:"Go Pro to remove the daily cap and never risk breaking your streak mid-session."},
-{emoji:"✨",color:C.accentLight,bg:C.accent,title:"Pro Tour & Onboarding",sub:"Onboarding · June 2026 update",desc:"Upgrading to Pro now triggers a 3-slide walkthrough of AI Debrief, AI Coach, and all three CFA levels — so every feature is immediately usable. New users also get a Getting Started checklist to reach their first session in under a minute.",tip:"Missed the Pro tour? Open Settings → scroll down → tap 'Replay Pro Tour'."},
-]},
 // WN_VER:2026-06-26-ai
 {version:"2026-06-26-ai",slides:[
 {emoji:"🤔",color:C.accentLight,bg:C.accent,title:"Socratic Wrong-Answer Tutor",sub:"AI · June 2026 update",desc:"When you get a quiz question wrong, a new 'Ask tutor →' button appears below the explanation. The AI doesn't just re-explain — it asks you Socratic questions to help you discover the gap yourself. Multi-turn dialogue, no extra quota used.",tip:"The Socratic method is proven to build deeper understanding than re-reading explanations. Try it on your next wrong answer."},
@@ -1068,6 +1062,13 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Today's Focus now diversifies recommendations across topics and tracks your completion progress. You'll see varied study suggestions instead of repetitive topics, keeping your prep balanced and engaging.",tip:"Check Today's Focus each session to see which recommendations you've completed and which new areas need attention."},
 {emoji:"✨",color:C.reward,bg:C.reward,title:"AI Questions Now Accurate",sub:"AI · 2026-06-30 update",desc:"Fixed critical bugs where AI-generated questions had mismatched explanations, missing worked examples, and formula grouping errors. Your AI questions are now reliable study partners with correct answers and clear walkthroughs.",tip:"Generate a new AI question and notice how explanations now match the answer choices perfectly."},
 {emoji:"📱",color:C.medium,bg:C.medium,title:"Smoother Navigation on Mobile",sub:"UX · 2026-06-30 update",desc:"The Next button now responds instantly on iOS and Android, scrolls to the top of new questions, and no longer gets blocked by overlays or safe-area spacing. Moving through questions feels fast and friction-free.",tip:"Tap Next on your phone—notice the instant response and smooth scroll to the question stem."},
+]},
+// WN_VER:2026-06-30-b
+{version:"2026-06-30-b",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Today's Focus now suggests a more diverse mix of topics instead of repeating the same areas, and tracks which suggestions you've completed. This keeps your prep varied and prevents knowledge gaps from being overlooked.",tip:"Check Today's Focus regularly—you'll see a fresh set of recommendations each day."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Accurate AI-Generated Questions",sub:"AI · 2026-06-30 update",desc:"Fixed a critical issue where AI-generated question explanations didn't match the answer options shown. Questions are now reliable for studying, so you can trust the content and learn the right concepts.",tip:"Re-try any AI-generated questions from recent sessions—they're now correct."},
+{emoji:"🔄",color:C.medium,bg:C.medium,title:"Worked Examples Always Load",sub:"Bug Fix · 2026-06-30 update",desc:"Resolved an issue where newly generated worked examples would not appear on screen. You'll now see step-by-step solutions every time you generate them during revision.",tip:"Generate a worked example in Revision mode to see it appear instantly."},
+{emoji:"🛠️",color:C.hard,bg:C.hard,title:"Cleaner Revision Interface",sub:"UX · 2026-06-30 update",desc:"Removed a duplicate topic picker that was cluttering the Learn and Coach tabs in Revision mode. The interface is now cleaner and faster to navigate.",tip:"Open Revision and switch to Learn or Coach—notice the streamlined topic selection."},
 ]},
 // WN_END
 ];
@@ -1092,6 +1093,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "docs: add complete user-facing features inventory to CLAUDE.md",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-06-30
+{date:"2026-06-30",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
