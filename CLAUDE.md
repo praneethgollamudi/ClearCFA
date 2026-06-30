@@ -93,6 +93,12 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
+**Focus suggestion type diversity**: Focus candidates now include a `_type` field (e.g., `"leech"` for high-miss cards) to track suggestion source. The UI filters out suggestions already marked done in `focusDone` state to prevent repetitive recommendations. When building focus candidates in `buildTodaysFocus()`, always include `_type` so completion tracking can diversify future suggestions.
+
+
+**Focus completion tracking**: Today's Focus suggestions now track which recommendations have been completed by the user. Completion state is stored in `localStorage` under `cfa_focus_done` with structure `{date: "YYYY-MM-DD", done: {focusKey: true}}`. When a quiz/practice session completes, if `pendingFocusKeyRef.current` is set, the focus key is marked done and localStorage is updated. Always set `pendingFocusKeyRef.current` before launching a practice session triggered by a Today's Focus suggestion.
+
+
 **Focus suggestion generation**: Today's Focus suggestions now track a `_type` field (e.g., `"leech"` for high-miss cards) to diversify recommendations and prevent suggesting the same module repeatedly. Always include `_type` when building focus candidates so the UI can filter by completion history.
 
 
@@ -514,6 +520,9 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+- **RevisionScreen topic picker duplication**: The topic picker on the Revision screen should only render for `tab==='notes'||tab==='formulas'||tab==='los'` — the Learn and Coach tabs render their own topic selectors below. Wrap the shared picker in a conditional to prevent duplicate controls.
+
+
 - **C before definition**: `C` is defined at ~line 976. Any module-level code using `C.*` color tokens must come after that line. Violating this causes a blank page — Babel won't catch it, but the pre-commit smoke check will.
 - **navPortal**: `wrap()` includes it automatically. Never add it manually to a screen.
 - **Cache bust**: Always increment `v=` in `index.html` before committing. Without this, users see the old cached version.
@@ -601,7 +610,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1790000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1790100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
