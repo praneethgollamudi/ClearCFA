@@ -93,6 +93,9 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
+**Numeric validation in questions**: AI question generation now validates that numeric values in explanations (including basis points/bps format) match the marked correct option. Explanations using "= X", "X%", or "X basis points/bps" patterns are parsed and cross-checked against option values. Questions are rejected if a stated numeric result matches a wrong option or if a concluding statement (DIFFERENCE/CHANGE/RESULT/GAP/DELTA/SPREAD) contradicts all options. Always ensure computed values in explanations match the correct option exactly, accounting for unit conversions (e.g., 2.5% = 250 bps).
+
+
 **Weekly Plan prompt level-awareness**: The `WEEKLY_PLAN_PROMPT` now accepts a `level` parameter ("1", "2", or "3") and injects it via `.split("{level}").join(cfaLevel)` at call time. Callers must pass `cfaLevel` from state; failure to do so defaults to Level 1 prompts.
 
 
@@ -120,6 +123,12 @@ Pro users bypass both limits entirely.
 - `getReferralStats(cfg, referrerId)` returns `{signups, paid}` — card shows paid count for progress, sign-up count as context
 
 ## Build & Deploy
+
+**Screen persistence across refresh**: Progress and revision screens (including selected tab like `los`, Notes, Formulas) now persist across page refresh via localStorage. The screen name and active tab are saved/restored automatically — no special handling required in new features.
+
+
+**Question generation explanation strictness**: The vignette prompt now explicitly forbids reinterpretive pivots ("reinterpreting"/"however") in explanations near correct answer values, in addition to existing chain-of-thought and self-correction bans. Explanations must be single clean final solutions with correct units.
+
 
 **UpgradeModal USD pricing**: Added approximate USD conversion display (`~${Math.round(ACTIVE_PRICE/85)} USD`) below INR amount using fixed 85 INR/USD rate for reference. Always update CLAUDE.md if exchange rate assumption changes.
 
@@ -582,10 +591,11 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_pro_tour_v1` | `PRO_TOUR_KEY` |
 | `cfa_screen_onboard_v1` | `SCREEN_ONBOARD_KEY` |
 | `cfa_checklist_done` | `CHECKLIST_KEY` |
+| `cfa_last_screen_v1` | `LAST_SCREEN_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1789900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
