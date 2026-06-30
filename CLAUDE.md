@@ -93,6 +93,9 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
+**Worked examples prompt format**: Worked example generation now explicitly requests plain text output (no JSON, no markdown) to prevent `callClaude` from parsing JSON-like text into objects. The result is always coerced to string via `typeof result === 'string' ? result.trim() : Object.entries(result)...` to ensure display works even if the response is accidentally parsed as an object. Use `retries:2` and `retryDelay:2000` for robustness.
+
+
 **Weekly Plan prompt level-awareness**: The `WEEKLY_PLAN_PROMPT` now accepts a `level` parameter ("1", "2", or "3") and injects it via `.split("{level}").join(cfaLevel)` at call time. Callers must pass `cfaLevel` from state; failure to do so defaults to Level 1 prompts.
 
 
@@ -120,6 +123,12 @@ Pro users bypass both limits entirely.
 - `getReferralStats(cfg, referrerId)` returns `{signups, paid}` — card shows paid count for progress, sign-up count as context
 
 ## Build & Deploy
+
+**Screen persistence across refresh**: ProgressScreen and RevisionScreen now persist their active screen/tab across page refresh via localStorage keys `PROGRESS_SCREEN_KEY` and `REVISION_SCREEN_KEY`. On mount, these keys are checked to restore the previous tab (e.g., `initialTab` prop is set from storage if available).
+
+
+**AI-generated formula grouping**: Dynamic formulas (from gaps) are now tagged with `_aiGen:true` and grouped under `module: "✦ From Your Mistakes"` in the Formulas tab. This section has distinct styling (dark purple background, tinted hover) and footer label "AI-generated from your mistakes". The formula count footer excludes the AI section from module count.
+
 
 **UpgradeModal USD pricing**: Added approximate USD conversion display (`~${Math.round(ACTIVE_PRICE/85)} USD`) below INR amount using fixed 85 INR/USD rate for reference. Always update CLAUDE.md if exchange rate assumption changes.
 
@@ -582,10 +591,11 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_pro_tour_v1` | `PRO_TOUR_KEY` |
 | `cfa_screen_onboard_v1` | `SCREEN_ONBOARD_KEY` |
 | `cfa_checklist_done` | `CHECKLIST_KEY` |
+| `cfa_last_screen_v1` | `LAST_SCREEN_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1788300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1789800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
