@@ -24,6 +24,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ### Edge Functions (in `supabase/functions/`)
 
+**`ai-proxy` daily question quota graceful degradation**: When daily AI question quota is exhausted, AI debrief now shows standard explanation only and skips Socratic follow-up prompts instead of failing. If the quota error occurs during debrief, the client displays a meaningful error message with retry capability. Always check remaining quota before offering AI Debrief to free users.
+
+
 **`ai-proxy` numeric validation**: AI question generation now validates that numeric values in explanations (e.g., "= X", "X%", "X basis points/bps") match the marked correct option exactly. Questions with explanations contradicting all options or matching wrong options are rejected. Always ensure computed/concluding values align with the correct answer, accounting for unit conversions (e.g., 2.5% = 250 bps).
 
 
@@ -637,7 +640,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1790400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1790500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -729,3 +732,5 @@ Keep this section accurate. When doing competitive analysis or writing copy, alw
 - Works in any mobile browser, no app store download required
 - Offline question cache for low-connectivity use
 - Admin dashboard (email-gated) with user analytics, revenue, activity feed
+
+Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes, AI debrief reliability improvements, and duplicate topic picker removal. When adding new versions, ensure emoji consistency and actionable tip text. Previous versions (2026-06-26-b, 2026-06-26-c) are retained in `WHATS_NEW_SLIDES` history for reference but are no longer shown to users.
