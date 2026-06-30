@@ -96,6 +96,15 @@ To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true`
 
 ## AI Quota System
 
+**Focus completion on session end**: When a quiz/practice session completes, check `pendingFocusKeyRef.current` — if set, mark that focus key as done in localStorage and update `focusDone` state. Always set `pendingFocusKeyRef.current` before launching a practice session triggered by a Today's Focus suggestion card.
+
+
+**Focus suggestion type diversity**: Focus candidates now include a `_type` field (e.g., `"leech"` for high-miss cards, `"weak"` for weak topics) to track suggestion source. The UI filters out suggestions already marked done in `focusDone` state (persisted in localStorage under `cfa_focus_done` with structure `{date: "YYYY-MM-DD", done: {focusKey: true}}`) to prevent repetitive recommendations and ensure daily diversity.
+
+
+**AI Debrief quota exhaustion handling**: When the daily AI question quota is exhausted, the AI Debrief feature now gracefully degrades instead of failing — it shows the standard explanation and skips Socratic follow-up prompts. Always check `proStatus` and remaining quota before offering AI Debrief buttons to free users.
+
+
 **Numeric validation in AI questions**: AI question generation now validates that numeric values in explanations (e.g. "= X", "X%", "X basis points/bps") match the marked correct option exactly. Questions with explanations contradicting all options or matching wrong options are rejected. Always ensure computed/concluding values (DIFFERENCE/CHANGE/RESULT/GAP/DELTA/SPREAD statements) align with the correct answer, accounting for unit conversions (e.g. 2.5% = 250 bps).
 
 
@@ -619,7 +628,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1790200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1790300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
