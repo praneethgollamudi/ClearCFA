@@ -9246,6 +9246,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
     if(!card)return wrap(<div style={{textAlign:"center",paddingTop:60}}><div style={{fontSize:36,marginBottom:12}}>✅</div><div style={{fontSize:16,fontWeight:700,marginBottom:8}}>SR deck cleared!</div><button onClick={()=>setScreen("home")} style={{padding:"12px 28px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Home</button></div>);
     const isLeech=(card.wrongCount||0)>=4;
     return wrap(<>
+      <button onClick={()=>setCalcOpen(true)} title="Open BA II Plus Calculator"
+        style={{position:"fixed",bottom:82,right:16,zIndex:270,width:46,height:46,borderRadius:"50%",background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",border:"1px solid #2563eb55",color:"#93c5fd",fontSize:20,cursor:"pointer",boxShadow:"0 4px 16px #0008",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>
+        🧮
+      </button>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <div><h2 style={{margin:0,fontSize:20,fontWeight:800}}>{isLeech?"⚠ Leech Review":"Spaced Repetition"}</h2><div style={{fontSize:12,color:C.muted,marginTop:3}}>{srIdx+1} of {srQueue.length}{isLeech?` · Wrong ${card.wrongCount}x`:` · Next review: ${sm2Update(card,true).interval}d if correct`}</div></div>
         <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
