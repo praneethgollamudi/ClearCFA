@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Lofi player enhancements (v2026-07-01-e)**: Study sessions now include a lofi player with 4 vibes, reverb control, melody toggle, and real-time visualizer for ambient focus. When building focus or ambient study features, reference lofi player state in session rendering to provide audio accompaniment options.
+
+
+**Pacing chip metric expansion (Questions/day)**: `getPaceStatus()` now returns `avgQsPerDay` (average questions studied per day) and `neededQsPerDay` (questions required daily to meet exam deadline). When rendering pacing guidance or updating pace calculations, use both session metrics and Q/day metrics together for comprehensive retaker pacing UI.
+
+
+**What's New version 2026-07-01-e (added)**: This version documents interactive Readiness dashboard (tappable module pills and drill buttons), smarter pacing for retakers with vignette scenario panel, and lofi player enhancements (4 vibes, reverb, melody, visualizer). Currently active versions are -b, -c, and -e in WHATS_NEW_SLIDES array.
+
+
 **What's New versions 2026-07-01-e and 2026-07-01-f removed**: Both versions removed from WHATS_NEW_SLIDES; currently active versions are base 2026-07-01, -c, and -d. Version -d documents pacing chip, Power Pro tier, and peer percentile features. Check WHATS_NEW_SLIDES for active versions to avoid duplicate messaging.
 
 
@@ -850,7 +859,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1793000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
