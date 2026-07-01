@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version 2026-07-01-b**: Documents Learn Calculator tab keystroke guides and Deep Study guide redesign. Older versions 2026-07-01-c and 2026-07-01-d have been removed from WHATS_NEW_SLIDES array; only -b and -e are now retained.
+
+
+**Study Reels feature**: New TikTok-style vertical swipe micro-learning feed. Uses `REEL_TOPIC_COLORS` constant (object mapping topic names to hex color codes) for visual styling. When building reels, always reference this color map for topic-consistent UI.
+
+
 **What's New version 2026-07-01-e**: Latest version documents Deep Study guide redesign and comprehensive Learn tab improvements. Older versions 2026-07-01-b and 2026-07-01-c have been removed from WHATS_NEW_SLIDES array; only -d and -e are retained. When creating future slides, follow the same emoji-led, tip-driven format and always prepend new versions at the `// WN_START` marker.
 
 
@@ -53,6 +59,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 - **Service role key / PAT:** stored as `SUPABASE_ACCESS_TOKEN` in GitHub Actions secrets
 
 ### Edge Functions (in `supabase/functions/`)
+
+**Learn Calculator tab keystroke guides**: Calc Trainer now includes a Learn tab with BA II Plus keystroke guides alongside practice problems. Keystroke guides should be structured as step-by-step sequences with specific key notation (e.g., `[2nd]`, `[×]`, `[Enter]`) to build exam-day muscle memory.
+
 
 **AI coach quality improvements**: Both AI coach implementations (question-specific and concept-based) now provide more targeted, exam-prep-focused explanations. Ensure prompts emphasize exam relevance and practical application when updating coach behavior in future sessions.
 
@@ -663,12 +672,12 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 - WhatsApp: `919493413121`
 - Manual grant: insert row into Supabase `subscriptions` table (active=true, valid_until=+30d)
 
-### Screens (18 total)
-`adminDashboard`, `apiKey`, `backup`, `calcTrainer`, `dashboard`, `home`, `losCoverage`, `masteryGrid`, `quiz`, `readiness`, `results`, `review`, `revision`, `setup`, `srReview`, `studyPath`, `studyPlan`, `walkthrough`
+### Screens (19 total)
+`adminDashboard`, `apiKey`, `backup`, `calcTrainer`, `dashboard`, `home`, `losCoverage`, `masteryGrid`, `quiz`, `readiness`, `reels`, `results`, `review`, `revision`, `setup`, `srReview`, `studyPath`, `studyPlan`, `walkthrough`
 
 ### activeTab map (current)
 ```
-{home:"home",setup:"practice",quiz:"practice",srReview:"drill",
+{home:"home",setup:"practice",quiz:"practice",srReview:"drill",reels:"drill",
         results:"practice",revision:"practice",studyPath:"practice",
         dashboard:"progress",readiness:"progress",losCoverage:"progress",
         masteryGrid:"progress",calcTrainer:"drill",adminDashboard:"home"}
@@ -715,7 +724,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1791400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1791500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
