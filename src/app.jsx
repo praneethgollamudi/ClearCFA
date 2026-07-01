@@ -7089,24 +7089,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const Ic=({d,size=22})=>(
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
     );
+    const clearOverlays=()=>{setAiCoachScreen(false);setWeeklyPlanScreen(false);};
     const navTabs=[
       {key:"home",label:"Home",
         icon:<Ic d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10"/>,
-        action:()=>{setShowMoreSheet(false);setScreen("home");}},
+        action:()=>{clearOverlays();setShowMoreSheet(false);setScreen("home");}},
       {key:"practice",label:"Practice",
         icon:<Ic d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>,
-        action:()=>{trackUsage("custom_mock");setShowMoreSheet(false);setScreen("setup");}},
+        action:()=>{trackUsage("custom_mock");clearOverlays();setShowMoreSheet(false);setScreen("setup");}},
       {key:"drill",label:"Drill",
         icon:<Ic d="M2 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z M16 3l-4 4-4-4"/>,
         action:()=>{
-          trackUsage("mix");setShowMoreSheet(false);
+          trackUsage("mix");clearOverlays();setShowMoreSheet(false);
           const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
           const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];
           if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");
         }},
       {key:"progress",label:"Progress",
         icon:<Ic d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20"/>,
-        action:()=>{trackUsage("dashboard");setShowMoreSheet(false);setScreen("readiness");}},
+        action:()=>{trackUsage("dashboard");clearOverlays();setShowMoreSheet(false);setScreen("readiness");}},
       {key:"more",label:"More",
         icon:<Ic d="M4 6h16 M4 12h16 M4 18h16"/>,
         action:()=>{if(showMoreSheet||moreSheetClosing)setMoreSheetClosing(true);else setShowMoreSheet(true);}},
