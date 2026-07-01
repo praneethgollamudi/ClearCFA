@@ -1131,12 +1131,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-e
-{version:"2026-07-01-e",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Interactive Readiness Dashboard",sub:"UX · 2026-07-01 update",desc:"Readiness screen now features tappable module pills and drill buttons on every card, letting you jump directly into focused practice from your study overview. This reduces friction and gets you drilling faster on areas that need work.",tip:"Tap any module pill to filter by topic, or hit the drill button on a card to start a quiz immediately."},
-{emoji:"🧠",color:C.medium,bg:C.medium,title:"Smarter Pacing for Retakers",sub:"AI · 2026-07-01 update",desc:"Retake students now receive intelligent pre-seeding and a pacing chip that adapts to your study schedule and prior performance. The app also includes a vignette scenario panel to help you practice exam-style question clusters with real context.",tip:"Check your pacing chip on the Readiness screen to see if you're on track to finish all modules before exam day."},
-{emoji:"🐛",color:C.hard,bg:C.hard,title:"Fixed Display Issues",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved blank page rendering errors and corrected alert styling so leech cards display correctly in light mode. Your study experience is now more stable across all devices and themes.",tip:"If you were seeing blank screens before, refresh the app and you should see all content load properly now."},
-]},
 // WN_VER:2026-07-01-f
 {version:"2026-07-01-f",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Progress by Questions, Not Sessions",sub:"Study Tools · 2026-07-01 update",desc:"Your pacing goal now displays questions per day instead of sessions per day, giving you a clearer target for daily progress. This helps you hit your study milestones with precision, especially when sessions vary in length.",tip:"Check your pacing chip on the dashboard to see exactly how many questions you should tackle today."},
@@ -1160,6 +1154,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Master BA II Plus Calculator",sub:"Study Tools · 2026-07-01 update",desc:"We've added an interactive guide strip to the BA II Plus calculator trainer, making it easier to learn keystrokes step-by-step. This helps you build calculator fluency without leaving the app, so you're faster and more confident on exam day.",tip:"Open Calc Trainer and look for the new walkthrough guides when you're learning amortization, interest conversion, or other complex functions."},
 {emoji:"🎵",color:C.reward,bg:C.reward,title:"Focus Better With Enhanced Lofi",sub:"UX · 2026-07-01 update",desc:"The lofi player now offers 4 mood vibes, reverb effects, melody control, and a visual equalizer to match your study vibe. Background music that adapts to your focus style helps you study longer without distractions.",tip:"Try the different vibes and reverb settings during your next practice session—you might find your perfect study soundtrack."},
 {emoji:"📊",color:C.easy,bg:C.easy,title:"Track Progress in Questions Per Day",sub:"Study Tools · 2026-07-01 update",desc:"The pacing chip now shows your daily question target instead of sessions per day, giving you a clearer, more actionable study goal. This helps you stay on track toward your exam date with concrete daily metrics.",tip:"Check your Questions/Day target on the study dashboard and adjust your daily plan to hit it consistently."},
+]},
+// WN_VER:2026-07-01-d
+{version:"2026-07-01-d",slides:[
+{emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"An interactive guide strip is now built into the calculator trainer, showing you step-by-step how to solve problems on the BA II Plus. This eliminates guesswork and builds muscle memory for exam day.",tip:"Open the Calc Trainer and look for the guide strip to see keystroke sequences in real time."},
+{emoji:"🎵",color:C.reward,bg:C.reward,title:"Study Soundtrack Gets a Vibe Upgrade",sub:"Study Tools · 2026-07-01 update",desc:"Your lofi player now offers 4 different vibes, reverb effects, melody controls, and a live visualizer to match your study mood. Stay focused longer with music that adapts to how you work.",tip:"Tap the lofi player icon during a study session to experiment with different vibes and find your focus sweet spot."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Pacing Feedback",sub:"UX · 2026-07-01 update",desc:"The pacing chip no longer shows a misleading floor target when you're already ahead of schedule. You'll see clearer, more accurate progress indicators that reflect your actual study pace.",tip:"Check your pacing chip—if you're on track or ahead, it will now give you the real picture without false ceilings."},
 ]},
 // WN_END
 ];
