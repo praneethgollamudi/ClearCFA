@@ -1148,12 +1148,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-b
-{version:"2026-07-01-b",slides:[
-{emoji:"🎵",color:C.reward,bg:C.reward,title:"Lofi Study Vibes & Visualizer",sub:"Study Tools · 2026-07-01 update",desc:"The lofi player now includes 4 distinct vibes, reverb control, melody adjustments, and a live visualizer to match your study mood. Customizable audio helps you stay focused during long study sessions without distraction.",tip:"Toggle between vibes and tweak reverb/melody while drilling to find your perfect study soundtrack."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Pacing & Better Readiness",sub:"UX · 2026-07-01 update",desc:"Pacing now displays questions per day instead of sessions per day for clearer progress tracking, and the Readiness screen is now fully interactive with tappable module pills and drill buttons on every card. Jump directly into focused drills from your readiness dashboard without extra taps.",tip:"Tap any module pill on Readiness to instantly drill that topic, or use the drill button for quick practice anywhere."},
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Expanded Calc & Amortization Guides",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed Calc Trainer colors in light mode and added comprehensive ICONV support plus expanded amortization guides. Better readability in light mode and deeper coverage of fixed-income calculations for Levels 2 & 3.",tip:"Check the enhanced amortization guide when prepping bond calculations—it now covers edge cases you'll see on exam day."},
-]},
 // WN_VER:2026-07-01-c
 {version:"2026-07-01-c",slides:[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Master BA II Plus Calculator",sub:"Study Tools · 2026-07-01 update",desc:"We've added an interactive guide strip to the BA II Plus calculator trainer, making it easier to learn keystrokes step-by-step. This helps you build calculator fluency without leaving the app, so you're faster and more confident on exam day.",tip:"Open Calc Trainer and look for the new walkthrough guides when you're learning amortization, interest conversion, or other complex functions."},
@@ -1177,6 +1171,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.easy,bg:C.easy,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"An interactive guide strip now walks you through BA II Plus calculator functions step-by-step during practice. This helps you master financial calculations without leaving the app or consulting external resources.",tip:"Look for the guide strip when you encounter calculator-heavy questions in your drills."},
 {emoji:"📍",color:C.medium,bg:C.medium,title:"Clearer Study Pace Indicators",sub:"UX · 2026-07-01 update",desc:"The pacing chip no longer shows a misleading minimum pace floor when you're already ahead of schedule. You'll now see only relevant pace guidance that reflects your actual progress.",tip:"Check your pacing chip during study sessions—it will feel less cluttered and more encouraging when you're on track."},
 {emoji:"⚙️",color:C.hard,bg:C.hard,title:"Streamlined Navigation Menu",sub:"UX · 2026-07-01 update",desc:"The More menu has been refined to focus on essential features and remove redundant navigation shortcuts. Finding what you need is now faster and less overwhelming.",tip:"Open the More menu to see the updated, leaner set of options available to you."},
+]},
+// WN_VER:2026-07-01
+{version:"2026-07-01",slides:[
+{emoji:"✨",color:C.reward,bg:C.reward,title:"5 New Study Features",sub:"UX · 2026-07-01 update",desc:"We've added post-quiz drill shortcuts, mock exam topic breakdowns, essay self-assessment tools, a smart mock scheduler, and explanation ratings to help you study smarter. These features let you drill weak spots faster, track mock performance by topic, and give feedback on explanations you find helpful or unclear.",tip:"After your next quiz, look for the drill CTA to immediately review questions you missed."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Clearer Pacing Indicators",sub:"Bug Fix · 2026-07-01 update",desc:"The pacing chip no longer shows a misleading floor when you're ahead of schedule. This gives you accurate feedback on whether you're on track to finish your study plan on time.",tip:"Check your pacing chip on the dashboard—it now only shows a floor if you're actually behind."},
+{emoji:"🧭",color:C.accentLight,bg:C.accentLight,title:"Streamlined More Menu",sub:"UX · 2026-07-01 update",desc:"We've reorganised the More menu to remove redundant shortcuts and keep it focused on what you actually use. Navigation is now faster and less cluttered.",tip:"Open the More menu to see the updated layout with your most-used study tools front and centre."},
 ]},
 // WN_END
 ];
