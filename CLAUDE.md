@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version 2026-07-01 (consolidated base version)**: This canonical version documents Drill enhancements (slide animations, XP pops, swipe hints, weak spot pills, pass probability advice), session summary with streak tracking, and pass probability delta metrics. Versions -b and -c have been removed; only -d, -f, and base 2026-07-01 are active. Always check WHATS_NEW_SLIDES array for active versions to avoid duplicate messaging.
+
+
+**Growth levers constants (v2026-07-01 complete)**: Three localStorage keys manage persona-driven features: `ONBOARDING_KEY` (onboarding gate), `QUALITY_FLAGS_KEY` (quality flags system), and `RETAKER_KEY` (retaker pre-seeding). When building onboarding, trial limits, or retaker-specific UX, reference these keys to gate features appropriately. `RETAKER_KEY` specifically enables retaker-focused guidance (pacing chip, vignette scenario panel) during onboarding flow.
+
+
 **What's New versions 2026-07-01 and 2026-07-01-b removed**: Base and -b versions have been removed from WHATS_NEW_SLIDES; currently -c, -d, and -f are active. When creating future versions, consolidate overlapping announcements and prepend at `// WN_START` marker with emoji-led, tip-driven format.
 
 
@@ -811,7 +817,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
