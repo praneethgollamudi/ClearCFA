@@ -1131,12 +1131,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-d
-{version:"2026-07-01-d",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Study Pacing",sub:"Study Tools · 2026-07-01 update",desc:"New pacing chip and vignette scenario panel help you stay on track toward your exam goal. Retakers get pre-seeded progress based on your history, so you skip material you've already mastered.",tip:"Check your pacing indicator in practice sessions to see if you're ahead or behind schedule."},
-{emoji:"⭐",color:C.reward,bg:C.reward,title:"Unlock Power Pro Premium",sub:"UX · 2026-07-01 update",desc:"New Power Pro tier, peer percentile rankings, and quality flags help you see exactly where you stand and what topics need the most work. Try our 40-question trial to explore advanced features risk-free.",tip:"Start the 40q trial during your next study session to compare your performance against other CFA candidates."},
-{emoji:"🐛",color:C.medium,bg:C.medium,title:"Fixed Display & Alert Issues",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved blank page errors and corrected alert styling in light mode so your study experience is clean and uninterrupted.",tip:"Restart the app if you encounter any display glitches—they should now be resolved."},
-]},
 // WN_VER:2026-07-01-e
 {version:"2026-07-01-e",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Interactive Readiness Dashboard",sub:"UX · 2026-07-01 update",desc:"Readiness screen now features tappable module pills and drill buttons on every card, letting you jump directly into focused practice from your study overview. This reduces friction and gets you drilling faster on areas that need work.",tip:"Tap any module pill to filter by topic, or hit the drill button on a card to start a quiz immediately."},
@@ -1160,6 +1154,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎵",color:C.reward,bg:C.reward,title:"Lofi Study Vibes & Visualizer",sub:"Study Tools · 2026-07-01 update",desc:"The lofi player now includes 4 distinct vibes, reverb control, melody adjustments, and a live visualizer to match your study mood. Customizable audio helps you stay focused during long study sessions without distraction.",tip:"Toggle between vibes and tweak reverb/melody while drilling to find your perfect study soundtrack."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Pacing & Better Readiness",sub:"UX · 2026-07-01 update",desc:"Pacing now displays questions per day instead of sessions per day for clearer progress tracking, and the Readiness screen is now fully interactive with tappable module pills and drill buttons on every card. Jump directly into focused drills from your readiness dashboard without extra taps.",tip:"Tap any module pill on Readiness to instantly drill that topic, or use the drill button for quick practice anywhere."},
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Expanded Calc & Amortization Guides",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed Calc Trainer colors in light mode and added comprehensive ICONV support plus expanded amortization guides. Better readability in light mode and deeper coverage of fixed-income calculations for Levels 2 & 3.",tip:"Check the enhanced amortization guide when prepping bond calculations—it now covers edge cases you'll see on exam day."},
+]},
+// WN_VER:2026-07-01-c
+{version:"2026-07-01-c",slides:[
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Master BA II Plus Calculator",sub:"Study Tools · 2026-07-01 update",desc:"We've added an interactive guide strip to the BA II Plus calculator trainer, making it easier to learn keystrokes step-by-step. This helps you build calculator fluency without leaving the app, so you're faster and more confident on exam day.",tip:"Open Calc Trainer and look for the new walkthrough guides when you're learning amortization, interest conversion, or other complex functions."},
+{emoji:"🎵",color:C.reward,bg:C.reward,title:"Focus Better With Enhanced Lofi",sub:"UX · 2026-07-01 update",desc:"The lofi player now offers 4 mood vibes, reverb effects, melody control, and a visual equalizer to match your study vibe. Background music that adapts to your focus style helps you study longer without distractions.",tip:"Try the different vibes and reverb settings during your next practice session—you might find your perfect study soundtrack."},
+{emoji:"📊",color:C.easy,bg:C.easy,title:"Track Progress in Questions Per Day",sub:"Study Tools · 2026-07-01 update",desc:"The pacing chip now shows your daily question target instead of sessions per day, giving you a clearer, more actionable study goal. This helps you stay on track toward your exam date with concrete daily metrics.",tip:"Check your Questions/Day target on the study dashboard and adjust your daily plan to hit it consistently."},
 ]},
 // WN_END
 ];
