@@ -7206,12 +7206,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
       setScreen("reels");
     };
     const moreItems=[
-      {key:"quick_drill",label:"Quick Drill",icon:"⚡",action:()=>{
-        trackUsage("mix");setShowMoreSheet(false);
-        const target=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy)[0]
-          ||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];
-        if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");
-      }},
       {key:"mix",label:"Weak Spots",icon:"⚡",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
       {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
       {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
@@ -7236,7 +7230,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {key:"practice",label:"Practice",
         icon:<Ic d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>,
         action:()=>{trackUsage("custom_mock");clearOverlays();setShowMoreSheet(false);setScreen("setup");}},
-      {key:"drill",label:"Reels",
+      {key:"drill",label:"Drill",
         icon:<Ic d="M5 3l14 9-14 9V3z"/>,
         action:()=>{
           clearOverlays();trackUsage("reels");setShowMoreSheet(false);
