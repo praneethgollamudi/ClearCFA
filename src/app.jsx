@@ -5548,6 +5548,9 @@ function CFAMock(){
   const [sessionSaved,setSessionSaved]=useState(null); // null=not attempted, true=ok, false=failed
   const generatingRef=useRef(false); // debounce double-tap
   const lastGenParamsRef=useRef(null); // for tap-to-retry
+  const prequizPassProbRef=useRef(null);
+  const srSessionResults=useRef({correct:0,total:0});
+  const srSessionStart=useRef(null);
   const [weeklyPlanScreen,setWeeklyPlanScreen]=useState(false);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [questionFlags,setQuestionFlags]=useState(()=>{try{return JSON.parse(localStorage.getItem(FLAGS_KEY)||"[]");}catch{return [];}});
@@ -6636,6 +6639,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null,multiModules=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
     lastGenParamsRef.current={t,st,diff,cnt,m,isVignette,st2};
+    prequizPassProbRef.current=passProbability?.probability??null;
     try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
     setSessionDraft(null);
     srProcessedRef.current=new Set();
@@ -8770,10 +8774,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {!historyLoaded?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>{[0,1,2,3].map(i=><Skeleton key={i} height={68} radius={11}/>)}</div>:(
       <>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:history.length===0?6:14}}>
-        <StatCard label="Sessions" value={history.length||"–"} icon="📚" onClick={history.length>0?()=>{trackUsage("dashboard");setScreen("dashboard");}:undefined}/>
+        <StatCard label="Sessions" value={history.length||"–"} icon="📚" sub={streak>1?`🔥 ${streak}d streak`:undefined} onClick={history.length>0?()=>{trackUsage("dashboard");setScreen("dashboard");}:undefined}/>
         <StatCard label="Avg Score" value={overallPct?`${overallPct}%`:"–"} color={overallPct?(overallPct>=70?C.easy:C.hard):C.muted} icon="🎯" onClick={overallPct?()=>{trackUsage("dashboard");setScreen("dashboard");}:undefined}/>
         <StatCard label="Pass Prob" value={passProbability?`${passProbability.probability}%`:"–"} color={passProbability?passProbability.color:C.muted} sub={passProbability?passProbability.label:history.length>=1?"more data needed":"do 3+ sessions"} onClick={()=>setScreen("readiness")} icon="📈"/>
-        <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"0"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":`${Object.keys(srDeck).length>0?`${Object.keys(srDeck).length} total · none due`:"no cards yet"}`} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}:undefined}/>
+        <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"0"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":`${Object.keys(srDeck).length>0?`${Object.keys(srDeck).length} total · none due`:"no cards yet"}`} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);srSessionResults.current={correct:0,total:0};srSessionStart.current=Date.now();setScreen("srReview");}:undefined}/>
       </div>
       {history.length===0&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:14,opacity:0.7}}>Stats unlock after your first session</div>}
       </>
@@ -8889,7 +8893,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     {/* SR due */}
     {dueCards.length>0&&(
-      <div onClick={()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}} style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",animation:"glow 3s ease infinite"}}>
+      <div onClick={()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);srSessionResults.current={correct:0,total:0};srSessionStart.current=Date.now();setScreen("srReview");}} style={{background:`linear-gradient(135deg,${C.accent}15,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",animation:"glow 3s ease infinite"}}>
         <div>
           <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>📋 {dueCards.length} card{dueCards.length!==1?"s":""} due for review</div>
           <div style={{fontSize:11,color:C.muted,marginTop:2}}>SM-2 spaced repetition · tap to start</div>
@@ -8905,7 +8909,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:13,fontWeight:700,color:C.hard}}>⚠ {leeches.length} leech card{leeches.length!==1?"s":""}</div>
           <div style={{fontSize:11,color:C.muted,marginTop:2}}>Missed 4+ times — your real blind spots</div>
         </div>
-        <button onClick={()=>{trackUsage("leech_review");setSrQueue([...leeches].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);setScreen("srReview");}} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:C.hard+"25",border:`1px solid ${C.hard}55`,color:C.hard,cursor:"pointer",flexShrink:0}}>Review Now</button>
+        <button onClick={()=>{trackUsage("leech_review");setSrQueue([...leeches].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);srSessionResults.current={correct:0,total:0};srSessionStart.current=Date.now();setScreen("srReview");}} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:C.hard+"25",border:`1px solid ${C.hard}55`,color:C.hard,cursor:"pointer",flexShrink:0}}>Review Now</button>
       </div>
     )}
 
@@ -9597,7 +9601,43 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ════════════════════════════════════════
   if(screen==="srReview"){
     const card=srQueue[srIdx];
-    if(!card)return wrap(<div style={{textAlign:"center",paddingTop:60}}><div style={{fontSize:36,marginBottom:12}}>✅</div><div style={{fontSize:16,fontWeight:700,marginBottom:8}}>SR deck cleared!</div><button onClick={()=>setScreen("home")} style={{padding:"12px 28px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Home</button></div>);
+    if(!card){
+      const {correct,total}=srSessionResults.current;
+      const mins=srSessionStart.current?Math.round((Date.now()-srSessionStart.current)/60000):null;
+      const pct=total>0?Math.round((correct/total)*100):null;
+      return wrap(
+        <div style={{textAlign:"center",paddingTop:40}}>
+          <div style={{fontSize:40,marginBottom:12}}>✅</div>
+          <div style={{fontSize:18,fontWeight:800,marginBottom:4}}>SR deck cleared!</div>
+          {total>0&&(
+            <>
+            <div style={{fontSize:13,color:C.muted,marginBottom:20}}>
+              {mins!==null&&mins>0?`${mins} min · `:""}{total} card{total!==1?"s":""} reviewed
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24,maxWidth:280,margin:"0 auto 24px"}}>
+              <div style={{background:C.easy+"15",border:`1px solid ${C.easy}33`,borderRadius:12,padding:"14px 10px"}}>
+                <div style={{fontSize:22,fontWeight:800,color:C.easy}}>{correct}</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:2}}>Correct</div>
+              </div>
+              <div style={{background:C.hard+"15",border:`1px solid ${C.hard}33`,borderRadius:12,padding:"14px 10px"}}>
+                <div style={{fontSize:22,fontWeight:800,color:C.hard}}>{total-correct}</div>
+                <div style={{fontSize:11,color:C.muted,marginTop:2}}>Review again</div>
+              </div>
+            </div>
+            {pct!==null&&<div style={{fontSize:13,color:pct>=70?C.easy:C.medium,fontWeight:700,marginBottom:20}}>
+              {pct}% retention{pct>=80?" 🎯":pct>=70?" 👍":" — keep drilling"}
+            </div>}
+            </>
+          )}
+          <button onClick={()=>setScreen("home")}
+            style={{padding:"12px 28px",borderRadius:10,fontSize:14,fontWeight:700,
+              background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,
+              color:"#fff",border:"none",cursor:"pointer"}}>
+            Home
+          </button>
+        </div>
+      );
+    }
     const isLeech=(card.wrongCount||0)>=4;
     return wrap(<>
       <button onClick={()=>setCalcOpen(true)} title="Open BA II Plus Calculator"
@@ -9664,6 +9704,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           <button onClick={()=>{
             const correct=srAnswer===card.answer;
+            srSessionResults.current.total++;
+            if(correct)srSessionResults.current.correct++;
             const key=Object.keys(srDeck).find(k=>srDeck[k].question===card.question)||`sr_${Date.now()}`;
             setSrDeck(prev=>{const existing=prev[key]||card;const updated=sm2Update(existing,correct);if(!correct)updated.wrongCount=(existing.wrongCount||0)+1;else updated.wrongCount=Math.max(0,(existing.wrongCount||0)-1);return{...prev,[key]:updated};});
             setSrAnswer(null);
@@ -10503,6 +10545,23 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <span style={{fontSize:13,fontWeight:800,color:C.rewardLight}}>+{calcXP(lastSession)} XP</span>
           <span style={{fontSize:11,color:C.muted}}>earned · {levelInfo.label} · Level {levelInfo.level}</span>
         </div>}
+        {prequizPassProbRef.current!==null&&passProbability&&(()=>{
+          const before=prequizPassProbRef.current;
+          const after=passProbability.probability;
+          const delta=after-before;
+          const col=delta>0?C.easy:delta<0?C.hard:C.muted;
+          return(
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+              background:col+"12",border:`1px solid ${col}33`,borderRadius:10,
+              padding:"10px 16px",marginTop:10,marginBottom:4}}>
+              <span style={{fontSize:13}}>📈</span>
+              <div style={{fontSize:13,fontWeight:700,color:col}}>
+                Pass probability: {before}% → {after}%
+                <span style={{marginLeft:6,fontWeight:800}}>{delta>0?"+":""}{delta}%</span>
+              </div>
+            </div>
+          );
+        })()}
         <button onClick={()=>{
           const fallbackText=`📊 ClearCFA Score Card\n━━━━━━━━━━━━━━━━━\n🎓 CFA Level ${cfaLevel} · ${subtopic}\n\n${sessionPct}%  ${sessionScore}/${questions.length} correct · ${difficulty}\n${sessionPct>=70?"✅ Above pass threshold":sessionPct>=50?"📈 Getting there (pass = 70%)":"💪 Keep drilling"}${todayStudySecs>0?`\n📚 ${fmtStudyTime(todayStudySecs)} studied today`:""}\n\nPrepping smarter with ClearCFA ✨\nclearcfa.com`;
           try{
