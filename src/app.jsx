@@ -1042,12 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-30-c
-{version:"2026-06-30-c",slides:[
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Formula Display Fixed",sub:"UX · 2026-06-30 update",desc:"Formula values in the Formulas tab no longer collapse into single-character columns, making complex equations readable at a glance. This ensures you can quickly reference and study financial formulas without squinting or reformatting.",tip:"Check the Formulas tab—your multi-variable equations should now display cleanly across full width."},
-{emoji:"🎲",color:C.reward,bg:C.reward,title:"Smarter Daily Focus Topics",sub:"AI · 2026-06-30 update",desc:"Today's Focus now suggests a more diverse range of topics and tracks what you've completed, preventing repetition and keeping your study plan fresh. You'll cover more ground and spend less time reviewing the same concepts.",tip:"Notice how your daily suggestions vary more—the app learns what you've already focused on to maximize learning efficiency."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"AI Questions Now Accurate",sub:"Bug Fix · 2026-06-30 update",desc:"AI-generated practice questions now have explanations that match their answer options, eliminating confusing mismatches. You can trust the feedback you receive and learn the correct reasoning every time.",tip:"Review any AI questions you flagged as confusing—they should now make clear sense with aligned explanations."},
-]},
 // WN_VER:2026-06-30-d
 {version:"2026-06-30-d",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Your daily question recommendations now diversify across topics instead of repeating the same focus area. This keeps your prep balanced and helps you build breadth across the curriculum faster.",tip:"Check your Today's Focus card—you'll notice it suggests different topics day to day now."},
@@ -1072,6 +1066,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Formulas Display Perfectly",sub:"Study Tools · 2026-07-01 update",desc:"Repaired formula rendering so values no longer collapse into single-character columns, and fixed grouping in AI-generated formula sections. Your Formulas tab is now clean and readable for last-minute review.",tip:"Open the Formulas tab in any session to see properly spaced, full-width formula values."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Questions Stay Fresh & Accurate",sub:"UX · 2026-07-01 update",desc:"Eliminated duplicate question IDs, mismatched explanations, and worked examples that never appeared after generation. Every question you see is now genuine and explanation-complete, so you learn from correct content.",tip:"Notice that AI-generated questions now show explanations immediately, and you won't see the same question ID twice in a session."},
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus & Progress Tracking",sub:"Study Tools · 2026-07-01 update",desc:"Today's Focus suggestions now vary more intelligently across topics, and your completion is tracked so you see real progress. You'll spend less time on repetitive suggestions and more time on gaps that matter.",tip:"Check your Today's Focus—you'll see different topics suggested each day, not the same ones repeating."},
+]},
+// WN_VER:2026-07-01-b
+{version:"2026-07-01-b",slides:[
+{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"Our AI coach implementations are now more effective at walking you through exam concepts and practice questions. You'll get sharper explanations and better-targeted feedback tailored to where you're struggling.",tip:"Try the AI Coach button on any practice question to see the improved guidance in action."},
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Always at Hand",sub:"Study Tools · 2026-07-01 update",desc:"A calculator button is now available on the Self-Review screen, so you can instantly verify calculations while reviewing your answers. No more switching apps or losing your focus mid-review.",tip:"Look for the calculator icon when reviewing Self-Review content to run quick calculations."},
+{emoji:"⚠️",color:C.hard,bg:C.hard,title:"Better Error Recovery",sub:"UX · 2026-07-01 update",desc:"When the AI debrief fails to load, you now see a clear error message and a retry button instead of a blank screen. This means less frustration and faster troubleshooting when something goes wrong.",tip:"If you hit an error, tap Retry—it usually resolves on the second attempt."},
 ]},
 // WN_END
 ];
@@ -1125,6 +1125,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-06-30
 {date:"2026-06-30",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
