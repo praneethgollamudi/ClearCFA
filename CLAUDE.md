@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**`CFA_ACRONYMS` constant**: Object mapping ~90 CFA exam acronyms (EAR, WACC, FCF, etc.) to full forms across quantitative methods, finance, accounting, portfolio management, and economics. Used by `expandAcronyms()` to automatically expand acronyms in UI text. When building new UI that displays CFA terminology, call `expandAcronyms(text)` to ensure acronyms are expanded.
+
+
+**`expandAcronyms()` function**: Takes text string and returns it with CFA acronyms replaced by their expanded forms using word-boundary regex. **Important**: Uses `\b` word boundaries (not lookbehind) for Safari < 16 compatibility. For acronyms with non-word chars (e.g., P/E, M&A), falls back to space/start anchor patterns. Always call this when rendering Drill card content, questions, or explanations.
+
+
 **`expandAcronyms()` function**: Takes text string and returns it with CFA acronyms replaced by their expanded forms (e.g., "WACC" becomes "WACC (Weighted Average Cost of Capital)"). Uses word-boundary regex to avoid replacing acronyms that are part of longer words or URLs. Always call this function when rendering Drill card content, questions, or explanations to enhance learner comprehension.
 
 
@@ -751,7 +757,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1791900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
