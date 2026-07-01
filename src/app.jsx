@@ -1131,12 +1131,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-f
-{version:"2026-07-01-f",slides:[
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Progress by Questions, Not Sessions",sub:"Study Tools · 2026-07-01 update",desc:"Your pacing goal now displays questions per day instead of sessions per day, giving you a clearer target for daily progress. This helps you hit your study milestones with precision, especially when sessions vary in length.",tip:"Check your pacing chip on the dashboard to see exactly how many questions you should tackle today."},
-{emoji:"✨",color:C.reward,bg:C.reward,title:"Readiness Screen Becomes Interactive",sub:"UX · 2026-07-01 update",desc:"Module pills and drill buttons on your Readiness screen are now fully interactive—tap modules to jump into focused drills instantly. You can now spot weak areas and start drilling without extra navigation steps.",tip:"Tap any module pill on Readiness to begin a targeted drill on that topic right away."},
-{emoji:"🐛",color:C.medium,bg:C.medium,title:"Fixed Display & Alert Issues",sub:"Bug Fix · 2026-07-01 update",desc:"We fixed a blank page crash and corrected card alert styling in light mode so your study experience stays smooth and readable. You'll see consistent, polished visuals across all themes.",tip:"Update to the latest version to ensure smooth navigation and proper styling on all screens."},
-]},
 // WN_VER:2026-07-01
 {version:"2026-07-01",slides:[
 {emoji:"🎵",color:C.reward,bg:C.reward,title:"Enhanced Study Music Engine",sub:"Study Tools · 2026-07-01 update",desc:"The lo-fi player now features 4 distinct vibes, reverb effects, melody layers, and a live visualizer to keep you engaged during long study sessions. Stay focused without distracting yourself by constantly tweaking your audio setup.",tip:"Tap the music icon during a study session to explore reverb and melody combinations that match your mood."},
@@ -1160,6 +1154,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"An interactive guide strip is now built into the calculator trainer, showing you step-by-step how to solve problems on the BA II Plus. This eliminates guesswork and builds muscle memory for exam day.",tip:"Open the Calc Trainer and look for the guide strip to see keystroke sequences in real time."},
 {emoji:"🎵",color:C.reward,bg:C.reward,title:"Study Soundtrack Gets a Vibe Upgrade",sub:"Study Tools · 2026-07-01 update",desc:"Your lofi player now offers 4 different vibes, reverb effects, melody controls, and a live visualizer to match your study mood. Stay focused longer with music that adapts to how you work.",tip:"Tap the lofi player icon during a study session to experiment with different vibes and find your focus sweet spot."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Pacing Feedback",sub:"UX · 2026-07-01 update",desc:"The pacing chip no longer shows a misleading floor target when you're already ahead of schedule. You'll see clearer, more accurate progress indicators that reflect your actual study pace.",tip:"Check your pacing chip—if you're on track or ahead, it will now give you the real picture without false ceilings."},
+]},
+// WN_VER:2026-07-01-e
+{version:"2026-07-01-e",slides:[
+{emoji:"🧮",color:C.easy,bg:C.easy,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"We added an interactive guide strip to the BA II Plus calculator trainer so you can learn key financial calculations without leaving the app. This bridges the gap between understanding the concept and mastering the keystrokes you'll use on exam day.",tip:"Open Calc Trainer and tap the guide icon to see step-by-step walkthroughs for common operations like amortization and interest conversion."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Pacing Indicators",sub:"UX · 2026-07-01 update",desc:"The pacing chip now hides misleading floor warnings when you're already ahead of schedule. You'll see clearer, less distracting progress feedback so you can focus on what actually needs your attention.",tip:"Check your pacing chip at the top of your study dashboard—if you're on track or ahead, you'll see only positive signals."},
+{emoji:"✨",color:C.reward,bg:C.reward,title:"Cleaner, Faster Navigation",sub:"UX · 2026-07-01 update",desc:"We trimmed the More menu from 13 items down to 8, removing redundant shortcuts and streamlining your app experience. Finding what you need is now faster and less overwhelming.",tip:"Tap the More menu (⋯) and notice the tighter, more focused list of options—no hunting through duplicate navigation paths."},
 ]},
 // WN_END
 ];
