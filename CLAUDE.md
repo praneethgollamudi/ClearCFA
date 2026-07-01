@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Trap cards rule & context display**: Trap cards now display both the rule being tested and the trap context together on the card. When rendering trap card content, ensure rule section and trap explanation are visible side-by-side. Cards must fill the screen properly without content cutoff—test on various viewport sizes.
+
+
+**Drill UI enhancements (v2026-07-01-f complete pack)**: Drill cards now feature smooth slide animations on swipe, XP pop-up animations, swipe hint UI (guiding next action), weak spot pill badges, and pass probability advice. When updating Drill card rendering or interaction logic, maintain consistency with these micro-interaction patterns for cohesive user experience.
+
+
+**What's New versions 2026-07-01-d and 2026-07-01-e removed**: These versions have been removed from WHATS_NEW_SLIDES array; only versions -b, -c, and -f are retained. The 2026-07-01-c version (newly re-added) documents acronym expansion, Drill tab rename, and Safari compatibility fixes. Always check the active versions in WHATS_NEW_SLIDES when building related features to avoid duplicate messaging.
+
+
 **What's New version 2026-07-01-c removed**: This version has been removed from WHATS_NEW_SLIDES array; only versions -b, -d, and -e are retained. Consolidate overlapping feature updates into single canonical versions to avoid redundant slides.
 
 
@@ -769,7 +778,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
