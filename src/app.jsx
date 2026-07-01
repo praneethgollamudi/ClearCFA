@@ -9322,7 +9322,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <span style={{fontSize:12,fontWeight:700,color:paceStatus.ahead?C.easy:C.medium}}>
           {paceStatus.ahead?"🟢 On pace":"⚠️ Behind pace"} · {paceStatus.avgQsPerDay} Qs/day
         </span>
-        <span style={{fontSize:11,color:C.muted}}>need {paceStatus.neededQsPerDay} Qs/day</span>
+        <span style={{fontSize:11,color:C.muted}}>{paceStatus.ahead?"stay consistent →":`need ${paceStatus.neededQsPerDay} Qs/day`}</span>
       </div>
     )}
 
