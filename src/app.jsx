@@ -1125,12 +1125,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-d
-{version:"2026-07-01-d",slides:[
-{emoji:"🎮",color:C.reward,bg:C.reward,title:"Drill Cards Feel Alive",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now animate smoothly as you swipe through them, with instant XP pop-ups and helpful hints guiding your next move. These visual touches make studying more engaging and keep you motivated through longer practice sessions.",tip:"Swipe through a few Drill cards and watch the animations—they'll also show you pass probability advice based on your performance."},
-{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"CFA Terms Spelled Out",sub:"Study Tools · 2026-07-01 update",desc:"CFA acronyms on Drill cards now expand to their full forms inline, so you never have to guess what WACC or FCF stands for mid-question. This reduces friction and helps reinforce terminology as you study.",tip:"Hover over or tap any expanded acronym in a Drill card to see the full definition in context."},
-{emoji:"🔍",color:C.medium,bg:C.medium,title:"Better Trap Card Context",sub:"Bug Fix · 2026-07-01 update",desc:"Trap answer cards now always show the relevant rule and full context so you understand exactly why an answer is a trap. This turns every wrong answer into a learning moment.",tip:"When you hit a trap card, read the rule carefully—it's the key to avoiding that mistake on test day."},
-]},
 // WN_VER:2026-07-01-e
 {version:"2026-07-01-e",slides:[
 {emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Cards Now More Engaging",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now feature smooth slide animations, swipe hints, XP pop animations, weak spot indicators, and pass probability advice to keep you motivated and focused. These enhancements make studying feel more interactive and help you quickly identify topics that need more attention.",tip:"Watch for the weak spot pill on cards you've struggled with—it's your cue to prioritize those concepts."},
@@ -1154,6 +1148,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.reward,bg:C.reward,title:"Smarter Study Pacing",sub:"Study Tools · 2026-07-01 update",desc:"New pacing chip and vignette scenario panel help you tackle questions at the right speed and understand real exam formats. Retakers get pre-seeded progress so you skip material you've already mastered.",tip:"Check the pacing chip during drills to stay on track for exam day timing."},
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Your Pass Probability",sub:"AI · 2026-07-01 update",desc:"Pass probability delta now shows how each study session moves you closer to exam readiness. Session summaries highlight your strongest and weakest topic areas so you focus effort where it matters most.",tip:"Review your SR session summary after drills to see which topics boosted your pass odds."},
 {emoji:"✨",color:C.hard,bg:C.hard,title:"Power Pro Tier & Quality Flags",sub:"Study Tools · 2026-07-01 update",desc:"Upgrade to Power Pro for premium features, and new quality flags mark the highest-caliber practice questions. Try a free 40-question trial and compare your score against peer percentiles to see where you rank.",tip:"Start the 40q trial to benchmark yourself against other CFA candidates right now."},
+]},
+// WN_VER:2026-07-01-c
+{version:"2026-07-01-c",slides:[
+{emoji:"🎓",color:C.reward,bg:C.reward,title:"Smarter Study Pacing & Retake Support",sub:"Study Tools · 2026-07-01 update",desc:"ClearCFA now personalizes your study timeline with pacing guidance and detects whether you're a first-time test taker or retaker—adjusting pre-loaded content to match your actual exam history. This ensures you focus on what you actually need to master, not generic defaults.",tip:"Check the pacing chip on your dashboard to see your recommended daily study load."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Track Your Percentile & Pass Probability",sub:"AI · 2026-07-01 update",desc:"See your performance ranked against other CFA candidates in real time, plus a live pass probability delta that updates as you study. This gives you concrete feedback on whether you're on track to pass.",tip:"Watch your pass probability percentage climb as you complete more high-quality practice sessions."},
+{emoji:"🐛",color:C.easy,bg:C.easy,title:"Fixed Leech Card Display in Light Mode",sub:"Bug Fix · 2026-07-01 update",desc:"Corrected a visual issue where leech card alerts appeared with incorrect contrast in light mode. Your app now displays alerts clearly no matter your theme preference.",tip:"Toggle between light and dark mode—leech cards should now be readable in both."},
 ]},
 // WN_END
 ];
