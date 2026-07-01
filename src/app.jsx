@@ -9110,7 +9110,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     {/* Leech alert */}
     {leeches.length>0&&(
-      <div style={{background:`linear-gradient(135deg,#1c0508,#12030a)`,border:`1px solid ${C.hard}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div style={{background:`${C.hard}12`,border:`1px solid ${C.hard}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           <div style={{fontSize:13,fontWeight:700,color:C.hard}}>⚠ {leeches.length} leech card{leeches.length!==1?"s":""}</div>
           <div style={{fontSize:11,color:C.muted,marginTop:2}}>Missed 4+ times — your real blind spots</div>
