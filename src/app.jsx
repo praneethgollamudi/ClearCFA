@@ -1125,12 +1125,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-e
-{version:"2026-07-01-e",slides:[
-{emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Cards Now More Engaging",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now feature smooth slide animations, swipe hints, XP pop animations, weak spot indicators, and pass probability advice to keep you motivated and focused. These enhancements make studying feel more interactive and help you quickly identify topics that need more attention.",tip:"Watch for the weak spot pill on cards you've struggled with—it's your cue to prioritize those concepts."},
-{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"CFA Acronyms Fully Explained",sub:"Study Tools · 2026-07-01 update",desc:"All CFA-specific acronyms in Drill cards now automatically expand to their full forms on first mention, reducing confusion and keeping you in flow. This works seamlessly across all devices, including older browsers.",tip:"Hover or tap an expanded acronym to see its full meaning—no need to switch tabs to look things up."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother Drill Navigation",sub:"UX · 2026-07-01 update",desc:"Back navigation in Drills now works more intuitively, giving you a seamless experience when returning to your study list. This small fix removes friction so you can move between drills without unexpected behavior.",tip:"Use the back button freely—it'll take you exactly where you expect."},
-]},
 // WN_VER:2026-07-01-f
 {version:"2026-07-01-f",slides:[
 {emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Sessions Get Smarter",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now show pass probability advice, weak spot indicators, and XP rewards with smooth animations and swipe hints. This helps you focus on topics where you're most likely to struggle and see your progress instantly.",tip:"Swipe left or right on any Drill card to see the hint animation and learn the fastest way to navigate."},
@@ -1154,6 +1148,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎓",color:C.reward,bg:C.reward,title:"Smarter Study Pacing & Retake Support",sub:"Study Tools · 2026-07-01 update",desc:"ClearCFA now personalizes your study timeline with pacing guidance and detects whether you're a first-time test taker or retaker—adjusting pre-loaded content to match your actual exam history. This ensures you focus on what you actually need to master, not generic defaults.",tip:"Check the pacing chip on your dashboard to see your recommended daily study load."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Track Your Percentile & Pass Probability",sub:"AI · 2026-07-01 update",desc:"See your performance ranked against other CFA candidates in real time, plus a live pass probability delta that updates as you study. This gives you concrete feedback on whether you're on track to pass.",tip:"Watch your pass probability percentage climb as you complete more high-quality practice sessions."},
 {emoji:"🐛",color:C.easy,bg:C.easy,title:"Fixed Leech Card Display in Light Mode",sub:"Bug Fix · 2026-07-01 update",desc:"Corrected a visual issue where leech card alerts appeared with incorrect contrast in light mode. Your app now displays alerts clearly no matter your theme preference.",tip:"Toggle between light and dark mode—leech cards should now be readable in both."},
+]},
+// WN_VER:2026-07-01-d
+{version:"2026-07-01-d",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Study Pacing",sub:"Study Tools · 2026-07-01 update",desc:"New pacing chip and vignette scenario panel help you stay on track toward your exam goal. Retakers get pre-seeded progress based on your history, so you skip material you've already mastered.",tip:"Check your pacing indicator in practice sessions to see if you're ahead or behind schedule."},
+{emoji:"⭐",color:C.reward,bg:C.reward,title:"Unlock Power Pro Premium",sub:"UX · 2026-07-01 update",desc:"New Power Pro tier, peer percentile rankings, and quality flags help you see exactly where you stand and what topics need the most work. Try our 40-question trial to explore advanced features risk-free.",tip:"Start the 40q trial during your next study session to compare your performance against other CFA candidates."},
+{emoji:"🐛",color:C.medium,bg:C.medium,title:"Fixed Display & Alert Issues",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved blank page errors and corrected alert styling in light mode so your study experience is clean and uninterrupted.",tip:"Restart the app if you encounter any display glitches—they should now be resolved."},
 ]},
 // WN_END
 ];
