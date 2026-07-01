@@ -1068,12 +1068,6 @@ const REEL_TOPIC_COLORS={
 };
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-e
-{version:"2026-07-01-e",slides:[
-{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Deep Study Guide Redesigned",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide that organizes content for focused, structured preparation. This replaces scattered lessons with a cohesive learning path that builds knowledge systematically across CFA topics.",tip:"Open the Learn tab to explore the new guided structure and follow the recommended study sequence for your level."},
-{emoji:"🏆",color:C.reward,bg:C.reward,title:"Smarter Card Progression",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a critical spaced repetition bug where difficult \"leech\" cards were stuck and never graduated despite correct answers. Now all cards progress properly based on your actual performance, ensuring you don't waste time on cards the system won't advance.",tip:"Check your review queue—previously stuck cards should now graduate when you answer them correctly."},
-{emoji:"🤖",color:C.medium,bg:C.medium,title:"More Effective AI Coach",sub:"AI · 2026-07-01 update",desc:"Both AI coach implementations have been improved for better explanations and guidance on exam-style questions. You'll now receive more targeted hints and clearer reasoning to strengthen weak topic areas before test day.",tip:"Use Ask Coach on tricky questions to see the enhanced explanations in action."},
-]},
 // WN_VER:2026-07-01-f
 {version:"2026-07-01-f",slides:[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Redesigned Learn Tab for Deeper Study",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide, replacing the previous layout with a more intuitive structure for tackling complex CFA topics. This helps you build stronger conceptual foundations before moving to practice questions.",tip:"Open the Learn tab to explore the new guided study sections organized by topic difficulty."},
@@ -1098,6 +1092,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎨",color:C.medium,bg:C.medium,title:"Flexible Mock Exam Customization",sub:"Study Tools · 2026-07-01 update",desc:"Custom Mock exams now support multi-topic and multi-module selection, letting you design practice sessions exactly how you need them. Build targeted quizzes that match your study plan and weak areas.",tip:"When setting up a Custom Mock, select multiple topics or modules at once to test cross-topic mastery."},
 {emoji:"🔧",color:C.easy,bg:C.easy,title:"Navigation & Sign-Up Stability",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed navigation issues on Study Advisor and Weekly Plan screens, plus resolved sign-up failures. Your study flow is now seamless from start to finish.",tip:"If you previously had trouble signing up, try again—the issue is now resolved."},
 ]},
+// WN_VER:2026-07-01-d
+{version:"2026-07-01-d",slides:[
+{emoji:"🎬",color:C.reward,bg:C.reward,title:"Study Reels for Micro-Learning",sub:"Study Tools · 2026-07-01 update",desc:"Swipe through bite-sized concept videos in a TikTok-style feed designed for quick, focused learning sessions. Perfect for cramming key formulas and definitions into spare moments throughout your day.",tip:"Try Study Reels when you have 5–10 minutes between classes or commutes."},
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"A new Learn Calculator tab in Calc Trainer now includes step-by-step keystroke guides for the BA II Plus, the approved calculator for the CFA exam. Master the exact buttons and sequences you'll use on test day.",tip:"Open Calc Trainer and tap Learn Calculator to practice entering Time Value of Money problems before your mock exams."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Flexible Mock Exam Builder",sub:"Study Tools · 2026-07-01 update",desc:"Custom Mock setup now lets you select multiple topics and modules in a single build, so you can test yourself on exactly the content mix you want. Build smarter practice exams aligned to your study plan.",tip:"Create a mock focused on Economics + Quantitative Methods to drill your weakest areas in one session."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1112,12 +1112,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1157,6 +1151,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
