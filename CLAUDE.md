@@ -6,6 +6,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 **Trap cards rule & context display**: Trap cards now display both the rule being tested and the trap context together on the card. When rendering trap card content, ensure rule section and trap explanation are visible side-by-side. Cards must fill the screen properly without content cutoff—test on various viewport sizes.
 
+**Trap card learning moments**: Trap answer cards now consistently display the relevant rule and full context together so learners understand exactly why an answer is a trap. This design principle turns every wrong answer into an intentional learning moment—ensure trap card content always pairs the tested rule with the common pitfall explanation.
+
+
 
 **Drill UI enhancements (v2026-07-01-f complete pack)**: Drill cards now feature smooth slide animations on swipe, XP pop-up animations, swipe hint UI (guiding next action), weak spot pill badges, and pass probability advice. When updating Drill card rendering or interaction logic, maintain consistency with these micro-interaction patterns for cohesive user experience.
 
@@ -17,6 +20,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 
 **What's New version 2026-07-01-f removed**: This version has been removed from WHATS_NEW_SLIDES array; only versions -b, -d, and -e are retained. When creating future versions, prepend at `// WN_START` marker with emoji-led, tip-driven format and avoid duplicating feature announcements across versions.
+
+**What's New version 2026-07-01-e & 2026-07-01-f removed**: Both versions have been removed from WHATS_NEW_SLIDES array; only versions -b, -c, and -d are retained. Version 2026-07-01 (base) now serves as the primary announcement for Drill feature launch and trap card improvements. Always check WHATS_NEW_SLIDES when building related features to maintain accurate messaging.
+
 
 
 **`expandAcroyms()` Safari < 16 compatibility**: Function now uses word-boundary regex (`\b`) instead of lookbehind (`?<!`) because Safari < 16 throws SyntaxError on negative lookbehind. For acronyms with non-word characters (P/E, M&A), falls back to space/start anchor patterns. Always use this function when rendering Drill card content to avoid Safari breakage.
@@ -38,6 +44,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 
 **Drill feature (formerly Study Reels)**: The micro-learning feature has been renamed from 'Study Reels' to 'Drill' in navigation and user messaging. Uses `REEL_TOPIC_COLORS` constant for topic-consistent visual styling. When referencing this feature in new updates or features, use 'Drill' as the primary label and describe it as TikTok-style vertical swipe micro-learning for bite-sized concept review.
+
+**Drill enhancement pack (v2026-07-01-d)**: Latest update adds smooth slide animations on swipe, XP pop-up animations, swipe hint UI guiding next action, weak spot pill badges indicating review-needed topics, and pass probability advice. When building or updating Drill UI, reference these enhancements for consistent micro-interaction patterns and visual feedback.
+
 
 
 **What's New version 2026-07-01-f**: Latest version documents Drill feature (TikTok-style vertical swipe micro-learning renamed from Study Reels) with bite-sized concept drills. Versions 2026-07-01 and 2026-07-01-f have been removed from WHATS_NEW_SLIDES array; only -b, -d, and -e are retained. When creating future versions, prepend at `// WN_START` marker with emoji-led, tip-driven format.
@@ -778,7 +787,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
