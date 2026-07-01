@@ -12282,7 +12282,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {label:"Full example: CF0=−1000, CF1=400, CF2=500, CF3=300, rate=10%",keys:["[CF]","[CLR WORK]","1000","[+/-]","[ENTER]","[↓]","400","[ENTER]","[↓]","1","[ENTER]","[↓]","500","[ENTER]","[↓]","1","[ENTER]","[↓]","300","[ENTER]","[↓]","1","[ENTER]","[NPV]","10","[ENTER]","[↓]","[CPT]"],note:"NPV ≈ $5.26. Then [IRR] [CPT] → IRR ≈ 10.65%."},
       ]},
       {title:"Amortization Worksheet",icon:"📊",steps:[
-        {label:"Loan P&I breakdown after TVM solve",keys:["(after solving loan in TVM)","[2ND]","[AMORT]","P1 = 1","[ENTER]","[↓]","P2 = 1","[ENTER]","[↓]","→ BAL","[↓]","→ PRN","[↓]","→ INT"],note:"P1/P2 define the payment range. Set P1=1, P2=12 to see the full first year's cumulative principal and interest. Cycle with ↓ to see each value."},
+        {label:"Loan P&I breakdown — single payment",keys:["(solve loan TVM first)","[2ND]","[AMORT]","1","[ENTER]","[↓]","1","[ENTER]","[↓]","[↓]","→ BAL","[↓]","→ PRN","[↓]","→ INT"],note:"P1=1, P2=1 gives you payment #1 breakdown: remaining balance, principal paid, interest paid. Press ↓ repeatedly to cycle through BAL, PRN, INT in order."},
+        {label:"Full-year P&I — range of payments",keys:["[2ND]","[AMORT]","1","[ENTER]","[↓]","12","[ENTER]","[↓]","→ BAL","[↓]","→ PRN","[↓]","→ INT"],note:"P1=1, P2=12 shows cumulative totals for payments 1 through 12 (first year). PRN shows total principal repaid; INT shows total interest paid in that range. Essential for fixed income questions on interest expense."},
+        {label:"Later-period range — year 3 analysis",keys:["[2ND]","[AMORT]","25","[ENTER]","[↓]","36","[ENTER]","[↓]","→ BAL","[↓]","→ PRN","[↓]","→ INT"],note:"P1=25, P2=36 gives payments 25–36 (year 3 for monthly). The calc automatically continues from where prior amort left off — if you changed P1/P2 manually, it recomputes. BAL shows balance *after* payment P2, useful for CFA balance-sheet questions."},
+      ]},
+      {title:"ICONV — Interest Rate Conversion",icon:"🔄",steps:[
+        {label:"Convert EAR to APR (or vice versa)",keys:["[2ND]","[ICONV]","NOM = annual rate","[ENTER]","[↓]","C/Y = periods per year","[ENTER]","[↓]","[CPT] → EFF"],note:"ICONV converts between nominal (APR) and effective annual rate (EAR). Enter NOM and C/Y, then CPT EFF to solve for EAR. Or enter EFF and C/Y, then CPT NOM for the APR. C/Y=2 for semi-annual, 12 for monthly, 4 for quarterly."},
+        {label:"EAR for semi-annual bond: 6% coupon, semi-annual pay",keys:["[2ND]","[ICONV]","6","[ENTER]","[↓]","2","[ENTER]","[↓]","[↓]","[CPT]"],note:"NOM=6, C/Y=2 → EFF=6.09%. This is the true annual cost of the bond. Examiners often ask for EAR when coupon payments are semi-annual — the 6% BEY understates the annual yield slightly."},
+        {label:"Convert monthly rate to EAR: 1% per month",keys:["[2ND]","[ICONV]","12","[ENTER]","[↓]","12","[ENTER]","[↓]","[↓]","[CPT]"],note:"NOM=12 (12 × 1%), C/Y=12 → EFF=12.68%. Alternatively use formula: EAR=(1+r)^m −1. The ICONV worksheet gives the same answer faster and without rounding error."},
       ]},
       {title:"Memory — STO & RCL",icon:"🧠",steps:[
         {label:"Store an intermediate result",keys:["(result on screen)","[STO]","[0–9]"],note:"Saves displayed value to memory 0–9. Essential for multi-step problems where you need an intermediate answer later without writing it down."},
@@ -12366,7 +12373,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                       <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:7}}>
                         {s.keys.map((k,ki)=>(
                           k.startsWith("[")?
-                            <span key={ki} style={{fontFamily:"monospace",fontSize:11,fontWeight:800,background:"#1e293b",color:"#93c5fd",border:"1px solid #2563eb44",padding:"3px 8px",borderRadius:5,letterSpacing:"0.03em"}}>{k}</span>
+                            <span key={ki} style={{fontFamily:"monospace",fontSize:11,fontWeight:800,background:isLight?"#eff6ff":"#1e293b",color:isLight?"#1d4ed8":"#93c5fd",border:`1px solid ${C.accent}44`,padding:"3px 8px",borderRadius:5,letterSpacing:"0.03em"}}>{k}</span>
                           : k.startsWith("(") || k.includes("→") || k.includes("=") || /^[A-Z]/.test(k) ?
                             <span key={ki} style={{fontSize:10,color:C.muted,padding:"3px 4px",alignSelf:"center",fontStyle:"italic"}}>{k}</span>
                           :
@@ -12382,7 +12389,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           ))}
           <div style={{marginTop:14}}>
             <button onClick={()=>setCalcOpen(true)}
-              style={{width:"100%",padding:"13px",borderRadius:11,fontSize:13,fontWeight:700,background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",color:"#93c5fd",border:"1px solid #2563eb44",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              style={{width:"100%",padding:"13px",borderRadius:11,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
               <span style={{fontSize:16}}>🧮</span> Open BA II Plus to practise alongside
             </button>
           </div>
@@ -12393,11 +12400,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {calcTrainerTab==="practice"&&(<>
       {/* Open the real BA II Plus calculator */}
       <button onClick={()=>setCalcOpen(true)}
-        style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",color:"#93c5fd",border:"1px solid #2563eb44",cursor:"pointer",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+        style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
         <span style={{fontSize:18}}>🧮</span>
         <div style={{textAlign:"left"}}>
-          <div style={{fontSize:13,fontWeight:800,color:"#e2e8f0"}}>Open BA II Plus Calculator</div>
-          <div style={{fontSize:11,color:"#7dd3fc",fontWeight:400}}>TVM · NPV/IRR · Arithmetic · Memory</div>
+          <div style={{fontSize:13,fontWeight:800,color:"#fff"}}>Open BA II Plus Calculator</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.75)",fontWeight:400}}>TVM · NPV/IRR · AMORT · ICONV · Memory</div>
         </div>
         <span style={{marginLeft:"auto",fontSize:16,opacity:0.6}}>→</span>
       </button>
@@ -12436,7 +12443,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div key={idx} style={{background:C.surface,border:`1px solid ${calcChecked[idx]==="correct"?C.easy+"55":calcChecked[idx]==="wrong"?C.hard+"55":C.border}`,borderRadius:12,padding:"14px",marginBottom:10,transition:"border-color 0.2s"}}>
               <div style={{fontSize:11,fontWeight:800,color:C.accentLight,marginBottom:6}}>Step {step.step_num}: {step.instruction}</div>
               {step.formula&&<div style={{fontSize:11,color:C.muted,fontFamily:"monospace",marginBottom:6,background:C.dim,padding:"5px 9px",borderRadius:6}}>Formula: {step.formula}</div>}
-              {step.calculator_keys&&<div style={{fontSize:11,color:"#93c5fd",fontFamily:"monospace",marginBottom:8,background:"#0d1117",border:`1px solid ${C.accent}33`,padding:"5px 9px",borderRadius:6}}>🧮 {step.calculator_keys}</div>}
+              {step.calculator_keys&&<div style={{fontSize:11,color:isLight?"#1d4ed8":"#93c5fd",fontFamily:"monospace",marginBottom:8,background:isLight?"#eff6ff":"#0d1117",border:`1px solid ${C.accent}33`,padding:"5px 9px",borderRadius:6}}>🧮 {step.calculator_keys}</div>}
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <input
                   type="text"
