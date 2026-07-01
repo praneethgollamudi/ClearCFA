@@ -5505,6 +5505,8 @@ function CFAMock(){
   const [calcDisplayVal, setCalcDisplayVal] = useState("0");
   const [calcTopic, setCalcTopic] = useState("Fixed Income");
   const [calcDifficulty, setCalcDifficulty] = useState("Medium");
+  const [calcTrainerTab, setCalcTrainerTab] = useState("practice"); // "practice" | "learn"
+  const [calcLearnSection, setCalcLearnSection] = useState(null); // expanded section index
   const [calcProblem, setCalcProblem] = useState(null);
   const [calcSteps, setCalcSteps] = useState([]);
   const [calcInputs, setCalcInputs] = useState({});
@@ -11362,6 +11364,42 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ════════════════════════════════════════
   if(screen==="calcTrainer") return wrap((()=>{
     const calcTopics=["Quantitative Methods","Fixed Income","Derivatives","Portfolio Management","Equity","Corporate Issuers"];
+    const CALC_GUIDES=[
+      {title:"Setup — First-Time Config",icon:"⚙️",steps:[
+        {label:"Set P/Y and C/Y to 1",keys:["[2ND]","[P/Y]","1","[ENTER]","[↓]","1","[ENTER]","[2ND]","[QUIT]"],note:"Most CFA questions assume annual periods. Always verify before TVM problems."},
+        {label:"Switch to END mode",keys:["[2ND]","[BGN]","(if BGN shows) →","[2ND]","[SET]","[2ND]","[QUIT]"],note:"END mode = cash flows at end of period (ordinary annuity). Switch to BGN only for annuities due."},
+        {label:"Clear TVM worksheet",keys:["[2ND]","[CLR TVM]"],note:"Always clear before a new TVM problem. Leftover values from prior problems silently corrupt answers — this is the #1 exam mistake."},
+        {label:"Set decimal places to 4",keys:["[2ND]","[FORMAT]","4","[ENTER]","[2ND]","[QUIT]"],note:"4 decimal places is standard for CFA precision. The display rounds but internal computation stays full precision."},
+      ]},
+      {title:"TVM — Bond Pricing & Loans",icon:"🏦",steps:[
+        {label:"PV of a bond: 5-year 8% annual coupon, YTM 6%, FV 1000",keys:["[2ND]","[CLR TVM]","5","[N]","6","[I/Y]","80","[PMT]","1000","[FV]","[CPT]","[PV]"],note:"Result: −1,084.25. Negative = cash you pay out (purchase price). PMT is positive because you receive coupons."},
+        {label:"Semi-annual bond: 10-year 6% coupon, YTM 8%, FV 1000",keys:["[2ND]","[CLR TVM]","20","[N]","4","[I/Y]","30","[PMT]","1000","[FV]","[CPT]","[PV]"],note:"Double N (10×2=20), halve I/Y (8/2=4%), halve PMT (60/2=30). Result: −864.10. Premium/discount logic: YTM > coupon → discount."},
+        {label:"Solve for YTM: bond costs $950, 5-yr, 7% annual coupon, FV 1000",keys:["[2ND]","[CLR TVM]","5","[N]","[−]","950","[PV]","70","[PMT]","1000","[FV]","[CPT]","[I/Y]"],note:"Result: 8.12% YTM. Enter PV as negative (you pay to buy). The calculator iterates — may take 1-2 seconds."},
+        {label:"Monthly loan: $200k at 6% annual for 30 years",keys:["[2ND]","[P/Y]","12","[ENTER]","[2ND]","[QUIT]","360","[N]","6","[I/Y]","200000","[PV]","0","[FV]","[CPT]","[PMT]"],note:"P/Y=12 tells the calc compounding is monthly. N=360 months, I/Y=annual rate. Reset P/Y=1 when done. Result: −$1,199.10/month."},
+        {label:"Annuity due (BGN): PV of 5 payments of $1,000 at 8%",keys:["[2ND]","[BGN]","[2ND]","[SET]","[2ND]","[QUIT]","5","[N]","8","[I/Y]","1000","[PMT]","0","[FV]","[CPT]","[PV]"],note:"BGN shows in display when active. Annuity due payments occur at start of period — PV is higher than ordinary annuity by (1 + r). Reset to END after."},
+      ]},
+      {title:"Cash Flows — NPV & IRR",icon:"💰",steps:[
+        {label:"Enter uneven cash flows",keys:["[CF]","[2ND]","[CLR WORK]","initial outflow (negative)","[ENTER]","[↓]","CF1","[ENTER]","[↓]","frequency (1 if once)","[ENTER]","[↓]","repeat for each period"],note:"CF0 is the initial investment (negative). F01 = how many consecutive periods have the same CF — saves entries for level streams within an uneven series."},
+        {label:"Compute NPV",keys:["[NPV]","discount rate","[ENTER]","[↓]","[CPT]"],note:"Enter rate as a whole number (10 for 10%, not 0.10). Positive NPV = accept. NPV is the value added to the firm above the cost of capital."},
+        {label:"Compute IRR",keys:["[IRR]","[CPT]"],note:"IRR is the discount rate making NPV = 0. If IRR > WACC, accept. 'Error 5' means no unique IRR (non-conventional CFs — multiple sign changes)."},
+        {label:"Full example: CF0=−1000, CF1=400, CF2=500, CF3=300, rate=10%",keys:["[CF]","[CLR WORK]","1000","[+/-]","[ENTER]","[↓]","400","[ENTER]","[↓]","1","[ENTER]","[↓]","500","[ENTER]","[↓]","1","[ENTER]","[↓]","300","[ENTER]","[↓]","1","[ENTER]","[NPV]","10","[ENTER]","[↓]","[CPT]"],note:"NPV ≈ $5.26. Then [IRR] [CPT] → IRR ≈ 10.65%."},
+      ]},
+      {title:"Amortization Worksheet",icon:"📊",steps:[
+        {label:"Loan P&I breakdown after TVM solve",keys:["(after solving loan in TVM)","[2ND]","[AMORT]","P1 = 1","[ENTER]","[↓]","P2 = 1","[ENTER]","[↓]","→ BAL","[↓]","→ PRN","[↓]","→ INT"],note:"P1/P2 define the payment range. Set P1=1, P2=12 to see the full first year's cumulative principal and interest. Cycle with ↓ to see each value."},
+      ]},
+      {title:"Memory — STO & RCL",icon:"🧠",steps:[
+        {label:"Store an intermediate result",keys:["(result on screen)","[STO]","[0–9]"],note:"Saves displayed value to memory 0–9. Essential for multi-step problems where you need an intermediate answer later without writing it down."},
+        {label:"Recall stored value",keys:["[RCL]","[0–9]"],note:"Pastes the stored value into the display without clearing it from memory. Combine with arithmetic: [RCL][1][×][2][=] multiplies memory 1 by 2."},
+        {label:"Running total in memory",keys:["[STO]","[+]","slot → adds to stored","[STO]","[−]","slot → subtracts"],note:"Lets you accumulate across multiple steps without a scratch pad. E.g. sum interest payments across periods."},
+      ]},
+      {title:"Common Mistakes & Pitfalls",icon:"⚠️",steps:[
+        {label:"Sign convention (Error 5)",keys:["PV and FV must have opposite signs"],note:"Pay to buy → PV negative, receive at maturity → FV positive. Getting this wrong gives Error 5 or a nonsense answer. A bond you buy: PV < 0, FV > 0, PMT > 0."},
+        {label:"P/Y vs N mismatch",keys:["P/Y=12 → enter N as months, not years"],note:"If P/Y=12 and you enter N=10, the calc assumes 10 monthly periods, not 10 years. Safest: always set P/Y=1 and adjust N and I/Y manually."},
+        {label:"CPT goes BEFORE the unknown",keys:["[CPT]","[FV]","not [FV]","[CPT]"],note:"Order is fixed. [CPT] then the variable to solve for. Reversing it re-enters the variable value, not a solve command."},
+        {label:"Forgetting CLR TVM between problems",keys:["[2ND]","[CLR TVM]","before every new TVM problem"],note:"A leftover N or PMT from a previous problem will silently poison the next calculation. Make it automatic — CLR TVM every time."},
+        {label:"Not resetting BGN mode",keys:["Check display — 'BGN' shows if annuity due mode is active"],note:"If BGN was set for a previous problem and not cleared, your next ordinary annuity PV will be wrong by (1 + r)."},
+      ]},
+    ];
     const generateCalcProblem=async()=>{
       if(!authUser?.id){setCalcError("Sign in to use Calc Trainer.");return;}
       setCalcLoading(true);setCalcError("");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});
@@ -11383,16 +11421,79 @@ Return ONLY a JSON array — no prose, no markdown fences:
     };
     return(<>
       {!screenOnboard.calcTrainer&&<SlideOverlay
-        slides={[{emoji:"🔢",color:C.accentLight,bg:C.accent,title:"Calc Trainer",sub:"How this works",desc:"Pick a topic and difficulty, then tap Generate. You'll get a multi-step CFA calculation problem — enter your answer for each step to check it. Use the BA II Plus calculator alongside for realistic exam practice.",tip:"The CFA exam allows the BA II Plus. Practice using it for every step here so the workflow is muscle memory on exam day."}]}
+        slides={[{emoji:"🔢",color:C.accentLight,bg:C.accent,title:"Calc Trainer",sub:"Practice + keystroke reference",desc:"Two modes: Learn shows you exactly how to use the BA II Plus for every CFA workflow. Practice gives you AI-generated multi-step problems to test your speed and accuracy.",tip:"Start with Learn → Setup if you haven't configured your calculator yet. Then drill Practice until keystrokes are muscle memory."}]}
         onDismiss={()=>{const u={...screenOnboard,calcTrainer:true};setScreenOnboard(u);try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{}}}
         skipLabel="Got it →"
         ctaLabel="Got it →"
         zIndex={360}
       />}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <div><h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>🔢 Calc Trainer</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>Step-by-step calculation practice</div></div>
+        <div><h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>🔢 Calc Trainer</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>BA II Plus reference & practice</div></div>
         <button onClick={()=>{setScreen("home");}} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
       </div>
+      {/* Tab switcher */}
+      <div style={{display:"flex",gap:0,marginBottom:14,background:C.surface,borderRadius:10,padding:3,border:`1px solid ${C.border}`}}>
+        {[["practice","📝 Practice"],["learn","📖 Learn Calculator"]].map(([t,label])=>(
+          <button key={t} onClick={()=>setCalcTrainerTab(t)}
+            style={{flex:1,padding:"8px",borderRadius:8,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
+              background:calcTrainerTab===t?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.surface,
+              color:calcTrainerTab===t?"#fff":C.muted,transition:"all 0.15s"}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── LEARN TAB ── */}
+      {calcTrainerTab==="learn"&&(
+        <div style={{animation:"fadeIn 0.2s ease"}}>
+          <div style={{fontSize:12,color:C.muted,marginBottom:14,lineHeight:1.6}}>
+            Step-by-step keystroke guides for every BA II Plus workflow tested on the CFA exam. Tap a section to expand.
+          </div>
+          {CALC_GUIDES.map((guide,gi)=>(
+            <div key={gi} style={{marginBottom:8,borderRadius:12,border:`1px solid ${calcLearnSection===gi?C.accent+"44":C.border}`,overflow:"hidden"}}>
+              <button onClick={()=>setCalcLearnSection(calcLearnSection===gi?null:gi)}
+                style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",
+                  padding:"13px 16px",background:calcLearnSection===gi?`${C.accent}10`:C.surface,
+                  border:"none",cursor:"pointer",textAlign:"left"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:18}}>{guide.icon}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:C.text}}>{guide.title}</span>
+                </div>
+                <span style={{fontSize:11,color:C.muted,flexShrink:0,marginLeft:8}}>{calcLearnSection===gi?"▲":"▼"}</span>
+              </button>
+              {calcLearnSection===gi&&(
+                <div style={{background:C.bg,borderTop:`1px solid ${C.border}`,padding:"12px 14px"}}>
+                  {guide.steps.map((s,si)=>(
+                    <div key={si} style={{marginBottom:si<guide.steps.length-1?16:0}}>
+                      <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:6}}>{s.label}</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:7}}>
+                        {s.keys.map((k,ki)=>(
+                          k.startsWith("[")?
+                            <span key={ki} style={{fontFamily:"monospace",fontSize:11,fontWeight:800,background:"#1e293b",color:"#93c5fd",border:"1px solid #2563eb44",padding:"3px 8px",borderRadius:5,letterSpacing:"0.03em"}}>{k}</span>
+                          : k.startsWith("(") || k.includes("→") || k.includes("=") || /^[A-Z]/.test(k) ?
+                            <span key={ki} style={{fontSize:10,color:C.muted,padding:"3px 4px",alignSelf:"center",fontStyle:"italic"}}>{k}</span>
+                          :
+                            <span key={ki} style={{fontFamily:"monospace",fontSize:11,fontWeight:700,background:C.surfaceHigh,color:C.accentLight,border:`1px solid ${C.border}`,padding:"3px 8px",borderRadius:5}}>{k}</span>
+                        ))}
+                      </div>
+                      <div style={{fontSize:11,color:C.muted,lineHeight:1.65,background:`${C.accent}08`,borderRadius:7,padding:"7px 10px"}}>{s.note}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          <div style={{marginTop:14}}>
+            <button onClick={()=>setCalcOpen(true)}
+              style={{width:"100%",padding:"13px",borderRadius:11,fontSize:13,fontWeight:700,background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",color:"#93c5fd",border:"1px solid #2563eb44",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <span style={{fontSize:16}}>🧮</span> Open BA II Plus to practise alongside
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── PRACTICE TAB ── */}
+      {calcTrainerTab==="practice"&&(<>
       {/* Open the real BA II Plus calculator */}
       <button onClick={()=>setCalcOpen(true)}
         style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",color:"#93c5fd",border:"1px solid #2563eb44",cursor:"pointer",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
@@ -11472,6 +11573,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </button>
         </div>
       )}
+      </>)}
     </>);
   })());
 
