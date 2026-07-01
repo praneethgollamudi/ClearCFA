@@ -1125,12 +1125,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-f
-{version:"2026-07-01-f",slides:[
-{emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Sessions Get Smarter",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now show pass probability advice, weak spot indicators, and XP rewards with smooth animations and swipe hints. This helps you focus on topics where you're most likely to struggle and see your progress instantly.",tip:"Swipe left or right on any Drill card to see the hint animation and learn the fastest way to navigate."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Sessions Card Shows Your Streak",sub:"UX · 2026-07-01 update",desc:"Your study sessions card now displays your current streak and includes a session summary with pass probability delta. Track momentum and see exactly how each study session moves you closer to exam readiness.",tip:"Check your Sessions card daily to watch your streak grow and monitor your pass probability improvement over time."},
-{emoji:"🐛",color:C.easy,bg:C.easy,title:"Better Browser Compatibility",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a compatibility issue that prevented acronym expansion from working on Safari browsers older than version 16. All students can now study smoothly across iOS, Android, and web.",tip:"If you use Safari on iPad or Mac, your Drill acronyms will now expand correctly—no need to update anything."},
-]},
 // WN_VER:2026-07-01
 {version:"2026-07-01",slides:[
 {emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Sessions Now More Interactive",sub:"Study Tools · 2026-07-01 update",desc:"Drills now feature smooth slide animations, swipe hints, XP pop animations, and weak spot indicators to keep you engaged. These visual cues help you identify knowledge gaps faster and celebrate progress in real time.",tip:"Swipe through a Drill to see the hint system in action—it guides you without spoiling answers."},
@@ -1154,6 +1148,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Study Pacing",sub:"Study Tools · 2026-07-01 update",desc:"New pacing chip and vignette scenario panel help you stay on track toward your exam goal. Retakers get pre-seeded progress based on your history, so you skip material you've already mastered.",tip:"Check your pacing indicator in practice sessions to see if you're ahead or behind schedule."},
 {emoji:"⭐",color:C.reward,bg:C.reward,title:"Unlock Power Pro Premium",sub:"UX · 2026-07-01 update",desc:"New Power Pro tier, peer percentile rankings, and quality flags help you see exactly where you stand and what topics need the most work. Try our 40-question trial to explore advanced features risk-free.",tip:"Start the 40q trial during your next study session to compare your performance against other CFA candidates."},
 {emoji:"🐛",color:C.medium,bg:C.medium,title:"Fixed Display & Alert Issues",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved blank page errors and corrected alert styling in light mode so your study experience is clean and uninterrupted.",tip:"Restart the app if you encounter any display glitches—they should now be resolved."},
+]},
+// WN_VER:2026-07-01-e
+{version:"2026-07-01-e",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Interactive Readiness Dashboard",sub:"UX · 2026-07-01 update",desc:"Readiness screen now features tappable module pills and drill buttons on every card, letting you jump directly into focused practice from your study overview. This reduces friction and gets you drilling faster on areas that need work.",tip:"Tap any module pill to filter by topic, or hit the drill button on a card to start a quiz immediately."},
+{emoji:"🧠",color:C.medium,bg:C.medium,title:"Smarter Pacing for Retakers",sub:"AI · 2026-07-01 update",desc:"Retake students now receive intelligent pre-seeding and a pacing chip that adapts to your study schedule and prior performance. The app also includes a vignette scenario panel to help you practice exam-style question clusters with real context.",tip:"Check your pacing chip on the Readiness screen to see if you're on track to finish all modules before exam day."},
+{emoji:"🐛",color:C.hard,bg:C.hard,title:"Fixed Display Issues",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved blank page rendering errors and corrected alert styling so leech cards display correctly in light mode. Your study experience is now more stable across all devices and themes.",tip:"If you were seeing blank screens before, refresh the app and you should see all content load properly now."},
 ]},
 // WN_END
 ];
