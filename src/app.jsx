@@ -4854,7 +4854,7 @@ function calcIRRValue(flows){
 }
 
 
-function CFACalculator({onClose, onMinimize=null}){
+function CFACalculator({onClose, onMinimize=null, guideStep=null}){
   const {useState:uS,useRef:uR}=React;
   const snap=(()=>{try{return JSON.parse(localStorage.getItem(CALC_SNAP_KEY)||"null");}catch{return null;}})();
   const [disp,setDisp]=uS(snap?.disp||"0");
@@ -4879,6 +4879,7 @@ function CFACalculator({onClose, onMinimize=null}){
   const [ws,setWs]=uS(null);
   const [msg,setMsg]=uS("");
   const msgTimer=uR(null);
+  const hkRef=uR(null);
 
   const showMsg=(m,ms=1800)=>{clearTimeout(msgTimer.current);setMsg(m);msgTimer.current=setTimeout(()=>setMsg(""),ms);};
   const fmtD=(n)=>{
@@ -5121,6 +5122,18 @@ function CFACalculator({onClose, onMinimize=null}){
       default:break;
     }
   };
+  hkRef.current=handleKey;
+  const IS_2ND_FN=new Set(["[CLR TVM]","[P/Y]","[CLR WORK]","[QUIT]","[BGN]","[SET]","[AMORT]","[ICONV]","[FORMAT]"]);
+  const KEY_ACTION_MAP={
+    "[2ND]":hk=>hk("2nd"),"[CPT]":hk=>hk("cpt"),"[N]":hk=>hk("N"),"[I/Y]":hk=>hk("IY"),
+    "[PV]":hk=>hk("PV"),"[PMT]":hk=>hk("PMT"),"[FV]":hk=>hk("FV"),"[ENTER]":hk=>hk("enter"),
+    "[↓]":hk=>hk("down"),"[↑]":hk=>hk("up"),"[+/-]":hk=>hk("neg"),"[CE/C]":hk=>hk("ce"),
+    "[CF]":hk=>hk("cf"),"[NPV]":hk=>hk("npv"),"[IRR]":hk=>hk("irr"),
+    "[STO]":hk=>hk("sto"),"[RCL]":hk=>hk("rcl"),
+    "[CLR TVM]":hk=>hk("FV"),"[P/Y]":hk=>hk("IY"),"[CLR WORK]":hk=>hk("ce"),
+    "[QUIT]":hk=>hk("cpt"),"[BGN]":hk=>hk("PMT"),"[SET]":hk=>hk("PMT"),
+    "[AMORT]":hk=>hk("PV"),"[ICONV]":hk=>hk("5"),"[FORMAT]":hk=>hk("2"),
+  };
 
   const BTNS=[
     // Row 1
@@ -5229,6 +5242,45 @@ function CFACalculator({onClose, onMinimize=null}){
           </div>
         )}
       </div>
+
+      {/* Guide strip — shown when opened from Learn tab */}
+      {guideStep&&(
+        <div style={{background:"#06111e",borderBottom:"1px solid #0e2035",padding:"5px 10px",flexShrink:0}}>
+          <div style={{fontSize:7,fontWeight:800,color:"#2563eb",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>
+            📖 {guideStep.label} — tap each key in order ↓
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+            {guideStep.keys.map((k,ki)=>{
+              const action=KEY_ACTION_MAP[k];
+              const fn2=IS_2ND_FN.has(k);
+              if(k.startsWith("["))return(
+                <button key={ki} onClick={()=>action?.(handleKey)}
+                  style={{fontFamily:"monospace",fontSize:9,fontWeight:800,padding:"2px 6px",borderRadius:4,cursor:"pointer",
+                    background:fn2?"#1a0e00":"#0a1a2e",color:fn2?"#d97706":"#60a5fa",
+                    border:`1px solid ${fn2?"#5a3800":"#1d4ed8"}`,
+                    WebkitTapHighlightColor:"transparent",touchAction:"manipulation"}}>
+                  {k}
+                </button>
+              );
+              if(k.startsWith("(")||k.includes("→")||k.includes("=")||/^[A-Z]/.test(k))return(
+                <span key={ki} style={{fontSize:8,color:"#1e3a5a",alignSelf:"center",fontStyle:"italic"}}>{k}</span>
+              );
+              return(
+                <button key={ki} onClick={()=>{
+                  const neg=k.startsWith("-");const abs=neg?k.slice(1):k;
+                  const digs=abs.replace(/[^0-9.]/g,"");
+                  let d=0;[...digs].forEach(ch=>{const c=ch;setTimeout(()=>hkRef.current?.(c==="."?"dot":c),d);d+=55;});
+                  if(neg)setTimeout(()=>hkRef.current?.("neg"),d);
+                }} style={{fontFamily:"monospace",fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,
+                  background:"#0a1420",color:"#3b82f6",border:"1px solid #0e2035",cursor:"pointer",
+                  WebkitTapHighlightColor:"transparent",touchAction:"manipulation"}}>
+                  {k}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* TVM register strip */}
       {!ws&&(
@@ -5915,6 +5967,7 @@ function CFAMock(){
   const [fsaSubtopic, setFsaSubtopic] = useState("Financial Ratios");
   const [fsaDifficulty, setFsaDifficulty] = useState("Medium");
   const [calcOpen, setCalcOpen] = useState(false);
+  const [calcGuideStep, setCalcGuideStep] = useState(null);
   const [calcMinimized, setCalcMinimized] = useState(false);
   const [calcDisplayVal, setCalcDisplayVal] = useState("0");
   const [calcTopic, setCalcTopic] = useState("Fixed Income");
@@ -7666,8 +7719,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
   );
   // ══ BA II PLUS CALCULATOR OVERLAY ════════════════════════════════════════
   if(calcOpen && !calcMinimized) return <CFACalculator
-    onClose={()=>setCalcOpen(false)}
+    onClose={()=>{setCalcOpen(false);setCalcGuideStep(null);}}
     onMinimize={(disp)=>{setCalcDisplayVal(disp);setCalcMinimized(true);}}
+    guideStep={calcGuideStep}
   />;
 
   // ══ GLOBAL LOADING OVERLAY — shown from any screen when generating ══════
@@ -12369,7 +12423,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 <div style={{background:C.bg,borderTop:`1px solid ${C.border}`,padding:"12px 14px"}}>
                   {guide.steps.map((s,si)=>(
                     <div key={si} style={{marginBottom:si<guide.steps.length-1?16:0}}>
-                      <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:6}}>{s.label}</div>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.text,flex:1}}>{s.label}</div>
+                        <button onClick={()=>{setCalcGuideStep({label:s.label,keys:s.keys});setCalcOpen(true);}}
+                          style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:6,flexShrink:0,
+                            background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                          ▶ Try it
+                        </button>
+                      </div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:7}}>
                         {s.keys.map((k,ki)=>(
                           k.startsWith("[")?
