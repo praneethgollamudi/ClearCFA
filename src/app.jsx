@@ -1068,12 +1068,6 @@ const REEL_TOPIC_COLORS={
 };
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-b
-{version:"2026-07-01-b",slides:[
-{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Master Calculator Skills Faster",sub:"Study Tools · 2026-07-01 update",desc:"The new Learn Calculator tab in Calc Trainer now includes BA II Plus keystroke guides alongside practice problems. This helps you build muscle memory for exam-day calculations without switching between tools.",tip:"Start with the keystroke guides before attempting calculator drills to lock in the right technique."},
-{emoji:"🎓",color:C.medium,bg:C.medium,title:"Deeper Learning, Better Retention",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide—not just flashcards. You get structured explanations, real-world context, and topic connections to reinforce understanding before tackling questions.",tip:"Use Deep Study for concept review before moving to practice quizzes on the same topic."},
-{emoji:"🛠️",color:C.hard,bg:C.hard,title:"Build Custom Mocks Your Way",sub:"Study Tools · 2026-07-01 update",desc:"Custom Mock exams now let you select multiple topics and modules in one setup. Mix and match exactly the content you need to focus on without creating separate exams.",tip:"Combine weak topics across modules into a single mock to simulate real exam pressure on your problem areas."},
-]},
 // WN_VER:2026-07-01-c
 {version:"2026-07-01-c",slides:[
 {emoji:"🧮",color:C.reward,bg:C.reward,title:"Calculator Training with Keystroke Guides",sub:"Study Tools · 2026-07-01 update",desc:"The Calc Trainer now includes a dedicated Learn Calculator tab with BA II Plus keystroke guides to help you master financial calculations faster. Master shortcuts and formulas in context so you're confident on exam day.",tip:"Tap the Learn tab in Calc Trainer to see step-by-step keystrokes for common CFA calculations."},
@@ -1098,6 +1092,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Navigation, Faster Access",sub:"UX · 2026-07-01 update",desc:"We've streamlined the app's navigation by removing duplicate entry points and consolidating study features. You now get to the right tool faster without confusion or redundant menu items.",tip:"Notice that Drill is now the single, easy-to-find hub for quick vertical-swipe study sessions."},
 {emoji:"🐛",color:C.easy,bg:C.easy,title:"Navigation Fixed Across Screens",sub:"Bug Fix · 2026-07-01 update",desc:"We resolved a navigation issue that was blocking movement from Study Advisor and Weekly Plan screens. Now you can seamlessly jump between tools without getting stuck.",tip:"Try navigating from Study Advisor back to your Weekly Plan—it should feel smooth and responsive."},
 ]},
+// WN_VER:2026-07-01
+{version:"2026-07-01",slides:[
+{emoji:"🎬",color:C.accentLight,bg:C.accentLight,title:"Drill: TikTok-Style Learning",sub:"Study Tools · 2026-07-01 update",desc:"The new Drill tab replaces Study Reels with a streamlined vertical swipe feed for bite-sized concept review. Master one topic at a time in the format that keeps you engaged.",tip:"Swipe up to move through cards—perfect for 5-minute study sessions between classes."},
+{emoji:"📖",color:C.medium,bg:C.medium,title:"Rules & Context on Trap Cards",sub:"UX · 2026-07-01 update",desc:"Trap cards now display the rule being tested plus the trap context inline, so you immediately see *why* the wrong answer is tempting. Learn faster by understanding common pitfalls.",tip:"Look for the rule and trap explanation on any difficult card to turn mistakes into learning moments."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1108,12 +1107,6 @@ const ADMIN_CHANGELOG=[
 // AC_START
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1139,6 +1132,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
