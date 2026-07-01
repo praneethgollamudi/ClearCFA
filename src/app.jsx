@@ -1050,12 +1050,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-c
-{version:"2026-07-01-c",slides:[
-{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"We've enhanced both AI coach implementations to provide more effective explanations and targeted learning support. You'll now get higher-quality answers when you ask the AI coach for help on difficult concepts.",tip:"Try asking your AI coach about a concept you're struggling with—the answers are now more tailored to exam prep."},
-{emoji:"📱",color:C.reward,bg:C.reward,title:"Calculator at Your Fingertips",sub:"Study Tools · 2026-07-01 update",desc:"A calculator button is now available directly on the spaced repetition review screen. Save time switching between apps—solve quantitative problems without leaving your study flow.",tip:"Look for the calculator icon during your next SR review session on quantitative questions."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Leech Cards Finally Graduate",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a bug where difficult 'leech' cards would never advance after you answered them correctly multiple times. Your hard-earned progress is now properly tracked and these stubborn cards will eventually graduate.",tip:"If you've been stuck reviewing the same tough card, it should now move forward once you nail it consistently."},
-]},
 // WN_VER:2026-07-01-d
 {version:"2026-07-01-d",slides:[
 {emoji:"🎓",color:C.reward,bg:C.reward,title:"Leech Cards Now Graduate Properly",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a critical spaced repetition bug where difficult 'leech' cards would get stuck and never advance to graduation, even after correct answers. Now your hardest topics will finally progress as you master them.",tip:"Check your study dashboard—cards you've been drilling should now show advancement toward completion."},
@@ -1079,6 +1073,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Master Calculators with Keystroke Guides",sub:"Study Tools · 2026-07-01 update",desc:"The Calc Trainer now includes a Learn Calculator tab with step-by-step BA II Plus keystroke guides. Stop guessing how to solve problems on your exam calculator and build muscle memory before test day.",tip:"Open Calc Trainer and tap Learn Calculator to practice common financial calculations side-by-side with your actual BA II Plus keys."},
 {emoji:"🎓",color:C.medium,bg:C.medium,title:"Deep Study Mode for Focused Learning",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab has been redesigned into a comprehensive Deep Study guide with structured explanations and concept breakdowns. Spend less time hunting for clarification and more time internalizing the material that appears on your exam.",tip:"Use Deep Study when you encounter a concept in quizzes that feels shaky—it's your go-to reference before moving forward."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Sign-Up Connection Errors Fixed",sub:"Bug Fix · 2026-07-01 update",desc:"Password-based sign-up no longer fails with connection errors, letting you create an account and start studying immediately. This removes a frustrating barrier between you and your prep.",tip:"If you had trouble signing up before, try again now—the issue is resolved."},
+]},
+// WN_VER:2026-07-01-b
+{version:"2026-07-01-b",slides:[
+{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Master Calculator Skills Faster",sub:"Study Tools · 2026-07-01 update",desc:"The new Learn Calculator tab in Calc Trainer now includes BA II Plus keystroke guides alongside practice problems. This helps you build muscle memory for exam-day calculations without switching between tools.",tip:"Start with the keystroke guides before attempting calculator drills to lock in the right technique."},
+{emoji:"🎓",color:C.medium,bg:C.medium,title:"Deeper Learning, Better Retention",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide—not just flashcards. You get structured explanations, real-world context, and topic connections to reinforce understanding before tackling questions.",tip:"Use Deep Study for concept review before moving to practice quizzes on the same topic."},
+{emoji:"🛠️",color:C.hard,bg:C.hard,title:"Build Custom Mocks Your Way",sub:"Study Tools · 2026-07-01 update",desc:"Custom Mock exams now let you select multiple topics and modules in one setup. Mix and match exactly the content you need to focus on without creating separate exams.",tip:"Combine weak topics across modules into a single mock to simulate real exam pressure on your problem areas."},
 ]},
 // WN_END
 ];
@@ -1106,12 +1106,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1151,6 +1145,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
