@@ -1109,10 +1109,14 @@ const CFA_ACRONYMS={
 function expandAcronyms(text){
   if(!text)return text;
   let result=String(text);
+  // Use \b word-boundary (universal) instead of lookbehind (Safari<16 throws SyntaxError)
   Object.entries(CFA_ACRONYMS).forEach(([abbr,full])=>{
     const escaped=abbr.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-    const re=new RegExp(`(?<![\\w/])(${escaped})(?![\\w/])`);
-    result=result.replace(re,`$1 (${full})`);
+    // For acronyms with non-word chars (P/E, M&A) fall back to a space/start anchor
+    const re=/[^A-Za-z0-9]/.test(abbr)
+      ? new RegExp(`(^|[^A-Za-z0-9])(${escaped})(?=[^A-Za-z0-9]|$)`)
+      : new RegExp(`\\b(${escaped})\\b`);
+    result=result.replace(re,(m,p1,p2)=>p2!==undefined?`${p1}${p2} (${full})`:`${m} (${full})`);
   });
   return result;
 }
