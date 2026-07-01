@@ -844,6 +844,21 @@ function getPaceStatus(levelHistory, passProbability, daysLeft) {
   };
 }
 
+function getMockTopicBreakdown(qs,ans,qTimes){
+  const byTopic={};
+  qs.forEach(q=>{
+    const t=q._fullExamTopic||q._topic||"Unknown";
+    if(!byTopic[t])byTopic[t]={correct:0,total:0,timeSum:0};
+    byTopic[t].total++;
+    if(ans[q.id]===q.answer)byTopic[t].correct++;
+    byTopic[t].timeSum+=(qTimes?.[q.id]||0);
+  });
+  return Object.entries(byTopic).map(([t,d])=>({
+    topic:t,pct:Math.round(d.correct/d.total*100),
+    total:d.total,avgSecs:Math.round(d.timeSum/d.total)
+  })).sort((a,b)=>a.pct-b.pct);
+}
+
 // ─── WEEKLY PLAN GENERATOR (AI-powered) ─────────────────────────────────────
 const WEEKLY_PLAN_PROMPT = `You are a CFA Level {level} study coach. Generate a practical weekly study plan.
 
@@ -939,6 +954,8 @@ const LAST_SCREEN_KEY      = "cfa_last_screen_v1";
 const ONBOARDING_KEY       = "cfa_onboarding_v1";
 const QUALITY_FLAGS_KEY    = "cfa_quality_flags_v1";
 const RETAKER_KEY          = "cfa_retaker_v1";
+const MOCK_SCHED_KEY       = "cfa_mock_sched_v1";
+const EXP_RATINGS_KEY      = "cfa_exp_ratings_v1";
 const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","masteryGrid","studyPlan","revision","studyPath","calcTrainer","backup","srReview"]);
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
@@ -5997,6 +6014,8 @@ function CFAMock(){
   const [adminBudget,setAdminBudget]=useState(()=>{try{return localStorage.getItem("cfa_admin_budget")||"";}catch{return "";}});
   const [reelIdx,setReelIdx]=useState(0);
   const [reelFeed,setReelFeed]=useState([]);
+  const [mockSchedule,setMockSchedule]=useState(()=>{try{return JSON.parse(localStorage.getItem(MOCK_SCHED_KEY)||"[]");}catch{return [];}});
+  const [expRatings,setExpRatings]=useState(()=>{try{return JSON.parse(localStorage.getItem(EXP_RATINGS_KEY)||"{}");}catch{return {};}});
   const [reelAnswer,setReelAnswer]=useState(null);
   const [reelRevealed,setReelRevealed]=useState(false);
   const [reelSessionCount,setReelSessionCount]=useState(0);
@@ -7236,6 +7255,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
   };
   generateQuestionsRef.current=generateQuestions;
 
+  function rateExplanation(qId,v,q){
+    const updated={...expRatings,[qId]:{v,t:q._topic||topic,st:q._subtopic||subtopic,ts:Date.now()}};
+    setExpRatings(updated);
+    try{localStorage.setItem(EXP_RATINGS_KEY,JSON.stringify(updated));}catch{}
+    if(v===-1){
+      const cache=qCacheRef.current;
+      const tk=q._topic||topic,stk=q._subtopic||subtopic;
+      if(cache[tk]?.[stk]){
+        cache[tk][stk]=cache[tk][stk].filter(cq=>cq.id!==qId);
+        try{const stored=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
+          if(stored[tk]?.[stk])stored[tk][stk]=stored[tk][stk].filter(cq=>cq.id!==qId);
+          localStorage.setItem(OFFLINE_QS_KEY,JSON.stringify(stored));}catch{}
+      }
+    }
+  }
+
   const startFullExam=async(sessionNum=1)=>{
     setLoading(true);setError("");
     try{
@@ -8463,6 +8498,26 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <button onClick={()=>setWeeklyPlanScreen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
     </div>
 
+    {/* Mock Exam Scheduler */}
+    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+      <div style={{fontSize:12,fontWeight:700,marginBottom:10}}>📅 Scheduled Mocks</div>
+      {mockSchedule.length===0&&<div style={{fontSize:12,color:C.muted,marginBottom:10}}>No mocks scheduled. Pick a date below to add one.</div>}
+      {[...mockSchedule].sort().map(d=>(
+        <div key={d} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <span style={{fontSize:12}}>{d}</span>
+          <button onClick={()=>{const s=mockSchedule.filter(x=>x!==d);setMockSchedule(s);try{localStorage.setItem(MOCK_SCHED_KEY,JSON.stringify(s));}catch{}}}
+            style={{fontSize:11,color:C.hard,background:"none",border:"none",cursor:"pointer"}}>Remove</button>
+        </div>
+      ))}
+      <input type="date" onChange={e=>{
+        const d=e.target.value;if(!d||mockSchedule.includes(d))return;
+        const s=[...mockSchedule,d];setMockSchedule(s);
+        try{localStorage.setItem(MOCK_SCHED_KEY,JSON.stringify(s));}catch{}
+        e.target.value="";
+      }} style={{width:"100%",padding:"8px 10px",borderRadius:8,fontSize:12,
+        background:C.surfaceHigh,border:`1px solid ${C.border}`,color:C.text,marginTop:6}}/>
+    </div>
+
     {/* Hours input */}
     {!weeklyPlan && !weeklyPlanLoading && (
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px",marginBottom:16}}>
@@ -9324,6 +9379,34 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <span style={{fontSize:11,color:C.muted}}>{paceStatus.ahead?"stay consistent →":`need ${paceStatus.neededQsPerDay} Qs/day`}</span>
       </div>
     )}
+
+    {/* Mock countdown */}
+    {(()=>{
+      const today=localDateKey();
+      const upcoming=[...mockSchedule].filter(d=>d>=today).sort();
+      const next=upcoming[0];
+      if(!next) return null;
+      const daysUntil=Math.round((new Date(next)-new Date(today))/86400000);
+      const urgent=daysUntil<=3;
+      return(
+        <div style={{background:urgent?C.medium+"18":C.surface,border:`1px solid ${urgent?C.medium:C.border}33`,
+          borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontSize:12,fontWeight:700,color:urgent?C.medium:C.text}}>
+                📅 Mock Exam {daysUntil===0?"Today":daysUntil===1?"Tomorrow":`in ${daysUntil} days`}
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginTop:2}}>{next} · 180 Qs · 270 min</div>
+            </div>
+            <button onClick={()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam(1);}}
+              style={{padding:"8px 14px",borderRadius:8,fontSize:12,fontWeight:700,
+                background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+              {daysUntil===0?"Start →":"Prep →"}
+            </button>
+          </div>
+        </div>
+      );
+    })()}
 
     {/* Daily Focus */}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",marginBottom:12}}>
@@ -10712,6 +10795,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:12,color:C.textMid,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{essayAnswers[q.id]}</div>
         </div>
       )}
+      {mode==="essay"&&essayRevealed[q.id]&&!answered&&(
+        <div style={{display:"flex",gap:8,marginBottom:12}}>
+          <button onClick={()=>handleAnswer(q.id,q.answer)}
+            style={{flex:1,padding:"10px",borderRadius:9,fontSize:13,fontWeight:700,
+              background:C.easy+"22",border:`1px solid ${C.easy}44`,color:C.easy,cursor:"pointer"}}>
+            ✓ Got it
+          </button>
+          <button onClick={()=>{const wrong=Object.keys(q.options||{}).find(k=>k!==q.answer)||"A";handleAnswer(q.id,wrong);}}
+            style={{flex:1,padding:"10px",borderRadius:9,fontSize:13,fontWeight:700,
+              background:C.hard+"18",border:`1px solid ${C.hard}33`,color:C.hard,cursor:"pointer"}}>
+            ✗ Missed key points
+          </button>
+        </div>
+      )}
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16,...(mode==="essay"&&!essayRevealed[q.id]?{display:"none"}:{})}}>
         {Object.entries(q.options).map(([key,val])=>{
           const sel=answered===key,correct=key===q.answer,reveal=!!answered&&(mode==="guided"||mode==="speed_drill"||mode==="essay");
@@ -10745,6 +10842,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
           }:null,q.concept||q.los_tested||"")}
           {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.muted}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
           {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
+          <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
+            <span style={{fontSize:10,color:C.muted}}>Was this explanation helpful?</span>
+            {[{v:1,label:"👍"},{v:-1,label:"👎"}].map(({v,label})=>(
+              <button key={v} onClick={()=>rateExplanation(q.id,v,q)}
+                style={{padding:"3px 10px",borderRadius:6,fontSize:12,cursor:"pointer",
+                  background:expRatings[q.id]?.v===v?v===1?C.easy+"33":C.hard+"22":"none",
+                  border:`1px solid ${expRatings[q.id]?.v===v?v===1?C.easy:C.hard:C.border}`,
+                  color:expRatings[q.id]?.v===v?v===1?C.easy:C.hard:C.muted}}>
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {/* Socratic Wrong-Answer Tutor */}
@@ -10963,6 +11072,54 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </button>
       </div>
 
+      {/* Feature 2: Re-drill CTA when score < 60% */}
+      {lastSession&&lastSession.pct<60&&!fullExamMode&&(
+        <div style={{background:C.hard+"12",border:`1px solid ${C.hard}33`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.hard,marginBottom:6}}>
+            ⚡ {lastSession.pct}% — below the 60% threshold
+          </div>
+          <div style={{fontSize:12,color:C.textMid,marginBottom:10,lineHeight:1.5}}>
+            Drill the missed questions now to lock in the concepts before they fade.
+          </div>
+          <button onClick={()=>{
+            const diff=lastSession.difficulty==="Easy"?"Medium":lastSession.difficulty;
+            generateQuestions(lastSession.topic,lastSession.subtopic,diff,Math.min(lastSession.wrongCount||10,10),"guided");
+          }} style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,
+            background:`linear-gradient(135deg,${C.hard},${C.hard}cc)`,color:"#fff",border:"none",cursor:"pointer"}}>
+            🔁 Re-drill {lastSession.subtopic?.split(" ").slice(0,3).join(" ")} →
+          </button>
+        </div>
+      )}
+
+      {/* Feature 4: Mock exam topic breakdown */}
+      {fullExamMode&&lastSession&&(()=>{
+        const breakdown=getMockTopicBreakdown(questions,answers,lastSession.qTimes);
+        return(
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:12}}>
+              📊 Mock Exam — Topic Breakdown
+            </div>
+            {breakdown.map(b=>{
+              const col=b.pct>=70?C.easy:b.pct>=50?C.medium:C.hard;
+              return(
+                <div key={b.topic} style={{marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                    <span style={{fontSize:12,fontWeight:600}}>{b.topic.split(" ").slice(0,2).join(" ")}</span>
+                    <span style={{fontSize:12,color:col,fontWeight:700}}>{b.pct}% · ⏱ {b.avgSecs}s/Q</span>
+                  </div>
+                  <div style={{height:5,background:C.border,borderRadius:3}}>
+                    <div style={{height:"100%",width:`${b.pct}%`,background:col,borderRadius:3}}/>
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{fontSize:11,color:C.muted,marginTop:8}}>
+              {breakdown.filter(b=>b.pct<60).length} topic{breakdown.filter(b=>b.pct<60).length!==1?"s":""} below threshold · focus these before your next mock
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Action buttons — immediately after score ring */}
       {/* Office Mode — Keep going prompt */}
       {omMode&&(
@@ -11121,6 +11278,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 <div style={{fontSize:12,color:C.muted,marginTop:8,lineHeight:1.65,borderTop:`1px solid ${C.border}`,paddingTop:8}}>{renderExplanation(q.explanation,C)}</div>
                 {q.los_tested&&<div style={{fontSize:11,color:C.muted,marginTop:6}}><span style={{fontWeight:700}}>LOS: </span>{q.los_tested}</div>}
                 {q.misconception_targeted&&<div style={{fontSize:11,color:C.muted,marginTop:4}}><span style={{fontWeight:700}}>Error pattern: </span>{q.misconception_targeted}</div>}
+                <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
+                  <span style={{fontSize:10,color:C.muted}}>Helpful explanation?</span>
+                  {[{v:1,label:"👍"},{v:-1,label:"👎"}].map(({v,label})=>(
+                    <button key={v} onClick={()=>rateExplanation(q.id,v,q)}
+                      style={{padding:"3px 10px",borderRadius:6,fontSize:12,cursor:"pointer",
+                        background:expRatings[q.id]?.v===v?v===1?C.easy+"33":C.hard+"22":"none",
+                        border:`1px solid ${expRatings[q.id]?.v===v?v===1?C.easy:C.hard:C.border}`,
+                        color:expRatings[q.id]?.v===v?v===1?C.easy:C.hard:C.muted}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <button onClick={()=>{setRevisionTopic(q._topic||topic);setRevisionTab("notes");setRevisionConcept(q.concept||q.los_tested||null);setScreen("revision");}}
                   style={{marginTop:10,fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:7,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                   📚 Review in Power Notes →
