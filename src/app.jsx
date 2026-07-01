@@ -932,6 +932,7 @@ const CHECKLIST_KEY        = "cfa_checklist_done";
 const LAST_SCREEN_KEY      = "cfa_last_screen_v1";
 const ONBOARDING_KEY       = "cfa_onboarding_v1";
 const QUALITY_FLAGS_KEY    = "cfa_quality_flags_v1";
+const RETAKER_KEY          = "cfa_retaker_v1";
 const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","masteryGrid","studyPlan","revision","studyPath","calcTrainer","backup","srReview"]);
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
@@ -2893,8 +2894,11 @@ function FeedbackModal({onClose, userId="", onSubmit}){
 }
 
 function OnboardingGate({onComplete}){
-  const [step,setStep]=React.useState(0); // 0=level, 1=date
+  const [step,setStep]=React.useState(0); // 0=level, 1=date, 2=retaker topics
   const [level,setLevel]=React.useState("1");
+  const [isRetaking,setIsRetaking]=React.useState(false);
+  const [retakerTopics,setRetakerTopics]=React.useState([]);
+  const [pendingExamDate,setPendingExamDate]=React.useState(null);
   const EXAM_DATES=[
     {label:"Aug 2026",value:"2026-08-19"},
     {label:"Nov 2026",value:"2026-11-19"},
@@ -2927,14 +2931,46 @@ function OnboardingGate({onComplete}){
             <div style={{fontSize:26,marginBottom:10,textAlign:"center"}}>📅</div>
             <div style={{fontSize:18,fontWeight:800,color:C.text,textAlign:"center",marginBottom:6}}>When is your exam?</div>
             <div style={{fontSize:13,color:C.muted,textAlign:"center",marginBottom:22,lineHeight:1.5}}>This unlocks your pass probability counter and daily study targets.</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:24}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
               {EXAM_DATES.map(({label,value})=>(
-                <button key={label} onClick={()=>onComplete({level,examDate:value})} style={{padding:"12px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.surface,color:C.text,fontSize:14,fontWeight:600,cursor:"pointer",textAlign:"left",transition:"all 0.12s"}}>
+                <button key={label} onClick={()=>{if(isRetaking){setPendingExamDate(value);setStep(2);}else{onComplete({level,examDate:value,retakerTopics:[]});}}} style={{padding:"12px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.surface,color:C.text,fontSize:14,fontWeight:600,cursor:"pointer",textAlign:"left",transition:"all 0.12s"}}>
                   {value?`📝 ${label}`:`⏭ ${label}`}
                 </button>
               ))}
             </div>
+            <button onClick={()=>setIsRetaking(r=>!r)}
+              style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 14px",
+                borderRadius:10,fontSize:13,cursor:"pointer",marginBottom:16,
+                background:isRetaking?C.accent+"18":"none",
+                border:`1px solid ${isRetaking?C.accent:C.border}`,color:isRetaking?C.accent:C.textMid}}>
+              <span style={{fontSize:15}}>{isRetaking?"✓":"○"}</span>
+              <span>I'm retaking this level</span>
+            </button>
             <button onClick={()=>setStep(0)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,width:"100%",textAlign:"center"}}>← Back</button>
+          </>
+        )}
+        {step===2&&(
+          <>
+            <div style={{fontSize:26,marginBottom:10,textAlign:"center"}}>🎯</div>
+            <div style={{fontSize:18,fontWeight:800,color:C.text,textAlign:"center",marginBottom:4}}>Which topics hurt you?</div>
+            <div style={{fontSize:12,color:C.muted,textAlign:"center",marginBottom:16,lineHeight:1.5}}>Select areas that were below average on your score report</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
+              {Object.keys(getActiveLOS(level)).map(t=>(
+                <button key={t} onClick={()=>setRetakerTopics(rt=>rt.includes(t)?rt.filter(x=>x!==t):[...rt,t])}
+                  style={{padding:"7px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",
+                    background:retakerTopics.includes(t)?C.accent+"22":"none",
+                    border:`1px solid ${retakerTopics.includes(t)?C.accent:C.border}`,
+                    color:retakerTopics.includes(t)?C.accent:C.textMid}}>
+                  {t}
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>onComplete({level,examDate:pendingExamDate,retakerTopics})}
+              style={{width:"100%",padding:"12px",borderRadius:10,fontSize:14,fontWeight:700,marginBottom:10,
+                background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+              {retakerTopics.length>0?`Done — ${retakerTopics.length} weak area${retakerTopics.length>1?"s":""} saved`:"Done (skip)"}
+            </button>
+            <button onClick={()=>setStep(1)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,width:"100%",textAlign:"center"}}>← Back</button>
           </>
         )}
       </div>
@@ -6582,6 +6618,17 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));
         const candidates=[];
 
+        // 0. Retaker pre-seeding — dominates when history is sparse (<5 sessions)
+        const retakerWeak=(()=>{try{return JSON.parse(localStorage.getItem(RETAKER_KEY)||"null");}catch{return null;}})();
+        if(retakerWeak?.topics?.length&&history.length<5){
+          retakerWeak.topics.forEach((t,ti)=>{
+            const mods=Object.keys(getActiveLOS(cfaLevel)[t]?.modules||{});
+            mods.forEach((m,mi)=>candidates.push({topic:t,module:m,difficulty:"Medium",count:10,mode:"guided",
+              reason:"Weak area from your last exam attempt",urgency:"high",
+              _score:900-ti*10-mi,_type:"retaker"}));
+          });
+        }
+
         // 1. Leech cards (wrong 4+ times) — highest priority
         const leeches=getLeeches(srDeck);
         const leechTopics={};
@@ -8406,13 +8453,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {feedbackOpen&&<FeedbackModal onClose={()=>setFeedbackOpen(false)} userId={authUser?.id||"anon"} onSubmit={(data)=>submitFeedback(SB_CFG,data)}/>}
 
     {/* Onboarding gate — shown once before feature tour */}
-    {!onboardingDone&&<OnboardingGate onComplete={({level,examDate})=>{
+    {!onboardingDone&&<OnboardingGate onComplete={({level,examDate,retakerTopics})=>{
       setCfaLevel(level);
       try{localStorage.setItem(CFA_LEVEL_KEY,level);}catch{}
       if(examDate){
         const goal={...(studyGoal||{}),examDate};
         setStudyGoal(goal);
         try{localStorage.setItem(STUDY_GOAL_KEY,JSON.stringify(goal));}catch{}
+      }
+      if(retakerTopics?.length>0){
+        try{localStorage.setItem(RETAKER_KEY,JSON.stringify({topics:retakerTopics}));}catch{}
       }
       setOnboardingDone(true);
       try{localStorage.setItem(ONBOARDING_KEY,"1");}catch{}
@@ -9120,6 +9170,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
             )}
           </>
         )}
+      </div>
+    )}
+
+    {/* Pace chip */}
+    {paceStatus&&(
+      <div onClick={()=>setScreen("dashboard")}
+        style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+          background:paceStatus.ahead?C.easy+"12":C.medium+"15",
+          border:`1px solid ${paceStatus.ahead?C.easy:C.medium}33`,
+          borderRadius:10,padding:"9px 14px",marginBottom:12,cursor:"pointer"}}>
+        <span style={{fontSize:12,fontWeight:700,color:paceStatus.ahead?C.easy:C.medium}}>
+          {paceStatus.ahead?"🟢 On pace":"⚠️ Behind pace"} · {paceStatus.avg} sessions/day
+        </span>
+        <span style={{fontSize:11,color:C.muted}}>need {paceStatus.neededPerDay}/day</span>
       </div>
     )}
 
@@ -10383,7 +10447,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {(()=>{const idealLeft=(questions.length-currentQ)*90;const paceRatio=timeLeft/Math.max(1,idealLeft);const paceCol=paceRatio>1.1?C.easy:paceRatio>0.8?C.medium:C.hard;const paceLabel=paceRatio>1.1?"Ahead":paceRatio>0.8?"On track":"Speed up";return timeLeft>0&&questions.length>1?<span style={{fontSize:10,color:paceCol,fontWeight:700,padding:"3px 7px",borderRadius:6,background:paceCol+"18"}}>{paceLabel}</span>:null;})()}
         </div>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:13,color:C.muted}}><span style={{color:C.accentLight,fontWeight:800}}>{currentQ+1}</span>/{questions.length}</span><Badge color={diffC[difficulty]}>{difficulty}</Badge></div>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:13,color:C.muted}}><span style={{color:C.accentLight,fontWeight:800}}>{currentQ+1}</span>/{questions.length}</span>{q._isVignette&&<span style={{fontSize:11,color:C.accent,fontWeight:700,opacity:0.85}}>· V{(q._vignetteIdx||0)+1}</span>}<Badge color={diffC[difficulty]}>{difficulty}</Badge></div>
       </div>
       {exitConfirm&&(
         <div style={{background:C.surface,border:`1px solid ${C.hard}44`,borderRadius:12,padding:"16px",marginBottom:14,animation:"fadeIn 0.15s ease"}}>
@@ -10473,7 +10537,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {q._isEthicsCase&&<div style={{fontSize:10,color:C.muted,marginBottom:8,fontStyle:"italic"}}>© 2019 CFA Institute. Ethics in Practice Casebook. Used with attribution for non-commercial study.</div>}
       <FormulaSheet topic={topic} level={cfaLevel}/>
       <PowerNotesSheet topic={topic} level={cfaLevel}/>
-      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,padding:"20px 22px",marginBottom:14,fontSize:14,lineHeight:1.8}}>{q.question}</div>
+      {q._isVignette?(()=>{
+        const parts=q.question.split(/\n\nQUESTION: /);
+        const scenarioText=(parts[0]||"").replace(/^SCENARIO:\n?/,"");
+        const questionText=parts[1]||q.question;
+        return(
+          <>
+            <div style={{background:C.accent+"0f",border:`1px solid ${C.accent}22`,borderRadius:11,padding:"12px 14px",marginBottom:10}}>
+              <div style={{fontSize:10,fontWeight:800,color:C.accent,marginBottom:6,textTransform:"uppercase",letterSpacing:0.8}}>
+                📋 Case Scenario · Q{(q._qIdx||0)+1} of 3
+              </div>
+              <div style={{fontSize:12,color:C.textMid,lineHeight:1.65}}>{scenarioText}</div>
+            </div>
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,padding:"16px 18px",marginBottom:14,fontSize:14,lineHeight:1.8,fontWeight:500}}>{questionText}</div>
+          </>
+        );
+      })():<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,padding:"20px 22px",marginBottom:14,fontSize:14,lineHeight:1.8}}>{q.question}</div>}
       {mode==="essay"&&!essayRevealed[q.id]&&(
         <div style={{marginBottom:14}}>
           <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Your written answer</div>
