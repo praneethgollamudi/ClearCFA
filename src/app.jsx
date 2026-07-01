@@ -7207,6 +7207,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const sessionPct=questions.length?Math.round((sessionScore/questions.length)*100):0;
   const lastSessionQuality=useMemo(()=>lastSession?getSessionQuality(lastSession):null,[lastSession]);
   const passProbability=useMemo(()=>getPassProbability(levelHistory,moduleReadiness,daysLeft),[levelHistory,moduleReadiness,daysLeft]);
+  const paceStatus=useMemo(()=>getPaceStatus(levelHistory,passProbability,daysLeft),[levelHistory,passProbability,daysLeft]);
   useEffect(()=>{
     if(!passProbability||!history.length)return;
     const today=localDateKey();
