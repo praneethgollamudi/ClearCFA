@@ -82,8 +82,9 @@ async function supabaseCreateAccount(cfg, userId, email){
       headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates,return=minimal"},
       body:JSON.stringify({user_id:userId,data:JSON.stringify({type:"account",email,created_at:new Date().toISOString()}),updated_at:new Date().toISOString()})
     });
-    return res.ok;
-  }catch{return false;}
+    if(!res.ok){const errText=await res.text().catch(()=>"");return {ok:false,status:res.status,error:errText};}
+    return {ok:true,status:res.status};
+  }catch(e){return {ok:false,status:0,error:String(e)};}
 }
 
 function loginWithGoogle(){
@@ -7422,11 +7423,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
       try{
         const id=await deriveUserId(authEmail,authPassword);
         if(isSignup){
-          const created=await supabaseCreateAccount(SB_CFG,id,authEmail.toLowerCase().trim());
-          if(!created){setAuthError("Could not create account — check your connection.");setAuthLoading(false);return;}
+          // Best-effort insert — proceed regardless of Supabase response.
+          // RLS on the sessions table may block anon inserts; the row will be created on first data sync.
+          // Only hard-fail on a complete network error (status 0 = no response at all).
+          const result=await supabaseCreateAccount(SB_CFG,id,authEmail.toLowerCase().trim());
+          if(result.status===0){setAuthError("No internet connection — please try again.");setAuthLoading(false);return;}
+          if(!result.ok){console.warn("Session row insert failed (non-fatal):",result.status,result.error);}
         } else {
           const exists=await supabaseCheckAccount(SB_CFG,id);
-          if(!exists){setAuthError("No account found. Check your email and password, or create a new account.");setAuthLoading(false);return;}
+          if(!exists){setAuthError("No account found — check your email and password, or create a new account.");setAuthLoading(false);return;}
         }
         const auth={id, email:authEmail.toLowerCase().trim()};
         // If switching to a different account, clear local data first
