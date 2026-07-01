@@ -4263,19 +4263,23 @@ function buildReelFeed(moduleReadiness,powerNotes,formulas,misconceptions,seedQs
       const mnem=pnt.mnemonic||null;
       rules.slice(0,isWeak?3:2).forEach((rule,ri)=>{
         if(ruleCount>=3)return;
-        byType.power_note.push({type:"power_note",topic:t,module:pnt.module||mods[0]||t,rule,trap:traps[ri]||null,mnemonic:ri===0?mnem:null});
+        const mod=pnt.module||mods[0]||t;
+        byType.power_note.push({type:"power_note",topic:t,module:mod,rule,mnemonic:ri===0?mnem:null});
+        // paired trap card: show the rule + its specific trap together for context
+        if(traps[ri]){
+          byType.trap.push({type:"trap",topic:t,module:mod,rule,trap:traps[ri]});
+        }
         if(isWeak&&ruleCount===0){
-          byType.power_note.push({type:"power_note",topic:t,module:pnt.module||mods[0]||t,rule,trap:null,mnemonic:null});
+          byType.power_note.push({type:"power_note",topic:t,module:mod,rule,mnemonic:null});
         }
         if(ruleCount<2){
-          byType.curiosity_gap.push({type:"curiosity_gap",topic:t,module:pnt.module||mods[0]||t,hint:`Key rule in ${pnt.module||mods[0]||t}`,reveal:rule});
+          byType.curiosity_gap.push({type:"curiosity_gap",topic:t,module:mod,hint:`Key rule in ${mod}`,reveal:rule});
         }
         ruleCount++;
       });
     });
-    // trap cards — MISCONCEPTIONS[topic] is string[]
-    const mc=misconceptions?.[t]||[];
-    mc.slice(0,2).forEach(trap=>{if(trap)byType.trap.push({type:"trap",topic:t,module:mods[0]||t,trap});});
+    // trap cards — paired rule+trap from POWER_NOTES (not standalone MISCONCEPTIONS strings)
+    // already created inline in the power_notes loop above
     // formula cards — FORMULAS[topic] is [{name, f, ...}]
     const fm=formulas?.[t]||[];
     fm.slice(0,2).forEach(f=>{
@@ -9636,49 +9640,60 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const renderCardBody=()=>{
       if(!card)return <div style={{color:C.muted,textAlign:"center",paddingTop:60}}>No content available</div>;
       if(card.type==="power_note")return(
-        <div style={{padding:"0 4px"}}>
-          <div style={{fontSize:17,fontWeight:700,lineHeight:1.75,color:C.text,marginBottom:card.trap||card.mnemonic?18:0}}>{card.rule}</div>
-          {card.trap&&(
-            <div style={{background:"#7f1d1d22",border:"1px solid #ef444444",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#ef4444",marginBottom:4}}>⚠ Common trap</div>
-              <div style={{fontSize:13,color:"#fca5a5",lineHeight:1.65}}>{card.trap}</div>
-            </div>
-          )}
+        <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+            <div style={{fontSize:11,fontWeight:700,color:accentColor,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>Key Rule · {card.module}</div>
+            <div style={{fontSize:16,fontWeight:700,lineHeight:1.8,color:C.text}}>{card.rule}</div>
+          </div>
           {card.mnemonic&&(
-            <div style={{display:"inline-block",background:"#f59e0b18",border:"1px solid #f59e0b44",borderRadius:20,padding:"5px 14px",fontSize:12,color:"#fcd34d",fontWeight:600}}>💡 {card.mnemonic}</div>
+            <div style={{background:"#f59e0b10",border:"1px solid #f59e0b33",borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:18}}>💡</span>
+              <div style={{fontSize:13,color:"#fcd34d",lineHeight:1.6,fontWeight:500}}>{card.mnemonic}</div>
+            </div>
           )}
         </div>
       );
       if(card.type==="trap")return(
-        <div style={{background:"#7f1d1d22",border:"1px solid #ef444444",borderRadius:14,padding:"22px 18px",textAlign:"center"}}>
-          <div style={{fontSize:32,marginBottom:12}}>⚠</div>
-          <div style={{fontSize:16,fontWeight:700,color:"#fca5a5",lineHeight:1.75,marginBottom:16}}>{card.trap}</div>
-          <div style={{fontSize:11,color:"#ef444488",fontStyle:"italic"}}>Watch for this on exam day</div>
+        <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
+          {card.rule&&(
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>✓ Remember</div>
+              <div style={{fontSize:15,fontWeight:600,color:C.text,lineHeight:1.8}}>{card.rule}</div>
+            </div>
+          )}
+          <div style={{background:"#2d0a0a",border:"1px solid #ef444455",borderRadius:14,padding:"20px 18px",flex:card.rule?0:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#ef4444",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Watch Out</div>
+            <div style={{fontSize:15,fontWeight:700,color:"#fca5a5",lineHeight:1.8}}>{card.trap}</div>
+          </div>
         </div>
       );
       if(card.type==="formula")return(
-        <div style={{textAlign:"center"}}>
-          <div style={{fontSize:14,fontWeight:700,color:C.accentLight,marginBottom:16}}>{card.name}</div>
-          <div onClick={()=>{setReelRevealed(true);if(navigator.vibrate)navigator.vibrate([20]);}}
-            style={{position:"relative",cursor:"pointer"}}>
-            <div style={{fontFamily:"monospace",fontSize:18,fontWeight:700,color:C.text,lineHeight:1.8,
-              filter:reelRevealed?"none":"blur(8px)",transition:"filter 0.3s",
-              background:C.surface,borderRadius:12,padding:"20px",border:`1px solid ${C.border}`}}>
-              {card.formula}
-            </div>
-            {!reelRevealed&&(
-              <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:6}}>
-                <div style={{fontSize:22}}>👁</div>
-                <div style={{fontSize:12,fontWeight:700,color:C.accentLight}}>Tap to reveal</div>
+        <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",textAlign:"center"}}
+            onClick={()=>{setReelRevealed(true);if(navigator.vibrate)navigator.vibrate([20]);}}>
+            <div style={{fontSize:12,fontWeight:700,color:accentColor,marginBottom:12,textTransform:"uppercase",letterSpacing:"0.08em"}}>{card.name}</div>
+            <div style={{position:"relative",width:"100%"}}>
+              <div style={{fontFamily:"'Courier New',monospace",fontSize:20,fontWeight:700,color:C.text,lineHeight:1.8,
+                filter:reelRevealed?"none":"blur(10px)",transition:"filter 0.35s",padding:"8px 0"}}>
+                {card.formula}
               </div>
-            )}
+              {!reelRevealed&&(
+                <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8}}>
+                  <div style={{fontSize:28}}>👁</div>
+                  <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>Tap to reveal</div>
+                </div>
+              )}
+            </div>
+            {reelRevealed&&<div style={{fontSize:11,color:C.muted,marginTop:16}}>Swipe up for next card ↑</div>}
           </div>
-          {reelRevealed&&<div style={{fontSize:11,color:C.muted,marginTop:10}}>Swipe up for next card</div>}
         </div>
       );
       if(card.type==="mcq")return(
-        <div>
-          <div style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.75,marginBottom:16}}>{card.question}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10,flex:1}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px",marginBottom:2}}>
+            <div style={{fontSize:11,fontWeight:700,color:accentColor,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>Quick Check</div>
+            <div style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.8}}>{card.question}</div>
+          </div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {Object.entries(card.options||{}).map(([key,val])=>{
               const isCorrect=key===card.answer;
@@ -9691,13 +9706,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 <button key={key} onClick={()=>{
                   if(reelAnswer)return;
                   setReelAnswer(key);
-                  if(key===card.answer){
-                    if(navigator.vibrate)navigator.vibrate([30,20,30]);
-                    setXp(x=>x+5);
-                  }
-                }} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"12px 14px",borderRadius:10,
+                  if(key===card.answer){if(navigator.vibrate)navigator.vibrate([30,20,30]);setXp(x=>x+5);}
+                }} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"13px 14px",borderRadius:10,
                   textAlign:"left",background:bg,border,color,cursor:reelAnswer?"default":"pointer",
-                  fontSize:13,lineHeight:1.6,transition:"all 0.2s"}}>
+                  fontSize:13,lineHeight:1.65,transition:"all 0.2s"}}>
                   <span style={{minWidth:22,height:22,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:showResult&&isCorrect?C.easy:showResult&&wasPicked&&!isCorrect?C.hard:C.dim,color:showResult&&(isCorrect||wasPicked)?"#fff":C.muted}}>{key}</span>
                   <span>{val}</span>
                 </button>
@@ -9705,24 +9717,21 @@ Return ONLY a JSON array — no prose, no markdown fences:
             })}
           </div>
           {reelAnswer&&(
-            <div style={{marginTop:12,background:C.surface,borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`,fontSize:12,color:C.textMid,lineHeight:1.7,animation:"fadeIn 0.3s ease"}}>
+            <div style={{background:C.surface,borderRadius:12,padding:"14px 16px",border:`1px solid ${C.border}`,fontSize:13,color:C.textMid,lineHeight:1.75,animation:"fadeIn 0.3s ease"}}>
               {reelAnswer===card.answer?<span style={{color:C.easy,fontWeight:700}}>✓ Correct! </span>:<span style={{color:C.hard,fontWeight:700}}>✗ Incorrect. </span>}
               {card.explanation}
             </div>
           )}
-          {reelAnswer&&<div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>Swipe up for next card</div>}
         </div>
       );
       if(card.type==="curiosity_gap")return(
-        <div style={{textAlign:"center"}}>
-          <div style={{fontSize:32,marginBottom:14}}>🧠</div>
-          <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:16,textTransform:"uppercase",letterSpacing:"0.08em"}}>{card.hint}</div>
-          <div style={{background:C.surface,borderRadius:12,padding:"18px",border:`1px solid ${C.border}`,marginBottom:14}}>
-            <div style={{fontSize:15,fontWeight:700,color:C.text,lineHeight:1.75,
-              filter:"blur(7px)",userSelect:"none"}}>{card.reveal}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 18px",flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:16}}>🧠</div>
+            <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:14,textTransform:"uppercase",letterSpacing:"0.08em"}}>{card.hint}</div>
+            <div style={{fontSize:15,fontWeight:700,color:C.text,lineHeight:1.8,filter:"blur(7px)",userSelect:"none",width:"100%"}}>{card.reveal}</div>
+            <div style={{fontSize:12,color:C.accentLight,marginTop:20}}>Swipe up to reveal ↑</div>
           </div>
-          <div style={{fontSize:12,color:C.accentLight}}>Swipe up to reveal ↑</div>
-          {/* Next card IS the reveal — pre-bake it */}
         </div>
       );
       return null;
