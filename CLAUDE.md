@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**BA II Plus calculator interactive guide strip (v402615b)**: Calculator Trainer now includes an interactive guide strip displaying keystroke sequences and step-by-step function guides (amortization, ICONV, etc.). When rendering calculator features, ensure guide strip is accessible during drills to provide real-time reference support.
+
+
+**What's New version 2026-07-01-e and 2026-07-01-f removed (latest consolidation)**: Both versions removed from WHATS_NEW_SLIDES array; currently active versions are base 2026-07-01, -c, and -d. Version -d now consolidates calculator guide, lofi vibes, and pacing chip floor-hiding logic. Always verify against active WHATS_NEW_SLIDES list to prevent duplicate messaging.
+
+
+**More menu item restoration (97d2f14)**: More menu restored to 12 items after accidental reduction to 8 items in v22c8816. When rendering More menu or overflow navigation, maintain the 12-item list as the canonical structure to avoid losing core utility shortcuts.
+
+
 **More menu item reduction (v22c8816)**: More menu trimmed from 13 to 8 items by removing redundant navigation shortcuts. When rendering the More menu or overflow navigation, ensure only core utility items are displayed and duplicate shortcuts are excluded to reduce menu bloat.
 
 
@@ -892,7 +901,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1793400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1793500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
