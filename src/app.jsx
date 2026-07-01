@@ -1043,13 +1043,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01
-{version:"2026-07-01",slides:[
-{emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Coach & Debrief Now Reliable",sub:"AI · 2026-07-01 update",desc:"Fixed critical issues preventing AI Coach from loading and AI debrief from working when you've hit your daily question limit. You'll now see helpful error messages and retry options instead of blank screens or silent failures.",tip:"Try the AI Coach button on any topic—it should load instantly without the loading blank page bug."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Formulas Display Perfectly",sub:"Study Tools · 2026-07-01 update",desc:"Repaired formula rendering so values no longer collapse into single-character columns, and fixed grouping in AI-generated formula sections. Your Formulas tab is now clean and readable for last-minute review.",tip:"Open the Formulas tab in any session to see properly spaced, full-width formula values."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Questions Stay Fresh & Accurate",sub:"UX · 2026-07-01 update",desc:"Eliminated duplicate question IDs, mismatched explanations, and worked examples that never appeared after generation. Every question you see is now genuine and explanation-complete, so you learn from correct content.",tip:"Notice that AI-generated questions now show explanations immediately, and you won't see the same question ID twice in a session."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus & Progress Tracking",sub:"Study Tools · 2026-07-01 update",desc:"Today's Focus suggestions now vary more intelligently across topics, and your completion is tracked so you see real progress. You'll spend less time on repetitive suggestions and more time on gaps that matter.",tip:"Check your Today's Focus—you'll see different topics suggested each day, not the same ones repeating."},
-]},
 // WN_VER:2026-07-01-b
 {version:"2026-07-01-b",slides:[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"Our AI coach implementations are now more effective at walking you through exam concepts and practice questions. You'll get sharper explanations and better-targeted feedback tailored to where you're struggling.",tip:"Try the AI Coach button on any practice question to see the improved guidance in action."},
@@ -1074,6 +1067,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🏆",color:C.reward,bg:C.reward,title:"Smarter Card Progression",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a critical spaced repetition bug where difficult \"leech\" cards were stuck and never graduated despite correct answers. Now all cards progress properly based on your actual performance, ensuring you don't waste time on cards the system won't advance.",tip:"Check your review queue—previously stuck cards should now graduate when you answer them correctly."},
 {emoji:"🤖",color:C.medium,bg:C.medium,title:"More Effective AI Coach",sub:"AI · 2026-07-01 update",desc:"Both AI coach implementations have been improved for better explanations and guidance on exam-style questions. You'll now receive more targeted hints and clearer reasoning to strengthen weak topic areas before test day.",tip:"Use Ask Coach on tricky questions to see the enhanced explanations in action."},
 ]},
+// WN_VER:2026-07-01-f
+{version:"2026-07-01-f",slides:[
+{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Redesigned Learn Tab for Deeper Study",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide, replacing the previous layout with a more intuitive structure for tackling complex CFA topics. This helps you build stronger conceptual foundations before moving to practice questions.",tip:"Open the Learn tab to explore the new guided study sections organized by topic difficulty."},
+{emoji:"✅",color:C.reward,bg:C.reward,title:"Spaced Repetition Cards Graduate Properly",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a critical issue where leech cards (difficult items) were stuck in your review queue even after correct answers. Your spaced repetition schedule now works as intended, so mastered concepts move forward.",tip:"Check your review queue—cards you've been acing should now graduate out of daily rotation."},
+{emoji:"🔐",color:C.medium,bg:C.medium,title:"Password Sign-Up Now Reliable",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved a connection error that prevented new users from signing up with a password. Account creation is now stable across all platforms.",tip:"Invite study partners—sign-ups should work smoothly now."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1082,13 +1081,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"docs: add complete user-facing features inventory to CLAUDE.md",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-06-30
 {date:"2026-06-30",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1143,6 +1135,13 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
