@@ -1050,12 +1050,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-d
-{version:"2026-07-01-d",slides:[
-{emoji:"🎓",color:C.reward,bg:C.reward,title:"Leech Cards Now Graduate Properly",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a critical spaced repetition bug where difficult 'leech' cards would get stuck and never advance to graduation, even after correct answers. Now your hardest topics will finally progress as you master them.",tip:"Check your study dashboard—cards you've been drilling should now show advancement toward completion."},
-{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"Enhanced both AI Coach implementations to deliver more targeted explanations and study strategies tailored to your learning gaps. Your personalized exam prep is now sharper and more effective.",tip:"Try asking the AI Coach a tricky question—you'll notice clearer, more concept-focused answers."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"AI Coach Loads Instantly",sub:"UX · 2026-07-01 update",desc:"Resolved a loading issue that caused the AI Coach button to display a blank page when tapped. The coach is now immediately ready to help you work through difficult topics.",tip:"Tap the AI Coach button anytime during a quiz—it should open without delay."},
-]},
 // WN_VER:2026-07-01-e
 {version:"2026-07-01-e",slides:[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Deep Study Guide Redesigned",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide that organizes content for focused, structured preparation. This replaces scattered lessons with a cohesive learning path that builds knowledge systematically across CFA topics.",tip:"Open the Learn tab to explore the new guided structure and follow the recommended study sequence for your level."},
@@ -1080,6 +1074,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎓",color:C.medium,bg:C.medium,title:"Deeper Learning, Better Retention",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide—not just flashcards. You get structured explanations, real-world context, and topic connections to reinforce understanding before tackling questions.",tip:"Use Deep Study for concept review before moving to practice quizzes on the same topic."},
 {emoji:"🛠️",color:C.hard,bg:C.hard,title:"Build Custom Mocks Your Way",sub:"Study Tools · 2026-07-01 update",desc:"Custom Mock exams now let you select multiple topics and modules in one setup. Mix and match exactly the content you need to focus on without creating separate exams.",tip:"Combine weak topics across modules into a single mock to simulate real exam pressure on your problem areas."},
 ]},
+// WN_VER:2026-07-01-c
+{version:"2026-07-01-c",slides:[
+{emoji:"🧮",color:C.reward,bg:C.reward,title:"Calculator Training with Keystroke Guides",sub:"Study Tools · 2026-07-01 update",desc:"The Calc Trainer now includes a dedicated Learn Calculator tab with BA II Plus keystroke guides to help you master financial calculations faster. Master shortcuts and formulas in context so you're confident on exam day.",tip:"Tap the Learn tab in Calc Trainer to see step-by-step keystrokes for common CFA calculations."},
+{emoji:"🎨",color:C.medium,bg:C.medium,title:"Flexible Mock Exam Customization",sub:"Study Tools · 2026-07-01 update",desc:"Custom Mock exams now support multi-topic and multi-module selection, letting you design practice sessions exactly how you need them. Build targeted quizzes that match your study plan and weak areas.",tip:"When setting up a Custom Mock, select multiple topics or modules at once to test cross-topic mastery."},
+{emoji:"🔧",color:C.easy,bg:C.easy,title:"Navigation & Sign-Up Stability",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed navigation issues on Study Advisor and Weekly Plan screens, plus resolved sign-up failures. Your study flow is now seamless from start to finish.",tip:"If you previously had trouble signing up, try again—the issue is now resolved."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1100,12 +1100,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1145,6 +1139,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
