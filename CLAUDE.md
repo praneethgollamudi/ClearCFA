@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**`expandAcronyms()` function**: Takes text string and returns it with CFA acronyms replaced by their expanded forms (e.g., "WACC" becomes "WACC (Weighted Average Cost of Capital)"). Uses word-boundary regex to avoid replacing acronyms that are part of longer words or URLs. Always call this function when rendering Drill card content, questions, or explanations to enhance learner comprehension.
+
+
+**`CFA_ACRONYMS` constant**: Object mapping CFA exam acronyms (e.g., "EAR", "WACC", "FCF") to their full forms. Used by `expandAcronyms()` function to automatically expand acronyms in Drill card text. When building new UI that displays CFA terminology, call `expandAcronyms(text)` to ensure acronyms are expanded for learner clarity. Currently covers ~90 common CFA acronyms across quantitative methods, finance, accounting, and portfolio management.
+
+
 **Drill feature (formerly Study Reels)**: The micro-learning feature has been renamed from 'Study Reels' to 'Drill' in navigation and user messaging. Uses `REEL_TOPIC_COLORS` constant for topic-consistent visual styling. When referencing this feature in new updates or features, use 'Drill' as the primary label and describe it as TikTok-style vertical swipe micro-learning for bite-sized concept review.
 
 
@@ -745,7 +751,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1791800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1791900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
