@@ -26,6 +26,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Supabase Infrastructure
 
+**Multi-topic/module question generation**: `buildQuestionPrompt()` now accepts optional `multiModuleList` parameter (array of `{t, st}` objects for topic and module). When provided, questions are generated across all listed modules with each question specifying which module it covers. Always pass `multiModuleList` from Custom Mock setup when user selects multiple topics/modules.
+
+
 **`supabaseCreateAccount()` return format**: Now returns an object `{ok, status, error}` instead of boolean. On success: `{ok:true, status:res.status}`. On failure: `{ok:false, status:res.status, error:errText}`. Always check `res.ok` in calling code and handle error cases with status/error details for better UX.
 
 
@@ -87,6 +90,9 @@ SQL migrations in `supabase/migrations/*.sql` run automatically via the **"Deplo
 Edge functions are deployed with `supabase functions deploy <name> --project-ref uucxyuqxqjpbxecemdvf` via the same workflow.
 
 ## Payment & Pricing
+
+**Custom Mock multi-selection**: Users can now select multiple topics and/or multiple modules when creating a Custom Mock exam. The question generator spreads questions across all selected modules and labels each question with its source module.
+
 
 **Calculator Trainer with Learn tab**: A new Calc Trainer feature includes a Learn Calculator tab with BA II Plus keystroke guides. This is a permanent study tool—do not remove without user migration.
 
@@ -703,7 +709,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1791200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1791300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
