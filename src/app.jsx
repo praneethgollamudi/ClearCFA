@@ -1122,12 +1122,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-e
-{version:"2026-07-01-e",slides:[
-{emoji:"📱",color:C.accentLight,bg:C.accentLight,title:"Learn with Study Reels",sub:"Study Tools · 2026-07-01 update",desc:"Swipe through bite-sized, vertical video lessons designed for micro-learning on the go. Master one concept at a time with the same engagement as social media.",tip:"Find Study Reels in the main navigation tab to start learning between study sessions."},
-{emoji:"🎲",color:C.medium,bg:C.medium,title:"Flexible Custom Mock Exams",sub:"Study Tools · 2026-07-01 update",desc:"Now select multiple topics and modules when building a custom mock exam, giving you precise control over what you practice. Tailor exams to your weakest areas faster.",tip:"Try selecting 2–3 related modules in Custom Mock setup to simulate exam-style mixed questions."},
-{emoji:"🛠️",color:C.easy,bg:C.easy,title:"Navigation Fixed",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved an issue where the navigation bar was unresponsive when returning from Study Advisor and Weekly Plan screens. Navigation is now smooth and instant across all screens.",tip:"You'll notice snappier taps and seamless screen transitions when jumping between study modes."},
-]},
 // WN_VER:2026-07-01-f
 {version:"2026-07-01-f",slides:[
 {emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill: Bite-Sized Learning",sub:"Study Tools · 2026-07-01 update",desc:"We've launched Drill—a TikTok-style vertical swipe feed for micro-learning that fits into your busiest days. Scroll through focused concept drills and reinforce key topics in minutes, not hours.",tip:"Tap the Drill tab in the bottom navigation to start swiping through your first micro-lesson."},
@@ -1151,6 +1145,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📚",color:C.medium,bg:C.medium,title:"Streamlined Drill Tab with Better Context",sub:"UX · 2026-07-01 update",desc:"The Reels tab is now called Drill for clarity, and we've consolidated duplicate study modes so you have one focused place to practice. Trap cards now show the rule and trap context together, helping you understand why answers are wrong.",tip:"Open the Drill tab and select a trap card to see both the rule being tested and the common pitfall explained side-by-side."},
 {emoji:"🔧",color:C.hard,bg:C.hard,title:"Better Browser Compatibility for Drill",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a technical issue that was causing Drill cards to display incorrectly on older Safari browsers and to not fill the screen properly. Now all cards render correctly across all supported browsers and devices.",tip:"If you use Safari on an older device, try Drill again—it should work smoothly now."},
 ]},
+// WN_VER:2026-07-01-d
+{version:"2026-07-01-d",slides:[
+{emoji:"🎮",color:C.reward,bg:C.reward,title:"Drill Cards Feel Alive",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now animate smoothly as you swipe through them, with instant XP pop-ups and helpful hints guiding your next move. These visual touches make studying more engaging and keep you motivated through longer practice sessions.",tip:"Swipe through a few Drill cards and watch the animations—they'll also show you pass probability advice based on your performance."},
+{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"CFA Terms Spelled Out",sub:"Study Tools · 2026-07-01 update",desc:"CFA acronyms on Drill cards now expand to their full forms inline, so you never have to guess what WACC or FCF stands for mid-question. This reduces friction and helps reinforce terminology as you study.",tip:"Hover over or tap any expanded acronym in a Drill card to see the full definition in context."},
+{emoji:"🔍",color:C.medium,bg:C.medium,title:"Better Trap Card Context",sub:"Bug Fix · 2026-07-01 update",desc:"Trap answer cards now always show the relevant rule and full context so you understand exactly why an answer is a trap. This turns every wrong answer into a learning moment.",tip:"When you hit a trap card, read the rule carefully—it's the key to avoiding that mistake on test day."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1163,15 +1163,14 @@ const ADMIN_CHANGELOG=[
 {date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin dashboard cost stats: use real token counts from Anthropic API",
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix admin dashboard cost stats: use real token counts from Anthropic API",
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
