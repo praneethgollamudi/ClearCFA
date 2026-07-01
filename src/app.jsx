@@ -830,11 +830,17 @@ function getPaceStatus(levelHistory, passProbability, daysLeft) {
   // neededPerDay: how many sessions/day are required to cover remaining work by exam day
   const neededPerDay = sessionsNeeded > 0 ? sessionsNeeded / daysLeft : 0;
   const ahead = avg >= neededPerDay;
+  const totalQs = levelHistory.reduce((s, h) => s + (h.total || 0), 0);
+  const avgQsPerDay = Math.round(totalQs / Math.max(uniqueDays, 1));
+  const avgQsPerSession = levelHistory.length > 0 ? totalQs / levelHistory.length : 0;
+  const neededQsPerDay = Math.round(neededPerDay * avgQsPerSession);
   return {
     avg: Math.round(avg * 10) / 10,
     neededPerDay: Math.round(neededPerDay * 10) / 10,
     sessionsNeeded,
     ahead,
+    avgQsPerDay,
+    neededQsPerDay,
   };
 }
 
@@ -9182,9 +9188,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
           border:`1px solid ${paceStatus.ahead?C.easy:C.medium}33`,
           borderRadius:10,padding:"9px 14px",marginBottom:12,cursor:"pointer"}}>
         <span style={{fontSize:12,fontWeight:700,color:paceStatus.ahead?C.easy:C.medium}}>
-          {paceStatus.ahead?"🟢 On pace":"⚠️ Behind pace"} · {paceStatus.avg} sessions/day
+          {paceStatus.ahead?"🟢 On pace":"⚠️ Behind pace"} · {paceStatus.avgQsPerDay} Qs/day
         </span>
-        <span style={{fontSize:11,color:C.muted}}>need {paceStatus.neededPerDay}/day</span>
+        <span style={{fontSize:11,color:C.muted}}>need {paceStatus.neededQsPerDay} Qs/day</span>
       </div>
     )}
 
