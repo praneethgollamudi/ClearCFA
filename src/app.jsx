@@ -1066,6 +1066,56 @@ const REEL_TOPIC_COLORS={
   "Risk Management":"#ef4444",
   "Trading & Performance":"#0ea5e9",
 };
+const CFA_ACRONYMS={
+  "EAR":"Effective Annual Rate","APR":"Annual Percentage Rate","HPY":"Holding Period Yield",
+  "HPR":"Holding Period Return","TWR":"Time-Weighted Return","MWR":"Money-Weighted Return",
+  "IRR":"Internal Rate of Return","MIRR":"Modified Internal Rate of Return",
+  "NPV":"Net Present Value","PV":"Present Value","FV":"Future Value","PMT":"Payment (annuity)",
+  "WACC":"Weighted Average Cost of Capital","CAPM":"Capital Asset Pricing Model",
+  "SML":"Security Market Line","CML":"Capital Market Line","APT":"Arbitrage Pricing Theory",
+  "EPS":"Earnings Per Share","DPS":"Dividends Per Share","BVS":"Book Value per Share",
+  "ROE":"Return on Equity","ROA":"Return on Assets","ROIC":"Return on Invested Capital",
+  "EBIT":"Earnings Before Interest and Taxes",
+  "EBITDA":"Earnings Before Interest, Taxes, Depreciation, and Amortization",
+  "NI":"Net Income","COGS":"Cost of Goods Sold",
+  "CFO":"Cash Flow from Operations","CFI":"Cash Flow from Investing","CFF":"Cash Flow from Financing",
+  "FCF":"Free Cash Flow","FCFF":"Free Cash Flow to the Firm","FCFE":"Free Cash Flow to Equity",
+  "DCF":"Discounted Cash Flow","DDM":"Dividend Discount Model","GGM":"Gordon Growth Model",
+  "PVGO":"Present Value of Growth Opportunities","RI":"Residual Income",
+  "YTM":"Yield to Maturity","YTC":"Yield to Call","YTW":"Yield to Worst",
+  "BEY":"Bond Equivalent Yield","OAS":"Option-Adjusted Spread",
+  "DV01":"Dollar Value of a Basis Point","CAGR":"Compound Annual Growth Rate",
+  "SD":"Standard Deviation","CV":"Coefficient of Variation",
+  "VaR":"Value at Risk","CVaR":"Conditional Value at Risk",
+  "MAR":"Minimum Acceptable Return","IR":"Information Ratio",
+  "OLS":"Ordinary Least Squares","CLT":"Central Limit Theorem",
+  "GDP":"Gross Domestic Product","CPI":"Consumer Price Index","PPI":"Producer Price Index",
+  "PMI":"Purchasing Managers Index",
+  "GAAP":"Generally Accepted Accounting Principles","IFRS":"International Financial Reporting Standards",
+  "FIFO":"First In, First Out","LIFO":"Last In, First Out",
+  "DTA":"Deferred Tax Asset","DTL":"Deferred Tax Liability",
+  "OBS":"Off-Balance Sheet","SPE":"Special Purpose Entity",
+  "MBS":"Mortgage-Backed Securities","ABS":"Asset-Backed Securities",
+  "CDO":"Collateralized Debt Obligation","CDS":"Credit Default Swap",
+  "ETF":"Exchange-Traded Fund","NAV":"Net Asset Value","AUM":"Assets Under Management",
+  "REIT":"Real Estate Investment Trust",
+  "IPO":"Initial Public Offering","ESG":"Environmental, Social, and Governance",
+  "GIPS":"Global Investment Performance Standards","IPS":"Investment Policy Statement",
+  "SAA":"Strategic Asset Allocation","TAA":"Tactical Asset Allocation",
+  "ALM":"Asset-Liability Management","LDI":"Liability-Driven Investing",
+  "CME":"Capital Market Expectations","MVO":"Mean-Variance Optimization",
+  "OTC":"Over the Counter","EMH":"Efficient Market Hypothesis",
+};
+function expandAcronyms(text){
+  if(!text)return text;
+  let result=String(text);
+  Object.entries(CFA_ACRONYMS).forEach(([abbr,full])=>{
+    const escaped=abbr.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    const re=new RegExp(`(?<![\\w/])(${escaped})(?![\\w/])`);
+    result=result.replace(re,`$1 (${full})`);
+  });
+  return result;
+}
 const WHATS_NEW_SLIDES=[
 // WN_START
 // WN_VER:2026-07-01-c
@@ -9642,7 +9692,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
             <div style={{fontSize:11,fontWeight:700,color:accentColor,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>Key Rule · {card.module}</div>
-            <div style={{fontSize:16,fontWeight:700,lineHeight:1.8,color:C.text}}>{card.rule}</div>
+            <div style={{fontSize:16,fontWeight:700,lineHeight:1.8,color:C.text}}>{expandAcronyms(card.rule)}</div>
           </div>
           {card.mnemonic&&(
             <div style={{background:"#f59e0b10",border:"1px solid #f59e0b33",borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
@@ -9657,12 +9707,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
           {card.rule&&(
             <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
               <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>✓ Remember</div>
-              <div style={{fontSize:15,fontWeight:600,color:C.text,lineHeight:1.8}}>{card.rule}</div>
+              <div style={{fontSize:15,fontWeight:600,color:C.text,lineHeight:1.8}}>{expandAcronyms(card.rule)}</div>
             </div>
           )}
           <div style={{background:"#2d0a0a",border:"1px solid #ef444455",borderRadius:14,padding:"20px 18px",flex:card.rule?0:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
             <div style={{fontSize:11,fontWeight:700,color:"#ef4444",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Watch Out</div>
-            <div style={{fontSize:15,fontWeight:700,color:"#fca5a5",lineHeight:1.8}}>{card.trap}</div>
+            <div style={{fontSize:15,fontWeight:700,color:"#fca5a5",lineHeight:1.8}}>{expandAcronyms(card.trap)}</div>
           </div>
         </div>
       );
@@ -9670,7 +9720,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",textAlign:"center"}}
             onClick={()=>{setReelRevealed(true);if(navigator.vibrate)navigator.vibrate([20]);}}>
-            <div style={{fontSize:12,fontWeight:700,color:accentColor,marginBottom:12,textTransform:"uppercase",letterSpacing:"0.08em"}}>{card.name}</div>
+            <div style={{fontSize:12,fontWeight:700,color:accentColor,marginBottom:12,textTransform:"uppercase",letterSpacing:"0.08em"}}>{expandAcronyms(card.name)}</div>
             <div style={{position:"relative",width:"100%"}}>
               <div style={{fontFamily:"'Courier New',monospace",fontSize:20,fontWeight:700,color:C.text,lineHeight:1.8,
                 filter:reelRevealed?"none":"blur(10px)",transition:"filter 0.35s",padding:"8px 0"}}>
@@ -9728,7 +9778,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 18px",flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
             <div style={{fontSize:36,marginBottom:16}}>🧠</div>
             <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:14,textTransform:"uppercase",letterSpacing:"0.08em"}}>{card.hint}</div>
-            <div style={{fontSize:15,fontWeight:700,color:C.text,lineHeight:1.8,filter:"blur(7px)",userSelect:"none",width:"100%"}}>{card.reveal}</div>
+            <div style={{fontSize:15,fontWeight:700,color:C.text,lineHeight:1.8,filter:"blur(7px)",userSelect:"none",width:"100%"}}>{expandAcronyms(card.reveal)}</div>
             <div style={{fontSize:12,color:C.accentLight,marginTop:20}}>Swipe up to reveal ↑</div>
           </div>
         </div>
