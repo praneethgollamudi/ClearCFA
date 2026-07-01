@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version 2026-06-30-f & 2026-07-01**: Latest versions document AI debrief reliability improvements, formula display fixes, and calculator addition to SR review. When creating future slides, follow the same emoji-led, tip-driven format and always prepend new versions at the `// WN_START` marker.
+
+
 **What's New slides versioning**: WHATS_NEW_SLIDES is a versioned array with `version` (e.g. "2026-06-30", "2026-06-30-b") and `slides` array. Versions with `-b`, `-c` suffixes are refinements of the same date. New versions are prepended at `// WN_START` marker. Use concise, emoji-led titles and actionable tip text; avoid vague marketing language.
 
 
@@ -61,6 +64,9 @@ Edge functions are deployed with `supabase functions deploy <name> --project-ref
 
 ## Payment & Pricing
 
+**Calculator in SR review**: A calculator button is now available on the Short Rate review screen to allow users to compute values during drilling without switching apps. This is a permanent UI feature—do not remove without migrating users elsewhere.
+
+
 Payment is **manual**: user pays via UPI, WhatsApp a screenshot, GSP manually inserts a row into the `subscriptions` Supabase table.
 
 ```
@@ -104,6 +110,9 @@ Pro = row exists where `active=true AND valid_until >= now()`. Checked via `chec
 To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true` and `valid_until` 30 days out.
 
 ## AI Quota System
+
+**AI Debrief error recovery**: AI debrief now catches quota exhaustion and other errors gracefully, displaying a user-friendly error message with a Retry button instead of a blank screen. Quota-exhausted errors inform the user when the quota resets. Always assume debrief can fail and provide meaningful feedback.
+
 
 **AI Debrief error messaging**: When debrief fails due to quota or other errors, show a user-friendly error message with a Retry button instead of crashing. The quota-exhausted error should indicate when the quota will reset (typically next day).
 
@@ -646,7 +655,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1790600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1790700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
