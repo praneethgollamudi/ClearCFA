@@ -5701,12 +5701,13 @@ function CFAMock(){
       setReelAnswer(null);setReelRevealed(false);setReelIdx(next);
       const count=reelSessionCount+1;
       setReelSessionCount(count);
-      if(count===10)showToast("🎬","10 Reels done!","Keep the momentum going 🔥");
-      if(count===25)showToast("🔥","25 Reels!","You're on a roll.");
-      if(count===50)showToast("🏆","50 Reels!","Study machine mode 💪");
+      if(count===10)showToast("🎬","10 Drills done!","Keep the momentum going 🔥");
+      if(count===25)showToast("🔥","25 Drills!","You're on a roll.");
+      if(count===50)showToast("🏆","50 Drills!","Study machine mode 💪");
     };
     const goPrev=()=>{
       if(reelIdx===0)return;
+      setReelSlideDir("prev");
       setReelAnswer(null);setReelRevealed(false);setReelIdx(i=>i-1);
     };
     const h=(e)=>{
@@ -9700,9 +9701,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       setReelAnswer(null);setReelRevealed(false);setReelXpPop(false);setReelIdx(next);
       const count=reelSessionCount+1;
       setReelSessionCount(count);
-      if(count===10)showToast("🎬","10 Reels done!","Keep the momentum going 🔥");
-      if(count===25)showToast("🔥","25 Reels!","You're on a roll.");
-      if(count===50)showToast("🏆","50 Reels!","Study machine mode 💪");
+      if(count===10)showToast("🎬","10 Drills done!","Keep the momentum going 🔥");
+      if(count===25)showToast("🔥","25 Drills!","You're on a roll.");
+      if(count===50)showToast("🏆","50 Drills!","Study machine mode 💪");
     };
     const reelGoPrev=()=>{
       if(reelIdx===0)return;
@@ -9871,7 +9872,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
             style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,padding:"4px 0"}}>
             📖 Study notes
           </button>
-          <div style={{fontSize:11,color:C.muted}}>{reelSessionCount} seen · swipe ↑</div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <button onClick={reelGoPrev} disabled={reelIdx===0}
+              style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,width:28,height:28,fontSize:14,color:reelIdx===0?C.border:C.muted,cursor:reelIdx===0?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>‹</button>
+            <span style={{fontSize:11,color:C.muted}}>{reelSessionCount} seen</span>
+            <button onClick={reelGoNext}
+              style={{background:"none",border:`1px solid ${C.border}`,borderRadius:8,width:28,height:28,fontSize:14,color:C.muted,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>›</button>
+          </div>
           <button onClick={()=>{if(card?.topic){setSelTopics([card.topic]);setSelSubtopics([]);setScreen("setup");}}}
             style={{background:"none",border:"none",color:C.accentLight,cursor:"pointer",fontSize:12,fontWeight:700,padding:"4px 0"}}>
             Practice →
