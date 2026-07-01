@@ -1131,12 +1131,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-b
-{version:"2026-07-01-b",slides:[
-{emoji:"🎯",color:C.reward,bg:C.reward,title:"Smarter Study Pacing",sub:"Study Tools · 2026-07-01 update",desc:"New pacing chip and vignette scenario panel help you tackle questions at the right speed and understand real exam formats. Retakers get pre-seeded progress so you skip material you've already mastered.",tip:"Check the pacing chip during drills to stay on track for exam day timing."},
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Your Pass Probability",sub:"AI · 2026-07-01 update",desc:"Pass probability delta now shows how each study session moves you closer to exam readiness. Session summaries highlight your strongest and weakest topic areas so you focus effort where it matters most.",tip:"Review your SR session summary after drills to see which topics boosted your pass odds."},
-{emoji:"✨",color:C.hard,bg:C.hard,title:"Power Pro Tier & Quality Flags",sub:"Study Tools · 2026-07-01 update",desc:"Upgrade to Power Pro for premium features, and new quality flags mark the highest-caliber practice questions. Try a free 40-question trial and compare your score against peer percentiles to see where you rank.",tip:"Start the 40q trial to benchmark yourself against other CFA candidates right now."},
-]},
 // WN_VER:2026-07-01-c
 {version:"2026-07-01-c",slides:[
 {emoji:"🎓",color:C.reward,bg:C.reward,title:"Smarter Study Pacing & Retake Support",sub:"Study Tools · 2026-07-01 update",desc:"ClearCFA now personalizes your study timeline with pacing guidance and detects whether you're a first-time test taker or retaker—adjusting pre-loaded content to match your actual exam history. This ensures you focus on what you actually need to master, not generic defaults.",tip:"Check the pacing chip on your dashboard to see your recommended daily study load."},
@@ -1160,6 +1154,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Progress by Questions, Not Sessions",sub:"Study Tools · 2026-07-01 update",desc:"Your pacing goal now displays questions per day instead of sessions per day, giving you a clearer target for daily progress. This helps you hit your study milestones with precision, especially when sessions vary in length.",tip:"Check your pacing chip on the dashboard to see exactly how many questions you should tackle today."},
 {emoji:"✨",color:C.reward,bg:C.reward,title:"Readiness Screen Becomes Interactive",sub:"UX · 2026-07-01 update",desc:"Module pills and drill buttons on your Readiness screen are now fully interactive—tap modules to jump into focused drills instantly. You can now spot weak areas and start drilling without extra navigation steps.",tip:"Tap any module pill on Readiness to begin a targeted drill on that topic right away."},
 {emoji:"🐛",color:C.medium,bg:C.medium,title:"Fixed Display & Alert Issues",sub:"Bug Fix · 2026-07-01 update",desc:"We fixed a blank page crash and corrected card alert styling in light mode so your study experience stays smooth and readable. You'll see consistent, polished visuals across all themes.",tip:"Update to the latest version to ensure smooth navigation and proper styling on all screens."},
+]},
+// WN_VER:2026-07-01
+{version:"2026-07-01",slides:[
+{emoji:"🎵",color:C.reward,bg:C.reward,title:"Enhanced Study Music Engine",sub:"Study Tools · 2026-07-01 update",desc:"The lo-fi player now features 4 distinct vibes, reverb effects, melody layers, and a live visualizer to keep you engaged during long study sessions. Stay focused without distracting yourself by constantly tweaking your audio setup.",tip:"Tap the music icon during a study session to explore reverb and melody combinations that match your mood."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Pacing Based on Questions",sub:"UX · 2026-07-01 update",desc:"Your daily study goal now shows questions per day instead of sessions per day, giving you a clearer, more flexible target. This makes it easier to adjust your pace based on actual question volume rather than arbitrary session counts.",tip:"Check your Readiness screen to see your new Qs/day target and adjust it based on your exam timeline."},
+{emoji:"🎮",color:C.easy,bg:C.easy,title:"Interactive Readiness Screen",sub:"UX · 2026-07-01 update",desc:"The Readiness screen is now fully interactive—tap any module pill to jump into that topic, and use the drill button on any card to practice immediately. Stop scrolling and start drilling with one tap.",tip:"Tap a module name directly to open its lessons, or hit the drill button to jump straight into practice questions."},
 ]},
 // WN_END
 ];
