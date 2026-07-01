@@ -93,6 +93,9 @@ WhatsApp message template uses `` `₹${ACTIVE_PRICE}` `` — do not hardcode th
 
 ## Pro Status & Subscriptions
 
+**Calculator on SR review**: A calculator button is permanently available on the Short Rate review screen (mentioned in Payment section but documented here for visibility). Do not remove this feature without migrating users to an alternative workflow.
+
+
 **USD price display in UpgradeModal**: The upgrade modal now displays an approximate USD conversion (`~${Math.round(ACTIVE_PRICE/85)} USD`) below the INR price using a fixed 85 INR/USD exchange rate. This is for reference only — all payments remain in INR via UPI.
 
 
@@ -110,6 +113,12 @@ Pro = row exists where `active=true AND valid_until >= now()`. Checked via `chec
 To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true` and `valid_until` 30 days out.
 
 ## AI Quota System
+
+**Leech card graduation fix**: Spaced repetition cards marked as "leech" now properly graduate after correct answers instead of staying stuck in the learning phase. This prevents demotivating infinite loops on previously-failed cards.
+
+
+**AI Coach loading fix**: AI Coach button no longer displays blank loading page due to navPortal temporal dead zone. The portal is now properly initialized before use. Always ensure portal refs are available in the render tree before attempting to render into them.
+
 
 **AI Debrief error recovery**: AI debrief now catches quota exhaustion and other errors gracefully, displaying a user-friendly error message with a Retry button instead of a blank screen. Quota-exhausted errors inform the user when the quota resets. Always assume debrief can fail and provide meaningful feedback.
 
@@ -655,7 +664,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1790700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1790800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -749,3 +758,5 @@ Keep this section accurate. When doing competitive analysis or writing copy, alw
 - Admin dashboard (email-gated) with user analytics, revenue, activity feed
 
 Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes, AI debrief reliability improvements, and duplicate topic picker removal. When adding new versions, ensure emoji consistency and actionable tip text. Previous versions (2026-06-26-b, 2026-06-26-c) are retained in `WHATS_NEW_SLIDES` history for reference but are no longer shown to users.
+
+**Recent critical fixes (2026-07-01)**: AI Coach/debrief error handling now displays meaningful messages instead of blank screens; formula display fixed to prevent single-character column collapse; duplicate question IDs and mismatched explanations eliminated. These fixes improve reliability for free-tier users hitting quota limits and for all users interacting with AI features.
