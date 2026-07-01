@@ -1131,12 +1131,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-c
-{version:"2026-07-01-c",slides:[
-{emoji:"🎓",color:C.reward,bg:C.reward,title:"Smarter Study Pacing & Retake Support",sub:"Study Tools · 2026-07-01 update",desc:"ClearCFA now personalizes your study timeline with pacing guidance and detects whether you're a first-time test taker or retaker—adjusting pre-loaded content to match your actual exam history. This ensures you focus on what you actually need to master, not generic defaults.",tip:"Check the pacing chip on your dashboard to see your recommended daily study load."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Track Your Percentile & Pass Probability",sub:"AI · 2026-07-01 update",desc:"See your performance ranked against other CFA candidates in real time, plus a live pass probability delta that updates as you study. This gives you concrete feedback on whether you're on track to pass.",tip:"Watch your pass probability percentage climb as you complete more high-quality practice sessions."},
-{emoji:"🐛",color:C.easy,bg:C.easy,title:"Fixed Leech Card Display in Light Mode",sub:"Bug Fix · 2026-07-01 update",desc:"Corrected a visual issue where leech card alerts appeared with incorrect contrast in light mode. Your app now displays alerts clearly no matter your theme preference.",tip:"Toggle between light and dark mode—leech cards should now be readable in both."},
-]},
 // WN_VER:2026-07-01-d
 {version:"2026-07-01-d",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Study Pacing",sub:"Study Tools · 2026-07-01 update",desc:"New pacing chip and vignette scenario panel help you stay on track toward your exam goal. Retakers get pre-seeded progress based on your history, so you skip material you've already mastered.",tip:"Check your pacing indicator in practice sessions to see if you're ahead or behind schedule."},
@@ -1160,6 +1154,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎵",color:C.reward,bg:C.reward,title:"Enhanced Study Music Engine",sub:"Study Tools · 2026-07-01 update",desc:"The lo-fi player now features 4 distinct vibes, reverb effects, melody layers, and a live visualizer to keep you engaged during long study sessions. Stay focused without distracting yourself by constantly tweaking your audio setup.",tip:"Tap the music icon during a study session to explore reverb and melody combinations that match your mood."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Pacing Based on Questions",sub:"UX · 2026-07-01 update",desc:"Your daily study goal now shows questions per day instead of sessions per day, giving you a clearer, more flexible target. This makes it easier to adjust your pace based on actual question volume rather than arbitrary session counts.",tip:"Check your Readiness screen to see your new Qs/day target and adjust it based on your exam timeline."},
 {emoji:"🎮",color:C.easy,bg:C.easy,title:"Interactive Readiness Screen",sub:"UX · 2026-07-01 update",desc:"The Readiness screen is now fully interactive—tap any module pill to jump into that topic, and use the drill button on any card to practice immediately. Stop scrolling and start drilling with one tap.",tip:"Tap a module name directly to open its lessons, or hit the drill button to jump straight into practice questions."},
+]},
+// WN_VER:2026-07-01-b
+{version:"2026-07-01-b",slides:[
+{emoji:"🎵",color:C.reward,bg:C.reward,title:"Lofi Study Vibes & Visualizer",sub:"Study Tools · 2026-07-01 update",desc:"The lofi player now includes 4 distinct vibes, reverb control, melody adjustments, and a live visualizer to match your study mood. Customizable audio helps you stay focused during long study sessions without distraction.",tip:"Toggle between vibes and tweak reverb/melody while drilling to find your perfect study soundtrack."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Pacing & Better Readiness",sub:"UX · 2026-07-01 update",desc:"Pacing now displays questions per day instead of sessions per day for clearer progress tracking, and the Readiness screen is now fully interactive with tappable module pills and drill buttons on every card. Jump directly into focused drills from your readiness dashboard without extra taps.",tip:"Tap any module pill on Readiness to instantly drill that topic, or use the drill button for quick practice anywhere."},
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Expanded Calc & Amortization Guides",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed Calc Trainer colors in light mode and added comprehensive ICONV support plus expanded amortization guides. Better readability in light mode and deeper coverage of fixed-income calculations for Levels 2 & 3.",tip:"Check the enhanced amortization guide when prepping bond calculations—it now covers edge cases you'll see on exam day."},
 ]},
 // WN_END
 ];
