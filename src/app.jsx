@@ -1068,12 +1068,6 @@ const REEL_TOPIC_COLORS={
 };
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01
-{version:"2026-07-01",slides:[
-{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Master Calculators with Keystroke Guides",sub:"Study Tools · 2026-07-01 update",desc:"The Calc Trainer now includes a Learn Calculator tab with step-by-step BA II Plus keystroke guides. Stop guessing how to solve problems on your exam calculator and build muscle memory before test day.",tip:"Open Calc Trainer and tap Learn Calculator to practice common financial calculations side-by-side with your actual BA II Plus keys."},
-{emoji:"🎓",color:C.medium,bg:C.medium,title:"Deep Study Mode for Focused Learning",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab has been redesigned into a comprehensive Deep Study guide with structured explanations and concept breakdowns. Spend less time hunting for clarification and more time internalizing the material that appears on your exam.",tip:"Use Deep Study when you encounter a concept in quizzes that feels shaky—it's your go-to reference before moving forward."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Sign-Up Connection Errors Fixed",sub:"Bug Fix · 2026-07-01 update",desc:"Password-based sign-up no longer fails with connection errors, letting you create an account and start studying immediately. This removes a frustrating barrier between you and your prep.",tip:"If you had trouble signing up before, try again now—the issue is resolved."},
-]},
 // WN_VER:2026-07-01-b
 {version:"2026-07-01-b",slides:[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Master Calculator Skills Faster",sub:"Study Tools · 2026-07-01 update",desc:"The new Learn Calculator tab in Calc Trainer now includes BA II Plus keystroke guides alongside practice problems. This helps you build muscle memory for exam-day calculations without switching between tools.",tip:"Start with the keystroke guides before attempting calculator drills to lock in the right technique."},
@@ -1098,6 +1092,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎲",color:C.medium,bg:C.medium,title:"Flexible Custom Mock Exams",sub:"Study Tools · 2026-07-01 update",desc:"Now select multiple topics and modules when building a custom mock exam, giving you precise control over what you practice. Tailor exams to your weakest areas faster.",tip:"Try selecting 2–3 related modules in Custom Mock setup to simulate exam-style mixed questions."},
 {emoji:"🛠️",color:C.easy,bg:C.easy,title:"Navigation Fixed",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved an issue where the navigation bar was unresponsive when returning from Study Advisor and Weekly Plan screens. Navigation is now smooth and instant across all screens.",tip:"You'll notice snappier taps and seamless screen transitions when jumping between study modes."},
 ]},
+// WN_VER:2026-07-01-f
+{version:"2026-07-01-f",slides:[
+{emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill: Bite-Sized Learning",sub:"Study Tools · 2026-07-01 update",desc:"We've launched Drill—a TikTok-style vertical swipe feed for micro-learning that fits into your busiest days. Scroll through focused concept drills and reinforce key topics in minutes, not hours.",tip:"Tap the Drill tab in the bottom navigation to start swiping through your first micro-lesson."},
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Navigation, Faster Access",sub:"UX · 2026-07-01 update",desc:"We've streamlined the app's navigation by removing duplicate entry points and consolidating study features. You now get to the right tool faster without confusion or redundant menu items.",tip:"Notice that Drill is now the single, easy-to-find hub for quick vertical-swipe study sessions."},
+{emoji:"🐛",color:C.easy,bg:C.easy,title:"Navigation Fixed Across Screens",sub:"Bug Fix · 2026-07-01 update",desc:"We resolved a navigation issue that was blocking movement from Study Advisor and Weekly Plan screens. Now you can seamlessly jump between tools without getting stuck.",tip:"Try navigating from Study Advisor back to your Weekly Plan—it should feel smooth and responsive."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1114,12 +1114,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1145,6 +1139,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
