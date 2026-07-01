@@ -1131,12 +1131,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01
-{version:"2026-07-01",slides:[
-{emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Sessions Now More Interactive",sub:"Study Tools · 2026-07-01 update",desc:"Drills now feature smooth slide animations, swipe hints, XP pop animations, and weak spot indicators to keep you engaged. These visual cues help you identify knowledge gaps faster and celebrate progress in real time.",tip:"Swipe through a Drill to see the hint system in action—it guides you without spoiling answers."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Pass Probability Insights & Streaks",sub:"Study Tools · 2026-07-01 update",desc:"Session summaries now show your pass probability delta (how your odds improved) and display your study streak on your Sessions card. Tracking these metrics reinforces momentum and lets you see exactly how each session moves you closer to passing.",tip:"Check your Sessions card after every study session to watch your streak grow and pass probability climb."},
-{emoji:"👥",color:C.accentLight,bg:C.accentLight,title:"See Your Rank Among Peers",sub:"Study Tools · 2026-07-01 update",desc:"The new peer percentile feature shows how your performance compares to other ClearCFA users at your level. Seeing where you stand motivates smarter study habits and helps you benchmark progress against real exam candidates.",tip:"View your percentile in your profile to stay motivated and identify which topics to prioritize next."},
-]},
 // WN_VER:2026-07-01-b
 {version:"2026-07-01-b",slides:[
 {emoji:"🎯",color:C.reward,bg:C.reward,title:"Smarter Study Pacing",sub:"Study Tools · 2026-07-01 update",desc:"New pacing chip and vignette scenario panel help you tackle questions at the right speed and understand real exam formats. Retakers get pre-seeded progress so you skip material you've already mastered.",tip:"Check the pacing chip during drills to stay on track for exam day timing."},
@@ -1160,6 +1154,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Interactive Readiness Dashboard",sub:"UX · 2026-07-01 update",desc:"Readiness screen now features tappable module pills and drill buttons on every card, letting you jump directly into focused practice from your study overview. This reduces friction and gets you drilling faster on areas that need work.",tip:"Tap any module pill to filter by topic, or hit the drill button on a card to start a quiz immediately."},
 {emoji:"🧠",color:C.medium,bg:C.medium,title:"Smarter Pacing for Retakers",sub:"AI · 2026-07-01 update",desc:"Retake students now receive intelligent pre-seeding and a pacing chip that adapts to your study schedule and prior performance. The app also includes a vignette scenario panel to help you practice exam-style question clusters with real context.",tip:"Check your pacing chip on the Readiness screen to see if you're on track to finish all modules before exam day."},
 {emoji:"🐛",color:C.hard,bg:C.hard,title:"Fixed Display Issues",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved blank page rendering errors and corrected alert styling so leech cards display correctly in light mode. Your study experience is now more stable across all devices and themes.",tip:"If you were seeing blank screens before, refresh the app and you should see all content load properly now."},
+]},
+// WN_VER:2026-07-01-f
+{version:"2026-07-01-f",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Progress by Questions, Not Sessions",sub:"Study Tools · 2026-07-01 update",desc:"Your pacing goal now displays questions per day instead of sessions per day, giving you a clearer target for daily progress. This helps you hit your study milestones with precision, especially when sessions vary in length.",tip:"Check your pacing chip on the dashboard to see exactly how many questions you should tackle today."},
+{emoji:"✨",color:C.reward,bg:C.reward,title:"Readiness Screen Becomes Interactive",sub:"UX · 2026-07-01 update",desc:"Module pills and drill buttons on your Readiness screen are now fully interactive—tap modules to jump into focused drills instantly. You can now spot weak areas and start drilling without extra navigation steps.",tip:"Tap any module pill on Readiness to begin a targeted drill on that topic right away."},
+{emoji:"🐛",color:C.medium,bg:C.medium,title:"Fixed Display & Alert Issues",sub:"Bug Fix · 2026-07-01 update",desc:"We fixed a blank page crash and corrected card alert styling in light mode so your study experience stays smooth and readable. You'll see consistent, polished visuals across all themes.",tip:"Update to the latest version to ensure smooth navigation and proper styling on all screens."},
 ]},
 // WN_END
 ];
