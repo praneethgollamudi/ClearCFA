@@ -6938,6 +6938,115 @@ Return ONLY a JSON array — no prose, no markdown fences:
     </div>
   );
 
+  // ══ GLOBAL NAV BAR (portal — renders on home, quiz, results, setup) ═══════
+  const _navRootEl = document.getElementById("nav-root");
+  const navPortal = _navRootEl ? ReactDOM.createPortal((()=>{
+    const moreItems=[
+      {key:"mix",label:"Weak Spots",icon:"⚡",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
+      {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
+      {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
+      {key:"revise",label:"Notes",icon:"📝",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
+      {key:"formulas",label:"Formulas",icon:"🔢",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
+      {key:"week_plan",label:"Week Plan",icon:"🗓",proTag:true,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
+      {key:"calc_trainer",label:"Calc Trainer",icon:"🧮",action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
+      {key:"los_coverage",label:"LOS Map",icon:"🗺",action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
+      {key:"mastery_grid",label:"Mastery",icon:"🏆",action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
+      {key:"interleaved",label:"Mixed Topics",icon:"🔀",action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
+      {key:"study_path",label:"Study Path",icon:"🎓",action:()=>{trackUsage("study_path");setScreen("studyPath");}},
+      {key:"dashboard",label:"Dashboard",icon:"📊",action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
+    ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
+    const Ic=({d,size=22})=>(
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
+    );
+    const navTabs=[
+      {key:"home",label:"Home",
+        icon:<Ic d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10"/>,
+        action:()=>{setShowMoreSheet(false);setScreen("home");}},
+      {key:"practice",label:"Practice",
+        icon:<Ic d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>,
+        action:()=>{trackUsage("custom_mock");setShowMoreSheet(false);setScreen("setup");}},
+      {key:"drill",label:"Drill",
+        icon:<Ic d="M2 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z M16 3l-4 4-4-4"/>,
+        action:()=>{
+          trackUsage("mix");setShowMoreSheet(false);
+          const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
+          const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];
+          if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");
+        }},
+      {key:"progress",label:"Progress",
+        icon:<Ic d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20"/>,
+        action:()=>{trackUsage("dashboard");setShowMoreSheet(false);setScreen("readiness");}},
+      {key:"more",label:"More",
+        icon:<Ic d="M4 6h16 M4 12h16 M4 18h16"/>,
+        action:()=>{if(showMoreSheet||moreSheetClosing)setMoreSheetClosing(true);else setShowMoreSheet(true);}},
+    ];
+    const activeTab = showMoreSheet ? "more" :
+      ({home:"home",setup:"practice",quiz:"practice",srReview:"drill",
+        results:"practice",revision:"practice",studyPath:"practice",
+        dashboard:"progress",readiness:"progress",losCoverage:"progress",
+        masteryGrid:"progress",calcTrainer:"drill",adminDashboard:"home"}[screen]||"home");
+    const handlePillTouchStart=(e)=>{sheetDragY.current=e.touches[0].clientY;};
+    const handlePillTouchMove=(e)=>{
+      if(sheetDragY.current===null)return;
+      const dy=e.touches[0].clientY-sheetDragY.current;
+      if(dy>0&&sheetPanelRef.current)sheetPanelRef.current.style.transform=`translateY(${dy}px)`;
+    };
+    const handlePillTouchEnd=(e)=>{
+      if(sheetDragY.current===null)return;
+      const dy=e.changedTouches[0].clientY-sheetDragY.current;
+      sheetDragY.current=null;
+      if(sheetPanelRef.current)sheetPanelRef.current.style.transform="";
+      if(dy>80)setMoreSheetClosing(true);
+    };
+    return(<>
+      {(showMoreSheet||moreSheetClosing)&&(
+        <div style={{position:"fixed",inset:0,zIndex:250,background:"rgba(0,0,0,0.55)",animation:`${moreSheetClosing?"fadeOut 0.25s ease":"fadeIn 0.2s ease"} forwards`}} onClick={()=>setMoreSheetClosing(true)}>
+          <div ref={sheetPanelRef} style={{position:"absolute",bottom:58,left:0,right:0,animation:`${moreSheetClosing?"slideDown 0.28s":"slideUp 0.28s"} cubic-bezier(0.4,0,0.2,1) forwards`}} onClick={e=>e.stopPropagation()} onAnimationEnd={moreSheetClosing?()=>{setMoreSheetClosing(false);setShowMoreSheet(false);}:undefined}>
+            <div style={{maxWidth:860,margin:"0 auto",background:C.surface,borderRadius:"16px 16px 0 0",padding:"14px 14px 8px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
+              <div onTouchStart={handlePillTouchStart} onTouchMove={handlePillTouchMove} onTouchEnd={handlePillTouchEnd}
+                style={{padding:"8px 0 14px",cursor:"grab",touchAction:"none",WebkitTapHighlightColor:"transparent"}}>
+                <div style={{width:36,height:3,background:C.border,borderRadius:2,margin:"0 auto"}}/>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+                {moreItems.map(item=>(
+                  <button key={item.key} onClick={()=>{setShowMoreSheet(false);item.action();}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,padding:"12px 6px 10px",borderRadius:12,background:C.bg,border:`1px solid ${C.border}`,cursor:"pointer",position:"relative",transition:"opacity 0.1s"}}>
+                    {item.proTag&&!proStatus&&<span style={{position:"absolute",top:4,right:4,fontSize:7,fontWeight:800,color:C.accentLight,background:C.accent+"30",border:`1px solid ${C.accent}55`,borderRadius:3,padding:"1px 3px",letterSpacing:"0.04em"}}>PRO</span>}
+                    <span style={{fontSize:20,lineHeight:1,color:C.textMid}}>{item.icon}</span>
+                    <span style={{fontSize:10,fontWeight:600,color:C.textMid,textAlign:"center",lineHeight:1.3}}>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:8,marginTop:10}}>
+                <button onClick={()=>{
+                  trackUsage("wrongs_review");setShowMoreSheet(false);
+                  const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
+                  if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
+                  else{setError("No wrong answers yet — complete a session first.");setTimeout(()=>setError(""),3000);}
+                }} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid ${srWrongCount>0?C.hard+"55":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
+                  🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
+                </button>
+                <button onClick={()=>{trackUsage("ai_coach");setShowMoreSheet(false);setAiCoachScreen(true);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 AI Coach</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:260,background:C.bg,borderTop:`1px solid ${C.border}`}}>
+        <div style={{maxWidth:860,margin:"0 auto",display:"flex",paddingBottom:"max(4px,env(safe-area-inset-bottom,4px))"}}>
+          {navTabs.map(tab=>{
+            const active=activeTab===tab.key;
+            return(
+              <button key={tab.key} onClick={tab.action} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"9px 4px 6px",background:"none",border:"none",cursor:"pointer",color:active?C.accent:C.muted,transition:"color 0.15s",outline:"none",WebkitTapHighlightColor:"transparent"}}>
+                {tab.icon}
+                <span style={{fontSize:9,fontWeight:active?700:500,letterSpacing:"0.01em"}}>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>);
+  })(), _navRootEl) : null;
+
   const wrap=(children,maxW=860)=>(
     <>
       <div style={{background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,-apple-system,sans-serif",padding:"22px 18px 0",display:"flex",flexDirection:"column",alignItems:"center"}}>
@@ -7779,115 +7888,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
     </>)}
   </>);
   }
-
-  // ══ GLOBAL NAV BAR (portal — renders on home, quiz, results, setup) ═══════
-  const _navRootEl = document.getElementById("nav-root");
-  const navPortal = _navRootEl ? ReactDOM.createPortal((()=>{
-    const moreItems=[
-      {key:"mix",label:"Weak Spots",icon:"⚡",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
-      {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
-      {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
-      {key:"revise",label:"Notes",icon:"📝",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
-      {key:"formulas",label:"Formulas",icon:"🔢",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
-      {key:"week_plan",label:"Week Plan",icon:"🗓",proTag:true,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
-      {key:"calc_trainer",label:"Calc Trainer",icon:"🧮",action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
-      {key:"los_coverage",label:"LOS Map",icon:"🗺",action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
-      {key:"mastery_grid",label:"Mastery",icon:"🏆",action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
-      {key:"interleaved",label:"Mixed Topics",icon:"🔀",action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
-      {key:"study_path",label:"Study Path",icon:"🎓",action:()=>{trackUsage("study_path");setScreen("studyPath");}},
-      {key:"dashboard",label:"Dashboard",icon:"📊",action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
-    ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
-    const Ic=({d,size=22})=>(
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
-    );
-    const navTabs=[
-      {key:"home",label:"Home",
-        icon:<Ic d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10"/>,
-        action:()=>{setShowMoreSheet(false);setScreen("home");}},
-      {key:"practice",label:"Practice",
-        icon:<Ic d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>,
-        action:()=>{trackUsage("custom_mock");setShowMoreSheet(false);setScreen("setup");}},
-      {key:"drill",label:"Drill",
-        icon:<Ic d="M2 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z M16 3l-4 4-4-4"/>,
-        action:()=>{
-          trackUsage("mix");setShowMoreSheet(false);
-          const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
-          const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];
-          if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");
-        }},
-      {key:"progress",label:"Progress",
-        icon:<Ic d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20"/>,
-        action:()=>{trackUsage("dashboard");setShowMoreSheet(false);setScreen("readiness");}},
-      {key:"more",label:"More",
-        icon:<Ic d="M4 6h16 M4 12h16 M4 18h16"/>,
-        action:()=>{if(showMoreSheet||moreSheetClosing)setMoreSheetClosing(true);else setShowMoreSheet(true);}},
-    ];
-    const activeTab = showMoreSheet ? "more" :
-      ({home:"home",setup:"practice",quiz:"practice",srReview:"drill",
-        results:"practice",revision:"practice",studyPath:"practice",
-        dashboard:"progress",readiness:"progress",losCoverage:"progress",
-        masteryGrid:"progress",calcTrainer:"drill",adminDashboard:"home"}[screen]||"home");
-    const handlePillTouchStart=(e)=>{sheetDragY.current=e.touches[0].clientY;};
-    const handlePillTouchMove=(e)=>{
-      if(sheetDragY.current===null)return;
-      const dy=e.touches[0].clientY-sheetDragY.current;
-      if(dy>0&&sheetPanelRef.current)sheetPanelRef.current.style.transform=`translateY(${dy}px)`;
-    };
-    const handlePillTouchEnd=(e)=>{
-      if(sheetDragY.current===null)return;
-      const dy=e.changedTouches[0].clientY-sheetDragY.current;
-      sheetDragY.current=null;
-      if(sheetPanelRef.current)sheetPanelRef.current.style.transform="";
-      if(dy>80)setMoreSheetClosing(true);
-    };
-    return(<>
-      {(showMoreSheet||moreSheetClosing)&&(
-        <div style={{position:"fixed",inset:0,zIndex:250,background:"rgba(0,0,0,0.55)",animation:`${moreSheetClosing?"fadeOut 0.25s ease":"fadeIn 0.2s ease"} forwards`}} onClick={()=>setMoreSheetClosing(true)}>
-          <div ref={sheetPanelRef} style={{position:"absolute",bottom:58,left:0,right:0,animation:`${moreSheetClosing?"slideDown 0.28s":"slideUp 0.28s"} cubic-bezier(0.4,0,0.2,1) forwards`}} onClick={e=>e.stopPropagation()} onAnimationEnd={moreSheetClosing?()=>{setMoreSheetClosing(false);setShowMoreSheet(false);}:undefined}>
-            <div style={{maxWidth:860,margin:"0 auto",background:C.surface,borderRadius:"16px 16px 0 0",padding:"14px 14px 8px",border:`1px solid ${C.border}`,borderBottom:"none"}}>
-              <div onTouchStart={handlePillTouchStart} onTouchMove={handlePillTouchMove} onTouchEnd={handlePillTouchEnd}
-                style={{padding:"8px 0 14px",cursor:"grab",touchAction:"none",WebkitTapHighlightColor:"transparent"}}>
-                <div style={{width:36,height:3,background:C.border,borderRadius:2,margin:"0 auto"}}/>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-                {moreItems.map(item=>(
-                  <button key={item.key} onClick={()=>{setShowMoreSheet(false);item.action();}} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,padding:"12px 6px 10px",borderRadius:12,background:C.bg,border:`1px solid ${C.border}`,cursor:"pointer",position:"relative",transition:"opacity 0.1s"}}>
-                    {item.proTag&&!proStatus&&<span style={{position:"absolute",top:4,right:4,fontSize:7,fontWeight:800,color:C.accentLight,background:C.accent+"30",border:`1px solid ${C.accent}55`,borderRadius:3,padding:"1px 3px",letterSpacing:"0.04em"}}>PRO</span>}
-                    <span style={{fontSize:20,lineHeight:1,color:C.textMid}}>{item.icon}</span>
-                    <span style={{fontSize:10,fontWeight:600,color:C.textMid,textAlign:"center",lineHeight:1.3}}>{item.label}</span>
-                  </button>
-                ))}
-              </div>
-              <div style={{display:"flex",gap:8,marginTop:10}}>
-                <button onClick={()=>{
-                  trackUsage("wrongs_review");setShowMoreSheet(false);
-                  const wrongCards=Object.values(srDeck).filter(c=>(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,30);
-                  if(wrongCards.length){setSrQueue(wrongCards);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
-                  else{setError("No wrong answers yet — complete a session first.");setTimeout(()=>setError(""),3000);}
-                }} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid ${srWrongCount>0?C.hard+"55":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
-                  🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
-                </button>
-                <button onClick={()=>{trackUsage("ai_coach");setShowMoreSheet(false);setAiCoachScreen(true);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 AI Coach</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:260,background:C.bg,borderTop:`1px solid ${C.border}`}}>
-        <div style={{maxWidth:860,margin:"0 auto",display:"flex",paddingBottom:"max(4px,env(safe-area-inset-bottom,4px))"}}>
-          {navTabs.map(tab=>{
-            const active=activeTab===tab.key;
-            return(
-              <button key={tab.key} onClick={tab.action} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"9px 4px 6px",background:"none",border:"none",cursor:"pointer",color:active?C.accent:C.muted,transition:"color 0.15s",outline:"none",WebkitTapHighlightColor:"transparent"}}>
-                {tab.icon}
-                <span style={{fontSize:9,fontWeight:active?700:500,letterSpacing:"0.01em"}}>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </>);
-  })(), _navRootEl) : null;
 
   // ══ HOME ══════════════════════════════════════════════════════════════════
   const downloadProgressCard=()=>{
