@@ -1042,12 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-30-d
-{version:"2026-06-30-d",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Your daily question recommendations now diversify across topics instead of repeating the same focus area. This keeps your prep balanced and helps you build breadth across the curriculum faster.",tip:"Check your Today's Focus card—you'll notice it suggests different topics day to day now."},
-{emoji:"🛠",color:C.medium,bg:C.medium,title:"Formulas Tab Now Displays Correctly",sub:"Bug Fix · 2026-06-30 update",desc:"Formula columns no longer collapse into single characters, making the Formulas reference tab readable and useful again. You can now quickly scan and study key equations without squinting or reformatting.",tip:"Open the Formulas tab to see full variable names and expressions side-by-side clearly."},
-{emoji:"✨",color:C.reward,bg:C.reward,title:"AI Debrief Always Available",sub:"AI · 2026-06-30 update",desc:"The AI debrief feature no longer fails when you've exhausted your daily question quota. You can always review your performance and get personalized feedback, even after hitting your limit.",tip:"If a debrief previously timed out, try again—it should now load smoothly every time."},
-]},
 // WN_VER:2026-06-30-e
 {version:"2026-06-30-e",slides:[
 {emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Debrief Now More Reliable",sub:"AI · 2026-06-30 update",desc:"We fixed AI debrief failures that occurred when you hit your daily question quota, and added clearer error messages so you know exactly what happened. You can now retry without confusion and keep learning without interruption.",tip:"If a debrief fails, you'll see a helpful message explaining why—tap retry once your quota resets."},
@@ -1072,6 +1066,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"Our AI coach implementations are now more effective at walking you through exam concepts and practice questions. You'll get sharper explanations and better-targeted feedback tailored to where you're struggling.",tip:"Try the AI Coach button on any practice question to see the improved guidance in action."},
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Always at Hand",sub:"Study Tools · 2026-07-01 update",desc:"A calculator button is now available on the Self-Review screen, so you can instantly verify calculations while reviewing your answers. No more switching apps or losing your focus mid-review.",tip:"Look for the calculator icon when reviewing Self-Review content to run quick calculations."},
 {emoji:"⚠️",color:C.hard,bg:C.hard,title:"Better Error Recovery",sub:"UX · 2026-07-01 update",desc:"When the AI debrief fails to load, you now see a clear error message and a retry button instead of a blank screen. This means less frustration and faster troubleshooting when something goes wrong.",tip:"If you hit an error, tap Retry—it usually resolves on the second attempt."},
+]},
+// WN_VER:2026-07-01-c
+{version:"2026-07-01-c",slides:[
+{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"We've enhanced both AI coach implementations to provide more effective explanations and targeted learning support. You'll now get higher-quality answers when you ask the AI coach for help on difficult concepts.",tip:"Try asking your AI coach about a concept you're struggling with—the answers are now more tailored to exam prep."},
+{emoji:"📱",color:C.reward,bg:C.reward,title:"Calculator at Your Fingertips",sub:"Study Tools · 2026-07-01 update",desc:"A calculator button is now available directly on the spaced repetition review screen. Save time switching between apps—solve quantitative problems without leaving your study flow.",tip:"Look for the calculator icon during your next SR review session on quantitative questions."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Leech Cards Finally Graduate",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a bug where difficult 'leech' cards would never advance after you answered them correctly multiple times. Your hard-earned progress is now properly tracked and these stubborn cards will eventually graduate.",tip:"If you've been stuck reviewing the same tough card, it should now move forward once you nail it consistently."},
 ]},
 // WN_END
 ];
@@ -1125,6 +1125,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-06-30
 {date:"2026-06-30",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
