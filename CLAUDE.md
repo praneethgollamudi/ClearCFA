@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version 2026-07-01-e & 2026-07-01-f**: Both versions now document Drill enhancements (slide animations, swipe hints, XP pops, weak spot pills, pass probability advice) and acronym expansion. Previous versions 2026-07-01 (base) have been removed. Always check WHATS_NEW_SLIDES array for active versions when building related features.
+
+
+**Session summary & streak tracking (v2026-07-01)**: Study Reels sessions now display session summaries and streak counts on the Sessions card. When rendering session feedback or streak UI, ensure pass probability delta, session metrics, and streak indicators are visible to reinforce progress and engagement.
+
+
+**Growth levers & onboarding gate (v2026-07-01)**: New `ONBOARDING_KEY` and `QUALITY_FLAGS_KEY` constants manage five growth features: onboarding gate, 40-question trial limit, peer percentile tracking, quality flags system, and Power Pro tier. When building onboarding or trial-related UI, reference these keys to gate features appropriately and track user progression through the trial funnel.
+
+
 **Trap cards rule & context display**: Trap cards now display both the rule being tested and the trap context together on the card. When rendering trap card content, ensure rule section and trap explanation are visible side-by-side. Cards must fill the screen properly without content cutoff—test on various viewport sizes.
 
 **Trap card learning moments**: Trap answer cards now consistently display the relevant rule and full context together so learners understand exactly why an answer is a trap. This design principle turns every wrong answer into an intentional learning moment—ensure trap card content always pairs the tested rule with the common pitfall explanation.
@@ -784,10 +793,12 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_screen_onboard_v1` | `SCREEN_ONBOARD_KEY` |
 | `cfa_checklist_done` | `CHECKLIST_KEY` |
 | `cfa_last_screen_v1` | `LAST_SCREEN_KEY` |
+| `cfa_onboarding_v1` | `ONBOARDING_KEY` |
+| `cfa_quality_flags_v1` | `QUALITY_FLAGS_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
