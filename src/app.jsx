@@ -1124,12 +1124,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-b
-{version:"2026-07-01-b",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Drill Tab Replaces Reels",sub:"Study Tools · 2026-07-01 update",desc:"We've streamlined your study interface by renaming Reels to Drill and removing duplicate entry points. You now have one clear, focused tab for spaced-repetition flashcard practice instead of scattered options.",tip:"Tap the Drill tab at the bottom to access all your adaptive flashcards in one place."},
-{emoji:"📖",color:C.medium,bg:C.medium,title:"Clearer CFA Terms on Cards",sub:"UX · 2026-07-01 update",desc:"CFA acronyms on Drill cards now expand to their full forms, eliminating confusion during study sessions. You'll retain concepts faster when you see the complete terminology every time.",tip:"Hover or tap any CFA acronym on a card to see the full definition without leaving the drill."},
-{emoji:"✨",color:C.hard,bg:C.hard,title:"Better Trap Card Context",sub:"Bug Fix · 2026-07-01 update",desc:"Trap cards now display the rule and context they're testing, making it easier to understand why an answer is incorrect. Cards also fill the screen properly so nothing gets cut off.",tip:"When you see a trap card, read the rule section to learn what concept the wrong answer was designed to catch."},
-]},
 // WN_VER:2026-07-01-c
 {version:"2026-07-01-c",slides:[
 {emoji:"🎓",color:C.accentLight,bg:C.accentLight,title:"Drill Cards Now Show Full Acronyms",sub:"Study Tools · 2026-07-01 update",desc:"CFA acronyms in Drill cards now expand to their full forms, making it easier to understand concepts without memorizing abbreviations. This helps you focus on learning the material rather than decoding jargon.",tip:"Hover over or tap any CFA acronym in a Drill card to see its full name instantly."},
@@ -1153,6 +1147,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Sessions Get Smarter",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now show pass probability advice, weak spot indicators, and XP rewards with smooth animations and swipe hints. This helps you focus on topics where you're most likely to struggle and see your progress instantly.",tip:"Swipe left or right on any Drill card to see the hint animation and learn the fastest way to navigate."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Sessions Card Shows Your Streak",sub:"UX · 2026-07-01 update",desc:"Your study sessions card now displays your current streak and includes a session summary with pass probability delta. Track momentum and see exactly how each study session moves you closer to exam readiness.",tip:"Check your Sessions card daily to watch your streak grow and monitor your pass probability improvement over time."},
 {emoji:"🐛",color:C.easy,bg:C.easy,title:"Better Browser Compatibility",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a compatibility issue that prevented acronym expansion from working on Safari browsers older than version 16. All students can now study smoothly across iOS, Android, and web.",tip:"If you use Safari on iPad or Mac, your Drill acronyms will now expand correctly—no need to update anything."},
+]},
+// WN_VER:2026-07-01
+{version:"2026-07-01",slides:[
+{emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Sessions Now More Interactive",sub:"Study Tools · 2026-07-01 update",desc:"Drills now feature smooth slide animations, swipe hints, XP pop animations, and weak spot indicators to keep you engaged. These visual cues help you identify knowledge gaps faster and celebrate progress in real time.",tip:"Swipe through a Drill to see the hint system in action—it guides you without spoiling answers."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Pass Probability Insights & Streaks",sub:"Study Tools · 2026-07-01 update",desc:"Session summaries now show your pass probability delta (how your odds improved) and display your study streak on your Sessions card. Tracking these metrics reinforces momentum and lets you see exactly how each session moves you closer to passing.",tip:"Check your Sessions card after every study session to watch your streak grow and pass probability climb."},
+{emoji:"👥",color:C.accentLight,bg:C.accentLight,title:"See Your Rank Among Peers",sub:"Study Tools · 2026-07-01 update",desc:"The new peer percentile feature shows how your performance compares to other ClearCFA users at your level. Seeing where you stand motivates smarter study habits and helps you benchmark progress against real exam candidates.",tip:"View your percentile in your profile to stay motivated and identify which topics to prioritize next."},
 ]},
 // WN_END
 ];
