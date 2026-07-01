@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version 2026-07-01-c (re-added)**: This version documents pacing chip & vignette scenario panel, pass probability percentile tracking, and leech card light-mode display fix. Currently active versions are -b, -c, -d, and -f. When consolidating What's New announcements, check WHATS_NEW_SLIDES array for active versions to avoid duplicate messaging.
+
+
+**Readiness screen interactivity (recent)**: Readiness screen now features tappable module pills and drill buttons on all cards, allowing users to jump directly into drills from the Readiness view. When updating Readiness card rendering or navigation, ensure module pills are clickable and drill CTAs are consistently placed across all card types.
+
+
 **40-question trial limit & peer percentile**: Free trial allows 40 questions with peer percentile benchmarking. When building trial gate or percentile display, ensure `QUALITY_FLAGS_KEY` and trial counter are properly tracked in localStorage to gate premium features.
 
 
@@ -736,6 +742,9 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+- **paceStatus declaration order**: The `paceStatus` variable must be declared before use in render logic to avoid blank page errors. Always declare persona-dependent state variables early in component logic, before conditional rendering that depends on them.
+
+
 - **AI Coach navPortal timing**: The AI Coach button loading state depends on `navPortal` being defined. If the button is rendered before `navPortal` is assigned (temporal dead zone), it loads a blank page. Always ensure `navPortal` is set in the parent component before rendering AI Coach buttons.
 
 
@@ -832,7 +841,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
