@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version 2026-07-01-e**: Latest version documents Deep Study guide redesign and comprehensive Learn tab improvements. When creating future slides, follow the same emoji-led, tip-driven format and always prepend new versions at the `// WN_START` marker.
+
+
 **What's New version 2026-07-01-d**: Latest version documents leech card graduation fix, smarter AI coach guidance, and completes calculator on SR review. When creating future slides, follow the same emoji-led, tip-driven format and always prepend new versions at the `// WN_START` marker.
 
 
@@ -22,6 +25,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 - **Live URL:** https://praneethgollamudi.github.io/ClearCFA/
 
 ## Supabase Infrastructure
+
+**`supabaseCreateAccount()` return format**: Now returns an object `{ok, status, error}` instead of boolean. On success: `{ok:true, status:res.status}`. On failure: `{ok:false, status:res.status, error:errText}`. Always check `res.ok` in calling code and handle error cases with status/error details for better UX.
+
 
 **`supabaseCreateAccount()` error handling**: Now returns an object `{ok, status, error}` instead of a boolean. On failure, includes HTTP status and error text for better debugging of sign-up connection issues. Always check `res.ok` and handle error cases gracefully in calling code.
 
@@ -81,6 +87,12 @@ SQL migrations in `supabase/migrations/*.sql` run automatically via the **"Deplo
 Edge functions are deployed with `supabase functions deploy <name> --project-ref uucxyuqxqjpbxecemdvf` via the same workflow.
 
 ## Payment & Pricing
+
+**Calculator Trainer with Learn tab**: A new Calc Trainer feature includes a Learn Calculator tab with BA II Plus keystroke guides. This is a permanent study tool—do not remove without user migration.
+
+
+**Learn tab redesigned**: The Learn tab is now a comprehensive Deep Study guide organizing CFA content into a structured learning path. This replaces scattered lessons with systematic, cohesive preparation. Do not remove or significantly alter this tab structure without migration plan.
+
 
 **Calculator on Self-Review**: A calculator button is now permanently available on the Self-Review screen to allow users to verify calculations while reviewing answers. This is a permanent UI feature—do not remove without migrating users elsewhere.
 
@@ -691,7 +703,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1791100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1791200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
