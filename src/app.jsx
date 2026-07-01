@@ -7206,7 +7206,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
       setScreen("reels");
     };
     const moreItems=[
-      {key:"reels",label:"Study Reels",icon:"▶",action:_launchReels},
       {key:"quick_drill",label:"Quick Drill",icon:"⚡",action:()=>{
         trackUsage("mix");setShowMoreSheet(false);
         const target=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy)[0]
@@ -8830,30 +8829,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{fontSize:18,color:C.accent,fontWeight:700}}>→</div>
       </div>
     )}
-
-    {/* Study Reels quick-launch */}
-    <div onClick={()=>{
-      setAiCoachScreen(false);setWeeklyPlanScreen(false);
-      trackUsage("reels");
-      const pn=getActivePowerNotes(cfaLevel);
-      const fm=getActiveFormulas(cfaLevel);
-      const mc=getActiveMisconceptions(cfaLevel);
-      const feed=buildReelFeed(moduleReadiness,pn,fm,mc,OFFLINE_SEED_QS);
-      reelFeedBase.current=feed;
-      setReelFeed(feed);setReelIdx(0);setReelAnswer(null);
-      setReelRevealed(false);setReelSessionCount(0);
-      setScreen("reels");
-    }}
-      style={{background:`linear-gradient(135deg,${C.accent}12,${C.accent}05)`,
-        border:`1px solid ${C.accent}30`,borderRadius:12,padding:"12px 16px",
-        marginBottom:10,cursor:"pointer",display:"flex",
-        justifyContent:"space-between",alignItems:"center"}}>
-      <div>
-        <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>▶ Study Reels</div>
-        <div style={{fontSize:11,color:C.muted,marginTop:2}}>Key rules · Formulas · Quick checks — swipe through</div>
-      </div>
-      <div style={{fontSize:18,opacity:0.5}}>📱</div>
-    </div>
 
     {/* Leech alert */}
     {leeches.length>0&&(
