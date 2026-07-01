@@ -1068,12 +1068,6 @@ const REEL_TOPIC_COLORS={
 };
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-f
-{version:"2026-07-01-f",slides:[
-{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Redesigned Learn Tab for Deeper Study",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide, replacing the previous layout with a more intuitive structure for tackling complex CFA topics. This helps you build stronger conceptual foundations before moving to practice questions.",tip:"Open the Learn tab to explore the new guided study sections organized by topic difficulty."},
-{emoji:"✅",color:C.reward,bg:C.reward,title:"Spaced Repetition Cards Graduate Properly",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a critical issue where leech cards (difficult items) were stuck in your review queue even after correct answers. Your spaced repetition schedule now works as intended, so mastered concepts move forward.",tip:"Check your review queue—cards you've been acing should now graduate out of daily rotation."},
-{emoji:"🔐",color:C.medium,bg:C.medium,title:"Password Sign-Up Now Reliable",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved a connection error that prevented new users from signing up with a password. Account creation is now stable across all platforms.",tip:"Invite study partners—sign-ups should work smoothly now."},
-]},
 // WN_VER:2026-07-01
 {version:"2026-07-01",slides:[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Master Calculators with Keystroke Guides",sub:"Study Tools · 2026-07-01 update",desc:"The Calc Trainer now includes a Learn Calculator tab with step-by-step BA II Plus keystroke guides. Stop guessing how to solve problems on your exam calculator and build muscle memory before test day.",tip:"Open Calc Trainer and tap Learn Calculator to practice common financial calculations side-by-side with your actual BA II Plus keys."},
@@ -1098,6 +1092,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"A new Learn Calculator tab in Calc Trainer now includes step-by-step keystroke guides for the BA II Plus, the approved calculator for the CFA exam. Master the exact buttons and sequences you'll use on test day.",tip:"Open Calc Trainer and tap Learn Calculator to practice entering Time Value of Money problems before your mock exams."},
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Flexible Mock Exam Builder",sub:"Study Tools · 2026-07-01 update",desc:"Custom Mock setup now lets you select multiple topics and modules in a single build, so you can test yourself on exactly the content mix you want. Build smarter practice exams aligned to your study plan.",tip:"Create a mock focused on Economics + Quantitative Methods to drill your weakest areas in one session."},
 ]},
+// WN_VER:2026-07-01-e
+{version:"2026-07-01-e",slides:[
+{emoji:"📱",color:C.accentLight,bg:C.accentLight,title:"Learn with Study Reels",sub:"Study Tools · 2026-07-01 update",desc:"Swipe through bite-sized, vertical video lessons designed for micro-learning on the go. Master one concept at a time with the same engagement as social media.",tip:"Find Study Reels in the main navigation tab to start learning between study sessions."},
+{emoji:"🎲",color:C.medium,bg:C.medium,title:"Flexible Custom Mock Exams",sub:"Study Tools · 2026-07-01 update",desc:"Now select multiple topics and modules when building a custom mock exam, giving you precise control over what you practice. Tailor exams to your weakest areas faster.",tip:"Try selecting 2–3 related modules in Custom Mock setup to simulate exam-style mixed questions."},
+{emoji:"🛠️",color:C.easy,bg:C.easy,title:"Navigation Fixed",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved an issue where the navigation bar was unresponsive when returning from Study Advisor and Weekly Plan screens. Navigation is now smooth and instant across all screens.",tip:"You'll notice snappier taps and seamless screen transitions when jumping between study modes."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1106,12 +1106,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1151,6 +1145,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
