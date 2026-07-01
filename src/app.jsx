@@ -5299,24 +5299,74 @@ function CFACalculator({onClose, onMinimize=null}){
 }
 
 // ─── LOFI AMBIENT PLAYER ─────────────────────────────────────────────────────
+function LofiVisualizer({analyserRef,isPlaying}){
+  const cvRef=useRef(null);
+  useEffect(()=>{
+    if(!isPlaying) return;
+    const analyser=analyserRef.current;
+    if(!analyser) return;
+    const cv=cvRef.current;if(!cv) return;
+    const c2=cv.getContext('2d');
+    const BARS=16;
+    const data=new Uint8Array(analyser.frequencyBinCount);
+    const step=Math.max(1,Math.floor(data.length/BARS));
+    let raf;
+    function draw(){
+      analyser.getByteFrequencyData(data);
+      c2.clearRect(0,0,cv.width,cv.height);
+      const bw=cv.width/BARS-2;
+      for(let i=0;i<BARS;i++){
+        const v=data[i*step]/255;
+        const h=Math.max(3,v*cv.height);
+        c2.fillStyle=`rgba(99,102,241,${0.3+v*0.7})`;
+        c2.fillRect(i*(bw+2),cv.height-h,bw,h);
+      }
+      raf=requestAnimationFrame(draw);
+    }
+    draw();
+    return()=>cancelAnimationFrame(raf);
+  },[isPlaying]);
+  return React.createElement('canvas',{ref:cvRef,width:180,height:36,
+    style:{display:'block',margin:'0 auto 10px',opacity:isPlaying?1:0.2,transition:'opacity 0.4s',borderRadius:4}});
+}
 function LofiPlayer(){
   const [loggedIn,setLoggedIn]=useState(()=>{try{return !!JSON.parse(localStorage.getItem('cfa_auth'));}catch{return false;}});
   const [isPlaying,setIsPlaying]=useState(false);
   const [pendingResume,setPendingResume]=useState(()=>{try{return localStorage.getItem('cfa_lofi_playing')==='1';}catch{return false;}});
   const [vol,setVol]=useState(()=>{try{return parseFloat(localStorage.getItem('cfa_lofi_vol')||'0.35');}catch{return 0.35;}});
+  const [vibeIdx,setVibeIdx]=useState(()=>{try{return parseInt(localStorage.getItem('cfa_lofi_vibe')||'0',10);}catch{return 0;}});
   const [showPanel,setShowPanel]=useState(false);
   const [lTheme,setLTheme]=useState(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}});
   const ctxRef=useRef(null);
   const masterRef=useRef(null);
-  const sched=useRef(null); // {nextBeat, beatCount, chordIdx, active}
+  const analyserRef=useRef(null);
+  const sched=useRef(null);
 
-  const BPM=82, BEAT=60/BPM;
-  // Lofi jazz chord voicings (Hz) + bass root
-  const CHORDS=[
-    {pad:[130.8,196.0,261.6,329.6,493.9],bass:65.4},  // Cmaj7
-    {pad:[174.6,220.0,261.6,349.2,440.0],bass:87.3},  // Fmaj7
-    {pad:[164.8,196.0,246.9,329.6,493.9],bass:82.4},  // Em7
-    {pad:[146.8,174.6,220.0,293.7,440.0],bass:73.4},  // Dm7
+  const VIBES=[
+    {name:"Lofi Jazz",emoji:"🎷",bpm:82,chords:[
+      {pad:[130.8,196.0,261.6,329.6,493.9],bass:65.4},
+      {pad:[174.6,220.0,261.6,349.2,440.0],bass:87.3},
+      {pad:[164.8,196.0,246.9,329.6,493.9],bass:82.4},
+      {pad:[146.8,174.6,220.0,293.7,440.0],bass:73.4},
+    ]},
+    {name:"Deep Focus",emoji:"🧘",bpm:68,chords:[
+      {pad:[110.0,164.8,220.0,261.6,392.0],bass:55.0},
+      {pad:[146.8,174.6,220.0,293.7,440.0],bass:73.4},
+      {pad:[98.0,146.8,196.0,233.1,349.2],bass:49.0},
+      {pad:[164.8,196.0,246.9,329.6,392.0],bass:82.4},
+    ]},
+    {name:"Rainy Café",emoji:"☕",bpm:95,chords:[
+      {pad:[98.0,123.5,146.8,196.0,369.9],bass:98.0},
+      {pad:[130.8,196.0,261.6,329.6,440.0],bass:65.4},
+      {pad:[110.0,130.8,164.8,220.0,392.0],bass:55.0},
+      {pad:[146.8,185.0,220.0,261.6,369.9],bass:73.4},
+    ]},
+    {name:"Chillwave",emoji:"🌊",bpm:75,chords:[
+      {pad:[110.0,138.6,164.8,220.0,415.3],bass:55.0},
+      {pad:[92.5,110.0,138.6,185.0,329.6],bass:46.2},
+      {pad:[146.8,185.0,220.0,277.2,369.9],bass:73.4},
+      {pad:[82.4,123.5,164.8,207.7,329.6],bass:41.2},
+    ]},
   ];
 
   function mkNoiseBuf(ctx,len){
@@ -5329,8 +5379,7 @@ function LofiPlayer(){
     const o=ctx.createOscillator(),g=ctx.createGain();
     o.frequency.setValueAtTime(160,t);
     o.frequency.exponentialRampToValueAtTime(38,t+0.18);
-    g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(0.75,t+0.008);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.75,t+0.008);
     g.gain.exponentialRampToValueAtTime(0.001,t+0.32);
     o.connect(g);g.connect(dest);o.start(t);o.stop(t+0.38);
   }
@@ -5355,60 +5404,71 @@ function LofiPlayer(){
       const o=ctx.createOscillator(),lpf=ctx.createBiquadFilter(),g=ctx.createGain();
       o.type='sawtooth';o.frequency.value=f;o.detune.value=(i%2===0?6:-6);
       lpf.type='lowpass';lpf.frequency.value=700;lpf.Q.value=0.7;
-      g.gain.setValueAtTime(0,t);
-      g.gain.linearRampToValueAtTime(0.032,t+0.9);
-      g.gain.setValueAtTime(0.032,t+dur-1.0);
-      g.gain.linearRampToValueAtTime(0,t+dur);
-      o.connect(lpf);lpf.connect(g);g.connect(dest);
-      o.start(t);o.stop(t+dur+0.1);
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.032,t+0.9);
+      g.gain.setValueAtTime(0.032,t+dur-1.0);g.gain.linearRampToValueAtTime(0,t+dur);
+      o.connect(lpf);lpf.connect(g);g.connect(dest);o.start(t);o.stop(t+dur+0.1);
     });
   }
   function bass(ctx,t,freq,dur,dest){
     const o=ctx.createOscillator(),lpf=ctx.createBiquadFilter(),g=ctx.createGain();
     o.type='triangle';o.frequency.value=freq;
     lpf.type='lowpass';lpf.frequency.value=280;
-    g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(0.18,t+0.08);
-    g.gain.setValueAtTime(0.09,t+0.4);
-    g.gain.linearRampToValueAtTime(0,t+dur);
-    o.connect(lpf);lpf.connect(g);g.connect(dest);
-    o.start(t);o.stop(t+dur+0.05);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.18,t+0.08);
+    g.gain.setValueAtTime(0.09,t+0.4);g.gain.linearRampToValueAtTime(0,t+dur);
+    o.connect(lpf);lpf.connect(g);g.connect(dest);o.start(t);o.stop(t+dur+0.05);
+  }
+  function mkReverb(ctx){
+    const len=Math.floor(ctx.sampleRate*1.5);
+    const buf=ctx.createBuffer(2,len,ctx.sampleRate);
+    for(let c=0;c<2;c++){const d=buf.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.5);}
+    const conv=ctx.createConvolver();conv.buffer=buf;return conv;
+  }
+  function melody(ctx,t,chord,beat,dest){
+    if(Math.random()<0.5) return;
+    const upper=chord.pad.slice(2);
+    const freq=upper[Math.floor(Math.random()*upper.length)]*(Math.random()<0.2?2:1);
+    const o=ctx.createOscillator(),lp=ctx.createBiquadFilter(),g=ctx.createGain();
+    o.type='sine';o.frequency.value=freq;o.detune.value=(Math.random()-0.5)*12;
+    lp.type='lowpass';lp.frequency.value=3200;
+    const dur=beat*(0.35+Math.random()*0.45);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.048,t+0.04);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(lp);lp.connect(g);g.connect(dest);o.start(t);o.stop(t+dur+0.05);
   }
 
   function startAudio(){
     if(!ctxRef.current) ctxRef.current=new(window.AudioContext||window.webkitAudioContext)();
     const ctx=ctxRef.current;
     if(ctx.state==='suspended') ctx.resume();
+    const vibe=VIBES[vibeIdx];
+    const BEAT=60/vibe.bpm;
     const master=ctx.createGain();
     master.gain.value=vol;
+    // Analyser for visualizer
+    const analyser=ctx.createAnalyser();analyser.fftSize=64;
+    master.connect(analyser);
     master.connect(ctx.destination);
-    masterRef.current=master;
-
+    // Reverb wet path: master → reverbSend → reverb convolver → wetGain → destination
+    const rev=mkReverb(ctx);
+    const reverbSend=ctx.createGain();reverbSend.gain.value=0.3;
+    const wetGain=ctx.createGain();wetGain.gain.value=0.65;
+    master.connect(reverbSend);reverbSend.connect(rev);rev.connect(wetGain);wetGain.connect(ctx.destination);
+    masterRef.current=master;analyserRef.current=analyser;
     const state={nextBeat:ctx.currentTime+0.1,beatCount:0,chordIdx:0,active:true};
     sched.current=state;
-
     function schedule(){
       if(!state.active) return;
       while(state.nextBeat < ctx.currentTime+0.5){
-        const t=state.nextBeat, b=state.beatCount, bar=b%4, ci=state.chordIdx;
-        // Kick on 1 and 3
-        if(bar===0) kick(ctx,t,master);
-        if(bar===2) kick(ctx,t,master);
-        // Snare on 2 and 4
+        const t=state.nextBeat,b=state.beatCount,bar=b%4,ci=state.chordIdx;
+        if(bar===0||bar===2) kick(ctx,t,master);
         if(bar===1||bar===3) snare(ctx,t,master);
-        // Hihat every beat + offbeat
         hihat(ctx,t,bar%2===0?0.08:0.05,master);
         hihat(ctx,t+BEAT*0.5,0.035,master);
-        // Pad: new chord every 16 beats
-        if(b%16===0){
-          pad(ctx,t,CHORDS[ci].pad,BEAT*16,master);
-        }
-        // Bass every 4 beats (repeating root)
-        if(b%4===0) bass(ctx,t,CHORDS[ci].bass,BEAT*3.8,master);
-        // Advance chord
-        if((b+1)%16===0) state.chordIdx=(ci+1)%CHORDS.length;
-        state.beatCount++;
-        state.nextBeat+=BEAT;
+        if(b%16===0) pad(ctx,t,vibe.chords[ci].pad,BEAT*16,master);
+        if(b%4===0) bass(ctx,t,vibe.chords[ci].bass,BEAT*3.8,master);
+        if(b%2===1) melody(ctx,t,vibe.chords[ci],BEAT,master);
+        if((b+1)%16===0) state.chordIdx=(ci+1)%vibe.chords.length;
+        state.beatCount++;state.nextBeat+=BEAT;
       }
       sched._timer=setTimeout(schedule,80);
     }
@@ -5418,6 +5478,7 @@ function LofiPlayer(){
   function stopAudio(){
     if(sched.current) sched.current.active=false;
     clearTimeout(sched._timer);
+    if(masterRef.current) try{masterRef.current.gain.value=0;}catch{}
     if(ctxRef.current?.state==='running') ctxRef.current.suspend();
   }
   const toggle=()=>{
@@ -5437,19 +5498,21 @@ function LofiPlayer(){
   useEffect(()=>()=>{stopAudio();try{ctxRef.current?.close();}catch{};},[]);
   useEffect(()=>{const h=(e)=>setLTheme(e.detail||'dark');window.addEventListener('cfa_theme',h);return()=>window.removeEventListener('cfa_theme',h);},[]);
   useEffect(()=>{const h=(e)=>{setLoggedIn(!!e.detail);if(!e.detail){stopAudio();setIsPlaying(false);setPendingResume(false);}};window.addEventListener('cfa_auth',h);return()=>window.removeEventListener('cfa_auth',h);},[]);
-  // Auto-resume after refresh: start on first user interaction (browsers block autoplay otherwise)
   useEffect(()=>{
     if(!pendingResume) return;
-    const resume=()=>{
-      startAudio();setIsPlaying(true);setPendingResume(false);
-    };
+    const resume=()=>{startAudio();setIsPlaying(true);setPendingResume(false);};
     document.addEventListener('click',resume,{once:true});
     document.addEventListener('keydown',resume,{once:true});
-    return()=>{
-      document.removeEventListener('click',resume);
-      document.removeEventListener('keydown',resume);
-    };
+    return()=>{document.removeEventListener('click',resume);document.removeEventListener('keydown',resume);};
   },[pendingResume]);
+  useEffect(()=>{
+    try{localStorage.setItem('cfa_lofi_vibe',String(vibeIdx));}catch{}
+    if(!isPlaying) return;
+    stopAudio();
+    let cancelled=false;
+    const t=setTimeout(()=>{if(!cancelled) startAudio();},40);
+    return()=>{cancelled=true;clearTimeout(t);};
+  },[vibeIdx]); // eslint-disable-line react-hooks/exhaustive-deps
   const isLight=lTheme==='light';
   if(!loggedIn) return null;
   return (
@@ -5463,16 +5526,31 @@ function LofiPlayer(){
           display:"flex",alignItems:"center",justifyContent:"center",
           touchAction:"manipulation",transition:"all 0.2s",
           animation:pendingResume?"pulse 1.6s ease-in-out infinite":undefined}}>
-        🎵
+        {VIBES[vibeIdx].emoji}
       </button>
       {showPanel&&(
         <div style={{position:"fixed",bottom:136,left:16,zIndex:270,background:isLight?"#ffffff":"#1a1a38",
           border:isLight?"1px solid #6366f144":"1px solid #6366f144",borderRadius:16,padding:"16px",
-          boxShadow:isLight?"0 8px 32px #0001":"0 8px 32px #00000099",minWidth:210,animation:"fadeIn 0.15s ease"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          boxShadow:isLight?"0 8px 32px #0001":"0 8px 32px #00000099",minWidth:228,animation:"fadeIn 0.15s ease"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div style={{fontSize:12,fontWeight:700,color:isLight?"#4f46e5":"#a5b4fc",letterSpacing:"0.05em"}}>🎵 LOFI STUDY</div>
             <button onClick={()=>setShowPanel(false)} style={{fontSize:14,color:isLight?"#8b89a8":"#7c7a9e",background:"none",border:"none",cursor:"pointer",lineHeight:1,padding:"2px 6px"}}>✕</button>
           </div>
+          <div style={{display:"flex",gap:4,marginBottom:8}}>
+            {VIBES.map((v,i)=>(
+              <button key={i} onClick={()=>setVibeIdx(i)}
+                style={{flex:1,padding:"7px 2px",borderRadius:7,fontSize:13,fontWeight:700,cursor:"pointer",
+                  background:vibeIdx===i?(isLight?"#6366f118":"#6366f130"):"none",
+                  border:`1px solid ${vibeIdx===i?"#6366f1":(isLight?"#c4c4de":"#3a3a60")}`,
+                  color:vibeIdx===i?"#818cf8":(isLight?"#8b89a8":"#5a5a7a")}}>
+                {v.emoji}
+              </button>
+            ))}
+          </div>
+          <div style={{fontSize:10,fontWeight:600,color:"#818cf8",textAlign:"center",marginBottom:8,opacity:0.85}}>
+            {VIBES[vibeIdx].name} · {VIBES[vibeIdx].bpm} BPM
+          </div>
+          <LofiVisualizer analyserRef={analyserRef} isPlaying={isPlaying}/>
           <button onClick={toggle} style={{width:"100%",padding:"10px",borderRadius:10,marginBottom:12,
             fontSize:13,fontWeight:700,
             background:isPlaying?"linear-gradient(135deg,#14532d,#166534)":"linear-gradient(135deg,#4338ca,#6366f1)",
@@ -5486,7 +5564,7 @@ function LofiPlayer(){
               style={{flex:1,accentColor:"#6366f1",cursor:"pointer"}}/>
             <span style={{fontSize:14}}>🔊</span>
           </div>
-          <div style={{fontSize:10,color:isLight?"#8b89a8":"#4a4869",textAlign:"center",marginTop:10}}>lofi jazz · 82 BPM · study focus</div>
+          <div style={{fontSize:10,color:isLight?"#8b89a8":"#4a4869",textAlign:"center",marginTop:10}}>study focus · tap vibe to switch</div>
         </div>
       )}
     </>
