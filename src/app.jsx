@@ -220,10 +220,17 @@ function buildDynamicContext(topic, module, srDeck, levelHistory){
   return{weakLOS,userMisconceptions,timingSignal,hasData:moduleCards.length>0};
 }
 
-function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null,dynCtx=null){
+function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null,dynCtx=null,multiModuleList=null){
   const activeLos=losData||LOS;
   const activeMisc=miscData||MISCONCEPTIONS;
-  const losStatements=activeLos[topic]?.modules[module]||[];
+  // multiModuleList=[{t,st},...] when user selected multiple topics/modules
+  const isMulti=multiModuleList&&multiModuleList.length>1;
+  const losStatements=isMulti
+    ? multiModuleList.flatMap(({t:mt,st:ms})=>(activeLos[mt]?.modules[ms]||[]).map(l=>`[${ms}] ${l}`))
+    : activeLos[topic]?.modules[module]||[];
+  const moduleHeader=isMulti
+    ? (()=>{const ts=[...new Set(multiModuleList.map(x=>x.t))];return ts.length===1?`Topic: ${ts[0]} | Modules: ${multiModuleList.map(x=>x.st).join(", ")}`:`Topics/Modules: ${multiModuleList.map(x=>x.st).join(", ")}`;})()
+    : `Topic: ${topic} | Module: ${module}`;
   const verbsForDiff=LOS_VERB_DIFFICULTY[difficulty];
 
   // Prioritise weak LOS from SR errors, then difficulty-verb-matched LOS, then rest
@@ -271,7 +278,7 @@ function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=nul
     ?`CFA Level 3 format: Frame every question around a PORTFOLIO MANAGEMENT decision — client objectives, IPS constraints, asset allocation, or risk management. Questions should require the candidate to recommend or justify, not just recall. Complexity: ${difficulty==="Easy"?"straightforward client-context application":difficulty==="Medium"?"trade-off analysis with supporting rationale":"multi-constraint portfolio construction or behavioural bias evaluation"}.`
     :`Difficulty: ${difficulty==="Easy"?"recall/definition":difficulty==="Medium"?"apply formula to scenario with numbers":"multi-step analysis or nuanced judgment"}`;
 
-  return `CFA L${level} question generator. Topic: ${topic} | Module: ${module} | Difficulty: ${difficulty} | Generate: ${count} questions.
+  return `CFA L${level} question generator. ${moduleHeader} | Difficulty: ${difficulty} | Generate: ${count} questions${isMulti?" spread across ALL listed modules. Each question must clearly specify which module it covers.":""}.
 
 LOS (test these):
 ${losText}
@@ -5345,6 +5352,8 @@ function CFAMock(){
     return "home";
   });
   const [topic,setTopic]=useState("");const [subtopic,setSubtopic]=useState("");
+  const [selTopics,setSelTopics]=useState([]); // setup screen multi-select
+  const [selSubtopics,setSelSubtopics]=useState([]); // setup screen multi-select
   const [difficulty,setDifficulty]=useState("Medium");const [count,setCount]=useState(10);const [mode,setMode]=useState("guided");
   const [questions,setQuestions]=useState([]);const [answers,setAnswers]=useState({});
   const [flaggedQ,setFlaggedQ]=useState({});  // confidence flags: {qId: true}
@@ -6446,7 +6455,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   };
 
   const generateQuestionsRef=React.useRef(null);
-  const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null)=>{
+  const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null,multiModules=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
     lastGenParamsRef.current={t,st,diff,cnt,m,isVignette,st2};
     try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
@@ -6588,7 +6597,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       } else {
         const tightMax={3:1500,5:2200,10:4500,15:6500,20:8000}[cnt]||(cnt*450);
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`});
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
@@ -6761,7 +6770,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
   const savePreset=()=>{
     if(!savePresetName.trim())return;
-    const preset={id:Date.now(),name:savePresetName.trim(),topic:mode==="interleaved"?null:topic,subtopic:mode==="interleaved"?null:subtopic,difficulty,count,mode,warmupEnabled};
+    const preset={id:Date.now(),name:savePresetName.trim(),topic:mode==="interleaved"?null:selTopics[0]||"",subtopic:mode==="interleaved"?null:selSubtopics[0]||"",difficulty,count,mode,warmupEnabled};
     const updated=[preset,...presets.filter(p=>p.name!==preset.name)].slice(0,8);
     setPresets(updated);try{localStorage.setItem(PRESETS_KEY,JSON.stringify(updated));}catch{}
     setShowSavePreset(false);setSavePresetName("");
@@ -9530,44 +9539,112 @@ Return ONLY a JSON array — no prose, no markdown fences:
     )}
 
     {mode!=="interleaved"&&(<>
+    {/* ── TOPIC multi-select ── */}
     <div style={{marginBottom:18}}>
-      <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:10}}>Topic</label>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
+        <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Topic</label>
+        {selTopics.length>0&&<button onClick={()=>{setSelTopics([]);setSelSubtopics([]);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:C.muted,padding:0}}>Clear all</button>}
+      </div>
       <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-        {Object.entries(activeTopicMap).map(([t,{weight}])=>(
-          <button key={t} onClick={()=>{setTopic(t);setSubtopic("");}} style={{padding:"7px 13px",borderRadius:8,fontSize:13,fontWeight:500,cursor:"pointer",border:topic===t?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:topic===t?C.accent+"20":C.surface,color:topic===t?C.accentLight:C.muted}}>
-            {t} <span style={{fontSize:10,opacity:0.6}}>{weight}%</span>
-          </button>
-        ))}
+        {Object.entries(activeTopicMap).map(([t,{weight}])=>{
+          const on=selTopics.includes(t);
+          return(
+            <button key={t} onClick={()=>{
+              if(on){
+                // deselect topic → also remove its modules from selSubtopics
+                const topicMods=activeTopicMap[t]?.subtopics||[];
+                setSelTopics(p=>p.filter(x=>x!==t));
+                setSelSubtopics(p=>p.filter(s=>!topicMods.includes(s)));
+              } else {
+                setSelTopics(p=>[...p,t]);
+              }
+            }} style={{padding:"7px 13px",borderRadius:8,fontSize:13,fontWeight:500,cursor:"pointer",
+              border:on?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,
+              background:on?C.accent+"20":C.surface,color:on?C.accentLight:C.muted,
+              display:"flex",alignItems:"center",gap:5}}>
+              {on&&<span style={{fontSize:10,color:C.accent}}>✓</span>}
+              {t} <span style={{fontSize:10,opacity:0.6}}>{weight}%</span>
+            </button>
+          );
+        })}
       </div>
     </div>
 
-    {topic&&(
+    {/* ── MODULE multi-select (per selected topic) ── */}
+    {selTopics.length>0&&(
       <div style={{marginBottom:18}}>
-        <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:10}}>Module</label>
-        <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-          {activeTopicMap[topic].subtopics.map(m=>{
-            const mH=history.filter(h=>h.topic===topic&&h.subtopic===m);
-            const mPct=mH.length?Math.round(mH.reduce((a,h)=>a+(h.pct||0),0)/mH.length):null;
-            const losCount=activeLOS[topic]?.modules[m]?.length||0;
-            const losM=getLOSMastery(history,topic,m);
-            return(
-              <button key={m} onClick={()=>setSubtopic(m)} style={{padding:"7px 13px",borderRadius:8,fontSize:12,fontWeight:500,cursor:"pointer",border:subtopic===m?`1.5px solid ${C.accentLight}`:`1.5px solid ${C.border}`,background:subtopic===m?C.accentLight+"18":C.surface,color:subtopic===m?C.accentLight:C.muted}}>
-                {m}
-                <span style={{marginLeft:5,fontSize:10,opacity:0.55}}>{losCount} LOS</span>
-                {mPct!==null&&<span style={{marginLeft:4,fontSize:10,color:mPct>=70?C.easy:mPct>=50?C.medium:C.hard}}>{mPct}%</span>}
-                {losM.untested>0&&<span style={{marginLeft:4,fontSize:10,color:C.muted}}>({losM.untested} untested)</span>}
-              </button>
-            );
-          })}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:10}}>
+          <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase"}}>Module</label>
+          {selSubtopics.length>0&&<button onClick={()=>setSelSubtopics([])} style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:C.muted,padding:0}}>Clear</button>}
         </div>
-        {subtopic&&activeLOS[topic]?.modules[subtopic]&&(
+        {selTopics.map(selT=>{
+          const mods=activeTopicMap[selT]?.subtopics||[];
+          const allOn=mods.every(m=>selSubtopics.includes(m));
+          return(
+            <div key={selT} style={{marginBottom:selTopics.length>1?14:0}}>
+              {selTopics.length>1&&(
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:7}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.accentLight}}>{selT}</div>
+                  <button onClick={()=>{
+                    if(allOn) setSelSubtopics(p=>p.filter(s=>!mods.includes(s)));
+                    else setSelSubtopics(p=>[...new Set([...p,...mods])]);
+                  }} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:6,cursor:"pointer",fontSize:10,color:C.muted,padding:"2px 8px"}}>
+                    {allOn?"Deselect all":"All modules"}
+                  </button>
+                </div>
+              )}
+              {selTopics.length===1&&(
+                <div style={{marginBottom:8}}>
+                  <button onClick={()=>{
+                    if(allOn) setSelSubtopics([]);
+                    else setSelSubtopics(mods);
+                  }} style={{padding:"5px 12px",borderRadius:7,fontSize:11,fontWeight:700,cursor:"pointer",
+                    border:allOn?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,
+                    background:allOn?C.accent+"18":C.surface,color:allOn?C.accentLight:C.muted}}>
+                    {allOn?"✓ All modules":"All modules"}
+                  </button>
+                </div>
+              )}
+              <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+                {mods.map(m=>{
+                  const on=selSubtopics.includes(m);
+                  const mH=history.filter(h=>h.topic===selT&&h.subtopic===m);
+                  const mPct=mH.length?Math.round(mH.reduce((a,h)=>a+(h.pct||0),0)/mH.length):null;
+                  const losCount=activeLOS[selT]?.modules[m]?.length||0;
+                  const losM=getLOSMastery(history,selT,m);
+                  return(
+                    <button key={m} onClick={()=>setSelSubtopics(p=>on?p.filter(x=>x!==m):[...p,m])}
+                      style={{padding:"7px 13px",borderRadius:8,fontSize:12,fontWeight:500,cursor:"pointer",
+                        border:on?`1.5px solid ${C.accentLight}`:`1.5px solid ${C.border}`,
+                        background:on?C.accentLight+"18":C.surface,color:on?C.accentLight:C.muted,
+                        display:"flex",alignItems:"center",flexWrap:"wrap",gap:4}}>
+                      {on&&<span style={{fontSize:10,color:C.accentLight}}>✓</span>}
+                      <span>{m}</span>
+                      <span style={{fontSize:10,opacity:0.55}}>{losCount} LOS</span>
+                      {mPct!==null&&<span style={{fontSize:10,color:mPct>=70?C.easy:mPct>=50?C.medium:C.hard}}>{mPct}%</span>}
+                      {losM.untested>0&&<span style={{fontSize:10,color:C.muted}}>({losM.untested} untested)</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+        {/* LOS preview — only when exactly one module selected */}
+        {selSubtopics.length===1&&selTopics.length===1&&activeLOS[selTopics[0]]?.modules[selSubtopics[0]]&&(
           <div style={{marginTop:12,background:C.surface,border:`1px solid ${C.border}`,borderRadius:9,padding:"12px 14px"}}>
-            <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>LOS for this module ({activeLOS[topic].modules[subtopic].length} statements)</div>
-            {activeLOS[topic].modules[subtopic].map((l,i)=>(
+            <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>LOS for this module ({activeLOS[selTopics[0]].modules[selSubtopics[0]].length} statements)</div>
+            {activeLOS[selTopics[0]].modules[selSubtopics[0]].map((l,i)=>(
               <div key={i} style={{fontSize:11,color:C.muted,lineHeight:1.6,marginBottom:4,display:"flex",gap:6}}>
                 <span style={{color:C.accent,flexShrink:0,fontWeight:700}}>·</span><span>…{l}</span>
               </div>
             ))}
+          </div>
+        )}
+        {/* Summary badge when multiple modules selected */}
+        {selSubtopics.length>1&&(
+          <div style={{marginTop:10,padding:"8px 12px",borderRadius:8,background:`${C.accent}10`,border:`1px solid ${C.accent}33`,fontSize:11,color:C.accentLight,fontWeight:700}}>
+            ✓ {selSubtopics.length} modules selected · AI will distribute questions across all of them
           </div>
         )}
       </div>
@@ -9587,8 +9664,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <label style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",display:"block",marginBottom:10}}>Difficulty</label>
         {(()=>{
           const adaptiveDiff=(()=>{
-            if(!topic||!subtopic)return null;
-            const mSessions=history.filter(h=>h.topic===topic&&h.subtopic===subtopic);
+            if(!selTopics[0]||selSubtopics.length!==1)return null;
+            const mSessions=history.filter(h=>h.topic===selTopics[0]&&h.subtopic===selSubtopics[0]);
             const byDiff={};
             mSessions.forEach(h=>{if(!byDiff[h.difficulty])byDiff[h.difficulty]={total:0,count:0};byDiff[h.difficulty].total+=(h.pct||0);byDiff[h.difficulty].count+=1;});
             const avg=d=>byDiff[d]?Math.round(byDiff[d].total/byDiff[d].count):null;
@@ -9615,13 +9692,26 @@ Return ONLY a JSON array — no prose, no markdown fences:
     </div>
 
     {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:14}}>{error}</div>}
+    {(()=>{
+      const ready=mode==="interleaved"||(selTopics.length>0&&selSubtopics.length>0);
+      const multiMods=selSubtopics.length>1
+        ? selTopics.flatMap(t=>(activeTopicMap[t]?.subtopics||[]).filter(s=>selSubtopics.includes(s)).map(s=>({t,st:s})))
+        : null;
+      const primaryT=selTopics[0]||"";
+      const primarySt=selSubtopics[0]||"";
+      const btnLabel=loading?loadingMsg
+        :mode==="interleaved"?`Generate ${count} Interleaved Questions (3 topics) →`
+        :vignetteMode?`Generate ${Math.ceil(count/3)} Vignettes (${count} questions) →`
+        :selSubtopics.length>1?`Generate ${warmupEnabled?count+3:count} Questions across ${selSubtopics.length} modules →`
+        :`Generate ${warmupEnabled?count+3:count} Questions${warmupEnabled?" (incl. 3 warm-up)":""} →`;
+      return(<>
     <button onClick={()=>{
       if(mode==="interleaved"){generateInterleavedSession(difficulty,count);return;}
-      generateQuestions(topic,subtopic,difficulty,warmupEnabled?count+3:count,mode,vignetteMode);
-    }} disabled={mode!=="interleaved"&&(!topic||!subtopic)||loading} style={{width:"100%",padding:"15px",borderRadius:12,fontSize:15,fontWeight:700,background:(mode==="interleaved"||topic&&subtopic)&&!loading?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.dim,color:(mode==="interleaved"||topic&&subtopic)&&!loading?"#fff":C.muted,border:"none",cursor:(mode==="interleaved"||topic&&subtopic)&&!loading?"pointer":"not-allowed",boxShadow:(mode==="interleaved"||topic&&subtopic)&&!loading?`0 4px 20px ${C.accent}44`:"none"}}>
-      {loading?loadingMsg:mode==="interleaved"?`Generate ${count} Interleaved Questions (3 topics) →`:vignetteMode?`Generate ${Math.ceil(count/3)} Vignettes (${count} questions) →`:`Generate ${warmupEnabled?count+3:count} Questions${warmupEnabled?" (incl. 3 warm-up)":""} →`}
+      generateQuestions(primaryT,primarySt,difficulty,warmupEnabled?count+3:count,mode,vignetteMode,null,multiMods);
+    }} disabled={!ready||loading} style={{width:"100%",padding:"15px",borderRadius:12,fontSize:15,fontWeight:700,background:ready&&!loading?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.dim,color:ready&&!loading?"#fff":C.muted,border:"none",cursor:ready&&!loading?"pointer":"not-allowed",boxShadow:ready&&!loading?`0 4px 20px ${C.accent}44`:"none"}}>
+      {btnLabel}
     </button>
-    {!loading&&(mode==="interleaved"||(topic&&subtopic))&&(
+    {!loading&&ready&&(
       <div style={{marginTop:10}}>
         {!showSavePreset?(
           <button onClick={()=>setShowSavePreset(true)} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:"transparent",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
@@ -9641,6 +9731,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
     {loading&&<div style={{marginTop:20,display:"flex",flexDirection:"column",gap:10}}>{[1,2,3].map(i=><div key={i} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:16}}><Skeleton height={13} style={{marginBottom:10}}/><Skeleton height={10} width="70%" style={{marginBottom:8}}/>{[1,2,3].map(j=><Skeleton key={j} height={9} width={`${58+j*9}%`} style={{marginBottom:6}}/>)}</div>)}</div>}
+    </>);})()}
   </>);
   // ══ QUIZ ══════════════════════════════════════════════════════════════════
   // ════════════════════════════════════════
