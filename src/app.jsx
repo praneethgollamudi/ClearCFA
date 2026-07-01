@@ -2968,7 +2968,7 @@ function LessonSection({title, items, color}){
   );
 }
 
-function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1", isPro=false, onStartQuiz=null, topicLessons={}, setTopicLessons=()=>{}, onUpgrade=null}){
+function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1", isPro=false, onStartQuiz=null, topicLessons={}, setTopicLessons=()=>{}, onUpgrade=null, topicReadiness=[]}){
   const activePowerNotes=getActivePowerNotes(cfaLevel);
   const activeFormulas=getActiveFormulas(cfaLevel);
   const activeLOSR=getActiveLOS(cfaLevel);
@@ -3185,8 +3185,10 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     setCoachInput("");
     setCoachLoading(true);
     const weak=Object.values(srDeck).filter(c=>c.topic===topic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,3).map(c=>c.concept||c.subtopic).filter(Boolean).join(", ");
-    const prompt=`CFA Level ${cfaLevel} concept coach. The student wants to understand "${topic}".${weak?` Their known weak areas: ${weak}.`:""}\n\nStart a short teaching dialogue. Begin with a key concept question to gauge their level. One question only — 2 sentences max.`;
-    const reply=await callAIChat(userId,[{role:"user",content:prompt}],200,cfaLevel);
+    const rd=topicReadiness.find(r=>r.topic===topic);
+    const perfCtx=rd?.accuracy!=null?`The student has attempted ${rd.totalQs||0} questions on this topic with ${rd.accuracy}% accuracy across ${rd.sessions} session(s).`:"The student has not yet practiced this topic.";
+    const prompt=`CFA Level ${cfaLevel} concept coach. The student wants to understand "${topic}". ${perfCtx}${weak?` Specific weak concepts from their SR deck: ${weak}.`:""}\n\nStart a short teaching dialogue. Begin with a key concept question to gauge their level — if their accuracy is low, start with a foundational concept; if above 75%, target a nuanced or application-level question. One question only — 2 sentences max.`;
+    const reply=await callAIChat(userId,[{role:"user",content:prompt}],220,cfaLevel);
     if(reply) setCoachMsgs([{role:"assistant",content:reply}]);
     setCoachLoading(false);
     setTimeout(()=>coachMsgsEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
@@ -3198,8 +3200,10 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     setCoachMsgs(newMsgs);
     setCoachInput("");
     setCoachLoading(true);
-    const system=`CFA Level ${cfaLevel} concept coach for topic "${coachTopic}". Teach through dialogue and Socratic questions. Keep responses to 2-3 sentences. If the student's answer shows understanding, advance to the next concept. If not, gently clarify.`;
-    const reply=await callAIChat(userId,[{role:"user",content:system},...newMsgs.slice(-8)],250,cfaLevel);
+    const rd=topicReadiness.find(r=>r.topic===coachTopic);
+    const perfCtx=rd?.accuracy!=null?` Student's exam accuracy on this topic: ${rd.accuracy}%.`:"";
+    const system=`CFA Level ${cfaLevel} concept coach for topic "${coachTopic}".${perfCtx} Teach through dialogue and Socratic questions. Keep responses to 2-3 sentences. If the student's answer shows understanding, advance to the next concept. If not, gently clarify with a concrete example or analogy.`;
+    const reply=await callAIChat(userId,[{role:"user",content:system},...newMsgs.slice(-8)],280,cfaLevel);
     if(reply) setCoachMsgs(m=>[...m,{role:"assistant",content:reply}]);
     setCoachLoading(false);
     setTimeout(()=>coachMsgsEndRef.current?.scrollIntoView({behavior:"smooth"}),100);
@@ -7025,7 +7029,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 }} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid ${srWrongCount>0?C.hard+"55":C.border}`,color:srWrongCount>0?C.hard:C.muted,cursor:"pointer",position:"relative"}}>
                   🔁 Mistakes{srWrongCount>0&&<span style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",background:C.hard,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{Math.min(srWrongCount,99)}</span>}
                 </button>
-                <button onClick={()=>{trackUsage("ai_coach");setShowMoreSheet(false);setAiCoachScreen(true);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>🤖 AI Coach</button>
+                <button onClick={()=>{trackUsage("ai_coach");setShowMoreSheet(false);setAiCoachScreen(true);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:12,fontWeight:600,background:C.bg,border:`1px solid rgba(34,211,238,0.3)`,color:"#22d3ee",cursor:"pointer"}}>📊 Study Advisor</button>
               </div>
             </div>
           </div>
@@ -7122,8 +7126,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
   if(aiCoachScreen) return wrap(<>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
       <div>
-        <h2 style={{margin:0,fontSize:20,fontWeight:800,color:"#22d3ee"}}>🤖 AI Study Coach</h2>
-        <div style={{fontSize:11,color:C.muted,marginTop:2}}>Powered by Claude · Knows your performance data</div>
+        <h2 style={{margin:0,fontSize:20,fontWeight:800,color:"#22d3ee"}}>📊 Study Advisor</h2>
+        <div style={{fontSize:11,color:C.muted,marginTop:2}}>Strategy & planning · Powered by your performance data</div>
       </div>
       <button onClick={()=>setAiCoachScreen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
     </div>
@@ -7152,7 +7156,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           "Where am I most likely to lose marks?",
           "How do I fix my weakest topic fast?",
           "Am I on track to pass? Be honest.",
-          "What's my biggest risk with 62 days left?"
+          `What's my biggest risk with ${daysLeft} days left?`
         ].map(prompt=>(
           <button key={prompt} onClick={async()=>{
             if(!authUser?.id){setAiCoachMessages(m=>[...m,{role:"user",text:prompt},{role:"assistant",text:"Sign in to use AI Coach."}]);return;}
@@ -7163,8 +7167,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
               const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3).map(m=>`${m.topic}: ${m.accuracy}%`).join(", ");
               const untouched=moduleReadiness.filter(m=>m.sessions===0).map(m=>m.topic.split(" ")[0]).join(", ");
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass probability ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest modules: ${topWeak||"none yet"}, untouched: ${untouched||"none"}, SR due: ${dueCards.length}, leeches: ${leeches.length}.`;
-              const sysPrompt=`You are a direct, honest CFA Level ${cfaLevel} study coach. ${context} Give specific, actionable advice in 2-4 sentences. No generic motivational fluff.`;
-              const result=await callAIChat(authUser.id,[{role:"user",content:`${sysPrompt}\n\nStudent: ${prompt}`}],300,cfaLevel);
+              const sysPrompt=`You are a direct, honest CFA Level ${cfaLevel} study advisor. ${context} Give specific, actionable advice. Be concise but complete — if the question calls for a plan or detailed diagnosis, give it fully. No generic motivational fluff.`;
+              const result=await callAIChat(authUser.id,[{role:"user",content:`${sysPrompt}\n\nStudent: ${prompt}`}],450,cfaLevel);
               const text=(typeof result==="string"?result:"")||"No response";
               setAiCoachMessages(m=>[...m,{role:"assistant",text}]);
             }catch(e){setAiCoachMessages(m=>[...m,{role:"assistant",text:"Error: "+e.message}]);}
@@ -7202,7 +7206,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             try{
               const topWeak=moduleReadiness.filter(m=>m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3).map(m=>`${m.topic}: ${m.accuracy}%`).join(", ");
               const context=`Student data: ${history.length} sessions, overall ${overallPct||"N/A"}%, pass prob ${passProbability?.probability||"N/A"}%, days to exam ${daysLeft}, weakest: ${topWeak||"none"}.`;
-              const result=await callAIChat(authUser.id,[{role:"user",content:`You are a direct CFA L${cfaLevel} coach. ${context}\n\nStudent: ${q}`}],300,cfaLevel);
+              const result=await callAIChat(authUser.id,[{role:"user",content:`You are a direct CFA L${cfaLevel} study advisor. ${context} Give specific, actionable advice. Be concise but complete. No generic motivational fluff.\n\nStudent: ${q}`}],450,cfaLevel);
               setAiCoachMessages(m=>[...m,{role:"assistant",text:(typeof result==="string"?result:"")||"No response"}]);
             }catch(e){setAiCoachMessages(m=>[...m,{role:"assistant",text:"Error: "+e.message}]);}
             setAiCoachLoading(false);
@@ -11416,7 +11420,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ════════════════════════════════════════
   // SCREEN: revision
   // ════════════════════════════════════════
-  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel} isPro={proStatus} topicLessons={topicLessons} setTopicLessons={setTopicLessons} onUpgrade={(cfg)=>setUpgradeModal(cfg)} onStartQuiz={(topic)=>{setScreen("home");const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});setTimeout(()=>generateQuestions(topic,mods[0]||topic,"Medium",10,"guided"),100);}}/>;
+  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel} isPro={proStatus} topicLessons={topicLessons} setTopicLessons={setTopicLessons} onUpgrade={(cfg)=>setUpgradeModal(cfg)} topicReadiness={moduleReadiness} onStartQuiz={(topic)=>{setScreen("home");const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});setTimeout(()=>generateQuestions(topic,mods[0]||topic,"Medium",10,"guided"),100);}}/>;
 
   // ══ STUDY PATH SCREEN ════════════════════════════════════════════════════════
   // ════════════════════════════════════════
