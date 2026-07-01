@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version 2026-07-01-e**: Latest version documents Deep Study guide redesign and comprehensive Learn tab improvements. Older versions 2026-07-01-b and 2026-07-01-c have been removed from WHATS_NEW_SLIDES array; only -d and -e are retained. When creating future slides, follow the same emoji-led, tip-driven format and always prepend new versions at the `// WN_START` marker.
+
+
 **What's New version 2026-07-01-e**: Latest version documents Deep Study guide redesign and comprehensive Learn tab improvements. When creating future slides, follow the same emoji-led, tip-driven format and always prepend new versions at the `// WN_START` marker.
 
 
@@ -25,6 +28,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 - **Live URL:** https://praneethgollamudi.github.io/ClearCFA/
 
 ## Supabase Infrastructure
+
+**`buildQuestionPrompt()` multi-module support**: Now accepts optional `multiModuleList` parameter (array of `{t, st}` objects for topic and module). When provided, questions are generated across all listed modules with each question specifying which module it covers. Prompt header dynamically adjusts to show all selected modules. Always pass `multiModuleList` from Custom Mock setup when user selects multiple topics/modules.
+
 
 **Multi-topic/module question generation**: `buildQuestionPrompt()` now accepts optional `multiModuleList` parameter (array of `{t, st}` objects for topic and module). When provided, questions are generated across all listed modules with each question specifying which module it covers. Always pass `multiModuleList` from Custom Mock setup when user selects multiple topics/modules.
 
@@ -709,7 +715,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1791300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1791400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
