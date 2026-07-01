@@ -4,6 +4,18 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New versions 2026-07-01 and 2026-07-01-b removed**: Base and -b versions have been removed from WHATS_NEW_SLIDES; currently -c, -d, and -f are active. When creating future versions, consolidate overlapping announcements and prepend at `// WN_START` marker with emoji-led, tip-driven format.
+
+
+**What's New version 2026-07-01-f (re-added)**: This version has been restored to WHATS_NEW_SLIDES array and documents Drill session improvements (pass probability advice, weak spot indicators, XP animations), Sessions card streak tracking, and Safari < 16 acronym compatibility fixes. Always check active versions when building related features.
+
+
+**Persona gap features (latest)**: Recent update adds retaker pre-seeding, pacing chip UI, and vignette scenario panel for personalized exam prep paths. When building retaker onboarding or scenario-based learning flows, check `RETAKER_KEY` and ensure pacing guidance and scenario context are visible.
+
+
+**Growth levers constants (v2026-07-01)**: Three new localStorage keys manage persona-driven features: `ONBOARDING_KEY` (onboarding gate), `QUALITY_FLAGS_KEY` (quality flags system), and `RETAKER_KEY` (retaker pre-seeding). When building onboarding, trial limits, or retaker-specific UX, reference these keys to gate features appropriately and track user progression.
+
+
 **What's New version 2026-07-01-e & 2026-07-01-f**: Both versions now document Drill enhancements (slide animations, swipe hints, XP pops, weak spot pills, pass probability advice) and acronym expansion. Previous versions 2026-07-01 (base) have been removed. Always check WHATS_NEW_SLIDES array for active versions when building related features.
 
 
@@ -795,10 +807,11 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_last_screen_v1` | `LAST_SCREEN_KEY` |
 | `cfa_onboarding_v1` | `ONBOARDING_KEY` |
 | `cfa_quality_flags_v1` | `QUALITY_FLAGS_KEY` |
+| `cfa_retaker_v1` | `RETAKER_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
