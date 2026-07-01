@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New versions 2026-07-01-e and 2026-07-01-f removed**: Both versions removed from WHATS_NEW_SLIDES; currently active versions are base 2026-07-01, -c, and -d. Version -d documents pacing chip, Power Pro tier, and peer percentile features. Check WHATS_NEW_SLIDES for active versions to avoid duplicate messaging.
+
+
+**Readiness screen interactivity (drill buttons)**: All Readiness cards now feature tappable module pills and drill CTAs that navigate directly to drills. When updating Readiness card layout or navigation, ensure both pill taps and drill buttons are consistently clickable across all card types.
+
+
+**Pacing chip metric shift (Questions/day)**: Pacing chip now displays Questions/day instead of Sessions/day. `getPaceStatus()` now calculates `avgQsPerDay` and `neededQsPerDay` alongside session metrics. When rendering pacing guidance or updating pace calculations, use Q/day metrics for retaker-focused pacing UI.
+
+
 **What's New version 2026-07-01-c (re-added)**: This version documents pacing chip & vignette scenario panel, pass probability percentile tracking, and leech card light-mode display fix. Currently active versions are -b, -c, -d, and -f. When consolidating What's New announcements, check WHATS_NEW_SLIDES array for active versions to avoid duplicate messaging.
 
 
@@ -841,7 +850,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
