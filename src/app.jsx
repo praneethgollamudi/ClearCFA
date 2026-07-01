@@ -5687,6 +5687,8 @@ function CFAMock(){
   const [reelAnswer,setReelAnswer]=useState(null);
   const [reelRevealed,setReelRevealed]=useState(false);
   const [reelSessionCount,setReelSessionCount]=useState(0);
+  const [reelSlideDir,setReelSlideDir]=useState("next");
+  const [reelXpPop,setReelXpPop]=useState(false);
   const reelTouchY=useRef(null);
   const reelFeedBase=useRef([]);
 
@@ -8777,6 +8779,23 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {history.length===0&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:14,opacity:0.7}}>Stats unlock after your first session</div>}
       </>
     )}
+    {/* Weak spot pill */}
+    {(()=>{
+      const weak=moduleReadiness.filter(m=>m.sessions>0&&m.accuracy!==null).sort((a,b)=>a.accuracy-b.accuracy)[0];
+      if(!weak||weak.accuracy>=65)return null;
+      return(
+        <div style={{background:`${C.hard}10`,border:`1px solid ${C.hard}33`,borderRadius:10,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,animation:"fadeIn 0.3s ease"}}>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:700,color:C.hard}}>📉 Weak spot: {weak.modules[0]}</div>
+            <div style={{fontSize:10,color:C.muted,marginTop:1}}>{weak.accuracy}% accuracy · {weak.sessions} session{weak.sessions!==1?"s":""}</div>
+          </div>
+          <button onClick={()=>generateQuestions(weak.topic,weak.modules[0],"Medium",5,"guided")}
+            style={{fontSize:12,fontWeight:700,padding:"6px 13px",borderRadius:8,flexShrink:0,background:C.hard+"20",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
+            Drill 5 →
+          </button>
+        </div>
+      );
+    })()}
     {/* Pass probability trend mini-sparkline */}
     {passTrend.length>=3&&passProbability&&(()=>{
       const vals=passTrend.map(p=>p.prob);
@@ -8806,6 +8825,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{textAlign:"right",flexShrink:0}}>
             <div style={{fontSize:18,fontWeight:800,color:trendColor,lineHeight:1}}>{trend>=0?"+":""}{Math.round(trend)}%</div>
             <div style={{fontSize:9,color:C.muted,fontWeight:700,textTransform:"uppercase"}}>vs {passTrend.length}d ago</div>
+            <div style={{fontSize:9,color:C.muted,marginTop:3,maxWidth:90,textAlign:"right",lineHeight:1.4}}>{passProbability.advice}</div>
           </div>
         </div>
       );
@@ -9673,7 +9693,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(next>=reelFeed.length-10){
         setReelFeed(p=>[...p,...[...reelFeedBase.current].sort(()=>Math.random()-0.5)]);
       }
-      setReelAnswer(null);setReelRevealed(false);setReelIdx(next);
+      setReelSlideDir("next");
+      if(!screenOnboard.drillSwipe){
+        const u={...screenOnboard,drillSwipe:true};setScreenOnboard(u);
+        try{localStorage.setItem(SCREEN_ONBOARD_KEY,JSON.stringify(u));}catch{}
+      }
+      setReelAnswer(null);setReelRevealed(false);setReelXpPop(false);setReelIdx(next);
       const count=reelSessionCount+1;
       setReelSessionCount(count);
       if(count===10)showToast("🎬","10 Reels done!","Keep the momentum going 🔥");
@@ -9682,7 +9707,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
     };
     const reelGoPrev=()=>{
       if(reelIdx===0)return;
-      setReelAnswer(null);setReelRevealed(false);setReelIdx(i=>i-1);
+      setReelSlideDir("prev");
+      setReelAnswer(null);setReelRevealed(false);setReelXpPop(false);setReelIdx(i=>i-1);
     };
     const exitReels=()=>{setAiCoachScreen(false);setWeeklyPlanScreen(false);setScreen("home");};
 
@@ -9740,7 +9766,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       );
       if(card.type==="mcq")return(
-        <div style={{display:"flex",flexDirection:"column",gap:10,flex:1}}>
+        <div style={{display:"flex",flexDirection:"column",gap:10,flex:1,position:"relative"}}>
+          {reelXpPop&&(
+            <div style={{position:"absolute",right:8,top:0,fontSize:15,fontWeight:800,
+              color:C.easy,pointerEvents:"none",animation:"floatUp 0.9s ease forwards",zIndex:10}}>
+              +5 XP ✓
+            </div>
+          )}
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px",marginBottom:2}}>
             <div style={{fontSize:11,fontWeight:700,color:accentColor,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>Quick Check</div>
             <div style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.8}}>{card.question}</div>
@@ -9757,7 +9789,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 <button key={key} onClick={()=>{
                   if(reelAnswer)return;
                   setReelAnswer(key);
-                  if(key===card.answer){if(navigator.vibrate)navigator.vibrate([30,20,30]);setXp(x=>x+5);}
+                  if(key===card.answer){if(navigator.vibrate)navigator.vibrate([30,20,30]);setXp(x=>x+5);setReelXpPop(true);setTimeout(()=>setReelXpPop(false),900);}
                 }} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"13px 14px",borderRadius:10,
                   textAlign:"left",background:bg,border,color,cursor:reelAnswer?"default":"pointer",
                   fontSize:13,lineHeight:1.65,transition:"all 0.2s"}}>
@@ -9819,10 +9851,21 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
 
         {/* Card body */}
-        <div style={{flex:1,overflowY:"auto",padding:"8px 18px 16px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+        <div key={reelIdx} style={{flex:1,overflowY:"auto",padding:"8px 18px 16px",display:"flex",flexDirection:"column",justifyContent:"center",animation:`${reelSlideDir==="next"?"reelNext":"reelPrev"} 0.25s ease`}}>
           {renderCardBody()}
         </div>
 
+        {/* Swipe hint — first visit only */}
+        {!screenOnboard.drillSwipe&&reelSessionCount===0&&(
+          <div style={{position:"absolute",bottom:90,left:0,right:0,display:"flex",
+            justifyContent:"center",pointerEvents:"none",animation:"fadeIn 0.5s ease"}}>
+            <div style={{background:"#000000cc",borderRadius:20,padding:"8px 20px",
+              display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:20}}>↑</span>
+              <span style={{fontSize:13,fontWeight:700,color:"#fff"}}>Swipe up to advance</span>
+            </div>
+          </div>
+        )}
         {/* Footer */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",paddingBottom:"calc(10px + env(safe-area-inset-bottom))",borderTop:`1px solid ${C.border}44`,flexShrink:0,background:`${C.bg}cc`}}>
           <button onClick={()=>{setRevisionTopic(card?.topic||null);setRevisionTab("notes");setScreen("revision");}}
