@@ -10212,6 +10212,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
         {/* Cost */}
         <Card title="Cost Breakdown" icon="💰" accent={C.reward}>
+          <div style={{fontSize:10,color:s.cost?.usingRealTokens?C.easy:C.medium,marginBottom:8,fontWeight:700}}>
+            {s.cost?.usingRealTokens?"✓ Real token data from Anthropic API responses":"⚠ Estimated (real data logs in after next API call)"}
+          </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
             {[["Generate today",fmtCur(s.cost?.generateToday)],["Generate 7d",fmtCur(s.cost?.generateWeek)],["Chat today",fmtCur(s.cost?.chatToday)],["Chat 14d",fmtCur(s.cost?.chatWeek)]].map(([l,v])=>(
               <div key={l} style={{background:C.bg,borderRadius:9,padding:"8px 10px",border:`1px solid ${C.border}`}}>

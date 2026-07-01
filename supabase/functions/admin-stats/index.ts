@@ -11,9 +11,11 @@ const ADMIN_EMAIL = 'sai.praneeth557@gmail.com';
 // Haiku pricing ($/M tokens)
 const HAIKU_IN  = 0.80;
 const HAIKU_OUT = 4.00;
-// Avg tokens per generate call (question generation)
-const AVG_IN_TOKENS  = 750;
-const AVG_OUT_TOKENS = 450;
+// Avg tokens per generate call — used only as fallback before api_usage table has data.
+// Real costs come from actual token counts logged by ai-proxy into api_usage.
+// Estimates based on buildQuestionPrompt (~1200 in) + typical 10-question output (~2200 out).
+const AVG_IN_TOKENS  = 1200;
+const AVG_OUT_TOKENS = 2200;
 const COST_PER_CALL  = (AVG_IN_TOKENS * HAIKU_IN + AVG_OUT_TOKENS * HAIKU_OUT) / 1_000_000;
 
 function jsonResponse(data: unknown, status = 200) {
@@ -132,8 +134,11 @@ Deno.serve(async (req: Request) => {
 
   const chatD14 = `chat-${d14}`;
 
+  const todayISO = `${today}T00:00:00.000Z`;
+  const d7ISO = new Date(now.getTime() - 7 * 86400000).toISOString();
+
   // Run all queries in parallel
-  const [sessions, aiQuota14, chatQuota14, subs, feedbackAll, feedbackRecent, flags, referrals] = await Promise.all([
+  const [sessions, aiQuota14, chatQuota14, subs, feedbackAll, feedbackRecent, flags, referrals, usageToday, usageWeek] = await Promise.all([
     safe(queryTable(supabaseUrl, svcHeaders, 'sessions?select=user_id,updated_at,data&limit=5000') as Promise<Array<{user_id:string;updated_at:string;data?:string}>>, []),
     safe(queryTable(supabaseUrl, svcHeaders, `ai_quota?select=user_id,quota_date,quota_count&quota_date=gte.${d14}&quota_date=lt.z&limit=5000`) as Promise<Array<{user_id:string;quota_date:string;quota_count:number}>>, []),
     safe(queryTable(supabaseUrl, svcHeaders, `ai_quota?select=user_id,quota_date,quota_count&quota_date=gte.${chatD14}&limit=5000`) as Promise<Array<{user_id:string;quota_date:string;quota_count:number}>>, []),
@@ -142,6 +147,8 @@ Deno.serve(async (req: Request) => {
     safe(queryTable(supabaseUrl, svcHeaders, 'feedback?select=rating,category,message,created_at&category=neq.Question Flag&order=created_at.desc&limit=8') as Promise<Array<{rating:number;category:string;message:string;created_at:string}>>, []),
     safe(queryTable(supabaseUrl, svcHeaders, 'feedback?select=user_id,message,created_at&category=eq.Question Flag&order=created_at.desc&limit=50') as Promise<Array<{user_id:string;message:string;created_at:string}>>, []),
     safe(queryTable(supabaseUrl, svcHeaders, 'referrals?select=referrer_id&limit=2000') as Promise<Array<{referrer_id:string}>>, []),
+    safe(queryTable(supabaseUrl, svcHeaders, `api_usage?created_at=gte.${todayISO}&select=request_type,token_in,token_out&limit=5000`) as Promise<Array<{request_type:string;token_in:number;token_out:number}>>, []),
+    safe(queryTable(supabaseUrl, svcHeaders, `api_usage?created_at=gte.${d7ISO}&select=request_type,token_in,token_out&limit=10000`) as Promise<Array<{request_type:string;token_in:number;token_out:number}>>, []),
   ]);
 
   // ── User metrics ────────────────────────────────────────────────────────────
@@ -187,9 +194,22 @@ Deno.serve(async (req: Request) => {
     .map(([date, count]) => ({ date, count }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // ── Cost metrics ─────────────────────────────────────────────────────────────
-  const costWeek = Math.round(aiWeek * COST_PER_CALL * 10000) / 10000;
-  const costToday = Math.round(aiToday * COST_PER_CALL * 10000) / 10000;
+  // ── Cost metrics — use real token data if available, else estimates ──────────
+  const computeTokenCost = (rows: Array<{request_type:string;token_in:number;token_out:number}>, type: string) =>
+    rows.filter(r => r.request_type === type)
+        .reduce((s, r) => s + ((r.token_in || 0) * HAIKU_IN + (r.token_out || 0) * HAIKU_OUT) / 1_000_000, 0);
+
+  const realGenToday  = (usageToday as Array<{request_type:string;token_in:number;token_out:number}>).some(r => r.request_type === 'generate');
+  const realChatToday = (usageToday as Array<{request_type:string;token_in:number;token_out:number}>).some(r => r.request_type === 'chat');
+  const realGenWeek   = (usageWeek  as Array<{request_type:string;token_in:number;token_out:number}>).some(r => r.request_type === 'generate');
+  const realChatWeek  = (usageWeek  as Array<{request_type:string;token_in:number;token_out:number}>).some(r => r.request_type === 'chat');
+
+  const costToday = Math.round((realGenToday
+    ? computeTokenCost(usageToday as Array<{request_type:string;token_in:number;token_out:number}>, 'generate')
+    : aiToday * COST_PER_CALL) * 10000) / 10000;
+  const costWeek  = Math.round((realGenWeek
+    ? computeTokenCost(usageWeek as Array<{request_type:string;token_in:number;token_out:number}>, 'generate')
+    : aiWeek  * COST_PER_CALL) * 10000) / 10000;
 
   // ── Revenue ──────────────────────────────────────────────────────────────────
   const subsRows = subs as Array<{user_id:string;valid_until:string}>;
@@ -203,11 +223,15 @@ Deno.serve(async (req: Request) => {
   const chatTodayDate = `chat-${today}`;
   const chatToday = chatRows.filter(r => r.quota_date === chatTodayDate).reduce((s, r) => s + (r.quota_count || 0), 0);
   const chatWeek  = chatRows.reduce((s, r) => s + (r.quota_count || 0), 0);
-  // Chat token estimates: ~400 in / ~300 out
-  const CHAT_IN = 400; const CHAT_OUT = 300;
+  // Chat token estimates (fallback when api_usage table has no data yet)
+  const CHAT_IN = 600; const CHAT_OUT = 350;
   const COST_PER_CHAT = (CHAT_IN * HAIKU_IN + CHAT_OUT * HAIKU_OUT) / 1_000_000;
-  const chatCostToday = Math.round(chatToday * COST_PER_CHAT * 10000) / 10000;
-  const chatCostWeek  = Math.round(chatWeek  * COST_PER_CHAT * 10000) / 10000;
+  const chatCostToday = Math.round((realChatToday
+    ? computeTokenCost(usageToday as Array<{request_type:string;token_in:number;token_out:number}>, 'chat')
+    : chatToday * COST_PER_CHAT) * 10000) / 10000;
+  const chatCostWeek  = Math.round((realChatWeek
+    ? computeTokenCost(usageWeek as Array<{request_type:string;token_in:number;token_out:number}>, 'chat')
+    : chatWeek  * COST_PER_CHAT) * 10000) / 10000;
 
   const chatTrendMap: Record<string, number> = {};
   for (const r of chatRows) {
@@ -256,6 +280,7 @@ Deno.serve(async (req: Request) => {
       dailyRate,
       perGenerateCall: Math.round(COST_PER_CALL * 1_000_000) / 1_000_000,
       perChatCall:     Math.round(COST_PER_CHAT * 1_000_000) / 1_000_000,
+      usingRealTokens: realGenToday || realChatToday || realGenWeek || realChatWeek,
     },
     revenue:  { proCount, freeCount: Math.max(0, totalUsers - proCount), conversionRate, referrals: referralTotal },
     feedback: { total: fbAll.length, avgRating, byCategory, recent: feedbackRecent },

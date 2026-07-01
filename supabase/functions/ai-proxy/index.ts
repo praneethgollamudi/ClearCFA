@@ -279,9 +279,10 @@ Deno.serve(async (req: Request) => {
 
     const data = await res.json();
 
-    // Increment chat counter in ai_quota (analytics + quota tracking)
+    // Increment chat counter in ai_quota and log actual token usage
     if (res.ok) {
       const chatDate = `chat-${todayUTC()}`;
+      const svcHdrs = { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}`, 'Content-Type': 'application/json' };
       try {
         const chatGetRes = await fetch(
           `${supabaseUrl}/rest/v1/ai_quota?user_id=eq.${encodeURIComponent(userId as string)}&quota_date=eq.${chatDate}&select=quota_count`,
@@ -291,13 +292,19 @@ Deno.serve(async (req: Request) => {
         const chatCount = Array.isArray(chatRows) && chatRows.length > 0 ? (chatRows[0].quota_count || 0) + 1 : 1;
         await fetch(`${supabaseUrl}/rest/v1/ai_quota`, {
           method: 'POST',
-          headers: {
-            apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal',
-          },
+          headers: { ...svcHdrs, Prefer: 'resolution=merge-duplicates,return=minimal' },
           body: JSON.stringify({ user_id: userId, quota_date: chatDate, quota_count: chatCount }),
         });
       } catch { /* never block on analytics failure */ }
+      // Log actual token counts for accurate cost reporting
+      const usage = (data as { usage?: { input_tokens?: number; output_tokens?: number } }).usage;
+      if (usage?.input_tokens != null) {
+        fetch(`${supabaseUrl}/rest/v1/api_usage`, {
+          method: 'POST',
+          headers: { ...svcHdrs, Prefer: 'return=minimal' },
+          body: JSON.stringify({ user_id: userId, request_type: 'chat', token_in: usage.input_tokens, token_out: usage.output_tokens ?? 0 }),
+        }).catch(() => {});
+      }
     }
 
     return jsonResponse(data, res.ok ? 200 : res.status);
@@ -342,6 +349,20 @@ Deno.serve(async (req: Request) => {
     }
 
     const data = await res.json();
+    // Log actual token counts for accurate cost reporting (fire-and-forget)
+    if (res.ok) {
+      const usage = (data as { usage?: { input_tokens?: number; output_tokens?: number } }).usage;
+      if (usage?.input_tokens != null) {
+        fetch(`${supabaseUrl}/rest/v1/api_usage`, {
+          method: 'POST',
+          headers: {
+            apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json', Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({ user_id: userId, request_type: 'generate', token_in: usage.input_tokens, token_out: usage.output_tokens ?? 0 }),
+        }).catch(() => {});
+      }
+    }
     return jsonResponse(data, res.ok ? 200 : res.status);
   }
 
