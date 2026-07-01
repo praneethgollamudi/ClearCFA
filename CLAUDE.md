@@ -4,6 +4,21 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**40-question trial limit & peer percentile**: Free trial allows 40 questions with peer percentile benchmarking. When building trial gate or percentile display, ensure `QUALITY_FLAGS_KEY` and trial counter are properly tracked in localStorage to gate premium features.
+
+
+**Power Pro tier & quality flags system**: Premium features gated by Power Pro upgrade; quality flags mark highest-caliber practice questions. When rendering question cards or trial limitations, reference Power Pro status and apply quality flag badges to premium content.
+
+
+**Pacing chip & vignette scenario panel (v2026-07-01-b)**: Retaker-focused UI elements help users study at exam-realistic speed and understand vignette formats. When rendering Drill sessions for retakers (check `RETAKER_KEY`), ensure pacing chip and scenario panel are visible to guide pace and context.
+
+
+**What's New ordering convention**: Versions are prepended at `// WN_START` marker in reverse chronological order of re-addition. When consolidating or re-adding versions, insert at the top of the array to ensure newest/most-relevant announcements appear first to users.
+
+
+**What's New version 2026-07-01-b (re-added)**: This version documents persona gap features (retaker pre-seeding, pacing chip, vignette scenario panel), pass probability delta tracking, and Power Pro tier with quality flags system. Currently active versions are -b, -e, and -f in WHATS_NEW_SLIDES array.
+
+
 **What's New version 2026-07-01 (consolidated base version)**: This canonical version documents Drill enhancements (slide animations, XP pops, swipe hints, weak spot pills, pass probability advice), session summary with streak tracking, and pass probability delta metrics. Versions -b and -c have been removed; only -d, -f, and base 2026-07-01 are active. Always check WHATS_NEW_SLIDES array for active versions to avoid duplicate messaging.
 
 
@@ -817,7 +832,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
