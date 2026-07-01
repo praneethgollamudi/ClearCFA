@@ -1042,13 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-30-b
-{version:"2026-06-30-b",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus Suggestions",sub:"Study Tools · 2026-06-30 update",desc:"Today's Focus now suggests a more diverse mix of topics instead of repeating the same areas, and tracks which suggestions you've completed. This keeps your prep varied and prevents knowledge gaps from being overlooked.",tip:"Check Today's Focus regularly—you'll see a fresh set of recommendations each day."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Accurate AI-Generated Questions",sub:"AI · 2026-06-30 update",desc:"Fixed a critical issue where AI-generated question explanations didn't match the answer options shown. Questions are now reliable for studying, so you can trust the content and learn the right concepts.",tip:"Re-try any AI-generated questions from recent sessions—they're now correct."},
-{emoji:"🔄",color:C.medium,bg:C.medium,title:"Worked Examples Always Load",sub:"Bug Fix · 2026-06-30 update",desc:"Resolved an issue where newly generated worked examples would not appear on screen. You'll now see step-by-step solutions every time you generate them during revision.",tip:"Generate a worked example in Revision mode to see it appear instantly."},
-{emoji:"🛠️",color:C.hard,bg:C.hard,title:"Cleaner Revision Interface",sub:"UX · 2026-06-30 update",desc:"Removed a duplicate topic picker that was cluttering the Learn and Coach tabs in Revision mode. The interface is now cleaner and faster to navigate.",tip:"Open Revision and switch to Learn or Coach—notice the streamlined topic selection."},
-]},
 // WN_VER:2026-06-30-c
 {version:"2026-06-30-c",slides:[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Formula Display Fixed",sub:"UX · 2026-06-30 update",desc:"Formula values in the Formulas tab no longer collapse into single-character columns, making complex equations readable at a glance. This ensures you can quickly reference and study financial formulas without squinting or reformatting.",tip:"Check the Formulas tab—your multi-variable equations should now display cleanly across full width."},
@@ -1072,6 +1065,13 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Debrief Now More Reliable",sub:"AI · 2026-06-30 update",desc:"AI debrief no longer crashes when you've exhausted your daily question quota, and now shows a clear error message if something goes wrong. You'll get helpful guidance on what to do next instead of a blank screen.",tip:"If a debrief fails, tap Retry to try again—the error message will tell you exactly why."},
 {emoji:"📐",color:C.medium,bg:C.medium,title:"Formula Values Display Correctly",sub:"UX · 2026-06-30 update",desc:"Fixed a display bug in the Formulas tab where numbers were collapsing into single-character columns, making them unreadable. Formula values now render clearly so you can study without squinting.",tip:"Open the Formulas tab and scroll through—you'll see multi-digit values fully visible now."},
 {emoji:"🧮",color:C.accentLight,bg:C.accentLight,title:"Calculator Always at Hand",sub:"Study Tools · 2026-06-30 update",desc:"Added a calculator button to the Short Rate review screen so you can quickly compute values while drilling. No more switching between apps mid-review.",tip:"Look for the calculator icon on the SR review screen—tap it to solve calculations on the spot."},
+]},
+// WN_VER:2026-07-01
+{version:"2026-07-01",slides:[
+{emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Coach & Debrief Now Reliable",sub:"AI · 2026-07-01 update",desc:"Fixed critical issues preventing AI Coach from loading and AI debrief from working when you've hit your daily question limit. You'll now see helpful error messages and retry options instead of blank screens or silent failures.",tip:"Try the AI Coach button on any topic—it should load instantly without the loading blank page bug."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Formulas Display Perfectly",sub:"Study Tools · 2026-07-01 update",desc:"Repaired formula rendering so values no longer collapse into single-character columns, and fixed grouping in AI-generated formula sections. Your Formulas tab is now clean and readable for last-minute review.",tip:"Open the Formulas tab in any session to see properly spaced, full-width formula values."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Questions Stay Fresh & Accurate",sub:"UX · 2026-07-01 update",desc:"Eliminated duplicate question IDs, mismatched explanations, and worked examples that never appeared after generation. Every question you see is now genuine and explanation-complete, so you learn from correct content.",tip:"Notice that AI-generated questions now show explanations immediately, and you won't see the same question ID twice in a session."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Focus & Progress Tracking",sub:"Study Tools · 2026-07-01 update",desc:"Today's Focus suggestions now vary more intelligently across topics, and your completion is tracked so you see real progress. You'll spend less time on repetitive suggestions and more time on gaps that matter.",tip:"Check your Today's Focus—you'll see different topics suggested each day, not the same ones repeating."},
 ]},
 // WN_END
 ];
