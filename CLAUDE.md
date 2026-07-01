@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Drill feature (formerly Study Reels)**: The micro-learning feature has been renamed from 'Study Reels' to 'Drill' in navigation and user messaging. Uses `REEL_TOPIC_COLORS` constant for topic-consistent visual styling. When referencing this feature in new updates or features, use 'Drill' as the primary label and describe it as TikTok-style vertical swipe micro-learning for bite-sized concept review.
+
+
+**What's New version 2026-07-01-f**: Latest version documents Drill feature (TikTok-style vertical swipe micro-learning renamed from Study Reels) with bite-sized concept drills. Versions 2026-07-01 and 2026-07-01-f have been removed from WHATS_NEW_SLIDES array; only -b, -d, and -e are retained. When creating future versions, prepend at `// WN_START` marker with emoji-led, tip-driven format.
+
+
 **What's New version 2026-07-01-d**: Documents Study Reels (now Drill tab), BA II Plus Calculator Guide in Learn tab, and Flexible Mock Exam Builder multi-topic/module selection. Versions 2026-07-01-e and 2026-07-01-f have been removed from WHATS_NEW_SLIDES array. When creating future versions, prepend at `// WN_START` marker with emoji-led, tip-driven format.
 
 
@@ -739,7 +745,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1791700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1791800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
