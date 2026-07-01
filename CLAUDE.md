@@ -17,6 +17,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Supabase Infrastructure
 
+**`admin-stats` cost metrics**: The admin dashboard now tracks real token counts from Anthropic API responses instead of estimates, providing accurate cost attribution per user and per question type. Token data is logged during `ai-proxy` calls and aggregated in the dashboard.
+
+
 **Admin stats edge function update**: `admin-stats` now accepts `userId` in the request body in addition to `accessToken` (which may be `undefined` for password-based logins). The function uses `userId` as a fallback for auth when `accessToken` is missing.
 
 
@@ -63,6 +66,9 @@ SQL migrations in `supabase/migrations/*.sql` run automatically via the **"Deplo
 Edge functions are deployed with `supabase functions deploy <name> --project-ref uucxyuqxqjpbxecemdvf` via the same workflow.
 
 ## Payment & Pricing
+
+**Calculator on Self-Review**: A calculator button is now permanently available on the Self-Review screen to allow users to verify calculations while reviewing answers. This is a permanent UI feature—do not remove without migrating users elsewhere.
+
 
 **Calculator in SR review**: A calculator button is now available on the Short Rate review screen to allow users to compute values during drilling without switching apps. This is a permanent UI feature—do not remove without migrating users elsewhere.
 
@@ -113,6 +119,9 @@ Pro = row exists where `active=true AND valid_until >= now()`. Checked via `chec
 To grant Pro manually: insert/upsert a row in `subscriptions` with `active=true` and `valid_until` 30 days out.
 
 ## AI Quota System
+
+**Leech card graduation**: Leech cards (high-repetition, low-success items) now properly graduate and stop appearing after a correct SR answer. This prevents indefinite cycling of already-learned material and improves study efficiency.
+
 
 **Leech card graduation fix**: Spaced repetition cards marked as "leech" now properly graduate after correct answers instead of staying stuck in the learning phase. This prevents demotivating infinite loops on previously-failed cards.
 
@@ -574,6 +583,9 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+- **AI Coach navPortal timing**: The AI Coach button loading state depends on `navPortal` being defined. If the button is rendered before `navPortal` is assigned (temporal dead zone), it loads a blank page. Always ensure `navPortal` is set in the parent component before rendering AI Coach buttons.
+
+
 - **RevisionScreen topic picker duplication**: The topic picker on the Revision screen should only render for `tab==='notes'||tab==='formulas'||tab==='los'` — the Learn and Coach tabs render their own topic selectors below. Wrap the shared picker in a conditional to prevent duplicate controls.
 
 
@@ -664,7 +676,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1790800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1790900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
