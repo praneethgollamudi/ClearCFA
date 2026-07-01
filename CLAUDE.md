@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Readiness screen pills and drill navigation**: Module pills on Readiness cards are now fully interactive—tapping them navigates directly to focused drills. When updating Readiness card layout, ensure pill taps and drill CTAs are consistently wired across all card types (weak topics, leech, etc.).
+
+
+**Pacing chip metric finalized (Questions/day)**: Pacing chip now exclusively displays `neededQsPerDay` (questions required daily to meet deadline) instead of sessions/day. When rendering pacing guidance or updating pace UI, always use Q/day metrics for clarity on daily study targets.
+
+
+**What's New version consolidation (2026-07-01-f active)**: Versions 2026-07-01 (base) and 2026-07-01-b have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-01-c, 2026-07-01-d, and 2026-07-01-f. Version -f documents Questions/day pacing metric, interactive Readiness screen, and display bug fixes. When adding future versions, check active list to avoid duplicate messaging.
+
+
 **Lofi player enhancements (v2026-07-01-e)**: Study sessions now include a lofi player with 4 vibes, reverb control, melody toggle, and real-time visualizer for ambient focus. When building focus or ambient study features, reference lofi player state in session rendering to provide audio accompaniment options.
 
 
@@ -859,7 +868,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1793000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1793100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
