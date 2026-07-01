@@ -1042,12 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-30-f
-{version:"2026-06-30-f",slides:[
-{emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Debrief Now More Reliable",sub:"AI · 2026-06-30 update",desc:"AI debrief no longer crashes when you've exhausted your daily question quota, and now shows a clear error message if something goes wrong. You'll get helpful guidance on what to do next instead of a blank screen.",tip:"If a debrief fails, tap Retry to try again—the error message will tell you exactly why."},
-{emoji:"📐",color:C.medium,bg:C.medium,title:"Formula Values Display Correctly",sub:"UX · 2026-06-30 update",desc:"Fixed a display bug in the Formulas tab where numbers were collapsing into single-character columns, making them unreadable. Formula values now render clearly so you can study without squinting.",tip:"Open the Formulas tab and scroll through—you'll see multi-digit values fully visible now."},
-{emoji:"🧮",color:C.accentLight,bg:C.accentLight,title:"Calculator Always at Hand",sub:"Study Tools · 2026-06-30 update",desc:"Added a calculator button to the Short Rate review screen so you can quickly compute values while drilling. No more switching between apps mid-review.",tip:"Look for the calculator icon on the SR review screen—tap it to solve calculations on the spot."},
-]},
 // WN_VER:2026-07-01
 {version:"2026-07-01",slides:[
 {emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Coach & Debrief Now Reliable",sub:"AI · 2026-07-01 update",desc:"Fixed critical issues preventing AI Coach from loading and AI debrief from working when you've hit your daily question limit. You'll now see helpful error messages and retry options instead of blank screens or silent failures.",tip:"Try the AI Coach button on any topic—it should load instantly without the loading blank page bug."},
@@ -1073,6 +1067,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"Enhanced both AI Coach implementations to deliver more targeted explanations and study strategies tailored to your learning gaps. Your personalized exam prep is now sharper and more effective.",tip:"Try asking the AI Coach a tricky question—you'll notice clearer, more concept-focused answers."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"AI Coach Loads Instantly",sub:"UX · 2026-07-01 update",desc:"Resolved a loading issue that caused the AI Coach button to display a blank page when tapped. The coach is now immediately ready to help you work through difficult topics.",tip:"Tap the AI Coach button anytime during a quiz—it should open without delay."},
 ]},
+// WN_VER:2026-07-01-e
+{version:"2026-07-01-e",slides:[
+{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Deep Study Guide Redesigned",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide that organizes content for focused, structured preparation. This replaces scattered lessons with a cohesive learning path that builds knowledge systematically across CFA topics.",tip:"Open the Learn tab to explore the new guided structure and follow the recommended study sequence for your level."},
+{emoji:"🏆",color:C.reward,bg:C.reward,title:"Smarter Card Progression",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a critical spaced repetition bug where difficult \"leech\" cards were stuck and never graduated despite correct answers. Now all cards progress properly based on your actual performance, ensuring you don't waste time on cards the system won't advance.",tip:"Check your review queue—previously stuck cards should now graduate when you answer them correctly."},
+{emoji:"🤖",color:C.medium,bg:C.medium,title:"More Effective AI Coach",sub:"AI · 2026-07-01 update",desc:"Both AI coach implementations have been improved for better explanations and guidance on exam-style questions. You'll now receive more targeted hints and clearer reasoning to strengthen weak topic areas before test day.",tip:"Use Ask Coach on tricky questions to see the enhanced explanations in action."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1081,17 +1081,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-06-26
-{date:"2026-06-26",entries:[
-"Admin dashboard: fix blank page (auth guard was blocking on accessToken for password logins)",
-"Admin dashboard: fix Unauthorized error — pass userId+email as fallback when no JWT",
-"Admin stats edge function: add userId auth path, extract emails from session data column",
-"CI gen-whats-new.yml: add rebase+retry loop to prevent push rejection on concurrent commits",
-"CI gen-claude-md.yml: same rebase+retry fix",
-"gen-whats-new: hard-filter internal commits before Claude sees them, allow 1–3 slides",
-"Settings: remove redundant Cloud Sync row, fold status into account footer",
-"Settings: remove redundant 'sessions saved locally' line",
-]},
 // AC_VER:2026-06-26
 {date:"2026-06-26",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1145,6 +1134,13 @@ const ADMIN_CHANGELOG=[
 {date:"2026-07-01",entries:[
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
