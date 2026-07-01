@@ -1042,12 +1042,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-06-30-e
-{version:"2026-06-30-e",slides:[
-{emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Debrief Now More Reliable",sub:"AI · 2026-06-30 update",desc:"We fixed AI debrief failures that occurred when you hit your daily question quota, and added clearer error messages so you know exactly what happened. You can now retry without confusion and keep learning without interruption.",tip:"If a debrief fails, you'll see a helpful message explaining why—tap retry once your quota resets."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Formula Values Display Correctly",sub:"Study Tools · 2026-06-30 update",desc:"Formula columns in the Formulas tab were collapsing to single characters, making them unreadable. We've restored proper column widths so you can see full values and symbols at a glance.",tip:"Open the Formulas tab and notice how formula values now display with proper spacing."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Revision Interface",sub:"UX · 2026-06-30 update",desc:"The topic picker was appearing twice on Revision Learn and Coach tabs, creating visual clutter and confusion. We've removed the duplicate so your study interface is clean and focused.",tip:"Switch to Revision mode and you'll see just one topic picker—select your topic and start studying immediately."},
-]},
 // WN_VER:2026-06-30-f
 {version:"2026-06-30-f",slides:[
 {emoji:"🤖",color:C.reward,bg:C.reward,title:"AI Debrief Now More Reliable",sub:"AI · 2026-06-30 update",desc:"AI debrief no longer crashes when you've exhausted your daily question quota, and now shows a clear error message if something goes wrong. You'll get helpful guidance on what to do next instead of a blank screen.",tip:"If a debrief fails, tap Retry to try again—the error message will tell you exactly why."},
@@ -1072,6 +1066,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"We've enhanced both AI coach implementations to provide more effective explanations and targeted learning support. You'll now get higher-quality answers when you ask the AI coach for help on difficult concepts.",tip:"Try asking your AI coach about a concept you're struggling with—the answers are now more tailored to exam prep."},
 {emoji:"📱",color:C.reward,bg:C.reward,title:"Calculator at Your Fingertips",sub:"Study Tools · 2026-07-01 update",desc:"A calculator button is now available directly on the spaced repetition review screen. Save time switching between apps—solve quantitative problems without leaving your study flow.",tip:"Look for the calculator icon during your next SR review session on quantitative questions."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Leech Cards Finally Graduate",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a bug where difficult 'leech' cards would never advance after you answered them correctly multiple times. Your hard-earned progress is now properly tracked and these stubborn cards will eventually graduate.",tip:"If you've been stuck reviewing the same tough card, it should now move forward once you nail it consistently."},
+]},
+// WN_VER:2026-07-01-d
+{version:"2026-07-01-d",slides:[
+{emoji:"🎓",color:C.reward,bg:C.reward,title:"Leech Cards Now Graduate Properly",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a critical spaced repetition bug where difficult 'leech' cards would get stuck and never advance to graduation, even after correct answers. Now your hardest topics will finally progress as you master them.",tip:"Check your study dashboard—cards you've been drilling should now show advancement toward completion."},
+{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"Enhanced both AI Coach implementations to deliver more targeted explanations and study strategies tailored to your learning gaps. Your personalized exam prep is now sharper and more effective.",tip:"Try asking the AI Coach a tricky question—you'll notice clearer, more concept-focused answers."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"AI Coach Loads Instantly",sub:"UX · 2026-07-01 update",desc:"Resolved a loading issue that caused the AI Coach button to display a blank page when tapped. The coach is now immediately ready to help you work through difficult topics.",tip:"Tap the AI Coach button anytime during a quiz—it should open without delay."},
 ]},
 // WN_END
 ];
@@ -1137,6 +1137,13 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
