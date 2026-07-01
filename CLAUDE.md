@@ -4,6 +4,18 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version 2026-07-01-c removed**: This version has been removed from WHATS_NEW_SLIDES array; only versions -b, -d, and -e are retained. Consolidate overlapping feature updates into single canonical versions to avoid redundant slides.
+
+
+**What's New version 2026-07-01-f removed**: This version has been removed from WHATS_NEW_SLIDES array; only versions -b, -d, and -e are retained. When creating future versions, prepend at `// WN_START` marker with emoji-led, tip-driven format and avoid duplicating feature announcements across versions.
+
+
+**`expandAcroyms()` Safari < 16 compatibility**: Function now uses word-boundary regex (`\b`) instead of lookbehind (`?<!`) because Safari < 16 throws SyntaxError on negative lookbehind. For acronyms with non-word characters (P/E, M&A), falls back to space/start anchor patterns. Always use this function when rendering Drill card content to avoid Safari breakage.
+
+
+**Drill enhancement pack (v2026-07-01-f)**: Recent update adds slide animation, swipe hint UI, XP pop animations, weak spot pill badges, and pass probability advice to Drill cards. When building or updating Drill UI, reference these enhancements for consistent micro-interaction patterns and visual feedback.
+
+
 **`CFA_ACRONYMS` constant**: Object mapping ~90 CFA exam acronyms (EAR, WACC, FCF, etc.) to full forms across quantitative methods, finance, accounting, portfolio management, and economics. Used by `expandAcronyms()` to automatically expand acronyms in UI text. When building new UI that displays CFA terminology, call `expandAcronyms(text)` to ensure acronyms are expanded.
 
 
@@ -757,7 +769,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1792000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1792100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
