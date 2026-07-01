@@ -5885,12 +5885,14 @@ function CFAMock(){
     qs.forEach(q=>{
       const correct=ans[q.id]===q.answer;
       const isFlagged=!!flagged[q.id];
-      if(correct&&!isFlagged) return; // skip correct+unflagged
       if(!correct&&srProcessedRef.current.has(q.id)) return; // already updated in real-time
       const key=`${t}|||${st}|||${q.id}`;
       const existing=updatedSrDeck[key]||{concept:(q.concept||st).slice(0,60),topic:t,subtopic:st,question:(q.question||""),options:q.options,answer:q.answer,explanation:(q.explanation||"").slice(0,1200),los_tested:(q.los_tested||"").slice(0,120),wrongCount:0};
+      const isLeechCard=(existing.wrongCount||0)>=4;
+      if(correct&&!isFlagged&&!isLeechCard) return; // skip correct+unflagged non-leeches
       const card=sm2Update(existing,correct);
       if(!correct) card.wrongCount=(existing.wrongCount||0)+1;
+      else if(isLeechCard) card.wrongCount=Math.max(0,(existing.wrongCount||0)-1);
       if(isFlagged&&correct){
         card.interval=1;card.repetitions=0;
         card.ef=Math.max(1.3,existing.ef-0.1);
@@ -9327,7 +9329,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <button onClick={()=>{
             const correct=srAnswer===card.answer;
             const key=Object.keys(srDeck).find(k=>srDeck[k].question===card.question)||`sr_${Date.now()}`;
-            setSrDeck(prev=>{const existing=prev[key]||card;const updated=sm2Update(existing,correct);if(!correct)updated.wrongCount=(existing.wrongCount||0)+1;return{...prev,[key]:updated};});
+            setSrDeck(prev=>{const existing=prev[key]||card;const updated=sm2Update(existing,correct);if(!correct)updated.wrongCount=(existing.wrongCount||0)+1;else updated.wrongCount=Math.max(0,(existing.wrongCount||0)-1);return{...prev,[key]:updated};});
             setSrAnswer(null);
             setReviewAiPanel(null);
             if(srIdx<srQueue.length-1)setSrIdx(i=>i+1);else setScreen("home");
