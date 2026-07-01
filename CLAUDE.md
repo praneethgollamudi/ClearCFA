@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (2026-07-01-b re-added)**: Versions 2026-07-01-b, -c, -e, and -f are now active in WHATS_NEW_SLIDES array (with -b and -c re-added in latest consolidation). Version -b now documents lofi player (4 vibes, reverb, melody, visualizer), Q/day pacing, interactive Readiness, and Calc Trainer light-mode fixes. Always verify against active list to prevent duplicate messaging.
+
+
+**Pacing chip floor hiding (v443171b)**: Pacing chip now hides the misleading floor indicator when users are ahead of pace. When rendering pacing guidance, check if user's actual progress exceeds needed pace and conditionally hide floor display to avoid confusing "catch-up" messaging for ahead-of-schedule users.
+
+
 **Pacing chip metric now Qs/day**: Pacing guidance switched from sessions/day to questions/day display. When rendering study targets or pace calculations, always display questions per day for clarity on daily question volume targets rather than session counts.
 
 
@@ -880,7 +886,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1793200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1793300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
