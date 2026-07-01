@@ -1118,12 +1118,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-c
-{version:"2026-07-01-c",slides:[
-{emoji:"🧮",color:C.reward,bg:C.reward,title:"Calculator Training with Keystroke Guides",sub:"Study Tools · 2026-07-01 update",desc:"The Calc Trainer now includes a dedicated Learn Calculator tab with BA II Plus keystroke guides to help you master financial calculations faster. Master shortcuts and formulas in context so you're confident on exam day.",tip:"Tap the Learn tab in Calc Trainer to see step-by-step keystrokes for common CFA calculations."},
-{emoji:"🎨",color:C.medium,bg:C.medium,title:"Flexible Mock Exam Customization",sub:"Study Tools · 2026-07-01 update",desc:"Custom Mock exams now support multi-topic and multi-module selection, letting you design practice sessions exactly how you need them. Build targeted quizzes that match your study plan and weak areas.",tip:"When setting up a Custom Mock, select multiple topics or modules at once to test cross-topic mastery."},
-{emoji:"🔧",color:C.easy,bg:C.easy,title:"Navigation & Sign-Up Stability",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed navigation issues on Study Advisor and Weekly Plan screens, plus resolved sign-up failures. Your study flow is now seamless from start to finish.",tip:"If you previously had trouble signing up, try again—the issue is now resolved."},
-]},
 // WN_VER:2026-07-01-d
 {version:"2026-07-01-d",slides:[
 {emoji:"🎬",color:C.reward,bg:C.reward,title:"Study Reels for Micro-Learning",sub:"Study Tools · 2026-07-01 update",desc:"Swipe through bite-sized concept videos in a TikTok-style feed designed for quick, focused learning sessions. Perfect for cramming key formulas and definitions into spare moments throughout your day.",tip:"Try Study Reels when you have 5–10 minutes between classes or commutes."},
@@ -1147,6 +1141,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎬",color:C.accentLight,bg:C.accentLight,title:"Drill: TikTok-Style Learning",sub:"Study Tools · 2026-07-01 update",desc:"The new Drill tab replaces Study Reels with a streamlined vertical swipe feed for bite-sized concept review. Master one topic at a time in the format that keeps you engaged.",tip:"Swipe up to move through cards—perfect for 5-minute study sessions between classes."},
 {emoji:"📖",color:C.medium,bg:C.medium,title:"Rules & Context on Trap Cards",sub:"UX · 2026-07-01 update",desc:"Trap cards now display the rule being tested plus the trap context inline, so you immediately see *why* the wrong answer is tempting. Learn faster by understanding common pitfalls.",tip:"Look for the rule and trap explanation on any difficult card to turn mistakes into learning moments."},
 ]},
+// WN_VER:2026-07-01-b
+{version:"2026-07-01-b",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Drill Tab Replaces Reels",sub:"Study Tools · 2026-07-01 update",desc:"We've streamlined your study interface by renaming Reels to Drill and removing duplicate entry points. You now have one clear, focused tab for spaced-repetition flashcard practice instead of scattered options.",tip:"Tap the Drill tab at the bottom to access all your adaptive flashcards in one place."},
+{emoji:"📖",color:C.medium,bg:C.medium,title:"Clearer CFA Terms on Cards",sub:"UX · 2026-07-01 update",desc:"CFA acronyms on Drill cards now expand to their full forms, eliminating confusion during study sessions. You'll retain concepts faster when you see the complete terminology every time.",tip:"Hover or tap any CFA acronym on a card to see the full definition without leaving the drill."},
+{emoji:"✨",color:C.hard,bg:C.hard,title:"Better Trap Card Context",sub:"Bug Fix · 2026-07-01 update",desc:"Trap cards now display the rule and context they're testing, making it easier to understand why an answer is incorrect. Cards also fill the screen properly so nothing gets cut off.",tip:"When you see a trap card, read the rule section to learn what concept the wrong answer was designed to catch."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1157,13 +1157,6 @@ const ADMIN_CHANGELOG=[
 // AC_START
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
-"Fix admin dashboard cost stats: use real token counts from Anthropic API",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1182,6 +1175,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
