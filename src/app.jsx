@@ -1122,12 +1122,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-f
-{version:"2026-07-01-f",slides:[
-{emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill: Bite-Sized Learning",sub:"Study Tools · 2026-07-01 update",desc:"We've launched Drill—a TikTok-style vertical swipe feed for micro-learning that fits into your busiest days. Scroll through focused concept drills and reinforce key topics in minutes, not hours.",tip:"Tap the Drill tab in the bottom navigation to start swiping through your first micro-lesson."},
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Navigation, Faster Access",sub:"UX · 2026-07-01 update",desc:"We've streamlined the app's navigation by removing duplicate entry points and consolidating study features. You now get to the right tool faster without confusion or redundant menu items.",tip:"Notice that Drill is now the single, easy-to-find hub for quick vertical-swipe study sessions."},
-{emoji:"🐛",color:C.easy,bg:C.easy,title:"Navigation Fixed Across Screens",sub:"Bug Fix · 2026-07-01 update",desc:"We resolved a navigation issue that was blocking movement from Study Advisor and Weekly Plan screens. Now you can seamlessly jump between tools without getting stuck.",tip:"Try navigating from Study Advisor back to your Weekly Plan—it should feel smooth and responsive."},
-]},
 // WN_VER:2026-07-01
 {version:"2026-07-01",slides:[
 {emoji:"🎬",color:C.accentLight,bg:C.accentLight,title:"Drill: TikTok-Style Learning",sub:"Study Tools · 2026-07-01 update",desc:"The new Drill tab replaces Study Reels with a streamlined vertical swipe feed for bite-sized concept review. Master one topic at a time in the format that keeps you engaged.",tip:"Swipe up to move through cards—perfect for 5-minute study sessions between classes."},
@@ -1151,6 +1145,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"CFA Terms Spelled Out",sub:"Study Tools · 2026-07-01 update",desc:"CFA acronyms on Drill cards now expand to their full forms inline, so you never have to guess what WACC or FCF stands for mid-question. This reduces friction and helps reinforce terminology as you study.",tip:"Hover over or tap any expanded acronym in a Drill card to see the full definition in context."},
 {emoji:"🔍",color:C.medium,bg:C.medium,title:"Better Trap Card Context",sub:"Bug Fix · 2026-07-01 update",desc:"Trap answer cards now always show the relevant rule and full context so you understand exactly why an answer is a trap. This turns every wrong answer into a learning moment.",tip:"When you hit a trap card, read the rule carefully—it's the key to avoiding that mistake on test day."},
 ]},
+// WN_VER:2026-07-01-e
+{version:"2026-07-01-e",slides:[
+{emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Cards Now More Engaging",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now feature smooth slide animations, swipe hints, XP pop animations, weak spot indicators, and pass probability advice to keep you motivated and focused. These enhancements make studying feel more interactive and help you quickly identify topics that need more attention.",tip:"Watch for the weak spot pill on cards you've struggled with—it's your cue to prioritize those concepts."},
+{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"CFA Acronyms Fully Explained",sub:"Study Tools · 2026-07-01 update",desc:"All CFA-specific acronyms in Drill cards now automatically expand to their full forms on first mention, reducing confusion and keeping you in flow. This works seamlessly across all devices, including older browsers.",tip:"Hover or tap an expanded acronym to see its full meaning—no need to switch tabs to look things up."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother Drill Navigation",sub:"UX · 2026-07-01 update",desc:"Back navigation in Drills now works more intuitively, giving you a seamless experience when returning to your study list. This small fix removes friction so you can move between drills without unexpected behavior.",tip:"Use the back button freely—it'll take you exactly where you expect."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1164,7 +1164,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix admin dashboard cost stats: use real token counts from Anthropic API",
 ]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
