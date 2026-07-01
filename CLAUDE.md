@@ -4,6 +4,18 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Pacing chip metric now Qs/day**: Pacing guidance switched from sessions/day to questions/day display. When rendering study targets or pace calculations, always display questions per day for clarity on daily question volume targets rather than session counts.
+
+
+**What's New version 2026-07-01-b and 2026-07-01-c removed**: Both versions have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-01 (base), 2026-07-01-d, and 2026-07-01-f. When adding future versions, verify against active list to prevent duplicate messaging across consolidated announcements.
+
+
+**Lofi player vibes & controls finalized**: Study sessions feature a fully enhanced lofi player with 4 distinct vibes (selectable moods), reverb effects, melody toggle, and live visualizer. When building or updating ambient study features, ensure all 4 controls are accessible and state persists across drill sessions.
+
+
+**BA II Plus calculator interactive guide strip (v2026-07-01-g)**: Calculator now includes an interactive guide strip with expanded amortization guides and ICONV function documentation. When rendering calculator features or enhancing financial tools, reference the guide strip UI pattern for contextual help on complex functions.
+
+
 **Readiness screen pills and drill navigation**: Module pills on Readiness cards are now fully interactive—tapping them navigates directly to focused drills. When updating Readiness card layout, ensure pill taps and drill CTAs are consistently wired across all card types (weak topics, leech, etc.).
 
 
@@ -868,7 +880,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1793100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1793200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
