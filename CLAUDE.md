@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version 2026-07-01-c & 2026-07-01-d**: Latest versions document smarter AI coach guidance, leech card graduation bug fix, and calculator on SR review. When creating future slides, follow the same emoji-led, tip-driven format and always prepend new versions at the `// WN_START` marker.
+
+
 **What's New version 2026-06-30-f & 2026-07-01**: Latest versions document AI debrief reliability improvements, formula display fixes, and calculator addition to SR review. When creating future slides, follow the same emoji-led, tip-driven format and always prepend new versions at the `// WN_START` marker.
 
 
@@ -29,6 +32,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 - **Service role key / PAT:** stored as `SUPABASE_ACCESS_TOKEN` in GitHub Actions secrets
 
 ### Edge Functions (in `supabase/functions/`)
+
+**AI coach quality improvements**: Both AI coach implementations (question-specific and concept-based) now provide more targeted, exam-prep-focused explanations. Ensure prompts emphasize exam relevance and practical application when updating coach behavior in future sessions.
+
+
+**Leech card graduation fix**: Spaced repetition now correctly advances 'leech' cards (frequently-reviewed difficult items) to graduation after consecutive correct answers. The algorithm no longer gets stuck when marking these cards as correct—track graduation state properly even for high-review-count items.
+
 
 **`ai-proxy` debrief error handling**: AI debrief now displays meaningful error messages when it fails (e.g., quota exhausted) instead of a blank screen, and includes a Retry button. Quota-exhausted errors are caught gracefully and inform the user when their quota resets.
 
@@ -676,7 +685,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1790900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1791000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
