@@ -930,6 +930,8 @@ const PRO_TOUR_KEY         = "cfa_pro_tour_v1";
 const SCREEN_ONBOARD_KEY   = "cfa_screen_onboard_v1";
 const CHECKLIST_KEY        = "cfa_checklist_done";
 const LAST_SCREEN_KEY      = "cfa_last_screen_v1";
+const ONBOARDING_KEY       = "cfa_onboarding_v1";
+const QUALITY_FLAGS_KEY    = "cfa_quality_flags_v1";
 const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","masteryGrid","studyPlan","revision","studyPath","calcTrainer","backup","srReview"]);
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
@@ -1244,6 +1246,7 @@ const PAYMENT_WHATSAPP='919493413121'; // WhatsApp number with country code, no 
 const PRICE_REGULAR=1499;   // regular price once all tiers fill
 const PRICE_TIER2=1199;     // tier-2 price (shown crossed-out when tier 1 active)
 const PRICE_TIER1=799;      // tier-1 price — the current launch price
+const PRICE_POWER=1999;     // Power Pro tier — full exam simulator + priority access
 const TIER1_SLOTS=10;       // number of tier-1 spots
 const TIER1_TAKEN=0;        // update manually as tier-1 subscribers join
 const TIER2_SLOTS=20;       // number of tier-2 spots
@@ -1303,6 +1306,28 @@ async function checkProFromServer(cfg,userId,email){
     setCachedProStatus(userId,isPro,validUntil);
     return{isPro,validUntil};
   }catch{return{isPro:false,validUntil:null};}
+}
+// Returns estimated percentile vs typical CFA candidates at the same prep stage.
+// Uses a normal distribution model; honest approximation, not real peer data.
+function getPeerPercentile(prob,daysLeft){
+  const mu=daysLeft>180?41:daysLeft>90?49:daysLeft>30?55:59;
+  const sigma=14;
+  const z=(prob-mu)/sigma;
+  const t2=1/(1+0.3275911*Math.abs(z));
+  const e=1-(0.254829592*t2-0.284496736*t2*t2+1.421413741*t2*t2*t2-1.453152027*t2*t2*t2*t2+1.061405429*t2*t2*t2*t2*t2)*Math.exp(-z*z);
+  return Math.max(1,Math.min(99,Math.round(100*(0.5*(1+(z>=0?e:-e))))));
+}
+// Returns true if user has an active Power Pro subscription (plan_tier='power').
+async function checkIsPowerPro(cfg,userId){
+  try{
+    const now=new Date().toISOString();
+    const res=await fetch(`${cfg.url}/rest/v1/subscriptions?user_id=eq.${encodeURIComponent(userId)}&active=eq.true&valid_until=gte.${encodeURIComponent(now)}&plan_tier=eq.power&select=user_id&limit=1`,{
+      headers:{"apikey":cfg.key,"Authorization":`Bearer ${cfg.key}`}
+    });
+    if(!res.ok)return false;
+    const rows=await res.json();
+    return Array.isArray(rows)&&rows.length>0;
+  }catch{return false;}
 }
 // ── Referral system ───────────────────────────────────────────────────────────
 const REFERRAL_THRESHOLD=2; // friends needed per free Pro month
@@ -2867,6 +2892,55 @@ function FeedbackModal({onClose, userId="", onSubmit}){
   );
 }
 
+function OnboardingGate({onComplete}){
+  const [step,setStep]=React.useState(0); // 0=level, 1=date
+  const [level,setLevel]=React.useState("1");
+  const EXAM_DATES=[
+    {label:"Aug 2026",value:"2026-08-19"},
+    {label:"Nov 2026",value:"2026-11-19"},
+    {label:"May 2027",value:"2027-05-19"},
+    {label:"Set later",value:null},
+  ];
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,0.92)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 20px"}}>
+      <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:20,padding:"28px 24px",width:"100%",maxWidth:360,animation:"fadeIn 0.25s ease"}}>
+        {step===0&&(
+          <>
+            <div style={{fontSize:26,marginBottom:10,textAlign:"center"}}>👋</div>
+            <div style={{fontSize:18,fontWeight:800,color:C.text,textAlign:"center",marginBottom:6}}>Welcome to ClearCFA</div>
+            <div style={{fontSize:13,color:C.muted,textAlign:"center",marginBottom:22,lineHeight:1.5}}>Which CFA exam are you preparing for?</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+              {[["1","CFA Level 1","Ethics, FI, FSA, Equity, Quant, Econ…"],["2","CFA Level 2","Vignette-style, deeper valuation focus"],["3","CFA Level 3","Portfolio management, IPS, behavioural"]].map(([v,title,sub])=>(
+                <button key={v} onClick={()=>setLevel(v)} style={{display:"flex",flexDirection:"column",alignItems:"flex-start",padding:"13px 16px",borderRadius:12,border:`2px solid ${level===v?C.accent:C.border}`,background:level===v?C.accent+"18":"transparent",cursor:"pointer",textAlign:"left",transition:"all 0.15s"}}>
+                  <span style={{fontSize:14,fontWeight:700,color:level===v?C.accentLight:C.text}}>{title}</span>
+                  <span style={{fontSize:11,color:C.muted,marginTop:2}}>{sub}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>setStep(1)} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+              Continue →
+            </button>
+          </>
+        )}
+        {step===1&&(
+          <>
+            <div style={{fontSize:26,marginBottom:10,textAlign:"center"}}>📅</div>
+            <div style={{fontSize:18,fontWeight:800,color:C.text,textAlign:"center",marginBottom:6}}>When is your exam?</div>
+            <div style={{fontSize:13,color:C.muted,textAlign:"center",marginBottom:22,lineHeight:1.5}}>This unlocks your pass probability counter and daily study targets.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:24}}>
+              {EXAM_DATES.map(({label,value})=>(
+                <button key={label} onClick={()=>onComplete({level,examDate:value})} style={{padding:"12px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.surface,color:C.text,fontSize:14,fontWeight:600,cursor:"pointer",textAlign:"left",transition:"all 0.12s"}}>
+                  {value?`📝 ${label}`:`⏭ ${label}`}
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>setStep(0)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,width:"100%",textAlign:"center"}}>← Back</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=null, weakCount=0, streakDays=0}){
   const [step,setStep]=useState("info"); // "info" | "pay" | "checking" | "granted" | "notyet"
   const [copied,setCopied]=useState(false);
@@ -2878,6 +2952,7 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
     l2l3:{icon:"📚",title:"Pro feature",sub:"Full CFA L2 & L3 support is available on Pro."},
     learn:{icon:"🎓",title:"Pro feature",sub:"AI Topic Lessons are available on Pro."},
     timed_mock:{icon:"⏱",title:"Pro feature",sub:"Timed Mock is a Pro feature — simulate the full 3-hour exam experience"},
+    exam_sim:{icon:"🎓",title:"Power Pro feature",sub:"Full Exam Simulator (180 questions · 3 hours · all topics) is a Power Pro exclusive."},
     default:{icon:"🚀",title:"Upgrade to Pro",sub:"Get unlimited access to every ClearCFA feature."},
   };
   const {icon,title,sub}=headers[reason]||headers.default;
@@ -3019,6 +3094,25 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
               style={{width:"100%",padding:"14px",borderRadius:11,fontSize:14,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 18px ${C.accent}44`,marginBottom:10}}>
               💳 Get {ACTIVE_LABEL} — ₹{ACTIVE_PRICE}/month
             </button>
+
+            {/* Power Pro upsell */}
+            <div style={{background:`linear-gradient(135deg,${C.reward}10,${C.reward}06)`,border:`1px solid ${C.reward}33`,borderRadius:12,padding:"12px 14px",marginBottom:10,cursor:"pointer"}} onClick={()=>setStep("pay_power")}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                <div>
+                  <div style={{fontSize:11,fontWeight:800,color:C.rewardLight,letterSpacing:"0.05em"}}>⚡ POWER PRO</div>
+                  <div style={{fontSize:12,color:C.muted,marginTop:1}}>Exam Simulator + priority support</div>
+                </div>
+                <div style={{fontSize:16,fontWeight:900,color:C.rewardLight}}>₹{PRICE_POWER}<span style={{fontSize:10,fontWeight:400,color:C.muted}}>/mo</span></div>
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                {["Everything in Pro","Full Exam Simulator (3hr · 180q)","Priority support"].map(f=>(
+                  <span key={f} style={{fontSize:10,color:C.textMid,display:"flex",gap:3,alignItems:"center"}}>
+                    <span style={{color:C.rewardLight,fontWeight:700}}>✓</span>{f}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <button onClick={onClose} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
               {reason==="limit"?"Continue on free · resets at midnight":"Continue on free"}
             </button>
@@ -3070,6 +3164,47 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
             </button>
             <button onClick={()=>setStep("info")} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
               ← Back
+            </button>
+          </>
+        )}
+
+        {step==="pay_power"&&(
+          <>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:28,marginBottom:6}}>⚡</div>
+              <div style={{fontSize:17,fontWeight:800,color:C.rewardLight,marginBottom:4}}>Power Pro — ₹{PRICE_POWER}/mo</div>
+              <div style={{fontSize:12,color:C.muted,lineHeight:1.5}}>Includes everything in Pro + Exam Simulator + priority support</div>
+            </div>
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>UPI ID</div>
+              <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                <div style={{flex:1,fontSize:16,fontWeight:800,color:C.text}}>{PAYMENT_UPI_ID}</div>
+                <button onClick={copyUPI} style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:700,background:copied?C.easy+"22":`${C.accent}22`,border:`1px solid ${copied?C.easy:C.accent}44`,color:copied?C.easy:C.accentLight,cursor:"pointer",flexShrink:0}}>
+                  {copied?"✓ Copied":"Copy"}
+                </button>
+              </div>
+              <div style={{marginTop:10,padding:"8px 10px",borderRadius:8,background:C.reward+"12",border:`1px solid ${C.reward}22`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <span style={{fontSize:12,fontWeight:800,color:C.rewardLight}}>Amount: </span>
+                  <span style={{fontSize:14,fontWeight:900,color:C.text}}>₹{PRICE_POWER}</span>
+                  <span style={{fontSize:11,color:C.muted}}> /month</span>
+                </div>
+                <span style={{fontSize:10,color:C.rewardLight,fontWeight:700}}>Power Pro</span>
+              </div>
+            </div>
+            {PAYMENT_WHATSAPP&&(
+              <a href={`https://wa.me/${PAYMENT_WHATSAPP}?text=${encodeURIComponent("Hi GSP, I just paid ₹"+PRICE_POWER+" for ClearCFA Power Pro. My registered email is: "+userEmail+"\n\nHere's my payment screenshot 👇")}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,width:"100%",padding:"13px",borderRadius:11,fontSize:13,fontWeight:700,background:"#25D366",color:"#fff",textDecoration:"none",marginBottom:10,boxShadow:"0 4px 14px #25D36644"}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                WhatsApp Power Pro screenshot →
+              </a>
+            )}
+            <button onClick={checkAccess} style={{width:"100%",padding:"12px",borderRadius:11,fontSize:13,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}55`,color:C.accentLight,cursor:"pointer",marginBottom:8}}>
+              ✓ Already paid — check my access
+            </button>
+            <button onClick={()=>setStep("info")} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+              ← Back to plans
             </button>
           </>
         )}
@@ -5585,6 +5720,9 @@ function CFAMock(){
   const toggleTheme=()=>{const t=theme==='dark'?'light':'dark';_applyTheme(t);try{localStorage.setItem('cfa_theme',t);}catch{};setTheme(t);};
   const [proStatus,setProStatus]=useState(getProStatus);
   const [proValidUntil,setProValidUntil]=useState(getProValidUntil);
+  const [powerStatus,setPowerStatus]=useState(false);
+  const [onboardingDone,setOnboardingDone]=useState(()=>{try{return!!localStorage.getItem(ONBOARDING_KEY);}catch{return false;}});
+  const [qualityFlags,setQualityFlags]=useState(()=>{try{return JSON.parse(localStorage.getItem(QUALITY_FLAGS_KEY)||"{}");}catch{return {};}});
   const [dailyAIUsage,setDailyAIUsage]=useState(getDailyAIUsage);
   const [upgradeModal,setUpgradeModal]=useState(null); // null | {reason:string}
   const [feedbackOpen,setFeedbackOpen]=useState(false);
@@ -5731,9 +5869,12 @@ function CFAMock(){
   // Re-evaluate Pro status when auth changes (owner email always gets Pro)
   useEffect(()=>{
     if(authUser?.id){
-      checkProFromServer(SB_CFG,authUser.id,authUser.email).then(({isPro,validUntil})=>{setProStatus(isPro);setProValidUntil(validUntil||null);});
+      checkProFromServer(SB_CFG,authUser.id,authUser.email).then(({isPro,validUntil})=>{
+        setProStatus(isPro);setProValidUntil(validUntil||null);
+        if(isPro)checkIsPowerPro(SB_CFG,authUser.id).then(pw=>setPowerStatus(pw));
+      });
     }else{
-      setProStatus(false);
+      setProStatus(false);setPowerStatus(false);
     }
   },[authUser]);
 
@@ -6877,9 +7018,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(!isVignette){
         try{
           const offlineCache=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
-          // Try specific module first, then any module in the topic
-          const specific=offlineCache[t]?.[st]||[];
-          const anyInTopic=Object.values(offlineCache[t]||{}).flat();
+          // Try specific module first, then any module in the topic; skip quality-flagged questions
+          const specific=(offlineCache[t]?.[st]||[]).filter(q=>!qualityFlags[q.id]);
+          const anyInTopic=Object.values(offlineCache[t]||{}).flat().filter(q=>!qualityFlags[q.id]);
           const candidates=specific.length>=Math.min(cnt,3)?specific:anyInTopic;
           const fresh=filterNewQuestions(candidates,qdb);
           const pool=fresh.length>=Math.ceil(cnt*0.5)?fresh:candidates;
@@ -7269,6 +7410,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const moreItems=[
       {key:"mix",label:"Weak Spots",icon:"⚡",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
       {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
+      {key:"exam_sim",label:"Exam Sim",icon:"🎓",proTag:true,action:()=>{trackUsage("exam_sim");if(!powerStatus){setUpgradeModal({reason:"exam_sim"});return;}startFullExam();}},
       {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
       {key:"revise",label:"Notes",icon:"📝",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
       {key:"formulas",label:"Formulas",icon:"🔢",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
@@ -8263,6 +8405,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {upgradeModal&&<UpgradeModal reason={upgradeModal.reason} passProb={upgradeModal.passProb??null} weakCount={upgradeModal.weakCount??0} streakDays={upgradeModal.streakDays??0} onClose={()=>setUpgradeModal(null)} userEmail={authUser?.email||""} onCheckAccess={async()=>{const{isPro,validUntil}=await checkProFromServer(SB_CFG,authUser?.id||"",authUser?.email||"");if(isPro){setProStatus(true);setProValidUntil(validUntil||null);}return isPro;}}/>}
     {feedbackOpen&&<FeedbackModal onClose={()=>setFeedbackOpen(false)} userId={authUser?.id||"anon"} onSubmit={(data)=>submitFeedback(SB_CFG,data)}/>}
 
+    {/* Onboarding gate — shown once before feature tour */}
+    {!onboardingDone&&<OnboardingGate onComplete={({level,examDate})=>{
+      setCfaLevel(level);
+      try{localStorage.setItem(CFA_LEVEL_KEY,level);}catch{}
+      if(examDate){
+        const goal={...(studyGoal||{}),examDate};
+        setStudyGoal(goal);
+        try{localStorage.setItem(STUDY_GOAL_KEY,JSON.stringify(goal));}catch{}
+      }
+      setOnboardingDone(true);
+      try{localStorage.setItem(ONBOARDING_KEY,"1");}catch{}
+    }}/>}
+
     {/* Feature tour — shown once for new users */}
     {!tourDismissed&&<SlideOverlay
       slides={[
@@ -8777,7 +8932,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:history.length===0?6:14}}>
         <StatCard label="Sessions" value={history.length||"–"} icon="📚" sub={streak>1?`🔥 ${streak}d streak`:undefined} onClick={history.length>0?()=>{trackUsage("dashboard");setScreen("dashboard");}:undefined}/>
         <StatCard label="Avg Score" value={overallPct?`${overallPct}%`:"–"} color={overallPct?(overallPct>=70?C.easy:C.hard):C.muted} icon="🎯" onClick={overallPct?()=>{trackUsage("dashboard");setScreen("dashboard");}:undefined}/>
-        <StatCard label="Pass Prob" value={passProbability?`${passProbability.probability}%`:"–"} color={passProbability?passProbability.color:C.muted} sub={passProbability?passProbability.label:history.length>=1?"more data needed":"do 3+ sessions"} onClick={()=>setScreen("readiness")} icon="📈"/>
+        <StatCard label="Pass Prob" value={passProbability?`${passProbability.probability}%`:"–"} color={passProbability?passProbability.color:C.muted} sub={passProbability?`${passProbability.label}${history.length>=3?` · top ${100-getPeerPercentile(passProbability.probability,daysLeft)}%`:""}`:history.length>=1?"more data needed":"do 3+ sessions"} onClick={()=>setScreen("readiness")} icon="📈"/>
         <StatCard label="SR Due" value={dueCards.length>0?dueCards.length:"0"} color={dueCards.length>0?C.accent:C.easy} sub={dueCards.length>0?"review today":`${Object.keys(srDeck).length>0?`${Object.keys(srDeck).length} total · none due`:"no cards yet"}`} icon="📋" onClick={dueCards.length>0?()=>{trackUsage("sr_review");setSrQueue([...dueCards].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);srSessionResults.current={correct:0,total:0};srSessionStart.current=Date.now();setScreen("srReview");}:undefined}/>
       </div>
       {history.length===0&&<div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:14,opacity:0.7}}>Stats unlock after your first session</div>}
@@ -10456,6 +10611,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   const updated=[flag,...questionFlags.filter(f=>f.id!==q.id)].slice(0,100);
                   setQuestionFlags(updated);
                   try{localStorage.setItem(FLAGS_KEY,JSON.stringify(updated));}catch{}
+                  if(r==="wrong_answer"||r==="factual_error"){const qf={...qualityFlags,[q.id]:true};setQualityFlags(qf);try{localStorage.setItem(QUALITY_FLAGS_KEY,JSON.stringify(qf));}catch{}}
                   // Sync to Supabase for admin visibility
                   if(authUser?.id){fetch(`${SUPABASE_URL}/rest/v1/feedback`,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`,Prefer:"return=minimal"},body:JSON.stringify({user_id:authUser.id,rating:0,category:"Question Flag",message:JSON.stringify(flag)})}).catch(()=>{});}
                   setFlagging(null);

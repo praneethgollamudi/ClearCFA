@@ -7,7 +7,8 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const FREE_DAILY_LIMIT      = 20; // generate requests per day for free users
+const FREE_DAILY_LIMIT      = 20; // generate requests per day for free users (after trial)
+const FREE_TRIAL_LIMIT      = 40; // generate requests per day during first 30 days
 const FREE_CHAT_DAILY_LIMIT = 15; // chat messages per day for free users
 const IP_DAILY_LIMIT        = 300; // requests per day per IP (anti-abuse)
 
@@ -102,12 +103,30 @@ async function checkIpRateLimit(
   }
 }
 
+// Returns true if user's first AI usage was within the last 30 days (new-user trial).
+async function isNewUserTrial(supabaseUrl: string, serviceKey: string, userId: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/ai_quota?user_id=eq.${encodeURIComponent(userId)}&quota_date=not.like.chat-*&order=quota_date.asc&limit=1&select=quota_date`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    const rows = await res.json() as Array<{ quota_date: string }>;
+    if (!Array.isArray(rows) || rows.length === 0) return true; // no prior usage → new user
+    const firstDate = rows[0].quota_date;
+    const daysDiff = (Date.now() - new Date(firstDate + 'T00:00:00Z').getTime()) / 86400000;
+    return daysDiff <= 30;
+  } catch {
+    return false;
+  }
+}
+
 // Atomically increments the daily counter for a free user.
 // Returns { allowed: boolean, used: number, limit: number }.
 async function checkAndIncrementQuota(
   supabaseUrl: string,
   serviceKey: string,
-  userId: string
+  userId: string,
+  limit: number = FREE_DAILY_LIMIT
 ): Promise<{ allowed: boolean; used: number; limit: number }> {
   const today = todayUTC();
   const headers = {
@@ -132,8 +151,8 @@ async function checkAndIncrementQuota(
       currentCount = row.quota_date === today ? (row.quota_count ?? 0) : 0;
     }
 
-    if (currentCount >= FREE_DAILY_LIMIT) {
-      return { allowed: false, used: currentCount, limit: FREE_DAILY_LIMIT };
+    if (currentCount >= limit) {
+      return { allowed: false, used: currentCount, limit };
     }
 
     // Upsert with incremented count
@@ -148,14 +167,12 @@ async function checkAndIncrementQuota(
     );
 
     if (!upsertRes.ok) {
-      // Upsert failed — still allow the request rather than blocking legitimate users
-      return { allowed: true, used: newCount, limit: FREE_DAILY_LIMIT };
+      return { allowed: true, used: newCount, limit };
     }
 
-    return { allowed: true, used: newCount, limit: FREE_DAILY_LIMIT };
+    return { allowed: true, used: newCount, limit };
   } catch {
-    // DB error — allow request rather than blocking users
-    return { allowed: true, used: 0, limit: FREE_DAILY_LIMIT };
+    return { allowed: true, used: 0, limit };
   }
 }
 
@@ -318,13 +335,17 @@ Deno.serve(async (req: Request) => {
     const isPro = await checkIsPro(supabaseUrl, supabaseServiceKey, userId as string);
 
     if (!isPro) {
-      const quota = await checkAndIncrementQuota(supabaseUrl, supabaseServiceKey, userId as string);
+      const isTrial = await isNewUserTrial(supabaseUrl, supabaseServiceKey, userId as string);
+      const effectiveLimit = isTrial ? FREE_TRIAL_LIMIT : FREE_DAILY_LIMIT;
+      const quota = await checkAndIncrementQuota(supabaseUrl, supabaseServiceKey, userId as string, effectiveLimit);
       if (!quota.allowed) {
+        const trialNote = isTrial ? ` (first 30 days: ${FREE_TRIAL_LIMIT}/day)` : '';
         return jsonResponse({
-          error: `Daily limit reached (${quota.limit} AI questions/day on free plan). Upgrade to Pro for unlimited access.`,
+          error: `Daily limit reached (${quota.limit} AI questions/day on free plan${trialNote}). Upgrade to Pro for unlimited access.`,
           quotaExceeded: true,
           used: quota.used,
           limit: quota.limit,
+          isTrial,
         }, 429);
       }
     }
