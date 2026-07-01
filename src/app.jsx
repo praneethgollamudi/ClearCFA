@@ -1048,6 +1048,24 @@ const LIGHT_PALETTE = {
 };
 const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}})();
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
+const REEL_TOPIC_COLORS={
+  "Ethics":"#6366f1",
+  "Quantitative Methods":"#818cf8",
+  "Economics":"#f59e0b",
+  "Financial Statement Analysis":"#10b981",
+  "Corporate Issuers":"#f97316",
+  "Equity":"#ef4444",
+  "Fixed Income":"#0ea5e9",
+  "Derivatives":"#a78bfa",
+  "Alternatives":"#f472b6",
+  "Portfolio Management":"#fcd34d",
+  "Behavioral Finance":"#818cf8",
+  "Capital Market Expectations":"#10b981",
+  "Asset Allocation":"#f97316",
+  "Alternative Investments":"#f472b6",
+  "Risk Management":"#ef4444",
+  "Trading & Performance":"#0ea5e9",
+};
 const WHATS_NEW_SLIDES=[
 // WN_START
 // WN_VER:2026-07-01-e
@@ -4225,6 +4243,77 @@ const DIAGNOSTIC_QUESTIONS=[
   {id:"dg15",topic:"Derivatives",question:"A forward contract DIFFERS from a futures contract primarily because forwards are:",options:{A:"Always cash-settled with no possibility of delivery","B":"Exchange-traded and require daily mark-to-market margining","C":"Private bilateral agreements with no daily settlement"},answer:"C",explanation:"Forwards are OTC (private) contracts customised between two parties with no daily settlement — gain/loss is settled at expiry. Futures are standardised, exchange-traded contracts subject to daily mark-to-market and margin calls."},
 ];
 
+// ─── STUDY REELS FEED BUILDER ─────────────────────────────────────────────────
+function buildReelFeed(moduleReadiness,powerNotes,formulas,misconceptions,seedQs){
+  const weak=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,4);
+  const untested=moduleReadiness.filter(m=>m.sessions===0).sort((a,b)=>(b.weight||0)-(a.weight||0)).slice(0,3);
+  const topics=[...weak,...untested];
+  const byType={power_note:[],trap:[],formula:[],mcq:[],curiosity_gap:[]};
+  topics.forEach(mod=>{
+    const t=mod.topic;
+    const mods=mod.modulesCovered||mod.modules||[];
+    const isWeak=weak.includes(mod);
+    // power_note cards — POWER_NOTES[topic].topics[].rules (string[]) + traps (string[]) + mnemonic
+    const pn=powerNotes?.[t];
+    const pnTopics=pn?.topics||[];
+    let ruleCount=0;
+    pnTopics.forEach(pnt=>{
+      const rules=pnt.rules||[];
+      const traps=pnt.traps||[];
+      const mnem=pnt.mnemonic||null;
+      rules.slice(0,isWeak?3:2).forEach((rule,ri)=>{
+        if(ruleCount>=3)return;
+        byType.power_note.push({type:"power_note",topic:t,module:pnt.module||mods[0]||t,rule,trap:traps[ri]||null,mnemonic:ri===0?mnem:null});
+        if(isWeak&&ruleCount===0){
+          byType.power_note.push({type:"power_note",topic:t,module:pnt.module||mods[0]||t,rule,trap:null,mnemonic:null});
+        }
+        if(ruleCount<2){
+          byType.curiosity_gap.push({type:"curiosity_gap",topic:t,module:pnt.module||mods[0]||t,hint:`Key rule in ${pnt.module||mods[0]||t}`,reveal:rule});
+        }
+        ruleCount++;
+      });
+    });
+    // trap cards — MISCONCEPTIONS[topic] is string[]
+    const mc=misconceptions?.[t]||[];
+    mc.slice(0,2).forEach(trap=>{if(trap)byType.trap.push({type:"trap",topic:t,module:mods[0]||t,trap});});
+    // formula cards — FORMULAS[topic] is [{name, f, ...}]
+    const fm=formulas?.[t]||[];
+    fm.slice(0,2).forEach(f=>{
+      if(f.name&&f.f){
+        byType.formula.push({type:"formula",topic:t,module:mods[0]||t,name:f.name,formula:f.f});
+        if(byType.curiosity_gap.length<8){
+          byType.curiosity_gap.push({type:"curiosity_gap",topic:t,module:mods[0]||t,hint:`Formula from ${mods[0]||t}`,reveal:`${f.name}: ${f.f}`});
+        }
+      }
+    });
+    // mcq from OFFLINE_SEED_QS[topic][module][0]
+    const sq=seedQs?.[t];
+    if(sq){
+      const mKey=Object.keys(sq)[0];
+      const qs=sq[mKey]||[];
+      if(qs.length>0){
+        const q=qs[0];
+        if(q&&q.question)byType.mcq.push({type:"mcq",topic:t,module:mKey,id:q.id||`reel_${t}`,question:q.question,options:q.options,answer:q.answer,explanation:q.explanation||""});
+      }
+    }
+  });
+  const pattern=["power_note","mcq","formula","trap","curiosity_gap","power_note","formula","mcq","trap","curiosity_gap"];
+  const feed=[];
+  const ptrs={power_note:0,mcq:0,formula:0,trap:0,curiosity_gap:0};
+  for(let i=0;feed.length<70;i++){
+    const type=pattern[i%pattern.length];
+    if(ptrs[type]<byType[type].length){feed.push(byType[type][ptrs[type]]);ptrs[type]++;}
+    else{
+      let found=false;
+      for(const t2 of Object.keys(ptrs)){
+        if(ptrs[t2]<byType[t2].length){feed.push(byType[t2][ptrs[t2]]);ptrs[t2]++;found=true;break;}
+      }
+      if(!found)break;
+    }
+  }
+  return feed;
+}
+
 // ─── REUSABLE SLIDE OVERLAY (swipeable) ───────────────────────────────────────
 function SlideOverlay({slides, onDismiss, skipLabel="Skip →", ctaLabel="Let's go →", zIndex=350}){
   const [slide,setSlide]=useState(0);
@@ -5538,6 +5627,39 @@ function CFAMock(){
   const [passTrend,setPassTrend]=useState([]);
   const passTrendRef=useRef([]);
   const [adminBudget,setAdminBudget]=useState(()=>{try{return localStorage.getItem("cfa_admin_budget")||"";}catch{return "";}});
+  const [reelIdx,setReelIdx]=useState(0);
+  const [reelFeed,setReelFeed]=useState([]);
+  const [reelAnswer,setReelAnswer]=useState(null);
+  const [reelRevealed,setReelRevealed]=useState(false);
+  const [reelSessionCount,setReelSessionCount]=useState(0);
+  const reelTouchY=useRef(null);
+  const reelFeedBase=useRef([]);
+
+  useEffect(()=>{
+    if(screen!=="reels")return;
+    const goNext=()=>{
+      const next=reelIdx+1;
+      if(next>=reelFeed.length-10){
+        setReelFeed(p=>[...p,...[...reelFeedBase.current].sort(()=>Math.random()-0.5)]);
+      }
+      setReelAnswer(null);setReelRevealed(false);setReelIdx(next);
+      const count=reelSessionCount+1;
+      setReelSessionCount(count);
+      if(count===10)showToast("🎬","10 Reels done!","Keep the momentum going 🔥");
+      if(count===25)showToast("🔥","25 Reels!","You're on a roll.");
+      if(count===50)showToast("🏆","50 Reels!","Study machine mode 💪");
+    };
+    const goPrev=()=>{
+      if(reelIdx===0)return;
+      setReelAnswer(null);setReelRevealed(false);setReelIdx(i=>i-1);
+    };
+    const h=(e)=>{
+      if(e.key==="ArrowUp"||e.key==="ArrowRight")goNext();
+      else if(e.key==="ArrowDown"||e.key==="ArrowLeft")goPrev();
+    };
+    document.addEventListener("keydown",h);
+    return()=>document.removeEventListener("keydown",h);
+  },[screen,reelIdx,reelFeed.length,reelSessionCount]);
 
   useEffect(()=>{
     if(!('serviceWorker' in navigator))return;
@@ -7072,7 +7194,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ══ GLOBAL NAV BAR (portal — renders on home, quiz, results, setup) ═══════
   const _navRootEl = document.getElementById("nav-root");
   const navPortal = _navRootEl ? ReactDOM.createPortal((()=>{
+    const _launchReels=()=>{
+      clearOverlays();trackUsage("reels");setShowMoreSheet(false);
+      const pn=getActivePowerNotes(cfaLevel);
+      const fm=getActiveFormulas(cfaLevel);
+      const mc=getActiveMisconceptions(cfaLevel);
+      const feed=buildReelFeed(moduleReadiness,pn,fm,mc,OFFLINE_SEED_QS);
+      reelFeedBase.current=feed;
+      setReelFeed(feed);setReelIdx(0);setReelAnswer(null);
+      setReelRevealed(false);setReelSessionCount(0);
+      setScreen("reels");
+    };
     const moreItems=[
+      {key:"reels",label:"Study Reels",icon:"▶",action:_launchReels},
+      {key:"quick_drill",label:"Quick Drill",icon:"⚡",action:()=>{
+        trackUsage("mix");setShowMoreSheet(false);
+        const target=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy)[0]
+          ||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];
+        if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");
+      }},
       {key:"mix",label:"Weak Spots",icon:"⚡",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
       {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
       {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
@@ -7097,13 +7237,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {key:"practice",label:"Practice",
         icon:<Ic d="M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>,
         action:()=>{trackUsage("custom_mock");clearOverlays();setShowMoreSheet(false);setScreen("setup");}},
-      {key:"drill",label:"Drill",
-        icon:<Ic d="M2 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z M16 3l-4 4-4-4"/>,
+      {key:"drill",label:"Reels",
+        icon:<Ic d="M5 3l14 9-14 9V3z"/>,
         action:()=>{
-          trackUsage("mix");clearOverlays();setShowMoreSheet(false);
-          const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
-          const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];
-          if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");
+          clearOverlays();trackUsage("reels");setShowMoreSheet(false);
+          const pn=getActivePowerNotes(cfaLevel);
+          const fm=getActiveFormulas(cfaLevel);
+          const mc=getActiveMisconceptions(cfaLevel);
+          const feed=buildReelFeed(moduleReadiness,pn,fm,mc,OFFLINE_SEED_QS);
+          reelFeedBase.current=feed;
+          setReelFeed(feed);setReelIdx(0);setReelAnswer(null);
+          setReelRevealed(false);setReelSessionCount(0);
+          setScreen("reels");
         }},
       {key:"progress",label:"Progress",
         icon:<Ic d="M18 20V10 M12 20V4 M6 20v-6 M2 20h20"/>,
@@ -7113,7 +7258,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         action:()=>{if(showMoreSheet||moreSheetClosing)setMoreSheetClosing(true);else setShowMoreSheet(true);}},
     ];
     const activeTab = showMoreSheet ? "more" :
-      ({home:"home",setup:"practice",quiz:"practice",srReview:"drill",
+      ({home:"home",setup:"practice",quiz:"practice",srReview:"drill",reels:"drill",
         results:"practice",revision:"practice",studyPath:"practice",
         dashboard:"progress",readiness:"progress",losCoverage:"progress",
         masteryGrid:"progress",calcTrainer:"drill",adminDashboard:"home"}[screen]||"home");
@@ -8686,6 +8831,30 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
 
+    {/* Study Reels quick-launch */}
+    <div onClick={()=>{
+      setAiCoachScreen(false);setWeeklyPlanScreen(false);
+      trackUsage("reels");
+      const pn=getActivePowerNotes(cfaLevel);
+      const fm=getActiveFormulas(cfaLevel);
+      const mc=getActiveMisconceptions(cfaLevel);
+      const feed=buildReelFeed(moduleReadiness,pn,fm,mc,OFFLINE_SEED_QS);
+      reelFeedBase.current=feed;
+      setReelFeed(feed);setReelIdx(0);setReelAnswer(null);
+      setReelRevealed(false);setReelSessionCount(0);
+      setScreen("reels");
+    }}
+      style={{background:`linear-gradient(135deg,${C.accent}12,${C.accent}05)`,
+        border:`1px solid ${C.accent}30`,borderRadius:12,padding:"12px 16px",
+        marginBottom:10,cursor:"pointer",display:"flex",
+        justifyContent:"space-between",alignItems:"center"}}>
+      <div>
+        <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>▶ Study Reels</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:2}}>Key rules · Formulas · Quick checks — swipe through</div>
+      </div>
+      <div style={{fontSize:18,opacity:0.5}}>📱</div>
+    </div>
+
     {/* Leech alert */}
     {leeches.length>0&&(
       <div style={{background:`linear-gradient(135deg,#1c0508,#12030a)`,border:`1px solid ${C.hard}44`,borderRadius:12,padding:"12px 16px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -9463,6 +9632,183 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </>
       )}
       <ReviewAIChatPanel/>
+    </>);
+  }
+
+  // ════════════════════════════════════════
+  // SCREEN: reels
+  // ════════════════════════════════════════
+  if(screen==="reels"){
+    const card=reelFeed[reelIdx];
+    const accentColor=(card&&REEL_TOPIC_COLORS[card.topic])||C.accent;
+    const segCount=10;
+    const segIdx=reelSessionCount%segCount;
+
+    const reelGoNext=()=>{
+      const next=reelIdx+1;
+      if(next>=reelFeed.length-10){
+        setReelFeed(p=>[...p,...[...reelFeedBase.current].sort(()=>Math.random()-0.5)]);
+      }
+      setReelAnswer(null);setReelRevealed(false);setReelIdx(next);
+      const count=reelSessionCount+1;
+      setReelSessionCount(count);
+      if(count===10)showToast("🎬","10 Reels done!","Keep the momentum going 🔥");
+      if(count===25)showToast("🔥","25 Reels!","You're on a roll.");
+      if(count===50)showToast("🏆","50 Reels!","Study machine mode 💪");
+    };
+    const reelGoPrev=()=>{
+      if(reelIdx===0)return;
+      setReelAnswer(null);setReelRevealed(false);setReelIdx(i=>i-1);
+    };
+    const exitReels=()=>{setAiCoachScreen(false);setWeeklyPlanScreen(false);setScreen("home");};
+
+    const typeLabel={power_note:"Key Rule",trap:"Watch Out",formula:"Formula",mcq:"Quick Check",curiosity_gap:"Curiosity"}[card?.type]||"";
+
+    const renderCardBody=()=>{
+      if(!card)return <div style={{color:C.muted,textAlign:"center",paddingTop:60}}>No content available</div>;
+      if(card.type==="power_note")return(
+        <div style={{padding:"0 4px"}}>
+          <div style={{fontSize:17,fontWeight:700,lineHeight:1.75,color:C.text,marginBottom:card.trap||card.mnemonic?18:0}}>{card.rule}</div>
+          {card.trap&&(
+            <div style={{background:"#7f1d1d22",border:"1px solid #ef444444",borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#ef4444",marginBottom:4}}>⚠ Common trap</div>
+              <div style={{fontSize:13,color:"#fca5a5",lineHeight:1.65}}>{card.trap}</div>
+            </div>
+          )}
+          {card.mnemonic&&(
+            <div style={{display:"inline-block",background:"#f59e0b18",border:"1px solid #f59e0b44",borderRadius:20,padding:"5px 14px",fontSize:12,color:"#fcd34d",fontWeight:600}}>💡 {card.mnemonic}</div>
+          )}
+        </div>
+      );
+      if(card.type==="trap")return(
+        <div style={{background:"#7f1d1d22",border:"1px solid #ef444444",borderRadius:14,padding:"22px 18px",textAlign:"center"}}>
+          <div style={{fontSize:32,marginBottom:12}}>⚠</div>
+          <div style={{fontSize:16,fontWeight:700,color:"#fca5a5",lineHeight:1.75,marginBottom:16}}>{card.trap}</div>
+          <div style={{fontSize:11,color:"#ef444488",fontStyle:"italic"}}>Watch for this on exam day</div>
+        </div>
+      );
+      if(card.type==="formula")return(
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:14,fontWeight:700,color:C.accentLight,marginBottom:16}}>{card.name}</div>
+          <div onClick={()=>{setReelRevealed(true);if(navigator.vibrate)navigator.vibrate([20]);}}
+            style={{position:"relative",cursor:"pointer"}}>
+            <div style={{fontFamily:"monospace",fontSize:18,fontWeight:700,color:C.text,lineHeight:1.8,
+              filter:reelRevealed?"none":"blur(8px)",transition:"filter 0.3s",
+              background:C.surface,borderRadius:12,padding:"20px",border:`1px solid ${C.border}`}}>
+              {card.formula}
+            </div>
+            {!reelRevealed&&(
+              <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:6}}>
+                <div style={{fontSize:22}}>👁</div>
+                <div style={{fontSize:12,fontWeight:700,color:C.accentLight}}>Tap to reveal</div>
+              </div>
+            )}
+          </div>
+          {reelRevealed&&<div style={{fontSize:11,color:C.muted,marginTop:10}}>Swipe up for next card</div>}
+        </div>
+      );
+      if(card.type==="mcq")return(
+        <div>
+          <div style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.75,marginBottom:16}}>{card.question}</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {Object.entries(card.options||{}).map(([key,val])=>{
+              const isCorrect=key===card.answer;
+              const wasPicked=key===reelAnswer;
+              const showResult=reelAnswer!==null;
+              let bg=C.surface,border=`1.5px solid ${C.border}`,color=C.text;
+              if(showResult&&isCorrect){bg=C.easy+"22";border=`1.5px solid ${C.easy}`;color=C.easy;}
+              else if(showResult&&wasPicked&&!isCorrect){bg=C.hard+"18";border=`1.5px solid ${C.hard}`;color=C.hard;}
+              return(
+                <button key={key} onClick={()=>{
+                  if(reelAnswer)return;
+                  setReelAnswer(key);
+                  if(key===card.answer){
+                    if(navigator.vibrate)navigator.vibrate([30,20,30]);
+                    setXp(x=>x+5);
+                  }
+                }} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"12px 14px",borderRadius:10,
+                  textAlign:"left",background:bg,border,color,cursor:reelAnswer?"default":"pointer",
+                  fontSize:13,lineHeight:1.6,transition:"all 0.2s"}}>
+                  <span style={{minWidth:22,height:22,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:showResult&&isCorrect?C.easy:showResult&&wasPicked&&!isCorrect?C.hard:C.dim,color:showResult&&(isCorrect||wasPicked)?"#fff":C.muted}}>{key}</span>
+                  <span>{val}</span>
+                </button>
+              );
+            })}
+          </div>
+          {reelAnswer&&(
+            <div style={{marginTop:12,background:C.surface,borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`,fontSize:12,color:C.textMid,lineHeight:1.7,animation:"fadeIn 0.3s ease"}}>
+              {reelAnswer===card.answer?<span style={{color:C.easy,fontWeight:700}}>✓ Correct! </span>:<span style={{color:C.hard,fontWeight:700}}>✗ Incorrect. </span>}
+              {card.explanation}
+            </div>
+          )}
+          {reelAnswer&&<div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.muted}}>Swipe up for next card</div>}
+        </div>
+      );
+      if(card.type==="curiosity_gap")return(
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:32,marginBottom:14}}>🧠</div>
+          <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:16,textTransform:"uppercase",letterSpacing:"0.08em"}}>{card.hint}</div>
+          <div style={{background:C.surface,borderRadius:12,padding:"18px",border:`1px solid ${C.border}`,marginBottom:14}}>
+            <div style={{fontSize:15,fontWeight:700,color:C.text,lineHeight:1.75,
+              filter:"blur(7px)",userSelect:"none"}}>{card.reveal}</div>
+          </div>
+          <div style={{fontSize:12,color:C.accentLight}}>Swipe up to reveal ↑</div>
+          {/* Next card IS the reveal — pre-bake it */}
+        </div>
+      );
+      return null;
+    };
+
+    return(<>
+      <div
+        onTouchStart={e=>{reelTouchY.current=e.touches[0].clientY;}}
+        onTouchEnd={e=>{
+          if(reelTouchY.current===null)return;
+          const dy=e.changedTouches[0].clientY-reelTouchY.current;
+          reelTouchY.current=null;
+          if(Math.abs(dy)<50)return;
+          if(dy<0)reelGoNext();else reelGoPrev();
+        }}
+        style={{position:"fixed",inset:0,
+          background:`linear-gradient(160deg,${accentColor}22 0%,${C.bg} 75%)`,
+          display:"flex",flexDirection:"column",overflowY:"hidden",zIndex:1}}>
+
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"52px 18px 10px",flexShrink:0}}>
+          <div style={{background:accentColor+"28",border:`1px solid ${accentColor}44`,borderRadius:20,padding:"4px 12px",fontSize:11,fontWeight:700,color:accentColor}}>{card?.topic||"CFA"}</div>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,background:C.surface+"88",borderRadius:16,padding:"4px 10px"}}>{typeLabel}</div>
+          <button onClick={exitReels} style={{background:"none",border:`1px solid ${C.border}`,borderRadius:20,padding:"4px 12px",fontSize:12,color:C.muted,cursor:"pointer"}}>✕</button>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{display:"flex",gap:3,padding:"0 18px 12px",flexShrink:0}}>
+          {Array.from({length:segCount}).map((_,i)=>(
+            <div key={i} style={{flex:1,height:3,borderRadius:2,
+              background:i<segIdx?accentColor:i===segIdx?accentColor+"88":C.border+"88",
+              transition:"background 0.3s"}}/>
+          ))}
+        </div>
+
+        {/* Card body */}
+        <div style={{flex:1,overflowY:"auto",padding:"8px 18px 16px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+          {renderCardBody()}
+        </div>
+
+        {/* Footer */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",paddingBottom:"calc(10px + env(safe-area-inset-bottom))",borderTop:`1px solid ${C.border}44`,flexShrink:0,background:`${C.bg}cc`}}>
+          <button onClick={()=>{setRevisionTopic(card?.topic||null);setRevisionTab("notes");setScreen("revision");}}
+            style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:12,padding:"4px 0"}}>
+            📖 Study notes
+          </button>
+          <div style={{fontSize:11,color:C.muted}}>{reelSessionCount} seen · swipe ↑</div>
+          <button onClick={()=>{if(card?.topic){setSelTopics([card.topic]);setSelSubtopics([]);setScreen("setup");}}}
+            style={{background:"none",border:"none",color:C.accentLight,cursor:"pointer",fontSize:12,fontWeight:700,padding:"4px 0"}}>
+            Practice →
+          </button>
+        </div>
+      </div>
+      {calcMiniWidget}
+      {navPortal}
     </>);
   }
 
