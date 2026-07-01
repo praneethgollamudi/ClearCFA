@@ -1122,11 +1122,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01
-{version:"2026-07-01",slides:[
-{emoji:"🎬",color:C.accentLight,bg:C.accentLight,title:"Drill: TikTok-Style Learning",sub:"Study Tools · 2026-07-01 update",desc:"The new Drill tab replaces Study Reels with a streamlined vertical swipe feed for bite-sized concept review. Master one topic at a time in the format that keeps you engaged.",tip:"Swipe up to move through cards—perfect for 5-minute study sessions between classes."},
-{emoji:"📖",color:C.medium,bg:C.medium,title:"Rules & Context on Trap Cards",sub:"UX · 2026-07-01 update",desc:"Trap cards now display the rule being tested plus the trap context inline, so you immediately see *why* the wrong answer is tempting. Learn faster by understanding common pitfalls.",tip:"Look for the rule and trap explanation on any difficult card to turn mistakes into learning moments."},
-]},
 // WN_VER:2026-07-01-b
 {version:"2026-07-01-b",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Drill Tab Replaces Reels",sub:"Study Tools · 2026-07-01 update",desc:"We've streamlined your study interface by renaming Reels to Drill and removing duplicate entry points. You now have one clear, focused tab for spaced-repetition flashcard practice instead of scattered options.",tip:"Tap the Drill tab at the bottom to access all your adaptive flashcards in one place."},
@@ -1150,6 +1145,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Cards Now More Engaging",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now feature smooth slide animations, swipe hints, XP pop animations, weak spot indicators, and pass probability advice to keep you motivated and focused. These enhancements make studying feel more interactive and help you quickly identify topics that need more attention.",tip:"Watch for the weak spot pill on cards you've struggled with—it's your cue to prioritize those concepts."},
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"CFA Acronyms Fully Explained",sub:"Study Tools · 2026-07-01 update",desc:"All CFA-specific acronyms in Drill cards now automatically expand to their full forms on first mention, reducing confusion and keeping you in flow. This works seamlessly across all devices, including older browsers.",tip:"Hover or tap an expanded acronym to see its full meaning—no need to switch tabs to look things up."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother Drill Navigation",sub:"UX · 2026-07-01 update",desc:"Back navigation in Drills now works more intuitively, giving you a seamless experience when returning to your study list. This small fix removes friction so you can move between drills without unexpected behavior.",tip:"Use the back button freely—it'll take you exactly where you expect."},
+]},
+// WN_VER:2026-07-01-f
+{version:"2026-07-01-f",slides:[
+{emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Sessions Get Smarter",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now show pass probability advice, weak spot indicators, and XP rewards with smooth animations and swipe hints. This helps you focus on topics where you're most likely to struggle and see your progress instantly.",tip:"Swipe left or right on any Drill card to see the hint animation and learn the fastest way to navigate."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Sessions Card Shows Your Streak",sub:"UX · 2026-07-01 update",desc:"Your study sessions card now displays your current streak and includes a session summary with pass probability delta. Track momentum and see exactly how each study session moves you closer to exam readiness.",tip:"Check your Sessions card daily to watch your streak grow and monitor your pass probability improvement over time."},
+{emoji:"🐛",color:C.easy,bg:C.easy,title:"Better Browser Compatibility",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a compatibility issue that prevented acronym expansion from working on Safari browsers older than version 16. All students can now study smoothly across iOS, Android, and web.",tip:"If you use Safari on iPad or Mac, your Drill acronyms will now expand correctly—no need to update anything."},
 ]},
 // WN_END
 ];
