@@ -1043,12 +1043,6 @@ const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}cat
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-b
-{version:"2026-07-01-b",slides:[
-{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"Our AI coach implementations are now more effective at walking you through exam concepts and practice questions. You'll get sharper explanations and better-targeted feedback tailored to where you're struggling.",tip:"Try the AI Coach button on any practice question to see the improved guidance in action."},
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Always at Hand",sub:"Study Tools · 2026-07-01 update",desc:"A calculator button is now available on the Self-Review screen, so you can instantly verify calculations while reviewing your answers. No more switching apps or losing your focus mid-review.",tip:"Look for the calculator icon when reviewing Self-Review content to run quick calculations."},
-{emoji:"⚠️",color:C.hard,bg:C.hard,title:"Better Error Recovery",sub:"UX · 2026-07-01 update",desc:"When the AI debrief fails to load, you now see a clear error message and a retry button instead of a blank screen. This means less frustration and faster troubleshooting when something goes wrong.",tip:"If you hit an error, tap Retry—it usually resolves on the second attempt."},
-]},
 // WN_VER:2026-07-01-c
 {version:"2026-07-01-c",slides:[
 {emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Coach Guidance",sub:"AI · 2026-07-01 update",desc:"We've enhanced both AI coach implementations to provide more effective explanations and targeted learning support. You'll now get higher-quality answers when you ask the AI coach for help on difficult concepts.",tip:"Try asking your AI coach about a concept you're struggling with—the answers are now more tailored to exam prep."},
@@ -1072,6 +1066,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Redesigned Learn Tab for Deeper Study",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab is now a comprehensive Deep Study guide, replacing the previous layout with a more intuitive structure for tackling complex CFA topics. This helps you build stronger conceptual foundations before moving to practice questions.",tip:"Open the Learn tab to explore the new guided study sections organized by topic difficulty."},
 {emoji:"✅",color:C.reward,bg:C.reward,title:"Spaced Repetition Cards Graduate Properly",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a critical issue where leech cards (difficult items) were stuck in your review queue even after correct answers. Your spaced repetition schedule now works as intended, so mastered concepts move forward.",tip:"Check your review queue—cards you've been acing should now graduate out of daily rotation."},
 {emoji:"🔐",color:C.medium,bg:C.medium,title:"Password Sign-Up Now Reliable",sub:"Bug Fix · 2026-07-01 update",desc:"Resolved a connection error that prevented new users from signing up with a password. Account creation is now stable across all platforms.",tip:"Invite study partners—sign-ups should work smoothly now."},
+]},
+// WN_VER:2026-07-01
+{version:"2026-07-01",slides:[
+{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Master Calculators with Keystroke Guides",sub:"Study Tools · 2026-07-01 update",desc:"The Calc Trainer now includes a Learn Calculator tab with step-by-step BA II Plus keystroke guides. Stop guessing how to solve problems on your exam calculator and build muscle memory before test day.",tip:"Open Calc Trainer and tap Learn Calculator to practice common financial calculations side-by-side with your actual BA II Plus keys."},
+{emoji:"🎓",color:C.medium,bg:C.medium,title:"Deep Study Mode for Focused Learning",sub:"Study Tools · 2026-07-01 update",desc:"The Learn tab has been redesigned into a comprehensive Deep Study guide with structured explanations and concept breakdowns. Spend less time hunting for clarification and more time internalizing the material that appears on your exam.",tip:"Use Deep Study when you encounter a concept in quizzes that feels shaky—it's your go-to reference before moving forward."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Sign-Up Connection Errors Fixed",sub:"Bug Fix · 2026-07-01 update",desc:"Password-based sign-up no longer fails with connection errors, letting you create an account and start studying immediately. This removes a frustrating barrier between you and your prep.",tip:"If you had trouble signing up before, try again now—the issue is resolved."},
 ]},
 // WN_END
 ];
@@ -1105,12 +1105,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-06-30
-{date:"2026-06-30",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-01
 {date:"2026-07-01",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1143,6 +1137,13 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard cost stats: use real token counts from Anthropic API",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-01
+{date:"2026-07-01",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin dashboard cost stats: use real token counts from Anthropic API",
 ]},
 // AC_END
 ];
