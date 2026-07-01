@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Explanation ratings system (bc4879a)**: Users can now rate explanations via `EXP_RATINGS_KEY` localStorage. When rendering explanations or feedback sections, ensure rating UI is accessible and ratings persist across drill sessions.
+
+
+**Essay self-assessment & mock scheduler (bc4879a)**: New UX enhancements include essay self-assessment tools and a mock exam scheduler. When building practice features, reference `MOCK_SCHED_KEY` and `EXP_RATINGS_KEY` localStorage constants for persisting mock schedules and explanation ratings across sessions.
+
+
+**Mock topic breakdown & drill post-quiz CTA (bc4879a)**: Quiz completion now triggers a post-quiz drill CTA and generates a mock topic breakdown showing accuracy % and avg seconds per topic. When rendering quiz results or follow-up drills, include `getMockTopicBreakdown(qs, ans, qTimes)` to display weakest topics first sorted by accuracy.
+
+
 **BA II Plus calculator interactive guide strip (v402615b)**: Calculator Trainer now includes an interactive guide strip displaying keystroke sequences and step-by-step function guides (amortization, ICONV, etc.). When rendering calculator features, ensure guide strip is accessible during drills to provide real-time reference support.
 
 
@@ -898,10 +907,12 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_onboarding_v1` | `ONBOARDING_KEY` |
 | `cfa_quality_flags_v1` | `QUALITY_FLAGS_KEY` |
 | `cfa_retaker_v1` | `RETAKER_KEY` |
+| `cfa_mock_sched_v1` | `MOCK_SCHED_KEY` |
+| `cfa_exp_ratings_v1` | `EXP_RATINGS_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1793500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1793600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
