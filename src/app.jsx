@@ -11469,18 +11469,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
               </div>
             </div>
             <div style={{height:4,background:C.border,borderRadius:2,marginBottom:10}}><div style={{height:"100%",width:`${m.readiness}%`,background:col,borderRadius:2,transition:"width 0.5s"}}/></div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:(notStarted||m.readiness<60)?10:0}}>
+            <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
               {m.modules.map(mod=>{
                 const stats=m.moduleStats[mod];
                 const los=m.losStats[mod];
+                const diff=stats?(stats.pct<50?"Easy":"Medium"):"Easy";
                 return(
-                  <span key={mod} title={`${los?.total||0} LOS · ${los?.untested||0} untested`} style={{fontSize:10,padding:"3px 8px",borderRadius:5,fontWeight:600,background:stats?(stats.pct>=70?C.easy+"22":stats.pct>=50?C.medium+"22":C.hard+"18"):C.dim,color:stats?(stats.pct>=70?C.easy:stats.pct>=50?C.medium:C.hard):C.muted,border:`1px solid ${stats?(stats.pct>=70?C.easy+"33":stats.pct>=50?C.medium+"33":C.hard+"33"):C.border}`}}>
+                  <button key={mod} onClick={()=>{setMode("guided");generateQuestions(m.topic,mod,diff,10);}} title={`${los?.total||0} LOS · tap to drill`} style={{fontSize:10,padding:"3px 8px",borderRadius:5,fontWeight:600,cursor:"pointer",background:stats?(stats.pct>=70?C.easy+"22":stats.pct>=50?C.medium+"22":C.hard+"18"):C.dim,color:stats?(stats.pct>=70?C.easy:stats.pct>=50?C.medium:C.hard):C.muted,border:`1px solid ${stats?(stats.pct>=70?C.easy+"33":stats.pct>=50?C.medium+"33":C.hard+"33"):C.border}`}}>
                     {mod.length>18?mod.slice(0,18)+"…":mod}{stats?` ${stats.pct}%`:""}<span style={{opacity:0.45}}> {los?.total}LOS</span>
-                  </span>
+                  </button>
                 );
               })}
             </div>
-            {(notStarted||m.readiness<60)&&<button onClick={()=>{const t=m.untouchedModules[0]||m.modules[0];setMode("guided");generateQuestions(m.topic,t,notStarted?"Easy":"Medium",10);}} style={{width:"100%",padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>{notStarted?`Start ${m.topic} →`:"Drill Weakest Module →"}</button>}
+            <button onClick={()=>{const t=m.untouchedModules[0]||m.modules[0];setMode("guided");generateQuestions(m.topic,t,notStarted?"Easy":"Medium",10);}} style={{width:"100%",padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>{notStarted?`Start ${m.topic} →`:m.readiness>=70?"Drill to stay sharp →":"Drill Weakest Module →"}</button>
           </div>
         );
       })}
