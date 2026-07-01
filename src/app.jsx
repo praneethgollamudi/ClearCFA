@@ -1125,12 +1125,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-c
-{version:"2026-07-01-c",slides:[
-{emoji:"🎓",color:C.accentLight,bg:C.accentLight,title:"Drill Cards Now Show Full Acronyms",sub:"Study Tools · 2026-07-01 update",desc:"CFA acronyms in Drill cards now expand to their full forms, making it easier to understand concepts without memorizing abbreviations. This helps you focus on learning the material rather than decoding jargon.",tip:"Hover over or tap any CFA acronym in a Drill card to see its full name instantly."},
-{emoji:"📚",color:C.medium,bg:C.medium,title:"Streamlined Drill Tab with Better Context",sub:"UX · 2026-07-01 update",desc:"The Reels tab is now called Drill for clarity, and we've consolidated duplicate study modes so you have one focused place to practice. Trap cards now show the rule and trap context together, helping you understand why answers are wrong.",tip:"Open the Drill tab and select a trap card to see both the rule being tested and the common pitfall explained side-by-side."},
-{emoji:"🔧",color:C.hard,bg:C.hard,title:"Better Browser Compatibility for Drill",sub:"Bug Fix · 2026-07-01 update",desc:"Fixed a technical issue that was causing Drill cards to display incorrectly on older Safari browsers and to not fill the screen properly. Now all cards render correctly across all supported browsers and devices.",tip:"If you use Safari on an older device, try Drill again—it should work smoothly now."},
-]},
 // WN_VER:2026-07-01-d
 {version:"2026-07-01-d",slides:[
 {emoji:"🎮",color:C.reward,bg:C.reward,title:"Drill Cards Feel Alive",sub:"Study Tools · 2026-07-01 update",desc:"Drill cards now animate smoothly as you swipe through them, with instant XP pop-ups and helpful hints guiding your next move. These visual touches make studying more engaging and keep you motivated through longer practice sessions.",tip:"Swipe through a few Drill cards and watch the animations—they'll also show you pass probability advice based on your performance."},
@@ -1154,6 +1148,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎬",color:C.reward,bg:C.reward,title:"Drill Sessions Now More Interactive",sub:"Study Tools · 2026-07-01 update",desc:"Drills now feature smooth slide animations, swipe hints, XP pop animations, and weak spot indicators to keep you engaged. These visual cues help you identify knowledge gaps faster and celebrate progress in real time.",tip:"Swipe through a Drill to see the hint system in action—it guides you without spoiling answers."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Pass Probability Insights & Streaks",sub:"Study Tools · 2026-07-01 update",desc:"Session summaries now show your pass probability delta (how your odds improved) and display your study streak on your Sessions card. Tracking these metrics reinforces momentum and lets you see exactly how each session moves you closer to passing.",tip:"Check your Sessions card after every study session to watch your streak grow and pass probability climb."},
 {emoji:"👥",color:C.accentLight,bg:C.accentLight,title:"See Your Rank Among Peers",sub:"Study Tools · 2026-07-01 update",desc:"The new peer percentile feature shows how your performance compares to other ClearCFA users at your level. Seeing where you stand motivates smarter study habits and helps you benchmark progress against real exam candidates.",tip:"View your percentile in your profile to stay motivated and identify which topics to prioritize next."},
+]},
+// WN_VER:2026-07-01-b
+{version:"2026-07-01-b",slides:[
+{emoji:"🎯",color:C.reward,bg:C.reward,title:"Smarter Study Pacing",sub:"Study Tools · 2026-07-01 update",desc:"New pacing chip and vignette scenario panel help you tackle questions at the right speed and understand real exam formats. Retakers get pre-seeded progress so you skip material you've already mastered.",tip:"Check the pacing chip during drills to stay on track for exam day timing."},
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Your Pass Probability",sub:"AI · 2026-07-01 update",desc:"Pass probability delta now shows how each study session moves you closer to exam readiness. Session summaries highlight your strongest and weakest topic areas so you focus effort where it matters most.",tip:"Review your SR session summary after drills to see which topics boosted your pass odds."},
+{emoji:"✨",color:C.hard,bg:C.hard,title:"Power Pro Tier & Quality Flags",sub:"Study Tools · 2026-07-01 update",desc:"Upgrade to Power Pro for premium features, and new quality flags mark the highest-caliber practice questions. Try a free 40-question trial and compare your score against peer percentiles to see where you rank.",tip:"Start the 40q trial to benchmark yourself against other CFA candidates right now."},
 ]},
 // WN_END
 ];
