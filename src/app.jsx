@@ -1151,12 +1151,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-c
-{version:"2026-07-01-c",slides:[
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Master BA II Plus Calculator",sub:"Study Tools · 2026-07-01 update",desc:"We've added an interactive guide strip to the BA II Plus calculator trainer, making it easier to learn keystrokes step-by-step. This helps you build calculator fluency without leaving the app, so you're faster and more confident on exam day.",tip:"Open Calc Trainer and look for the new walkthrough guides when you're learning amortization, interest conversion, or other complex functions."},
-{emoji:"🎵",color:C.reward,bg:C.reward,title:"Focus Better With Enhanced Lofi",sub:"UX · 2026-07-01 update",desc:"The lofi player now offers 4 mood vibes, reverb effects, melody control, and a visual equalizer to match your study vibe. Background music that adapts to your focus style helps you study longer without distractions.",tip:"Try the different vibes and reverb settings during your next practice session—you might find your perfect study soundtrack."},
-{emoji:"📊",color:C.easy,bg:C.easy,title:"Track Progress in Questions Per Day",sub:"Study Tools · 2026-07-01 update",desc:"The pacing chip now shows your daily question target instead of sessions per day, giving you a clearer, more actionable study goal. This helps you stay on track toward your exam date with concrete daily metrics.",tip:"Check your Questions/Day target on the study dashboard and adjust your daily plan to hit it consistently."},
-]},
 // WN_VER:2026-07-01-d
 {version:"2026-07-01-d",slides:[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"An interactive guide strip is now built into the calculator trainer, showing you step-by-step how to solve problems on the BA II Plus. This eliminates guesswork and builds muscle memory for exam day.",tip:"Open the Calc Trainer and look for the guide strip to see keystroke sequences in real time."},
@@ -1180,6 +1174,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"✨",color:C.reward,bg:C.reward,title:"5 New Study Features",sub:"UX · 2026-07-01 update",desc:"We've added post-quiz drill shortcuts, mock exam topic breakdowns, essay self-assessment tools, a smart mock scheduler, and explanation ratings to help you study smarter. These features let you drill weak spots faster, track mock performance by topic, and give feedback on explanations you find helpful or unclear.",tip:"After your next quiz, look for the drill CTA to immediately review questions you missed."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Clearer Pacing Indicators",sub:"Bug Fix · 2026-07-01 update",desc:"The pacing chip no longer shows a misleading floor when you're ahead of schedule. This gives you accurate feedback on whether you're on track to finish your study plan on time.",tip:"Check your pacing chip on the dashboard—it now only shows a floor if you're actually behind."},
 {emoji:"🧭",color:C.accentLight,bg:C.accentLight,title:"Streamlined More Menu",sub:"UX · 2026-07-01 update",desc:"We've reorganised the More menu to remove redundant shortcuts and keep it focused on what you actually use. Navigation is now faster and less cluttered.",tip:"Open the More menu to see the updated layout with your most-used study tools front and centre."},
+]},
+// WN_VER:2026-07-02
+{version:"2026-07-02",slides:[
+{emoji:"🚀",color:C.reward,bg:C.reward,title:"Share & Track Your Progress",sub:"Study Tools · 2026-07-02 update",desc:"ClearCFA now includes viral & effectiveness features that let you share your study wins and track what's actually moving your scores. Built-in analytics show which study methods work best for you across all three CFA levels.",tip:"After completing a mock exam, check the new effectiveness breakdown by topic to focus your retakes where you need them most."},
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smarter Quiz & Mock Workflows",sub:"UX · 2026-07-02 update",desc:"Five streamlined UX improvements make studying faster: drill recommendations appear right after quizzes, mock exams break down by topic for targeted review, essay questions include self-assessment tools, and the mock scheduler auto-plans your prep timeline. Plus, you can now rate explanations to help us improve.",tip:"Use the post-quiz drill CTA to immediately strengthen your weakest concepts instead of waiting until your next study session."},
 ]},
 // WN_END
 ];
