@@ -1151,12 +1151,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-e
-{version:"2026-07-01-e",slides:[
-{emoji:"🧮",color:C.easy,bg:C.easy,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"We added an interactive guide strip to the BA II Plus calculator trainer so you can learn key financial calculations without leaving the app. This bridges the gap between understanding the concept and mastering the keystrokes you'll use on exam day.",tip:"Open Calc Trainer and tap the guide icon to see step-by-step walkthroughs for common operations like amortization and interest conversion."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Pacing Indicators",sub:"UX · 2026-07-01 update",desc:"The pacing chip now hides misleading floor warnings when you're already ahead of schedule. You'll see clearer, less distracting progress feedback so you can focus on what actually needs your attention.",tip:"Check your pacing chip at the top of your study dashboard—if you're on track or ahead, you'll see only positive signals."},
-{emoji:"✨",color:C.reward,bg:C.reward,title:"Cleaner, Faster Navigation",sub:"UX · 2026-07-01 update",desc:"We trimmed the More menu from 13 items down to 8, removing redundant shortcuts and streamlining your app experience. Finding what you need is now faster and less overwhelming.",tip:"Tap the More menu (⋯) and notice the tighter, more focused list of options—no hunting through duplicate navigation paths."},
-]},
 // WN_VER:2026-07-01-f
 {version:"2026-07-01-f",slides:[
 {emoji:"🧮",color:C.easy,bg:C.easy,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"An interactive guide strip now walks you through BA II Plus calculator functions step-by-step during practice. This helps you master financial calculations without leaving the app or consulting external resources.",tip:"Look for the guide strip when you encounter calculator-heavy questions in your drills."},
@@ -1179,6 +1173,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚔️",color:C.reward,bg:C.reward,title:"Challenge Friends in Duel Mode",sub:"Study Tools · 2026-07-02 update",desc:"Compete head-to-head with other CFA candidates in real-time quiz duels and join study groups to collaborate on tough topics. Turn solo prep into a social competition that keeps you motivated and accountable.",tip:"Start or join a duel from the home screen to see how you stack up against peers on the same exam level."},
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smarter Post-Quiz Learning",sub:"UX · 2026-07-02 update",desc:"After every quiz, drill down into your weak topic areas with targeted follow-up questions, self-assess your essay responses, and rate explanation quality to improve future ones. Get instant feedback loops that accelerate mastery.",tip:"Look for the 'Drill This Topic' button after your next quiz to reinforce gaps immediately while they're fresh."},
 {emoji:"📅",color:C.medium,bg:C.medium,title:"Mock Exam Scheduler & Breakdown",sub:"Study Tools · 2026-07-02 update",desc:"Plan your mock exams with an intelligent scheduler and receive detailed topic-by-topic breakdowns of your performance. Know exactly which areas need more study time before test day.",tip:"Use the mock scheduler to space your practice exams 2–3 weeks apart for maximum retention and confidence."},
+]},
+// WN_VER:2026-07-02-c
+{version:"2026-07-02-c",slides:[
+{emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Clearer Drill Card Design",sub:"UX · 2026-07-02 update",desc:"Drill cards now feature color-coded topic headers and improved visual hierarchy, making it easier to navigate concepts at a glance. Better organization helps you focus on what matters during rapid-fire practice sessions.",tip:"Notice the topic colors match your study roadmap—use them to spot patterns in your weak areas."},
+{emoji:"👥",color:C.medium,bg:C.medium,title:"Study Together: Duel & Groups",sub:"Study Tools · 2026-07-02 update",desc:"Challenge peers in live Duel Mode or join Study Groups to collaborate on tough topics and stay accountable. Studying with others boosts retention and keeps you motivated through the grind.",tip:"Start or join a Study Group focused on your weakest topic—friendly competition accelerates progress."},
+{emoji:"🚀",color:C.reward,bg:C.reward,title:"Smarter Practice & Feedback",sub:"AI · 2026-07-02 update",desc:"Get instant essay self-assessments, mock exam scheduling recommendations, and the ability to rate explanations so the AI learns your learning style. Every interaction makes your prep more personalized and effective.",tip:"Rate explanations you find helpful—the app will prioritize similar ones for future quizzes."},
 ]},
 // WN_END
 ];
@@ -1236,8 +1236,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
+// AC_VER:2026-07-02
+{date:"2026-07-02",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
