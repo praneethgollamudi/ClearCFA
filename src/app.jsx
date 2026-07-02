@@ -956,6 +956,9 @@ const QUALITY_FLAGS_KEY    = "cfa_quality_flags_v1";
 const RETAKER_KEY          = "cfa_retaker_v1";
 const MOCK_SCHED_KEY       = "cfa_mock_sched_v1";
 const EXP_RATINGS_KEY      = "cfa_exp_ratings_v1";
+const DAILY_Q_KEY          = "cfa_daily_q_v1";
+const DUEL_KEY             = "cfa_duel_v1";
+const SG_KEY               = "cfa_study_group_v1";
 const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","masteryGrid","studyPlan","revision","studyPath","calcTrainer","backup","srReview"]);
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
@@ -2633,7 +2636,7 @@ function _crr(ctx,x,y,w,h,r){
   ctx.closePath();
 }
 
-function buildShareImage({sessionPct,sessionScore,total,subtopic,difficulty,timeTaken,todayStudySecs,cfaLevel,fmtStudyTime}){
+function buildShareImage({sessionPct,sessionScore,total,subtopic,difficulty,timeTaken,todayStudySecs,cfaLevel,fmtStudyTime,levelLabel,levelNum}){
   const W=1080,H=1080;
   const canvas=document.createElement('canvas');
   canvas.width=W;canvas.height=H;
@@ -2723,13 +2726,48 @@ function buildShareImage({sessionPct,sessionScore,total,subtopic,difficulty,time
   ctx.fillStyle=bG;ctx.shadowColor=accent;ctx.shadowBlur=10;
   _crr(ctx,bX,bY,fW,bH,5);ctx.fill();ctx.shadowBlur=0;
 
+  // ── Pass/fail verdict badge ──
+  const badgeY=bY+60;
+  const badgeW=380,badgeH=44;
+  const badgeBg=sessionPct>=70?'#22c55e22':'#ef444422';
+  const badgeBorder=sessionPct>=70?'#22c55e':'#ef4444';
+  ctx.strokeStyle=badgeBorder;ctx.lineWidth=1.5;
+  _crr(ctx,cx-badgeW/2,badgeY,badgeW,badgeH,10);ctx.fillStyle=badgeBg;ctx.fill();ctx.stroke();
+  ctx.font='bold 22px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle=sessionPct>=70?'#22c55e':'#ef4444';
+  ctx.fillText(sessionPct>=70?'ABOVE 70% THRESHOLD ✓':'BELOW 70% THRESHOLD',cx,badgeY+29);
+
+  // ── vs threshold progress bar ──
+  const tbY=badgeY+62;
+  const tbW=W-200;
+  ctx.fillStyle='#ffffff08';_crr(ctx,100,tbY,tbW,8,4);ctx.fill();
+  const filledW=Math.max(8,(sessionPct/100)*tbW);
+  ctx.fillStyle=accent;ctx.shadowColor=accent;ctx.shadowBlur=8;
+  _crr(ctx,100,tbY,filledW,8,4);ctx.fill();ctx.shadowBlur=0;
+  // 70% threshold line
+  const threshX=100+tbW*0.7;
+  ctx.strokeStyle='#ffffff55';ctx.lineWidth=2;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(threshX,tbY-6);ctx.lineTo(threshX,tbY+14);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font='18px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#22c55e88';
+  ctx.textAlign='center';ctx.fillText('70%',threshX,tbY+32);ctx.textAlign='center';
+
   // ── Study time badge ──
-  let footY=bY+68;
+  let footY=tbY+58;
   if(todayStudySecs>0){
     ctx.font='27px system-ui,-apple-system,sans-serif';
     ctx.fillStyle='#4c4c90';
     ctx.fillText(`📚 ${fmtStudyTime(todayStudySecs)} studied today`,cx,footY);
     footY+=46;
+  }
+
+  // ── XP level chip ──
+  if(levelLabel||levelNum){
+    ctx.font='20px system-ui,-apple-system,sans-serif';
+    ctx.fillStyle='#f59e0b88';
+    ctx.fillText(`⭐ ${levelLabel||""} · Level ${levelNum||""}  ·  CFA L${cfaLevel||"1"}`,cx,footY);
+    footY+=36;
   }
 
   // ── Footer ──
@@ -5813,6 +5851,41 @@ function StudyHeatmap({history}){
   );
 }
 
+function WeaknessRadar({data}){
+  if(!data||data.length<3) return null;
+  const N=data.length;
+  const R=75,cx=120,cy=120,size=240;
+  const axes=data.map((_,i)=>{const a=i*(2*Math.PI/N)-(Math.PI/2);return{cos:Math.cos(a),sin:Math.sin(a)};});
+  const poly=axes.map((ax,i)=>{const v=Math.max(0,Math.min(1,(data[i].pct||0)/100));return `${cx+v*R*ax.cos},${cy+v*R*ax.sin}`;}).join(' ');
+  return(
+    <div style={{display:'flex',justifyContent:'center',marginBottom:8}}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {[0.25,0.5,0.75,1].map(r=>(
+          <polygon key={r} fill="none" stroke="#ffffff18" strokeWidth={r===1?1:0.5}
+            points={axes.map(ax=>`${cx+r*R*ax.cos},${cy+r*R*ax.sin}`).join(' ')}/>
+        ))}
+        {axes.map((ax,i)=>(<line key={i} x1={cx} y1={cy} x2={cx+R*ax.cos} y2={cy+R*ax.sin} stroke="#ffffff18" strokeWidth={0.5}/>))}
+        <polygon points={poly} fill="#6366f122" stroke="#6366f1" strokeWidth={1.5} strokeLinejoin="round"/>
+        {axes.map((ax,i)=>{
+          const v=Math.max(0,Math.min(1,(data[i].pct||0)/100));
+          const col=data[i].pct>=70?'#22c55e':data[i].pct>=50?'#f59e0b':'#ef4444';
+          const lx=cx+(R+20)*ax.cos,ly=cy+(R+20)*ax.sin;
+          return(
+            <g key={i}>
+              <circle cx={cx+v*R*ax.cos} cy={cy+v*R*ax.sin} r={3} fill={col} stroke="#06061a" strokeWidth={1}/>
+              <text x={lx} y={ly+4} textAnchor="middle" fill="#8080a8" fontSize={7.5} fontWeight={700}>{data[i].topic}</text>
+            </g>
+          );
+        })}
+        <text x={cx} y={cy-(R*0.5)+3} textAnchor="middle" fill="#ffffff18" fontSize={7}>50%</text>
+        <text x={cx} y={cy+4} textAnchor="middle" fill="#ffffff25" fontSize={7}>0%</text>
+        <line x1={cx} y1={cy-(R*0.7)+2} x2={cx+R*axes[0].cos} y2={cy+R*axes[0].sin} stroke="none"/>
+        <text x={cx+(R+4)*axes[Math.floor(N*0.75)].cos} y={cy+(R+4)*axes[Math.floor(N*0.75)].sin+3} textAnchor="middle" fill="#22c55e55" fontSize={7}>70%</text>
+      </svg>
+    </div>
+  );
+}
+
 function CFAMock(){
   const [screen,setScreen]=useState(()=>{
     try{const s=localStorage.getItem(LAST_SCREEN_KEY);if(s&&RESTORABLE_SCREENS.has(s))return s;}catch{}
@@ -6016,6 +6089,12 @@ function CFAMock(){
   const [reelFeed,setReelFeed]=useState([]);
   const [mockSchedule,setMockSchedule]=useState(()=>{try{return JSON.parse(localStorage.getItem(MOCK_SCHED_KEY)||"[]");}catch{return [];}});
   const [expRatings,setExpRatings]=useState(()=>{try{return JSON.parse(localStorage.getItem(EXP_RATINGS_KEY)||"{}");}catch{return {};}});
+  const [dailyQ,setDailyQ]=useState(()=>{try{const s=JSON.parse(localStorage.getItem(DAILY_Q_KEY)||"null");if(s?.date===localDateKey())return s;}catch{}return null;});
+  const [milestoneOverlay,setMilestoneOverlay]=useState(null);
+  const [nextActionText,setNextActionText]=useState("");
+  const [nextActionLoading,setNextActionLoading]=useState(false);
+  const [duelChallenge,setDuelChallenge]=useState(null);
+  const [notifEnabled,setNotifEnabled]=useState(()=>{try{return localStorage.getItem("cfa_notif_v1")==="1";}catch{return false;}});
   const [reelAnswer,setReelAnswer]=useState(null);
   const [reelRevealed,setReelRevealed]=useState(false);
   const [reelSessionCount,setReelSessionCount]=useState(0);
@@ -6338,6 +6417,35 @@ function CFAMock(){
     }catch{}
   },[]);
 
+  // Daily Q init — pick a date-seeded question from offline seed bank
+  useEffect(()=>{
+    if(dailyQ) return;
+    const allQs=[];
+    Object.entries(OFFLINE_SEED_QS).forEach(([t,mods])=>{
+      Object.entries(mods).forEach(([mod,qs])=>{qs.forEach(q=>allQs.push({...q,_topic:t,_mod:mod}));});
+    });
+    if(!allQs.length) return;
+    const today=localDateKey();
+    const dayNum=Math.floor(new Date(today).getTime()/86400000);
+    const q=allQs[dayNum%allQs.length];
+    const newDQ={date:today,q,answered:false,userAnswer:null};
+    setDailyQ(newDQ);
+    try{localStorage.setItem(DAILY_Q_KEY,JSON.stringify(newDQ));}catch{}
+  },[]);
+
+  // Daily notification check
+  useEffect(()=>{
+    if(!notifEnabled) return;
+    try{
+      if(typeof Notification==="undefined"||Notification.permission!=="granted") return;
+      const sentKey="cfa_notif_sent_"+localDateKey();
+      if(localStorage.getItem(sentKey)) return;
+      const n=new Notification("ClearCFA",{body:"Your CFA exam is waiting — study time! 📚",icon:"/ClearCFA/icon-192.png"});
+      setTimeout(()=>n.close(),6000);
+      localStorage.setItem(sentKey,"1");
+    }catch{}
+  },[notifEnabled]);
+
   const pendingSessionRef=useRef(null);
 
   const showToast=React.useCallback((emoji,title,desc,celebrate=false)=>{
@@ -6602,6 +6710,23 @@ function CFAMock(){
         setPersonalBests(prev=>({...prev,longestStreak:newStreak}));
       }
     }catch{}
+    // ─── Question count milestones ─────────────────────────────────────────
+    const prevTotalQs=historyRef.current.slice(1).reduce((s,h)=>s+(h.total||0),0);
+    const newTotalQs=newHistory.reduce((s,h)=>s+(h.total||0),0);
+    const QS_MILESTONES=[100,500,1000,2500,5000];
+    const hitQMilestone=QS_MILESTONES.find(m=>prevTotalQs<m&&newTotalQs>=m);
+    if(hitQMilestone){
+      const qEmoji=hitQMilestone===100?"🎯":hitQMilestone===500?"⚡":hitQMilestone===1000?"🏆":hitQMilestone===2500?"🔥":"👑";
+      setMilestoneOverlay({type:"questions",count:hitQMilestone,emoji:qEmoji});
+      fireConfetti();
+    }
+    // ─── Hardest topic warrior badges ─────────────────────────────────────
+    const HARD_TOPICS_LIST=["Fixed Income","Derivatives","Alternative Investments"];
+    HARD_TOPICS_LIST.forEach(ht=>{
+      const prevCount=historyRef.current.slice(1).filter(h=>h.topic===ht).reduce((s,h)=>s+(h.total||0),0);
+      const newCount=newHistory.filter(h=>h.topic===ht).reduce((s,h)=>s+(h.total||0),0);
+      if(prevCount<10&&newCount>=10)showToast("🏅",`${ht.split(" ")[0]} Warrior!`,`10+ questions answered on one of the hardest CFA topics.`,true);
+    });
     // ─────────────────────────────────────────────────────────────────────
 
     // Auto-escalation
@@ -6983,6 +7108,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const generateQuestionsRef=React.useRef(null);
   const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null,multiModules=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
+    setNextActionText(""); setNextActionLoading(false);
     lastGenParamsRef.current={t,st,diff,cnt,m,isVignette,st2};
     prequizPassProbRef.current=passProbability?.probability??null;
     try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
@@ -8473,6 +8599,28 @@ Return ONLY a JSON array — no prose, no markdown fences:
     </div>
   );
 
+  // ══ MILESTONE OVERLAY ════════════════════════════════════════════════════════
+  if(milestoneOverlay) return(
+    <div style={{position:"fixed",inset:0,zIndex:9000,background:"rgba(6,6,16,0.98)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}
+      onClick={()=>setMilestoneOverlay(null)}>
+      <div style={{fontSize:80,marginBottom:12,animation:"pulse 1.2s ease infinite"}}>{milestoneOverlay.emoji}</div>
+      <div style={{fontSize:11,fontWeight:700,color:"#f59e0b",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:10}}>Milestone</div>
+      <div style={{fontSize:48,fontWeight:800,color:"#e2e2ff",marginBottom:4}}>{milestoneOverlay.count}</div>
+      <div style={{fontSize:20,fontWeight:600,color:"#8080b0",marginBottom:30}}>Questions Answered</div>
+      <button onClick={()=>{
+        const shareText=`${milestoneOverlay.emoji} ${milestoneOverlay.count} CFA practice questions answered on ClearCFA! Building exam readiness one Q at a time 📚 clearcfa.com`;
+        if(navigator.share)navigator.share({title:"ClearCFA Milestone",text:shareText}).catch(()=>{});
+        else{try{navigator.clipboard.writeText(shareText);}catch{}showToast("📋","Copied!","Share text copied to clipboard");}
+      }} style={{padding:"12px 28px",borderRadius:12,fontSize:14,fontWeight:700,background:"linear-gradient(135deg,#f59e0b,#fbbf24)",color:"#000",border:"none",cursor:"pointer",marginBottom:12}}>
+        Share milestone →
+      </button>
+      <button onClick={()=>setMilestoneOverlay(null)} style={{padding:"10px 24px",borderRadius:10,fontSize:13,fontWeight:600,background:"transparent",border:"1px solid #ffffff22",color:"#8080b0",cursor:"pointer"}}>
+        See My Results →
+      </button>
+      <div style={{fontSize:11,color:"#40406060",marginTop:16}}>tap anywhere to continue</div>
+    </div>
+  );
+
   // ══ WEEKLY PLAN SCREEN ══════════════════════════════════════════════════════
   if(weeklyPlanScreen){
   // Compute this-week session completion status
@@ -9366,6 +9514,57 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
 
+    {/* Daily Q card — Wordle-style one question per day */}
+    {dailyQ&&(()=>{
+      const dq=dailyQ.q;
+      const answered=dailyQ.answered;
+      const userAns=dailyQ.userAnswer;
+      const correct=dq&&userAns===dq.answer;
+      return(
+        <div style={{background:`linear-gradient(135deg,${C.accent}14,${C.accent}06)`,border:`1px solid ${C.accent}33`,borderRadius:14,padding:"14px 16px",marginBottom:12,animation:"fadeIn 0.3s ease"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:11,fontWeight:800,color:C.accentLight,letterSpacing:"0.05em",textTransform:"uppercase"}}>📅 Daily Q · {localDateKey()}</div>
+            {answered&&<span style={{fontSize:10,fontWeight:800,color:correct?C.easy:C.hard,background:correct?C.easy+"20":C.hard+"20",borderRadius:6,padding:"2px 7px"}}>{correct?"✓ Correct":"✗ Wrong"}</span>}
+          </div>
+          {dq&&<div style={{fontSize:13,fontWeight:600,color:C.text,lineHeight:1.5,marginBottom:10}}>{dq.question}</div>}
+          {dq&&!answered&&(
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {Object.entries(dq.options||{}).map(([k,v])=>(
+                <button key={k} onClick={()=>{
+                  const updated={...dailyQ,answered:true,userAnswer:k};
+                  setDailyQ(updated);
+                  try{localStorage.setItem(DAILY_Q_KEY,JSON.stringify(updated));}catch{}
+                }} style={{padding:"9px 12px",borderRadius:9,fontSize:12,fontWeight:600,border:`1px solid ${C.border}`,background:C.surfaceHigh,color:C.text,cursor:"pointer",textAlign:"left"}}>
+                  {k}. {v}
+                </button>
+              ))}
+            </div>
+          )}
+          {answered&&dq&&(
+            <div style={{marginTop:4}}>
+              <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                {Object.entries(dq.options||{}).map(([k,v])=>{
+                  const isCorrect=k===dq.answer;
+                  const isUser=k===userAns;
+                  const bg=isCorrect?C.easy+"25":isUser&&!isCorrect?C.hard+"22":"transparent";
+                  const border=isCorrect?C.easy:isUser&&!isCorrect?C.hard:C.border;
+                  return(<div key={k} style={{padding:"8px 12px",borderRadius:8,fontSize:12,border:`1px solid ${border}`,background:bg,color:isCorrect?C.easy:isUser&&!isCorrect?C.hard:C.muted}}>{k}. {v}</div>);
+                })}
+              </div>
+              {dq.explanation&&<div style={{marginTop:8,fontSize:12,color:C.textMid,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.accent}55`}}>{dq.explanation}</div>}
+              <button onClick={()=>{
+                const shareText=`${correct?"🟢":"🔴"} Today's CFA Daily Q · ${dq._topic||""} · ${correct?"Got it!":"Missed it"} · Streak: ${getStreak(history)}d\n📚 clearcfa.com`;
+                if(navigator.share)navigator.share({title:"ClearCFA Daily Q",text:shareText}).catch(()=>{});
+                else{try{navigator.clipboard.writeText(shareText);}catch{}showToast("📋","Copied!","Share text ready");}
+              }} style={{marginTop:10,width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                📤 Share today's result
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    })()}
+
     {/* Pace chip */}
     {paceStatus&&(
       <div onClick={()=>setScreen("dashboard")}
@@ -9407,6 +9606,36 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       );
     })()}
+
+    {/* Exam countdown notification toggle + readiness gauge */}
+    {passProbability&&(
+      <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{fontSize:12,fontWeight:700,color:C.text}}>📊 Readiness vs threshold</span>
+          <button onClick={async()=>{
+            if(!notifEnabled){
+              try{
+                const perm=await Notification.requestPermission();
+                if(perm==="granted"){setNotifEnabled(true);try{localStorage.setItem("cfa_notif_v1","1");}catch{}showToast("🔔","Reminders on!","You'll get a daily study nudge.");}
+                else showToast("🔕","Permission denied","Enable notifications in browser settings.");
+              }catch{}
+            } else {
+              setNotifEnabled(false);try{localStorage.setItem("cfa_notif_v1","0");}catch{}showToast("🔕","Reminders off","Daily nudges paused.");
+            }
+          }} style={{fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:8,background:notifEnabled?C.easy+"22":C.surface,border:`1px solid ${notifEnabled?C.easy:C.border}`,color:notifEnabled?C.easy:C.muted,cursor:"pointer"}}>
+            {notifEnabled?"🔔 On":"🔕 Remind me"}
+          </button>
+        </div>
+        <div style={{position:"relative",height:8,background:C.border,borderRadius:4,overflow:"hidden"}}>
+          <div style={{position:"absolute",inset:0,width:`${Math.min(100,passProbability.probability)}%`,background:passProbability.probability>=70?C.easy:passProbability.probability>=55?C.medium:C.hard,borderRadius:4,transition:"width 0.6s ease"}}/>
+          <div style={{position:"absolute",top:0,bottom:0,left:"70%",width:2,background:"#ffffff44"}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:5}}>
+          <span style={{fontSize:10,color:C.muted}}>{passProbability.probability}% pass probability</span>
+          <span style={{fontSize:10,color:C.easy}}>70% threshold</span>
+        </div>
+      </div>
+    )}
 
     {/* Daily Focus */}
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",marginBottom:12}}>
@@ -11019,6 +11248,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <ScoreRing pct={sessionPct} size={96}/>
         <div style={{fontSize:16,fontWeight:700,marginTop:12,color:passed?C.easy:C.hard}}>{passed?"Above Threshold ✓":"Not there yet — every wrong answer is data"}</div>
         <div style={{fontSize:12,color:C.muted,marginTop:5}}>{sessionScore}/{questions.length} · {fmt(timeTaken)} · ~{avgTime}s/q · {subtopic} · {difficulty}</div>
+        {(()=>{
+          const prev=history.slice(1).find(h=>h.topic===topic&&h.subtopic===subtopic&&h.level===cfaLevel);
+          if(!prev) return null;
+          const delta=sessionPct-prev.pct;
+          const col=delta>0?C.easy:delta<0?C.hard:C.muted;
+          return(<div style={{fontSize:12,fontWeight:700,color:col,marginTop:4}}>{delta>0?`↑${delta}% vs last time`:`↓${Math.abs(delta)}% vs last time`} on this topic</div>);
+        })()}
         {!passed&&<div style={{marginTop:8,fontSize:12,color:C.muted,fontStyle:"italic",lineHeight:1.5}}>You attempted {questions.length} questions — that effort is what builds exam readiness.</div>}
         {sessionPct>=80&&difficulty!=="Hard"&&<div style={{marginTop:10,fontSize:12,color:C.easy,background:C.easy+"15",borderRadius:6,padding:"5px 10px",display:"inline-block"}}>🔥 Strong — try {difficulty==="Easy"?"Medium":"Hard"} next</div>}
         <div style={{marginTop:10,fontSize:11,color:sessionSaved?C.easy:C.hard}}>
@@ -11048,7 +11284,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <button onClick={()=>{
           const fallbackText=`📊 ClearCFA Score Card\n━━━━━━━━━━━━━━━━━\n🎓 CFA Level ${cfaLevel} · ${subtopic}\n\n${sessionPct}%  ${sessionScore}/${questions.length} correct · ${difficulty}\n${sessionPct>=70?"✅ Above pass threshold":sessionPct>=50?"📈 Getting there (pass = 70%)":"💪 Keep drilling"}${todayStudySecs>0?`\n📚 ${fmtStudyTime(todayStudySecs)} studied today`:""}\n\nPrepping smarter with ClearCFA ✨\nclearcfa.com`;
           try{
-            const imgCanvas=buildShareImage({sessionPct,sessionScore,total:questions.length,subtopic,difficulty,timeTaken,todayStudySecs,cfaLevel,fmtStudyTime});
+            const imgCanvas=buildShareImage({sessionPct,sessionScore,total:questions.length,subtopic,difficulty,timeTaken,todayStudySecs,cfaLevel,fmtStudyTime,levelLabel:levelInfo?.label,levelNum:levelInfo?.level});
             imgCanvas.toBlob(async(blob)=>{
               if(!blob){if(navigator.share)navigator.share({title:"ClearCFA Score",text:fallbackText}).catch(()=>{});return;}
               const file=new File([blob],'clearcfa-score.png',{type:'image/png'});
@@ -11165,6 +11401,45 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <button onClick={()=>{setScreen("home");setFocusSuggestions(null);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Home</button>
         <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setScreen("revision");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise {topic?.split(" ")[0]}</button>
       </div>
+
+      {/* AI Diagnosis — "What should I do next?" */}
+      {!fullExamMode&&wrongs.length>0&&authUser?.id&&(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+          {!nextActionText&&!nextActionLoading&&(
+            <button onClick={async()=>{
+              setNextActionLoading(true);
+              try{
+                const wrongConcepts=wrongs.slice(0,5).map(q=>q.concept||q.los_tested||q.question.slice(0,60)).join("; ");
+                const prompt=`CFA L${cfaLevel} coach. Student scored ${sessionPct}% on ${subtopic}. Wrong answers: ${wrongConcepts}. In exactly 2 sentences: (1) name the specific concept gap, (2) one targeted drill action to fix it. Be direct.`;
+                const result=await callAIChat([{role:"user",content:prompt}],authUser?.accessToken,cfaLevel);
+                setNextActionText(result);
+              }catch(e){
+                if(e.quotaExceeded)setUpgradeModal({reason:"chat_limit"});
+                else setNextActionText("Unable to generate diagnosis. Try again later.");
+              }
+              setNextActionLoading(false);
+            }} style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent}22,${C.accent}11)`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+              🤖 Diagnose my gaps →
+            </button>
+          )}
+          {nextActionLoading&&(
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"4px 0"}}>
+              <div style={{width:14,height:14,border:`2px solid ${C.accent}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
+              <span style={{fontSize:12,color:C.muted}}>Analysing your gaps…</span>
+            </div>
+          )}
+          {nextActionText&&!nextActionLoading&&(
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:C.accentLight,marginBottom:6,letterSpacing:"0.05em",textTransform:"uppercase"}}>🤖 AI Diagnosis</div>
+              <div style={{fontSize:13,color:C.text,lineHeight:1.65,marginBottom:12}}>{nextActionText}</div>
+              <button onClick={()=>generateQuestions(topic,subtopic,difficulty,10,"guided")}
+                style={{width:"100%",padding:"10px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                🔁 Drill it now →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* #4 — Post-session upgrade nudge for free users who scored ≥70% */}
       {!proStatus&&sessionPct>=70&&(
@@ -11662,6 +11937,26 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       </div>
     )}
+
+    {/* Weakness Radar — SVG spider chart */}
+    {moduleReadiness.length>=3&&(()=>{
+      const radarData=moduleReadiness.map(m=>({topic:m.topic.split(" ").slice(0,1).join(""),pct:m.accuracy??0}));
+      return(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:4}}>📡 Weakness Radar</div>
+          <div style={{fontSize:11,color:C.muted,marginBottom:10}}>Polygon shows accuracy per topic — target the gaps that pull you below 70%</div>
+          <WeaknessRadar data={radarData}/>
+          <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:6}}>
+            {[{col:C.easy,label:"≥70%"},{col:C.medium,label:"50–69%"},{col:C.hard,label:"<50%"}].map(d=>(
+              <div key={d.label} style={{display:"flex",alignItems:"center",gap:4}}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:d.col}}/>
+                <span style={{fontSize:10,color:C.muted}}>{d.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    })()}
 
     {/* Factors breakdown */}
     {passProbability&&(
@@ -12822,6 +13117,7 @@ function ToastManager(){
 
 // Capture referral code from URL before React boots
 try{const ref=new URLSearchParams(window.location.search).get('ref');if(ref){sessionStorage.setItem('cfa_ref',ref);}}catch{}
+try{const duel=new URLSearchParams(window.location.search).get('duel');if(duel){sessionStorage.setItem(DUEL_KEY,duel);}}catch{}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CFAMock));
