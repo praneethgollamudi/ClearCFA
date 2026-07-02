@@ -1151,12 +1151,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-d
-{version:"2026-07-01-d",slides:[
-{emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"An interactive guide strip is now built into the calculator trainer, showing you step-by-step how to solve problems on the BA II Plus. This eliminates guesswork and builds muscle memory for exam day.",tip:"Open the Calc Trainer and look for the guide strip to see keystroke sequences in real time."},
-{emoji:"🎵",color:C.reward,bg:C.reward,title:"Study Soundtrack Gets a Vibe Upgrade",sub:"Study Tools · 2026-07-01 update",desc:"Your lofi player now offers 4 different vibes, reverb effects, melody controls, and a live visualizer to match your study mood. Stay focused longer with music that adapts to how you work.",tip:"Tap the lofi player icon during a study session to experiment with different vibes and find your focus sweet spot."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Pacing Feedback",sub:"UX · 2026-07-01 update",desc:"The pacing chip no longer shows a misleading floor target when you're already ahead of schedule. You'll see clearer, more accurate progress indicators that reflect your actual study pace.",tip:"Check your pacing chip—if you're on track or ahead, it will now give you the real picture without false ceilings."},
-]},
 // WN_VER:2026-07-01-e
 {version:"2026-07-01-e",slides:[
 {emoji:"🧮",color:C.easy,bg:C.easy,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"We added an interactive guide strip to the BA II Plus calculator trainer so you can learn key financial calculations without leaving the app. This bridges the gap between understanding the concept and mastering the keystrokes you'll use on exam day.",tip:"Open Calc Trainer and tap the guide icon to see step-by-step walkthroughs for common operations like amortization and interest conversion."},
@@ -1179,6 +1173,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-02",slides:[
 {emoji:"🚀",color:C.reward,bg:C.reward,title:"Share & Track Your Progress",sub:"Study Tools · 2026-07-02 update",desc:"ClearCFA now includes viral & effectiveness features that let you share your study wins and track what's actually moving your scores. Built-in analytics show which study methods work best for you across all three CFA levels.",tip:"After completing a mock exam, check the new effectiveness breakdown by topic to focus your retakes where you need them most."},
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smarter Quiz & Mock Workflows",sub:"UX · 2026-07-02 update",desc:"Five streamlined UX improvements make studying faster: drill recommendations appear right after quizzes, mock exams break down by topic for targeted review, essay questions include self-assessment tools, and the mock scheduler auto-plans your prep timeline. Plus, you can now rate explanations to help us improve.",tip:"Use the post-quiz drill CTA to immediately strengthen your weakest concepts instead of waiting until your next study session."},
+]},
+// WN_VER:2026-07-02-b
+{version:"2026-07-02-b",slides:[
+{emoji:"⚔️",color:C.reward,bg:C.reward,title:"Challenge Friends in Duel Mode",sub:"Study Tools · 2026-07-02 update",desc:"Compete head-to-head with other CFA candidates in real-time quiz duels and join study groups to collaborate on tough topics. Turn solo prep into a social competition that keeps you motivated and accountable.",tip:"Start or join a duel from the home screen to see how you stack up against peers on the same exam level."},
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smarter Post-Quiz Learning",sub:"UX · 2026-07-02 update",desc:"After every quiz, drill down into your weak topic areas with targeted follow-up questions, self-assess your essay responses, and rate explanation quality to improve future ones. Get instant feedback loops that accelerate mastery.",tip:"Look for the 'Drill This Topic' button after your next quiz to reinforce gaps immediately while they're fresh."},
+{emoji:"📅",color:C.medium,bg:C.medium,title:"Mock Exam Scheduler & Breakdown",sub:"Study Tools · 2026-07-02 update",desc:"Plan your mock exams with an intelligent scheduler and receive detailed topic-by-topic breakdowns of your performance. Know exactly which areas need more study time before test day.",tip:"Use the mock scheduler to space your practice exams 2–3 weeks apart for maximum retention and confidence."},
 ]},
 // WN_END
 ];
@@ -1242,8 +1242,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
+// AC_VER:2026-07-02
+{date:"2026-07-02",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
