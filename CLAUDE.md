@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New consolidation (968ec59)**: Versions 2026-07-01 (base) and 2026-07-01-b have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-01-c, 2026-07-01-d, and 2026-07-01-f. Verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**New persistence constants (968ec59)**: Added `MOCK_SCHED_KEY`, `EXP_RATINGS_KEY`, `DAILY_Q_KEY`, `DUEL_KEY`, and `SG_KEY` localStorage keys for mock scheduling, explanation ratings, daily question tracking, competitive duels, and study group features respectively. Always reference these constants when persisting viral/effectiveness feature state.
+
+
+**Mock topic breakdown function (968ec59)**: `getMockTopicBreakdown(qs, ans, qTimes)` analyzes quiz performance by topic, returning sorted array with `topic`, `pct` (accuracy %), `total` (question count), and `avgSecs` (average time). Topics sorted by accuracy (weakest first). Use after quiz completion to populate post-quiz drill CTAs and mock exam analytics.
+
+
 **Explanation ratings system (bc4879a)**: Users can now rate explanations via `EXP_RATINGS_KEY` localStorage. When rendering explanations or feedback sections, ensure rating UI is accessible and ratings persist across drill sessions.
 
 
@@ -909,10 +918,13 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_retaker_v1` | `RETAKER_KEY` |
 | `cfa_mock_sched_v1` | `MOCK_SCHED_KEY` |
 | `cfa_exp_ratings_v1` | `EXP_RATINGS_KEY` |
+| `cfa_daily_q_v1` | `DAILY_Q_KEY` |
+| `cfa_duel_v1` | `DUEL_KEY` |
+| `cfa_study_group_v1` | `SG_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1793600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1793700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
