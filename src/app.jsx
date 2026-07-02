@@ -10610,52 +10610,67 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     const renderCardBody=()=>{
       if(!card)return <div style={{color:C.muted,textAlign:"center",paddingTop:60}}>No content available</div>;
+      const topicIcon={"Ethics":"⚖️","Quantitative Methods":"📊","Economics":"📈","Financial Statement Analysis":"📋","Corporate Issuers":"🏢","Equity Investments":"📉","Fixed Income":"💵","Derivatives":"⚡","Alternative Investments":"💎","Portfolio Management":"🎯","Behavioral Finance":"🧠","Capital Market Expectations":"🔮","Asset Allocation":"⚖️","Risk Management":"🛡️","Trading & Performance":"📊"}[card.topic]||"📚";
       if(card.type==="power_note")return(
-        <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-            <div style={{fontSize:11,fontWeight:700,color:accentColor,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>Key Rule · {card.module}</div>
-            <div style={{fontSize:16,fontWeight:700,lineHeight:1.8,color:C.text}}>{expandAcronyms(card.rule)}</div>
+        <div style={{display:"flex",flexDirection:"column",flex:1,borderRadius:18,overflow:"hidden",border:`1px solid ${accentColor}44`}}>
+          <div style={{background:`linear-gradient(135deg,${accentColor}44 0%,${accentColor}18 100%)`,padding:"26px 22px 20px",textAlign:"center",borderBottom:`1px solid ${accentColor}30`}}>
+            <div style={{fontSize:44,marginBottom:10,lineHeight:1}}>{topicIcon}</div>
+            <div style={{fontSize:10,fontWeight:700,color:accentColor,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:4}}>📌 Key Rule</div>
+            <div style={{fontSize:12,fontWeight:600,color:C.textMid,lineHeight:1.4}}>{card.module}</div>
           </div>
-          {card.mnemonic&&(
-            <div style={{background:"#f59e0b10",border:"1px solid #f59e0b33",borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:18}}>💡</span>
-              <div style={{fontSize:13,color:"#fcd34d",lineHeight:1.6,fontWeight:500}}>{card.mnemonic}</div>
+          <div style={{flex:1,background:C.surface,padding:"24px 20px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+            <div style={{borderLeft:`3px solid ${accentColor}`,paddingLeft:16,marginBottom:card.mnemonic?20:0}}>
+              <div style={{fontSize:16,fontWeight:700,lineHeight:1.9,color:C.text}}>{expandAcronyms(card.rule)}</div>
             </div>
-          )}
+            {card.mnemonic&&(
+              <div style={{background:"#f59e0b10",border:"1px solid #f59e0b44",borderRadius:12,padding:"13px 15px",display:"flex",alignItems:"flex-start",gap:10}}>
+                <span style={{fontSize:18,flexShrink:0}}>💡</span>
+                <div style={{fontSize:13,color:"#fcd34d",lineHeight:1.65,fontWeight:500}}>{card.mnemonic}</div>
+              </div>
+            )}
+          </div>
         </div>
       );
       if(card.type==="trap")return(
-        <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
+        <div style={{display:"flex",flexDirection:"column",flex:1,gap:10}}>
+          <div style={{background:"linear-gradient(135deg,#450a0a55 0%,#450a0a22 100%)",border:"1px solid #ef444455",borderRadius:16,padding:"20px 20px 16px",textAlign:"center"}}>
+            <div style={{fontSize:40,marginBottom:8,lineHeight:1}}>⚠️</div>
+            <div style={{fontSize:10,fontWeight:700,color:"#ef4444",textTransform:"uppercase",letterSpacing:"0.14em"}}>Watch Out · {card.topic}</div>
+          </div>
           {card.rule&&(
-            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"20px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-              <div style={{fontSize:11,fontWeight:700,color:C.muted,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>✓ Remember</div>
-              <div style={{fontSize:15,fontWeight:600,color:C.text,lineHeight:1.8}}>{expandAcronyms(card.rule)}</div>
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px"}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:7,textTransform:"uppercase",letterSpacing:"0.08em"}}>✓ Remember</div>
+              <div style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.8}}>{expandAcronyms(card.rule)}</div>
             </div>
           )}
-          <div style={{background:"#2d0a0a",border:"1px solid #ef444455",borderRadius:14,padding:"20px 18px",flex:card.rule?0:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#ef4444",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Watch Out</div>
-            <div style={{fontSize:15,fontWeight:700,color:"#fca5a5",lineHeight:1.8}}>{expandAcronyms(card.trap)}</div>
+          <div style={{background:"#1a0505",border:"1px solid #ef444466",borderRadius:14,padding:"18px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#ef4444",marginBottom:9,textTransform:"uppercase",letterSpacing:"0.08em"}}>⚠ Common Mistake</div>
+            <div style={{fontSize:15,fontWeight:700,color:"#fca5a5",lineHeight:1.85}}>{expandAcronyms(card.trap)}</div>
           </div>
         </div>
       );
       if(card.type==="formula")return(
-        <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 18px",flex:1,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",textAlign:"center"}}
+        <div style={{display:"flex",flexDirection:"column",flex:1,borderRadius:18,overflow:"hidden",border:`1px solid ${accentColor}44`}}>
+          <div style={{background:`linear-gradient(135deg,${accentColor}44 0%,${accentColor}18 100%)`,padding:"22px 22px 18px",textAlign:"center",borderBottom:`1px solid ${accentColor}30`}}>
+            <div style={{fontSize:42,marginBottom:8,fontFamily:"serif",fontWeight:900,color:accentColor,lineHeight:1}}>Σ</div>
+            <div style={{fontSize:10,fontWeight:700,color:accentColor,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:4}}>Formula</div>
+            <div style={{fontSize:13,fontWeight:700,color:C.text,lineHeight:1.4}}>{expandAcronyms(card.name)}</div>
+          </div>
+          <div style={{flex:1,background:C.surface,padding:"24px 20px",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",textAlign:"center"}}
             onClick={()=>{setReelRevealed(true);if(navigator.vibrate)navigator.vibrate([20]);}}>
-            <div style={{fontSize:12,fontWeight:700,color:accentColor,marginBottom:12,textTransform:"uppercase",letterSpacing:"0.08em"}}>{expandAcronyms(card.name)}</div>
             <div style={{position:"relative",width:"100%"}}>
-              <div style={{fontFamily:"'Courier New',monospace",fontSize:20,fontWeight:700,color:C.text,lineHeight:1.8,
-                filter:reelRevealed?"none":"blur(10px)",transition:"filter 0.35s",padding:"8px 0"}}>
+              <div style={{fontFamily:"'Courier New',monospace",fontSize:21,fontWeight:700,color:accentColor,lineHeight:1.9,
+                filter:reelRevealed?"none":"blur(10px)",transition:"filter 0.35s",padding:"10px 0",letterSpacing:"0.02em"}}>
                 {card.formula}
               </div>
               {!reelRevealed&&(
-                <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8}}>
-                  <div style={{fontSize:28}}>👁</div>
-                  <div style={{fontSize:13,fontWeight:700,color:C.accentLight}}>Tap to reveal</div>
+                <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:10}}>
+                  <div style={{fontSize:34}}>👁</div>
+                  <div style={{fontSize:14,fontWeight:700,color:accentColor}}>Tap to reveal</div>
                 </div>
               )}
             </div>
-            {reelRevealed&&<div style={{fontSize:11,color:C.muted,marginTop:16}}>Swipe up for next card ↑</div>}
+            {reelRevealed&&<div style={{fontSize:11,color:C.muted,marginTop:20,borderTop:`1px solid ${C.border}`,paddingTop:14,width:"100%"}}>Swipe up for next card ↑</div>}
           </div>
         </div>
       );
@@ -10667,8 +10682,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
               +5 XP ✓
             </div>
           )}
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px",marginBottom:2}}>
-            <div style={{fontSize:11,fontWeight:700,color:accentColor,marginBottom:10,textTransform:"uppercase",letterSpacing:"0.08em"}}>Quick Check</div>
+          <div style={{background:`linear-gradient(135deg,${accentColor}28 0%,${accentColor}10 100%)`,border:`1px solid ${accentColor}44`,borderRadius:16,padding:"16px 18px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+              <span style={{fontSize:18,lineHeight:1}}>{topicIcon}</span>
+              <div style={{fontSize:10,fontWeight:700,color:accentColor,textTransform:"uppercase",letterSpacing:"0.12em"}}>Quick Check</div>
+            </div>
             <div style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.8}}>{card.question}</div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -10702,12 +10720,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       );
       if(card.type==="curiosity_gap")return(
-        <div style={{display:"flex",flexDirection:"column",gap:14,flex:1}}>
-          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"22px 18px",flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
-            <div style={{fontSize:36,marginBottom:16}}>🧠</div>
-            <div style={{fontSize:12,fontWeight:700,color:C.muted,marginBottom:14,textTransform:"uppercase",letterSpacing:"0.08em"}}>{card.hint}</div>
-            <div style={{fontSize:15,fontWeight:700,color:C.text,lineHeight:1.8,filter:"blur(7px)",userSelect:"none",width:"100%"}}>{expandAcronyms(card.reveal)}</div>
-            <div style={{fontSize:12,color:C.accentLight,marginTop:20}}>Swipe up to reveal ↑</div>
+        <div style={{display:"flex",flexDirection:"column",flex:1,borderRadius:18,overflow:"hidden",border:`1px solid ${accentColor}44`}}>
+          <div style={{background:`linear-gradient(135deg,${accentColor}44 0%,${accentColor}18 100%)`,padding:"22px 22px 18px",textAlign:"center",borderBottom:`1px solid ${accentColor}30`}}>
+            <div style={{fontSize:44,marginBottom:8,lineHeight:1}}>🧠</div>
+            <div style={{fontSize:10,fontWeight:700,color:accentColor,textTransform:"uppercase",letterSpacing:"0.14em"}}>Did You Know?</div>
+          </div>
+          <div style={{flex:1,background:C.surface,padding:"24px 20px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.muted,marginBottom:16,textTransform:"uppercase",letterSpacing:"0.06em"}}>{card.hint}</div>
+            <div style={{fontSize:16,fontWeight:700,color:C.text,lineHeight:1.8,filter:"blur(7px)",userSelect:"none",width:"100%",marginBottom:20}}>{expandAcronyms(card.reveal)}</div>
+            <div style={{fontSize:12,color:accentColor,fontWeight:600}}>Swipe up to reveal ↑</div>
           </div>
         </div>
       );
@@ -10745,7 +10766,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
 
         {/* Card body */}
-        <div key={reelIdx} style={{flex:1,overflowY:"auto",padding:"8px 18px 16px",display:"flex",flexDirection:"column",justifyContent:"center",animation:`${reelSlideDir==="next"?"reelNext":"reelPrev"} 0.25s ease`}}>
+        <div key={reelIdx} style={{flex:1,overflowY:"auto",padding:"4px 16px 12px",display:"flex",flexDirection:"column",justifyContent:"center",animation:`${reelSlideDir==="next"?"reelNext":"reelPrev"} 0.25s ease`}}>
           {renderCardBody()}
         </div>
 
