@@ -6093,6 +6093,14 @@ function CFAMock(){
   const [nextActionText,setNextActionText]=useState("");
   const [nextActionLoading,setNextActionLoading]=useState(false);
   const [duelChallenge,setDuelChallenge]=useState(null);
+  const [duelCreating,setDuelCreating]=useState(false);
+  const [duelTopicPicking,setDuelTopicPicking]=useState(false);
+  const [studyGroup,setStudyGroup]=useState(()=>{try{return JSON.parse(localStorage.getItem(SG_KEY)||"null");}catch{return null;}});
+  const [groupLeaderboard,setGroupLeaderboard]=useState([]);
+  const [sgScreen,setSgScreen]=useState(false);
+  const [sgJoinCode,setSgJoinCode]=useState("");
+  const [sgCreateName,setSgCreateName]=useState("");
+  const [sgLoading,setSgLoading]=useState(false);
   const [notifEnabled,setNotifEnabled]=useState(()=>{try{return localStorage.getItem("cfa_notif_v1")==="1";}catch{return false;}});
   const [reelAnswer,setReelAnswer]=useState(null);
   const [reelRevealed,setReelRevealed]=useState(false);
@@ -6430,6 +6438,17 @@ function CFAMock(){
     const newDQ={date:today,q,answered:false,userAnswer:null};
     setDailyQ(newDQ);
     try{localStorage.setItem(DAILY_Q_KEY,JSON.stringify(newDQ));}catch{}
+  },[]);
+
+  // Load duel challenge from sessionStorage (pre-boot captured ?duel= param)
+  useEffect(()=>{
+    try{
+      const raw=sessionStorage.getItem(DUEL_KEY);
+      if(!raw) return;
+      const parsed=JSON.parse(atob(raw));
+      if(parsed?.qs&&parsed.qs.length>0) setDuelChallenge(parsed);
+      sessionStorage.removeItem(DUEL_KEY);
+    }catch{}
   },[]);
 
   // Daily notification check
@@ -7105,9 +7124,33 @@ Return ONLY a JSON array — no prose, no markdown fences:
   };
 
   const generateQuestionsRef=React.useRef(null);
+  const startDuelCreator=(topicName)=>{
+    const mods=OFFLINE_SEED_QS[topicName]||{};
+    const qs=Object.values(mods).flat().slice(0,3).map(q=>({...q,_topic:topicName}));
+    if(qs.length===0){showToast("⚠️","No Questions","Try a different topic.");return;}
+    setDuelCreating(true);setDuelTopicPicking(false);
+    setTopic(topicName);setSubtopic(Object.keys(mods)[0]||topicName);
+    setDifficulty("Medium");setCount(qs.length);setMode("guided");
+    setQuestions(qs);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);
+    setFullExamMode(false);setVignetteMode(false);
+    setScreen("quiz");
+  };
+
+  const startDuelChallenge=(challenge)=>{
+    setDuelChallenge({...challenge,accepted:true});
+    const qs=challenge.qs.map(q=>({...q}));
+    setTopic(challenge.topic||qs[0]?._topic||"Mixed");
+    setSubtopic(challenge.topic||"Duel");
+    setDifficulty("Medium");setCount(qs.length);setMode("guided");
+    setQuestions(qs);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);
+    setFullExamMode(false);setVignetteMode(false);
+    setScreen("quiz");
+  };
+
   const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null,multiModules=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
     setNextActionText(""); setNextActionLoading(false);
+    setDuelCreating(false);
     lastGenParamsRef.current={t,st,diff,cnt,m,isVignette,st2};
     prequizPassProbRef.current=passProbability?.probability??null;
     try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
@@ -7765,6 +7808,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {key:"interleaved",label:"Mixed Topics",icon:"🔀",action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
       {key:"study_path",label:"Study Path",icon:"🎓",action:()=>{trackUsage("study_path");setScreen("studyPath");}},
       {key:"dashboard",label:"Dashboard",icon:"📊",action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
+      {key:"duel",label:"Duel Mode",icon:"⚔️",action:()=>{trackUsage("duel");setDuelTopicPicking(true);}},
+      {key:"study_group",label:"Study Group",icon:"👥",action:()=>{trackUsage("study_group");setSgScreen(true);}},
     ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
     const Ic=({d,size=22})=>(
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
@@ -8619,6 +8664,128 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{fontSize:11,color:"#40406060",marginTop:16}}>tap anywhere to continue</div>
     </div>
   );
+
+  // ══ DUEL TOPIC PICKER ════════════════════════════════════════════════════════
+  if(duelTopicPicking) return(
+    <div style={{position:"fixed",inset:0,zIndex:8000,background:"rgba(6,6,16,0.97)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{width:"100%",maxWidth:400}}>
+        <div style={{textAlign:"center",marginBottom:24}}>
+          <div style={{fontSize:32,marginBottom:8}}>⚔️</div>
+          <div style={{fontSize:20,fontWeight:800,color:C.text,marginBottom:6}}>Create a Duel</div>
+          <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>Pick a topic — you'll play 3 questions, then get a shareable link. Your friend plays the same ones. May the best score win.</div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+          {Object.keys(OFFLINE_SEED_QS).map(topicName=>(
+            <button key={topicName} onClick={()=>startDuelCreator(topicName)}
+              style={{padding:"12px 10px",borderRadius:11,fontSize:12,fontWeight:700,border:`1px solid ${C.border}`,background:C.surface,color:C.text,cursor:"pointer",textAlign:"left"}}>
+              {topicName.split(" ").slice(0,2).join(" ")}
+            </button>
+          ))}
+        </div>
+        <button onClick={()=>setDuelTopicPicking(false)} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+
+  // ══ STUDY GROUP SCREEN ═══════════════════════════════════════════════════════
+  if(sgScreen) return wrap(<>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+      <div>
+        <h2 style={{margin:0,fontSize:22,fontWeight:800}}>Study Group 👥</h2>
+        <div style={{fontSize:12,color:C.muted,marginTop:3}}>Study alongside friends · shared leaderboard</div>
+      </div>
+      <button onClick={()=>setSgScreen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Back</button>
+    </div>
+
+    {studyGroup?(
+      <div>
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Your Group</div>
+          <div style={{fontSize:18,fontWeight:800,color:C.text,marginBottom:4}}>{studyGroup.name}</div>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.accentLight,background:C.accent+"20",border:`1px solid ${C.accent}33`,borderRadius:8,padding:"4px 12px",letterSpacing:"0.12em"}}>{studyGroup.code}</div>
+            <button onClick={()=>{
+              const url=`${window.location.origin}${window.location.pathname}?sg=${studyGroup.code}`;
+              try{navigator.clipboard.writeText(url);}catch{}
+              showToast("📋","Invite link copied!","Share it with your study partners.");
+            }} style={{fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+              Copy invite link
+            </button>
+          </div>
+          <div style={{fontSize:11,color:C.muted}}>Share the code or link so friends can join your group.</div>
+        </div>
+
+        {/* Leaderboard */}
+        {groupLeaderboard.length>0&&(
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:12}}>This Week's Leaderboard</div>
+            {groupLeaderboard.map((m,i)=>(
+              <div key={m.userId} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<groupLeaderboard.length-1?`1px solid ${C.border}`:"none"}}>
+                <div style={{width:24,height:24,borderRadius:"50%",background:i===0?C.reward+"30":C.surface,border:`1px solid ${i===0?C.reward:C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:i===0?C.reward:C.muted,flexShrink:0}}>
+                  {i+1}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:600,color:C.text}}>{m.displayName||"Member"}</div>
+                  <div style={{fontSize:11,color:C.muted}}>{m.questions} Qs · {m.accuracy}% avg</div>
+                </div>
+                {m.userId===authUser?.id&&<span style={{fontSize:9,fontWeight:800,color:C.accentLight,background:C.accent+"20",borderRadius:4,padding:"2px 5px"}}>YOU</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button onClick={()=>{
+          setStudyGroup(null);
+          try{localStorage.removeItem(SG_KEY);}catch{}
+          showToast("👋","Left group","You've left the study group.");
+        }} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,background:"none",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
+          Leave group
+        </button>
+      </div>
+    ):(
+      <div>
+        {/* Create Group */}
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:10}}>Create a group</div>
+          <input value={sgCreateName} onChange={e=>setSgCreateName(e.target.value)} placeholder="Group name (e.g. CFA L1 June 2026)"
+            style={{width:"100%",padding:"10px 12px",borderRadius:9,fontSize:13,border:`1px solid ${C.border}`,background:C.bg,color:C.text,marginBottom:10,outline:"none"}}/>
+          <button disabled={!sgCreateName.trim()||sgLoading||!authUser?.id} onClick={async()=>{
+            if(!authUser?.id){showToast("🔒","Sign in required","Create an account to use study groups.");return;}
+            setSgLoading(true);
+            const code=Math.random().toString(36).slice(2,8).toUpperCase();
+            const group={groupId:`local_${Date.now()}`,code,name:sgCreateName.trim(),createdBy:authUser.id};
+            setStudyGroup(group);
+            try{localStorage.setItem(SG_KEY,JSON.stringify(group));}catch{}
+            setSgCreateName("");setSgLoading(false);
+            showToast("👥","Group created!",`Code: ${code} — share with friends.`);
+          }} style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:sgCreateName.trim()&&!sgLoading&&authUser?.id?"pointer":"not-allowed",opacity:sgCreateName.trim()&&!sgLoading&&authUser?.id?1:0.5}}>
+            {sgLoading?"Creating…":"Create Group →"}
+          </button>
+        </div>
+
+        {/* Join Group */}
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:10}}>Join a group</div>
+          <input value={sgJoinCode} onChange={e=>setSgJoinCode(e.target.value.toUpperCase().slice(0,6))} placeholder="Enter 6-char code"
+            style={{width:"100%",padding:"10px 12px",borderRadius:9,fontSize:13,border:`1px solid ${C.border}`,background:C.bg,color:C.text,marginBottom:10,outline:"none",letterSpacing:"0.12em",fontWeight:700}}/>
+          <button disabled={sgJoinCode.length!==6||sgLoading||!authUser?.id} onClick={()=>{
+            if(!authUser?.id){showToast("🔒","Sign in required","Create an account to join study groups.");return;}
+            const group={groupId:`joined_${sgJoinCode}`,code:sgJoinCode,name:`Group ${sgJoinCode}`,createdBy:null};
+            setStudyGroup(group);
+            try{localStorage.setItem(SG_KEY,JSON.stringify(group));}catch{}
+            setSgJoinCode("");
+            showToast("👥","Joined!",`You've joined group ${sgJoinCode}.`);
+          }} style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:sgJoinCode.length===6&&!sgLoading&&authUser?.id?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"none",color:sgJoinCode.length===6&&!sgLoading&&authUser?.id?"#fff":C.muted,border:sgJoinCode.length===6&&!sgLoading&&authUser?.id?"none":`1px solid ${C.border}`,cursor:sgJoinCode.length===6&&!sgLoading&&authUser?.id?"pointer":"not-allowed",opacity:sgJoinCode.length===6&&authUser?.id?1:0.5}}>
+            Join Group →
+          </button>
+        </div>
+
+        {!authUser?.id&&<div style={{textAlign:"center",fontSize:12,color:C.muted,lineHeight:1.6}}>Sign in or create a free account to use study groups.</div>}
+      </div>
+    )}
+  </>);
 
   // ══ WEEKLY PLAN SCREEN ══════════════════════════════════════════════════════
   if(weeklyPlanScreen){
@@ -9605,6 +9772,23 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       );
     })()}
+
+    {/* Duel challenge card — shown when a duel link was opened */}
+    {duelChallenge&&!duelChallenge.accepted&&(
+      <div style={{background:`linear-gradient(135deg,${C.hard}18,${C.hard}06)`,border:`1px solid ${C.hard}44`,borderRadius:14,padding:"14px 16px",marginBottom:12,animation:"fadeIn 0.3s ease"}}>
+        <div style={{fontSize:11,fontWeight:800,color:C.hard,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:6}}>⚔️ You've Been Challenged!</div>
+        <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:4}}>Can you beat their score?</div>
+        <div style={{fontSize:12,color:C.muted,marginBottom:2}}>Topic: {duelChallenge.topic} · {duelChallenge.qs?.length||3} questions</div>
+        <div style={{fontSize:13,fontWeight:700,color:C.medium,marginBottom:12}}>Their score: {duelChallenge.cs}/{duelChallenge.ct} ({duelChallenge.ct>0?Math.round(duelChallenge.cs/duelChallenge.ct*100):0}%)</div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>startDuelChallenge(duelChallenge)}
+            style={{flex:2,padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.hard},${C.hard}cc)`,color:"#fff",border:"none",cursor:"pointer"}}>
+            ⚔️ Accept Duel →
+          </button>
+          <button onClick={()=>setDuelChallenge(null)} style={{flex:1,padding:"11px",borderRadius:10,fontSize:12,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Dismiss</button>
+        </div>
+      </div>
+    )}
 
     {/* Exam countdown notification toggle + readiness gauge */}
     {passProbability&&(
@@ -11306,6 +11490,58 @@ Return ONLY a JSON array — no prose, no markdown fences:
           📤 Share Result
         </button>
       </div>
+
+      {/* Duel creator: show shareable link after quiz */}
+      {duelCreating&&lastSession&&(()=>{
+        const qs=questions.map(q=>({id:q.id,question:q.question,options:q.options,answer:q.answer,_topic:q._topic||topic}));
+        const payload={qs,cs:sessionScore,ct:questions.length,topic:topic||"Mixed"};
+        let duelLink="";
+        try{duelLink=`${window.location.origin}${window.location.pathname}?duel=${btoa(JSON.stringify(payload))}`;}catch{}
+        return(
+          <div style={{background:`linear-gradient(135deg,${C.hard}18,${C.hard}06)`,border:`1px solid ${C.hard}44`,borderRadius:12,padding:"16px",marginBottom:14}}>
+            <div style={{fontSize:12,fontWeight:700,color:C.hard,marginBottom:4}}>⚔️ Duel created! Your score: {sessionScore}/{questions.length} ({sessionPct}%)</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:12,lineHeight:1.5}}>Share the link below. Your challenger plays the same questions and we compare scores.</div>
+            <div style={{fontSize:11,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",marginBottom:10,wordBreak:"break-all",color:C.muted,lineHeight:1.5}}>{duelLink}</div>
+            <button onClick={()=>{
+              try{navigator.clipboard.writeText(duelLink);}catch{}
+              if(navigator.share)navigator.share({title:"CFA Duel Challenge",text:`I scored ${sessionPct}% on this CFA ${topic} duel — can you beat me? ${duelLink}`}).catch(()=>{});
+              else showToast("📋","Link copied!","Share it with your study partner.");
+            }} style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.hard},${C.hard}cc)`,color:"#fff",border:"none",cursor:"pointer"}}>
+              ⚔️ Challenge a friend →
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* Duel challenger: comparison after completing the duel */}
+      {duelChallenge?.accepted&&lastSession&&!duelCreating&&(()=>{
+        const theirPct=duelChallenge.ct>0?Math.round(duelChallenge.cs/duelChallenge.ct*100):0;
+        const myPct=sessionPct;
+        const iWon=myPct>theirPct;const tied=myPct===theirPct;
+        return(
+          <div style={{background:iWon?`linear-gradient(135deg,${C.easy}18,${C.easy}06)`:tied?`linear-gradient(135deg,${C.medium}15,transparent)`:C.hard+"12",border:`1px solid ${iWon?C.easy:tied?C.medium:C.hard}44`,borderRadius:12,padding:"16px",marginBottom:14}}>
+            <div style={{fontSize:14,fontWeight:800,color:iWon?C.easy:tied?C.medium:C.hard,marginBottom:12,textAlign:"center"}}>
+              {iWon?"🏆 You Won!":tied?"🤝 Tie!":"😤 They Won"}
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              {[{label:"You",pct:myPct,score:`${sessionScore}/${questions.length}`,highlight:iWon||tied},{label:"Challenger",pct:theirPct,score:`${duelChallenge.cs}/${duelChallenge.ct}`,highlight:!iWon||tied}].map(s=>(
+                <div key={s.label} style={{flex:1,textAlign:"center",padding:"12px",borderRadius:10,background:s.highlight?C.surface:C.bg,border:`1px solid ${s.highlight?C.border:"transparent"}`}}>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:4}}>{s.label}</div>
+                  <div style={{fontSize:22,fontWeight:800,color:s.pct>=70?C.easy:s.pct>=50?C.medium:C.hard}}>{s.pct}%</div>
+                  <div style={{fontSize:11,color:C.muted}}>{s.score}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={()=>{
+              const shareText=`${iWon?"🏆":"💪"} CFA Duel: ${myPct}% vs ${theirPct}% — ${iWon?"I won!":tied?"we tied!":"close one!"} Topic: ${duelChallenge.topic} · clearcfa.com`;
+              if(navigator.share)navigator.share({title:"CFA Duel Result",text:shareText}).catch(()=>{});
+              else{try{navigator.clipboard.writeText(shareText);}catch{}showToast("📋","Copied!","Share text ready");}
+            }} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",marginTop:12}}>
+              📤 Share duel result
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Feature 2: Re-drill CTA when score < 60% */}
       {lastSession&&lastSession.pct<60&&!fullExamMode&&(
