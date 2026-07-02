@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Wave 2 social features expansion (001c762)**: Duel Mode and Study Groups are now documented in What's New (2026-07-02-b). These features enable head-to-head real-time quiz competition and collaborative study group formation. Reference `DUEL_KEY` and `SG_KEY` localStorage constants when implementing peer competition and group functionality.
+
+
+**Drill card visual redesign (001c762)**: Drill cards now feature topic-color headers and improved visual hierarchy for better scannability. When rendering drill cards or quiz result summaries, apply topic-specific colors to headers to enhance visual organization and reinforce topic grouping.
+
+
+**What's New version consolidation (001c762)**: Versions 2026-07-01-c and 2026-07-01-d have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-01-e, 2026-07-01-f, 2026-07-02, and 2026-07-02-b. Version 2026-07-02 now documents viral & effectiveness features (progress sharing, analytics). Version 2026-07-02-b now documents Wave 2 social features (Duel Mode, Study Groups). Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (6fd6dec)**: Versions 2026-07-01-b and 2026-07-01-c have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-01 (base), 2026-07-01-d, and 2026-07-01-f. Version base 2026-07-01 now documents 5 new study features (post-quiz drill CTA, mock topic breakdown, essay self-assess, mock scheduler, explanation ratings). Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -933,7 +942,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1793800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1793900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
