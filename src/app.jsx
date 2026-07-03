@@ -1151,12 +1151,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01-f
-{version:"2026-07-01-f",slides:[
-{emoji:"🧮",color:C.easy,bg:C.easy,title:"BA II Plus Calculator Guide",sub:"Study Tools · 2026-07-01 update",desc:"An interactive guide strip now walks you through BA II Plus calculator functions step-by-step during practice. This helps you master financial calculations without leaving the app or consulting external resources.",tip:"Look for the guide strip when you encounter calculator-heavy questions in your drills."},
-{emoji:"📍",color:C.medium,bg:C.medium,title:"Clearer Study Pace Indicators",sub:"UX · 2026-07-01 update",desc:"The pacing chip no longer shows a misleading minimum pace floor when you're already ahead of schedule. You'll now see only relevant pace guidance that reflects your actual progress.",tip:"Check your pacing chip during study sessions—it will feel less cluttered and more encouraging when you're on track."},
-{emoji:"⚙️",color:C.hard,bg:C.hard,title:"Streamlined Navigation Menu",sub:"UX · 2026-07-01 update",desc:"The More menu has been refined to focus on essential features and remove redundant navigation shortcuts. Finding what you need is now faster and less overwhelming.",tip:"Open the More menu to see the updated, leaner set of options available to you."},
-]},
 // WN_VER:2026-07-01
 {version:"2026-07-01",slides:[
 {emoji:"✨",color:C.reward,bg:C.reward,title:"5 New Study Features",sub:"UX · 2026-07-01 update",desc:"We've added post-quiz drill shortcuts, mock exam topic breakdowns, essay self-assessment tools, a smart mock scheduler, and explanation ratings to help you study smarter. These features let you drill weak spots faster, track mock performance by topic, and give feedback on explanations you find helpful or unclear.",tip:"After your next quiz, look for the drill CTA to immediately review questions you missed."},
@@ -1179,6 +1173,10 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Clearer Drill Card Design",sub:"UX · 2026-07-02 update",desc:"Drill cards now feature color-coded topic headers and improved visual hierarchy, making it easier to navigate concepts at a glance. Better organization helps you focus on what matters during rapid-fire practice sessions.",tip:"Notice the topic colors match your study roadmap—use them to spot patterns in your weak areas."},
 {emoji:"👥",color:C.medium,bg:C.medium,title:"Study Together: Duel & Groups",sub:"Study Tools · 2026-07-02 update",desc:"Challenge peers in live Duel Mode or join Study Groups to collaborate on tough topics and stay accountable. Studying with others boosts retention and keeps you motivated through the grind.",tip:"Start or join a Study Group focused on your weakest topic—friendly competition accelerates progress."},
 {emoji:"🚀",color:C.reward,bg:C.reward,title:"Smarter Practice & Feedback",sub:"AI · 2026-07-02 update",desc:"Get instant essay self-assessments, mock exam scheduling recommendations, and the ability to rate explanations so the AI learns your learning style. Every interaction makes your prep more personalized and effective.",tip:"Rate explanations you find helpful—the app will prioritize similar ones for future quizzes."},
+]},
+// WN_VER:2026-07-03
+{version:"2026-07-03",slides:[
+{emoji:"🛠️",color:C.hard,bg:C.hard,title:"Calc Trainer Crash Fixed",sub:"Bug Fix · 2026-07-03 update",desc:"Resolved a ReferenceError that was crashing the Calc Trainer Learn tab, preventing you from practicing calculations smoothly. You can now study formulas and calculations without interruptions.",tip:"Open Calc Trainer and navigate to the Learn tab—it should now load without errors."},
 ]},
 // WN_END
 ];
