@@ -13153,7 +13153,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                       <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:7}}>
                         {s.keys.map((k,ki)=>(
                           k.startsWith("[")?
-                            <span key={ki} style={{fontFamily:"monospace",fontSize:11,fontWeight:800,background:isLight?"#eff6ff":"#1e293b",color:isLight?"#1d4ed8":"#93c5fd",border:`1px solid ${C.accent}44`,padding:"3px 8px",borderRadius:5,letterSpacing:"0.03em"}}>{k}</span>
+                            <span key={ki} style={{fontFamily:"monospace",fontSize:11,fontWeight:800,background:theme==='light'?"#eff6ff":"#1e293b",color:theme==='light'?"#1d4ed8":"#93c5fd",border:`1px solid ${C.accent}44`,padding:"3px 8px",borderRadius:5,letterSpacing:"0.03em"}}>{k}</span>
                           : k.startsWith("(") || k.includes("→") || k.includes("=") || /^[A-Z]/.test(k) ?
                             <span key={ki} style={{fontSize:10,color:C.muted,padding:"3px 4px",alignSelf:"center",fontStyle:"italic"}}>{k}</span>
                           :
@@ -13223,7 +13223,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div key={idx} style={{background:C.surface,border:`1px solid ${calcChecked[idx]==="correct"?C.easy+"55":calcChecked[idx]==="wrong"?C.hard+"55":C.border}`,borderRadius:12,padding:"14px",marginBottom:10,transition:"border-color 0.2s"}}>
               <div style={{fontSize:11,fontWeight:800,color:C.accentLight,marginBottom:6}}>Step {step.step_num}: {step.instruction}</div>
               {step.formula&&<div style={{fontSize:11,color:C.muted,fontFamily:"monospace",marginBottom:6,background:C.dim,padding:"5px 9px",borderRadius:6}}>Formula: {step.formula}</div>}
-              {step.calculator_keys&&<div style={{fontSize:11,color:isLight?"#1d4ed8":"#93c5fd",fontFamily:"monospace",marginBottom:8,background:isLight?"#eff6ff":"#0d1117",border:`1px solid ${C.accent}33`,padding:"5px 9px",borderRadius:6}}>🧮 {step.calculator_keys}</div>}
+              {step.calculator_keys&&<div style={{fontSize:11,color:theme==='light'?"#1d4ed8":"#93c5fd",fontFamily:"monospace",marginBottom:8,background:theme==='light'?"#eff6ff":"#0d1117",border:`1px solid ${C.accent}33`,padding:"5px 9px",borderRadius:6}}>🧮 {step.calculator_keys}</div>}
               <div style={{display:"flex",gap:8,alignItems:"center"}}>
                 <input
                   type="text"
