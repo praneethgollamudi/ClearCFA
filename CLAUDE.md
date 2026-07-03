@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Calc Trainer Learn tab ReferenceError fix (d6e10ce)**: Fixed crash in Calc Trainer Learn tab that occurred when rendering guide strip or educational content. When enhancing calculator features or guide strip functionality, ensure all component references are defined before render to prevent runtime errors.
+
+
+**What's New version consolidation (d6e10ce)**: Versions 2026-07-01-d and 2026-07-01-e have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-01-f, 2026-07-02, 2026-07-02-b, and 2026-07-02-c. Version 2026-07-02-b now documents Wave 2 social features (Duel Mode, Study Groups, post-quiz learning CTAs, mock scheduler). Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **Wave 2 social features expansion (001c762)**: Duel Mode and Study Groups are now documented in What's New (2026-07-02-b). These features enable head-to-head real-time quiz competition and collaborative study group formation. Reference `DUEL_KEY` and `SG_KEY` localStorage constants when implementing peer competition and group functionality.
 
 
@@ -942,7 +948,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1793900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1794000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
