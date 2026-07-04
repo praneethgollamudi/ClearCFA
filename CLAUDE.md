@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (038617b)**: Versions 2026-07-04-b and 2026-07-04-c have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-04-d, 2026-07-04-e, 2026-07-04-f, and 2026-07-04. Version 2026-07-04 documents TVM reference card, P/Y worksheet workflow, and note formatting improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**TVM and CF storage operator evaluation (038617b)**: TVM and CF calculator storage now evaluates any pending operator before storing the value, ensuring calculations are completed before saving. When modifying calculator storage logic, ensure pending operators are resolved to prevent incomplete calculations from being persisted.
+
+
 **Reference cards expansion (ca9d6a7)**: Added reference cards to CF (Cash Flow), Amortization, and ICONV (Interest Conversion) calculator sections alongside the existing TVM key reference card. When adding new calculator guide sections or reference materials, ensure consistent formatting and keystroke documentation across all reference cards to support cohesive exam prep experience.
 
 
@@ -1005,7 +1011,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1794900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1795000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
