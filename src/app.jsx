@@ -1166,11 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-02
-{version:"2026-07-02",slides:[
-{emoji:"🚀",color:C.reward,bg:C.reward,title:"Share & Track Your Progress",sub:"Study Tools · 2026-07-02 update",desc:"ClearCFA now includes viral & effectiveness features that let you share your study wins and track what's actually moving your scores. Built-in analytics show which study methods work best for you across all three CFA levels.",tip:"After completing a mock exam, check the new effectiveness breakdown by topic to focus your retakes where you need them most."},
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smarter Quiz & Mock Workflows",sub:"UX · 2026-07-02 update",desc:"Five streamlined UX improvements make studying faster: drill recommendations appear right after quizzes, mock exams break down by topic for targeted review, essay questions include self-assessment tools, and the mock scheduler auto-plans your prep timeline. Plus, you can now rate explanations to help us improve.",tip:"Use the post-quiz drill CTA to immediately strengthen your weakest concepts instead of waiting until your next study session."},
-]},
 // WN_VER:2026-07-02-b
 {version:"2026-07-02-b",slides:[
 {emoji:"⚔️",color:C.reward,bg:C.reward,title:"Challenge Friends in Duel Mode",sub:"Study Tools · 2026-07-02 update",desc:"Compete head-to-head with other CFA candidates in real-time quiz duels and join study groups to collaborate on tough topics. Turn solo prep into a social competition that keeps you motivated and accountable.",tip:"Start or join a duel from the home screen to see how you stack up against peers on the same exam level."},
@@ -1191,6 +1186,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-04",slides:[
 {emoji:"🛡️",color:C.easy,bg:C.easy,title:"Calc Trainer Stability Fixed",sub:"Bug Fix · 2026-07-04 update",desc:"We've resolved crashes in the Calc Trainer Learn tab that prevented you from accessing practice problems. You can now study calculations smoothly without interruptions.",tip:"Open Calc Trainer and refresh to load the latest stable version."},
 {emoji:"⚡",color:C.reward,bg:C.reward,title:"Fresh Content Loads Instantly",sub:"Study Tools · 2026-07-04 update",desc:"The app now forces a cache refresh when you enter the Calc Trainer Learn tab, ensuring you always see the most up-to-date problems and solutions. No more stale or outdated study material slowing you down.",tip:"You don't need to manually clear your cache—it happens automatically when you study."},
+]},
+// WN_VER:2026-07-04-b
+{version:"2026-07-04-b",slides:[
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother Calculator Navigation",sub:"UX · 2026-07-04 update",desc:"Fixed button navigation in the BA II Plus calculator tool so you can move between functions without friction. Faster calculations mean more time drilling questions instead of fighting the interface.",tip:"Try tabbing through calculator buttons—navigation should now feel seamless."},
+{emoji:"📚",color:C.hard,bg:C.hard,title:"Clearer Drill Card Design",sub:"Study Tools · 2026-07-02 update",desc:"Redesigned drill cards with color-coded topic headers and improved visual hierarchy so you instantly recognize which topic you're studying. Better visual scanning helps you retain topic context faster.",tip:"Look for the colored header bar on each drill card—it matches your topic color throughout the app."},
+{emoji:"⚙️",color:C.easy,bg:C.easy,title:"Calc Trainer Stability Improved",sub:"Bug Fix · 2026-07-03 update",desc:"Resolved crashes in the Calc Trainer Learn tab and added error recovery so your study session won't drop unexpectedly. You can now focus on mastering calculations without technical interruptions.",tip:"The Learn tab now handles edge cases gracefully—keep studying without fear of losing progress."},
 ]},
 // WN_END
 ];
@@ -1242,12 +1243,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1256,6 +1251,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-04
+{date:"2026-07-04",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
