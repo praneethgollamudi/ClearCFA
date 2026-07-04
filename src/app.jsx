@@ -5199,7 +5199,12 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
       case 'N':case 'IY':case 'PV':case 'PMT':case 'FV':{
         let v=getN();
         if(pendingOp){v=doOp(prevVal??0,v,pendingOp);setPendingOp(null);setPrevVal(null);}
-        setTvm(t=>({...t,[id]:v}));setTvmLbl(id==='IY'?'I/Y':id);setDisp(fmtD(v));setFresh(true);setLastAns(v);setCptMode(false);break;
+        setTvm(t=>({...t,[id]:v}));setTvmLbl(id==='IY'?'I/Y':id);
+        // Reset display to 0 after storage — TVM strip row shows the stored value.
+        // This matches real BA II Plus: arithmetic after TVM storage starts from 0,
+        // so [−] 950 [PV] correctly computes 0−950=−950 not prevTVM−950.
+        setDisp("0");setPrevVal(0);setPendingOp(null);
+        setFresh(true);setLastAns(v);setCptMode(false);break;
       }
       case 'cpt':setCptMode(true);setTvmLbl("CPT ▶");break;
       case 'cf':
