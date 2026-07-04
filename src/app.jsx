@@ -1166,12 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04-c
-{version:"2026-07-04-c",slides:[
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Navigation Fixed",sub:"Study Tools · 2026-07-04 update",desc:"BA II Plus calculator button navigation now works smoothly without interruption. You can move between functions and modes reliably during practice problems.",tip:"Try the Calc Trainer—button presses now respond instantly when switching between 2nd function operations."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Calc Trainer Learn Tab Stability",sub:"Bug Fix · 2026-07-04 update",desc:"Eliminated crashes in the Calc Trainer Learn tab that could interrupt your study session. The app now gracefully handles errors and refreshes data automatically.",tip:"Open the Learn tab to explore calculator techniques—it's now stable even on slower connections."},
-{emoji:"📖",color:C.hard,bg:C.hard,title:"Clearer Formula Guide Explanations",sub:"Study Tools · 2026-07-04 update",desc:"Formula guide strips now include explanatory notes and fixed 2nd function button behavior for better clarity. You understand *why* each formula matters, not just how to use it.",tip:"Check the guide strips while practicing—hover over or tap for the new explanatory context."},
-]},
 // WN_VER:2026-07-04-d
 {version:"2026-07-04-d",slides:[
 {emoji:"🧮",color:C.easy,bg:C.easy,title:"Smoother Calculator Experience",sub:"UX · 2026-07-04 update",desc:"Fixed BA II Plus calculator button navigation and cleared snapshot issues when opening from guide steps. You can now seamlessly switch between lessons and calculator practice without unexpected visual glitches.",tip:"Open a calculator from any guide step—the display will now load cleanly and ready to use."},
@@ -1194,6 +1188,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Workflow Improvements",sub:"UX · 2026-07-04 update",desc:"P/Y worksheet now responds intuitively—ENTER saves in place, down arrow advances to the next field, and QUIT exits with a confirmation prompt. Calculator guide steps now clear properly and provide live feedback as you work through them.",tip:"Try using ENTER and arrow keys in the P/Y worksheet to feel the smoother workflow."},
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Note Formatting Fixed",sub:"Bug Fix · 2026-07-04 update",desc:"Note newlines now render correctly across all platforms, making your study notes cleaner and easier to read. Better formatting means your custom notes stay organized just as you intended.",tip:"Check any notes you've saved with line breaks—they'll display properly now."},
 ]},
+// WN_VER:2026-07-04-b
+{version:"2026-07-04-b",slides:[
+{emoji:"📚",color:C.easy,bg:C.easy,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"Quick-reference cards are now available for Cash Flow, Amortization, Interest Conversion, and Time Value of Money sections. These cards summarize formulas and key concepts at a glance, helping you review critical material faster during study sessions.",tip:"Check the reference cards before tackling practice problems to reinforce formulas and definitions."},
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother Financial Calculator Workflow",sub:"UX · 2026-07-04 update",desc:"The P/Y worksheet and calculator guide now respond intuitively to your inputs: ENTER saves your entry, the down arrow advances to the next field, and QUIT exits with a confirmation prompt. Step-by-step feedback also clarifies which mode you're in.",tip:"Use ENTER and the down arrow to navigate the P/Y worksheet quickly without re-entering data."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1208,12 +1207,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1222,6 +1215,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-04
+{date:"2026-07-04",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
