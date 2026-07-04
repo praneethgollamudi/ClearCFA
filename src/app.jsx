@@ -1166,12 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04-d
-{version:"2026-07-04-d",slides:[
-{emoji:"🧮",color:C.easy,bg:C.easy,title:"Smoother Calculator Experience",sub:"UX · 2026-07-04 update",desc:"Fixed BA II Plus calculator button navigation and cleared snapshot issues when opening from guide steps. You can now seamlessly switch between lessons and calculator practice without unexpected visual glitches.",tip:"Open a calculator from any guide step—the display will now load cleanly and ready to use."},
-{emoji:"📚",color:C.medium,bg:C.medium,title:"Clearer Calculator Function Guides",sub:"Study Tools · 2026-07-04 update",desc:"Enhanced second-function button guidance with clearer labeling and explanatory notes in the calculator trainer. You'll spend less time guessing which button does what and more time mastering calculations under exam conditions.",tip:"Check the updated guide-strip notes next to 2ND FN buttons to understand what each function calculates."},
-{emoji:"⚙️",color:C.hard,bg:C.hard,title:"More Reliable Calc Trainer",sub:"Bug Fix · 2026-07-04 update",desc:"Added error handling to the Calc Trainer Learn tab and improved cache refresh logic. You'll experience fewer interruptions when drilling calculator problems, keeping your study rhythm unbroken.",tip:"If you notice the trainer acting odd, try refreshing the app—cache improvements make it faster and more stable."},
-]},
 // WN_VER:2026-07-04-e
 {version:"2026-07-04-e",slides:[
 {emoji:"🧮",color:C.accentLight,bg:C.easy,title:"Clearer Calculator Guide Steps",sub:"Study Tools · 2026-07-04 update",desc:"Calculator guide strips now properly clear the 2ND function flag between steps and provide better feedback on each action. This prevents confusion when practicing multi-step BA II Plus problems on exam prep.",tip:"Watch the guide highlight change as you work through calculator sequences—it's now more reliable."},
@@ -1193,6 +1187,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📚",color:C.easy,bg:C.easy,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"Quick-reference cards are now available for Cash Flow, Amortization, Interest Conversion, and Time Value of Money sections. These cards summarize formulas and key concepts at a glance, helping you review critical material faster during study sessions.",tip:"Check the reference cards before tackling practice problems to reinforce formulas and definitions."},
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother Financial Calculator Workflow",sub:"UX · 2026-07-04 update",desc:"The P/Y worksheet and calculator guide now respond intuitively to your inputs: ENTER saves your entry, the down arrow advances to the next field, and QUIT exits with a confirmation prompt. Step-by-step feedback also clarifies which mode you're in.",tip:"Use ENTER and the down arrow to navigate the P/Y worksheet quickly without re-entering data."},
 ]},
+// WN_VER:2026-07-04-c
+{version:"2026-07-04-c",slides:[
+{emoji:"📚",color:C.accentLight,bg:C.easy,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"We've added quick-reference cards to the Cash Flow, Amortization, and Interest Conversion sections so you can instantly recall formulas and key concepts without leaving your calculator. These cards are designed to reinforce the most testable material at a glance.",tip:"Look for the reference icon in CF, Amortization, and ICONV—use them while practicing problems to build muscle memory before exam day."},
+{emoji:"🎛️",color:C.medium,bg:C.medium,title:"Smarter P/Y Worksheet Controls",sub:"UX · 2026-07-04 update",desc:"The P/Y worksheet now responds intuitively to your inputs: ENTER saves your entry in place, the down arrow moves to the next field, and QUIT safely exits with a confirmation prompt. This matches how financial calculators work, reducing friction and mistakes.",tip:"Press ENTER to confirm each value, then use ↓ to navigate—no more unexpected exits or lost entries."},
+{emoji:"✅",color:C.hard,bg:C.hard,title:"Fixed TVM and Cash Flow Calculations",sub:"Bug Fix · 2026-07-04 update",desc:"We fixed a critical bug where pending operations weren't evaluated before storing values in the TVM and Cash Flow engines. Now your calculations are always accurate, even when you're chaining operations together quickly.",tip:"If you've noticed unexpected results in complex TVM chains or CF sequences, try your problems again—they should solve correctly now."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1201,12 +1201,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1215,6 +1209,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-04
+{date:"2026-07-04",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
