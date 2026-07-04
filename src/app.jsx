@@ -1166,12 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-02-b
-{version:"2026-07-02-b",slides:[
-{emoji:"⚔️",color:C.reward,bg:C.reward,title:"Challenge Friends in Duel Mode",sub:"Study Tools · 2026-07-02 update",desc:"Compete head-to-head with other CFA candidates in real-time quiz duels and join study groups to collaborate on tough topics. Turn solo prep into a social competition that keeps you motivated and accountable.",tip:"Start or join a duel from the home screen to see how you stack up against peers on the same exam level."},
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smarter Post-Quiz Learning",sub:"UX · 2026-07-02 update",desc:"After every quiz, drill down into your weak topic areas with targeted follow-up questions, self-assess your essay responses, and rate explanation quality to improve future ones. Get instant feedback loops that accelerate mastery.",tip:"Look for the 'Drill This Topic' button after your next quiz to reinforce gaps immediately while they're fresh."},
-{emoji:"📅",color:C.medium,bg:C.medium,title:"Mock Exam Scheduler & Breakdown",sub:"Study Tools · 2026-07-02 update",desc:"Plan your mock exams with an intelligent scheduler and receive detailed topic-by-topic breakdowns of your performance. Know exactly which areas need more study time before test day.",tip:"Use the mock scheduler to space your practice exams 2–3 weeks apart for maximum retention and confidence."},
-]},
 // WN_VER:2026-07-02-c
 {version:"2026-07-02-c",slides:[
 {emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Clearer Drill Card Design",sub:"UX · 2026-07-02 update",desc:"Drill cards now feature color-coded topic headers and improved visual hierarchy, making it easier to navigate concepts at a glance. Better organization helps you focus on what matters during rapid-fire practice sessions.",tip:"Notice the topic colors match your study roadmap—use them to spot patterns in your weak areas."},
@@ -1192,6 +1186,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother Calculator Navigation",sub:"UX · 2026-07-04 update",desc:"Fixed button navigation in the BA II Plus calculator tool so you can move between functions without friction. Faster calculations mean more time drilling questions instead of fighting the interface.",tip:"Try tabbing through calculator buttons—navigation should now feel seamless."},
 {emoji:"📚",color:C.hard,bg:C.hard,title:"Clearer Drill Card Design",sub:"Study Tools · 2026-07-02 update",desc:"Redesigned drill cards with color-coded topic headers and improved visual hierarchy so you instantly recognize which topic you're studying. Better visual scanning helps you retain topic context faster.",tip:"Look for the colored header bar on each drill card—it matches your topic color throughout the app."},
 {emoji:"⚙️",color:C.easy,bg:C.easy,title:"Calc Trainer Stability Improved",sub:"Bug Fix · 2026-07-03 update",desc:"Resolved crashes in the Calc Trainer Learn tab and added error recovery so your study session won't drop unexpectedly. You can now focus on mastering calculations without technical interruptions.",tip:"The Learn tab now handles edge cases gracefully—keep studying without fear of losing progress."},
+]},
+// WN_VER:2026-07-04-c
+{version:"2026-07-04-c",slides:[
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Navigation Fixed",sub:"Study Tools · 2026-07-04 update",desc:"BA II Plus calculator button navigation now works smoothly without interruption. You can move between functions and modes reliably during practice problems.",tip:"Try the Calc Trainer—button presses now respond instantly when switching between 2nd function operations."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Calc Trainer Learn Tab Stability",sub:"Bug Fix · 2026-07-04 update",desc:"Eliminated crashes in the Calc Trainer Learn tab that could interrupt your study session. The app now gracefully handles errors and refreshes data automatically.",tip:"Open the Learn tab to explore calculator techniques—it's now stable even on slower connections."},
+{emoji:"📖",color:C.hard,bg:C.hard,title:"Clearer Formula Guide Explanations",sub:"Study Tools · 2026-07-04 update",desc:"Formula guide strips now include explanatory notes and fixed 2nd function button behavior for better clarity. You understand *why* each formula matters, not just how to use it.",tip:"Check the guide strips while practicing—hover over or tap for the new explanatory context."},
 ]},
 // WN_END
 ];
@@ -1237,12 +1237,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1251,6 +1245,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-04
+{date:"2026-07-04",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
