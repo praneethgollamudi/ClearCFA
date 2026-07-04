@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Note newline rendering fix (b92a12e)**: Fixed newline rendering in calculator notes and reference materials to ensure multi-line explanations display correctly. When adding educational content or notes to calculator guides or reference cards, test newline formatting across all screen sizes to prevent text overflow or truncation.
+
+
+**What's New version consolidation (b92a12e)**: Versions 2026-07-03 and 2026-07-04 have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-04-b, 2026-07-04-c, 2026-07-04-d, 2026-07-04-e, and 2026-07-04-f. Versions 2026-07-04-e and 2026-07-04-f consolidate calculator guide, workflow, and learning mode improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**TVM key reference card (b92a12e)**: Added a Time Value of Money key reference card to the calculator guide system. When enhancing calculator educational materials or reference content, ensure TVM formulas and keystroke sequences are clearly documented alongside their visual representations to support exam prep workflow.
+
+
 **What's New version consolidation (014868c)**: Versions 2026-07-02-c and 2026-07-03 have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-04, 2026-07-04-b, 2026-07-04-c, 2026-07-04-d, and 2026-07-04-e. Version 2026-07-04-d documents smoother calculator UX with snapshot clearing and improved guide steps. Version 2026-07-04-e consolidates calculator guide strip improvements and button navigation fixes. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -990,7 +999,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1794700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1794800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
