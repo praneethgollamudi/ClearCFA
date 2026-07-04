@@ -1166,12 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-02-c
-{version:"2026-07-02-c",slides:[
-{emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Clearer Drill Card Design",sub:"UX · 2026-07-02 update",desc:"Drill cards now feature color-coded topic headers and improved visual hierarchy, making it easier to navigate concepts at a glance. Better organization helps you focus on what matters during rapid-fire practice sessions.",tip:"Notice the topic colors match your study roadmap—use them to spot patterns in your weak areas."},
-{emoji:"👥",color:C.medium,bg:C.medium,title:"Study Together: Duel & Groups",sub:"Study Tools · 2026-07-02 update",desc:"Challenge peers in live Duel Mode or join Study Groups to collaborate on tough topics and stay accountable. Studying with others boosts retention and keeps you motivated through the grind.",tip:"Start or join a Study Group focused on your weakest topic—friendly competition accelerates progress."},
-{emoji:"🚀",color:C.reward,bg:C.reward,title:"Smarter Practice & Feedback",sub:"AI · 2026-07-02 update",desc:"Get instant essay self-assessments, mock exam scheduling recommendations, and the ability to rate explanations so the AI learns your learning style. Every interaction makes your prep more personalized and effective.",tip:"Rate explanations you find helpful—the app will prioritize similar ones for future quizzes."},
-]},
 // WN_VER:2026-07-03
 {version:"2026-07-03",slides:[
 {emoji:"🛠️",color:C.hard,bg:C.hard,title:"Calc Trainer Crash Fixed",sub:"Bug Fix · 2026-07-03 update",desc:"Resolved a ReferenceError that was crashing the Calc Trainer Learn tab, preventing you from practicing calculations smoothly. You can now study formulas and calculations without interruptions.",tip:"Open Calc Trainer and navigate to the Learn tab—it should now load without errors."},
@@ -1192,6 +1186,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Navigation Fixed",sub:"Study Tools · 2026-07-04 update",desc:"BA II Plus calculator button navigation now works smoothly without interruption. You can move between functions and modes reliably during practice problems.",tip:"Try the Calc Trainer—button presses now respond instantly when switching between 2nd function operations."},
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Calc Trainer Learn Tab Stability",sub:"Bug Fix · 2026-07-04 update",desc:"Eliminated crashes in the Calc Trainer Learn tab that could interrupt your study session. The app now gracefully handles errors and refreshes data automatically.",tip:"Open the Learn tab to explore calculator techniques—it's now stable even on slower connections."},
 {emoji:"📖",color:C.hard,bg:C.hard,title:"Clearer Formula Guide Explanations",sub:"Study Tools · 2026-07-04 update",desc:"Formula guide strips now include explanatory notes and fixed 2nd function button behavior for better clarity. You understand *why* each formula matters, not just how to use it.",tip:"Check the guide strips while practicing—hover over or tap for the new explanatory context."},
+]},
+// WN_VER:2026-07-04-d
+{version:"2026-07-04-d",slides:[
+{emoji:"🧮",color:C.easy,bg:C.easy,title:"Smoother Calculator Experience",sub:"UX · 2026-07-04 update",desc:"Fixed BA II Plus calculator button navigation and cleared snapshot issues when opening from guide steps. You can now seamlessly switch between lessons and calculator practice without unexpected visual glitches.",tip:"Open a calculator from any guide step—the display will now load cleanly and ready to use."},
+{emoji:"📚",color:C.medium,bg:C.medium,title:"Clearer Calculator Function Guides",sub:"Study Tools · 2026-07-04 update",desc:"Enhanced second-function button guidance with clearer labeling and explanatory notes in the calculator trainer. You'll spend less time guessing which button does what and more time mastering calculations under exam conditions.",tip:"Check the updated guide-strip notes next to 2ND FN buttons to understand what each function calculates."},
+{emoji:"⚙️",color:C.hard,bg:C.hard,title:"More Reliable Calc Trainer",sub:"Bug Fix · 2026-07-04 update",desc:"Added error handling to the Calc Trainer Learn tab and improved cache refresh logic. You'll experience fewer interruptions when drilling calculator problems, keeping your study rhythm unbroken.",tip:"If you notice the trainer acting odd, try refreshing the app—cache improvements make it faster and more stable."},
 ]},
 // WN_END
 ];
@@ -1231,12 +1231,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1245,6 +1239,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-04
+{date:"2026-07-04",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
