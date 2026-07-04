@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Drill card visual consolidation (a4748bb)**: Drill card redesign documented in version 2026-07-02-c now emphasizes color-coded topic headers and improved visual hierarchy. When rendering drill cards, ensure topic-specific colors are applied consistently to headers for better scannability and topic reinforcement across all quiz result summaries.
+
+
+**What's New version consolidation (a4748bb)**: Versions 2026-07-01-e and 2026-07-01-f have been removed from WHATS_NEW_SLIDES array; new version 2026-07-02-c added documenting clearer drill card design with color-coded topic headers. Currently active versions are 2026-07-01, 2026-07-02, 2026-07-02-b, and 2026-07-02-c. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**Error boundary for Calc Trainer Learn tab (a4748bb)**: Added `CalcLearnBoundary` React error boundary component to catch and gracefully display errors in the Calc Trainer Learn tab. When enhancing Learn tab features, wrap risky content with this boundary to prevent full app crashes and provide user-facing error messaging with retry capability.
+
+
 **Calc Trainer Learn tab ReferenceError fix (d6e10ce)**: Fixed crash in Calc Trainer Learn tab that occurred when rendering guide strip or educational content. When enhancing calculator features or guide strip functionality, ensure all component references are defined before render to prevent runtime errors.
 
 
@@ -948,7 +957,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1794000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1794200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
