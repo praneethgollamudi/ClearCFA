@@ -5205,16 +5205,35 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
     }
   };
   hkRef.current=handleKey;
+  // Direct 2nd-function actions — used by guide strip so is2nd state isn't needed
+  const hk2nd=(id)=>{
+    if(id==='PMT'){setIsBGN(b=>!b);showMsg(isBGN?"END mode":"BGN mode");return;}
+    if(id==='FV'||id==='arr'){setTvm({N:"",IY:"",PV:"",PMT:"",FV:""});setDisp("0");setFresh(true);setTvmLbl("CLR TVM");return;}
+    if(id==='ce'){
+      if(cfMode){setCfFlows([]);setDisp("0");setFresh(true);setTvmLbl("CF0");showMsg("CF cleared");return;}
+      setTvm({N:"",IY:"",PV:"",PMT:"",FV:""});setPendingOp(null);setPrevVal(null);setParenStack([]);setDisp("0");setFresh(true);setTvmLbl("CLR WRK");return;
+    }
+    if(id==='IY'){setPyMode(true);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");return;}
+    if(id==='5'){const w=makeWs('iconv');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
+    if(id==='PV'){const w=makeWs('amort');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
+    if(id==='cpt'){
+      if(ws){setWs(null);setTvmLbl("");setDisp("0");setFresh(true);}
+      else if(pyMode){setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");}
+      else if(cfMode){setCfMode(false);setCfFlows([]);setTvmLbl(""); showMsg("Exited CF");}
+      return;
+    }
+    if(id==='8'){const w=makeWs('delta');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
+  };
   const IS_2ND_FN=new Set(["[CLR TVM]","[P/Y]","[CLR WORK]","[QUIT]","[BGN]","[SET]","[AMORT]","[ICONV]","[FORMAT]"]);
   const KEY_ACTION_MAP={
     "[2ND]":hk=>hk("2nd"),"[CPT]":hk=>hk("cpt"),"[N]":hk=>hk("N"),"[I/Y]":hk=>hk("IY"),
     "[PV]":hk=>hk("PV"),"[PMT]":hk=>hk("PMT"),"[FV]":hk=>hk("FV"),"[ENTER]":hk=>hk("enter"),
     "[↓]":hk=>hk("down"),"[↑]":hk=>hk("up"),"[+/-]":hk=>hk("neg"),"[CE/C]":hk=>hk("ce"),
     "[CF]":hk=>hk("cf"),"[NPV]":hk=>hk("npv"),"[IRR]":hk=>hk("irr"),
-    "[STO]":hk=>hk("sto"),"[RCL]":hk=>hk("rcl"),
-    "[CLR TVM]":hk=>hk("FV"),"[P/Y]":hk=>hk("IY"),"[CLR WORK]":hk=>hk("ce"),
-    "[QUIT]":hk=>hk("cpt"),"[BGN]":hk=>hk("PMT"),"[SET]":hk=>hk("PMT"),
-    "[AMORT]":hk=>hk("PV"),"[ICONV]":hk=>hk("5"),"[FORMAT]":hk=>hk("2"),
+    "[STO]":hk=>hk("sto"),"[RCL]":hk=>hk("rcl"),"[−]":hk=>hk("sub"),
+    "[CLR TVM]":()=>hk2nd("FV"),"[P/Y]":()=>hk2nd("IY"),"[CLR WORK]":()=>hk2nd("ce"),
+    "[QUIT]":()=>hk2nd("cpt"),"[BGN]":()=>hk2nd("PMT"),"[SET]":()=>hk2nd("PMT"),
+    "[AMORT]":()=>hk2nd("PV"),"[ICONV]":()=>hk2nd("5"),"[FORMAT]":()=>hk2nd("8"),
   };
 
   const BTNS=[
@@ -5332,12 +5351,13 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
           <div style={{fontSize:7,fontWeight:800,color:"#2563eb",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>
             📖 {guideStep.label} — tap each key in order ↓
           </div>
+          {guideStep.note&&<div style={{fontSize:8,color:"#3b5f8a",lineHeight:1.5,marginBottom:4,fontStyle:"italic"}}>{guideStep.note}</div>}
           <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
             {guideStep.keys.map((k,ki)=>{
               const action=KEY_ACTION_MAP[k];
               const fn2=IS_2ND_FN.has(k);
               if(k.startsWith("["))return(
-                <button key={ki} onClick={()=>action?.(handleKey)}
+                <button key={ki} onClick={()=>fn2?action?.():action?.(handleKey)}
                   style={{fontFamily:"monospace",fontSize:9,fontWeight:800,padding:"2px 6px",borderRadius:4,cursor:"pointer",
                     background:fn2?"#1a0e00":"#0a1a2e",color:fn2?"#d97706":"#60a5fa",
                     border:`1px solid ${fn2?"#5a3800":"#1d4ed8"}`,
@@ -13065,10 +13085,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const calcTopics=["Quantitative Methods","Fixed Income","Derivatives","Portfolio Management","Equity","Corporate Issuers"];
     const CALC_GUIDES=[
       {title:"Setup — First-Time Config",icon:"⚙️",steps:[
-        {label:"Set P/Y and C/Y to 1",keys:["[2ND]","[P/Y]","1","[ENTER]","[↓]","1","[ENTER]","[2ND]","[QUIT]"],note:"Most CFA questions assume annual periods. Always verify before TVM problems."},
-        {label:"Switch to END mode",keys:["[2ND]","[BGN]","(if BGN shows) →","[2ND]","[SET]","[2ND]","[QUIT]"],note:"END mode = cash flows at end of period (ordinary annuity). Switch to BGN only for annuities due."},
-        {label:"Clear TVM worksheet",keys:["[2ND]","[CLR TVM]"],note:"Always clear before a new TVM problem. Leftover values from prior problems silently corrupt answers — this is the #1 exam mistake."},
-        {label:"Set decimal places to 4",keys:["[2ND]","[FORMAT]","4","[ENTER]","[2ND]","[QUIT]"],note:"4 decimal places is standard for CFA precision. The display rounds but internal computation stays full precision."},
+        {label:"Set P/Y and C/Y to 1",keys:["[2ND]","[P/Y]","1","[ENTER]","[↓]","1","[ENTER]","[2ND]","[QUIT]"],note:"P/Y = Payments per Year (how many times you pay per year). C/Y = Compounding periods per Year (how often interest compounds per year). Most CFA exam questions assume annual periods — so set both to 1. Only change P/Y for monthly loans (P/Y=12) or semi-annual bonds (P/Y=2). Tap [↓] after [ENTER] to advance from P/Y to the C/Y field."},
+        {label:"Switch to END mode",keys:["[2ND]","[BGN]","[2ND]","[QUIT]"],note:"END vs BGN controls WHEN cash flows occur. END (ordinary annuity) = payments at END of each period — the default for most CFA problems. BGN (annuity due) = payments at START. 'BGN' appears in the display header when BGN mode is active. Switch to END if you see it."},
+        {label:"Clear TVM worksheet",keys:["[2ND]","[CLR TVM]"],note:"Always run this before each new TVM problem! Leftover values for N, I/Y, PV, PMT, or FV from a previous problem will silently poison your answer. This is the single most common calculator mistake on the CFA exam."},
+        {label:"Set decimal places to 4",keys:["[2ND]","[FORMAT]","4","[ENTER]","[2ND]","[QUIT]"],note:"FORMAT controls how many decimal places are shown. 4 decimal places gives the precision expected in CFA answer choices (e.g. 6.1234%). The calculator stores full precision internally — this only changes what you see on screen."},
       ]},
       {title:"TVM — Bond Pricing & Loans",icon:"🏦",steps:[
         {label:"PV of a bond: 5-year 8% annual coupon, YTM 6%, FV 1000",keys:["[2ND]","[CLR TVM]","5","[N]","6","[I/Y]","80","[PMT]","1000","[FV]","[CPT]","[PV]"],note:"Result: −1,084.25. Negative = cash you pay out (purchase price). PMT is positive because you receive coupons."},
@@ -13174,7 +13194,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     <div key={si} style={{marginBottom:si<guide.steps.length-1?16:0}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8}}>
                         <div style={{fontSize:12,fontWeight:700,color:C.text,flex:1}}>{s.label}</div>
-                        <button onClick={()=>{setCalcGuideStep({label:s.label,keys:s.keys});setCalcOpen(true);}}
+                        <button onClick={()=>{setCalcGuideStep({label:s.label,keys:s.keys,note:s.note});setCalcOpen(true);}}
                           style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:6,flexShrink:0,
                             background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                           ▶ Try it
