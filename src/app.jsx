@@ -5068,7 +5068,7 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
       if(id==='PV'){const w=makeWs('amort');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
       if(id==='5'){const w=makeWs('iconv');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
       if(id==='8'){const w=makeWs('delta');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
-      if(id==='cpt'){if(pyMode){setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");}return;}
+      if(id==='cpt'){if(pyMode){setPyMode(false);setPyField('py');setDisp("0");setFresh(true);setTvmLbl("");showMsg("P/Y="+py+" C/Y="+cy+" ✓ done!");}return;}
       if(id==='npv'&&cfFlows.length>0){setCfNPVMode(true);setCfFlowsForNPV([...cfFlows]);setDisp("0");setFresh(true);setTvmLbl("I =");return;}
       return;
     }
@@ -5078,18 +5078,30 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
       if(DIGITS.includes(id)){setDisp(p=>fresh||(p==='0')?(setFresh(false),id):p.length<4?p+id:p);setFresh(false);return;}
       if(id==='dot'){if(!disp.includes('.')){setDisp(p=>(fresh?'0':p)+'.');setFresh(false);}return;}
       if(id==='neg'){const v=parseFloat(disp)||0;setDisp(fmtD(-v));setFresh(true);return;}
-      if(id==='down'||id==='enter'||id==='eq'||id==='N'||id==='IY'){
+      if(id==='enter'||id==='eq'){
+        // ENTER saves current field value and stays — match real BA II Plus behavior
         const v=Math.max(1,Math.min(365,parseInt(disp)||1));
-        if(pyField==='py'){setPy(v);setPyField('cy');setDisp(String(cy));setFresh(true);setTvmLbl("C/Y =");showMsg("P/Y="+v+" ✓ → type C/Y");return;}
-        else{setCy(v);setPyMode(false);setPyField('py');setDisp(String(v));setFresh(true);setTvmLbl("C/Y");showMsg("C/Y="+v+" ✓ saved!");return;}
+        if(pyField==='py'){setPy(v);setFresh(true);showMsg("P/Y="+v+" saved ✓ → press ↓");return;}
+        else{setCy(v);setFresh(true);showMsg("C/Y="+v+" saved ✓ → [2ND][QUIT]");return;}
+      }
+      if(id==='down'){
+        // ↓ advances to next field (or wraps P/Y from C/Y)
+        if(pyField==='py'){setPyField('cy');setDisp(String(cy));setFresh(true);setTvmLbl("C/Y =");showMsg("→ C/Y field");return;}
+        else{setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("→ P/Y field");return;}
       }
       if(id==='up'){
-        if(pyField==='cy'){const v=Math.max(1,Math.min(365,parseInt(disp)||1));setCy(v);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("← back to P/Y");return;}
+        if(pyField==='cy'){setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("← P/Y field");return;}
         return;
       }
       if(id==='ce'){
-        if(pyField==='cy'){setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("← back to P/Y");return;}
-        setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");showMsg("P/Y cancelled");return;
+        if(pyField==='cy'){setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("← P/Y field");return;}
+        setPyMode(false);setPyField('py');setDisp("0");setFresh(true);setTvmLbl("");showMsg("P/Y cancelled");return;
+      }
+      if(id==='N'||id==='IY'){
+        // legacy shortcut: save-and-advance
+        const v=Math.max(1,Math.min(365,parseInt(disp)||1));
+        if(pyField==='py'){setPy(v);setPyField('cy');setDisp(String(cy));setFresh(true);setTvmLbl("C/Y =");showMsg("P/Y="+v+" ✓ → C/Y");return;}
+        else{setCy(v);setPyMode(false);setPyField('py');setDisp(String(v));setFresh(true);setTvmLbl("C/Y");showMsg("C/Y="+v+" ✓ done!");return;}
       }
       return;
     }
@@ -5215,12 +5227,12 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
       if(cfMode){setCfFlows([]);setDisp("0");setFresh(true);setTvmLbl("CF0");showMsg("CF cleared");return;}
       setTvm({N:"",IY:"",PV:"",PMT:"",FV:""});setPendingOp(null);setPrevVal(null);setParenStack([]);setDisp("0");setFresh(true);setTvmLbl("CLR WRK");showMsg("Worksheet cleared");return;
     }
-    if(id==='IY'){setPyMode(true);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("Type P/Y, press ENTER");return;}
+    if(id==='IY'){setPyMode(true);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("P/Y worksheet: type → ENTER → ↓ → type → ENTER → QUIT");return;}
     if(id==='5'){const w=makeWs('iconv');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);showMsg("ICONV worksheet");return;}
     if(id==='PV'){const w=makeWs('amort');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);showMsg("Amort worksheet");return;}
     if(id==='cpt'){
       if(ws){setWs(null);setTvmLbl("");setDisp("0");setFresh(true);showMsg("Exited worksheet");}
-      else if(pyMode){setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");showMsg("Exited P/Y");}
+      else if(pyMode){setPyMode(false);setPyField('py');setDisp("0");setFresh(true);setTvmLbl("");showMsg("P/Y="+py+" C/Y="+cy+" ✓ done!");}
       else if(cfMode){setCfMode(false);setCfFlows([]);setTvmLbl("");showMsg("Exited CF");}
       else{showMsg("QUIT");}
       return;
