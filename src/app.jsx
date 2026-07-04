@@ -5079,16 +5079,16 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
       if(id==='neg'){const v=parseFloat(disp)||0;setDisp(fmtD(-v));setFresh(true);return;}
       if(id==='down'||id==='enter'||id==='eq'||id==='N'||id==='IY'){
         const v=Math.max(1,Math.min(365,parseInt(disp)||1));
-        if(pyField==='py'){setPy(v);setPyField('cy');setDisp(String(cy));setFresh(true);setTvmLbl("C/Y =");return;}
-        else{setCy(v);setPyMode(false);setPyField('py');setDisp(String(v));setFresh(true);setTvmLbl("C/Y");return;}
+        if(pyField==='py'){setPy(v);setPyField('cy');setDisp(String(cy));setFresh(true);setTvmLbl("C/Y =");showMsg("P/Y="+v+" ✓ → type C/Y");return;}
+        else{setCy(v);setPyMode(false);setPyField('py');setDisp(String(v));setFresh(true);setTvmLbl("C/Y");showMsg("C/Y="+v+" ✓ saved!");return;}
       }
       if(id==='up'){
-        if(pyField==='cy'){const v=Math.max(1,Math.min(365,parseInt(disp)||1));setCy(v);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");return;}
+        if(pyField==='cy'){const v=Math.max(1,Math.min(365,parseInt(disp)||1));setCy(v);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("← back to P/Y");return;}
         return;
       }
       if(id==='ce'){
-        if(pyField==='cy'){setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");return;}
-        setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");return;
+        if(pyField==='cy'){setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("← back to P/Y");return;}
+        setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");showMsg("P/Y cancelled");return;
       }
       return;
     }
@@ -5207,22 +5207,24 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
   hkRef.current=handleKey;
   // Direct 2nd-function actions — used by guide strip so is2nd state isn't needed
   const hk2nd=(id)=>{
+    setIs2nd(false); // always clear 2ND indicator before performing the action
     if(id==='PMT'){setIsBGN(b=>!b);showMsg(isBGN?"END mode":"BGN mode");return;}
-    if(id==='FV'||id==='arr'){setTvm({N:"",IY:"",PV:"",PMT:"",FV:""});setDisp("0");setFresh(true);setTvmLbl("CLR TVM");return;}
+    if(id==='FV'||id==='arr'){setTvm({N:"",IY:"",PV:"",PMT:"",FV:""});setDisp("0");setFresh(true);setTvmLbl("CLR TVM");showMsg("TVM cleared");return;}
     if(id==='ce'){
       if(cfMode){setCfFlows([]);setDisp("0");setFresh(true);setTvmLbl("CF0");showMsg("CF cleared");return;}
-      setTvm({N:"",IY:"",PV:"",PMT:"",FV:""});setPendingOp(null);setPrevVal(null);setParenStack([]);setDisp("0");setFresh(true);setTvmLbl("CLR WRK");return;
+      setTvm({N:"",IY:"",PV:"",PMT:"",FV:""});setPendingOp(null);setPrevVal(null);setParenStack([]);setDisp("0");setFresh(true);setTvmLbl("CLR WRK");showMsg("Worksheet cleared");return;
     }
-    if(id==='IY'){setPyMode(true);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");return;}
-    if(id==='5'){const w=makeWs('iconv');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
-    if(id==='PV'){const w=makeWs('amort');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
+    if(id==='IY'){setPyMode(true);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");showMsg("Type P/Y, press ENTER");return;}
+    if(id==='5'){const w=makeWs('iconv');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);showMsg("ICONV worksheet");return;}
+    if(id==='PV'){const w=makeWs('amort');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);showMsg("Amort worksheet");return;}
     if(id==='cpt'){
-      if(ws){setWs(null);setTvmLbl("");setDisp("0");setFresh(true);}
-      else if(pyMode){setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");}
-      else if(cfMode){setCfMode(false);setCfFlows([]);setTvmLbl(""); showMsg("Exited CF");}
+      if(ws){setWs(null);setTvmLbl("");setDisp("0");setFresh(true);showMsg("Exited worksheet");}
+      else if(pyMode){setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");showMsg("Exited P/Y");}
+      else if(cfMode){setCfMode(false);setCfFlows([]);setTvmLbl("");showMsg("Exited CF");}
+      else{showMsg("QUIT");}
       return;
     }
-    if(id==='8'){const w=makeWs('delta');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
+    if(id==='8'){const w=makeWs('delta');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);showMsg("Format worksheet");return;}
   };
   const IS_2ND_FN=new Set(["[CLR TVM]","[P/Y]","[CLR WORK]","[QUIT]","[BGN]","[SET]","[AMORT]","[ICONV]","[FORMAT]"]);
   const KEY_ACTION_MAP={
