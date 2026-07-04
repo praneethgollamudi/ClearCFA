@@ -1166,11 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04-e
-{version:"2026-07-04-e",slides:[
-{emoji:"🧮",color:C.accentLight,bg:C.easy,title:"Clearer Calculator Guide Steps",sub:"Study Tools · 2026-07-04 update",desc:"Calculator guide strips now properly clear the 2ND function flag between steps and provide better feedback on each action. This prevents confusion when practicing multi-step BA II Plus problems on exam prep.",tip:"Watch the guide highlight change as you work through calculator sequences—it's now more reliable."},
-{emoji:"✅",color:C.medium,bg:C.medium,title:"Smoother Calculator Navigation",sub:"UX · 2026-07-04 update",desc:"Fixed button navigation and snap behavior when opening the calculator from a guide step. You can now switch between the guide and calculator without losing your place or seeing stale calculator states.",tip:"Try opening the calculator from a guide step—it now snaps cleanly without lingering previews."},
-]},
 // WN_VER:2026-07-04-f
 {version:"2026-07-04-f",slides:[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Workflow Fixes",sub:"Study Tools · 2026-07-04 update",desc:"Fixed the P/Y worksheet to properly save values with ENTER and advance through fields with the down arrow, while QUIT now confirms before exiting. Also cleared the 2ND function flag and improved step feedback in the calculator guide to prevent confusion.",tip:"When working through calculator problems in the guide, watch for clearer step-by-step feedback and smoother navigation between worksheet fields."},
@@ -1193,6 +1188,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎛️",color:C.medium,bg:C.medium,title:"Smarter P/Y Worksheet Controls",sub:"UX · 2026-07-04 update",desc:"The P/Y worksheet now responds intuitively to your inputs: ENTER saves your entry in place, the down arrow moves to the next field, and QUIT safely exits with a confirmation prompt. This matches how financial calculators work, reducing friction and mistakes.",tip:"Press ENTER to confirm each value, then use ↓ to navigate—no more unexpected exits or lost entries."},
 {emoji:"✅",color:C.hard,bg:C.hard,title:"Fixed TVM and Cash Flow Calculations",sub:"Bug Fix · 2026-07-04 update",desc:"We fixed a critical bug where pending operations weren't evaluated before storing values in the TVM and Cash Flow engines. Now your calculations are always accurate, even when you're chaining operations together quickly.",tip:"If you've noticed unexpected results in complex TVM chains or CF sequences, try your problems again—they should solve correctly now."},
 ]},
+// WN_VER:2026-07-04-d
+{version:"2026-07-04-d",slides:[
+{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"We've added quick-reference cards to the Cash Flows, Amortization, and Interest Conversion sections so you can instantly see formulas and key concepts without leaving your practice. These cards help reinforce critical CFA formulas during your study sessions.",tip:"Look for the reference card icon in CF, Amortization, and ICONV lessons to pull up instant formula guides."},
+{emoji:"🔧",color:C.medium,bg:C.medium,title:"TVM Calculator Entry Fixed",sub:"Bug Fix · 2026-07-04 update",desc:"We fixed sign entry and operator handling in the Time Value of Money calculator so your inputs are stored correctly and calculations stay accurate. This ensures your TVM practice questions evaluate properly every time.",tip:"When entering negative cash flows or using operators in TVM, your values will now display and calculate correctly."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1207,8 +1207,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-02
-{date:"2026-07-02",entries:[
+// AC_VER:2026-07-04
+{date:"2026-07-04",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
