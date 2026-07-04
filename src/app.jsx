@@ -5130,7 +5130,7 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
 
     // ── CF mode ──
     if(cfMode){
-      if(id==='cf'||id==='enter'||id==='down'){const v=getN();const next=[...cfFlows,v];setCfFlows(next);showMsg(`CF${next.length-1}=${fmtD(v)}`);setDisp("0");setFresh(true);setTvmLbl(`CF${next.length}`);return;}
+      if(id==='cf'||id==='enter'||id==='down'){let v=getN();if(pendingOp){v=doOp(prevVal??0,v,pendingOp);setPendingOp(null);setPrevVal(null);}const next=[...cfFlows,v];setCfFlows(next);showMsg(`CF${next.length-1}=${fmtD(v)}`);setDisp("0");setFresh(true);setTvmLbl(`CF${next.length}`);return;}
       if(id==='irr'){const allF=fresh?cfFlows:[...cfFlows,getN()];if(allF.length<2){showMsg("Need ≥2 CFs");return;}setCfMode(false);const irr=calcIRRValue(allF);setDisp(fmtD(irr));setFresh(true);setLastAns(irr);setTvmLbl("IRR %");return;}
       if(id==='npv'){const allF=fresh?cfFlows:[...cfFlows,getN()];if(allF.length<1){showMsg("Enter CF0 first");return;}setCfMode(false);setCfNPVMode(true);setCfFlowsForNPV(allF);setDisp("0");setFresh(true);setTvmLbl("I =");return;}
       if(id==='ce'){if(!fresh){setDisp("0");setFresh(true);}else{setCfMode(false);setCfFlows([]);setTvmLbl("");showMsg("CF cleared");}return;}
@@ -5197,7 +5197,9 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
         }break;
       }
       case 'N':case 'IY':case 'PV':case 'PMT':case 'FV':{
-        const v=getN();setTvm(t=>({...t,[id]:v}));setTvmLbl(id==='IY'?'I/Y':id);setDisp(fmtD(v));setFresh(true);setLastAns(v);setCptMode(false);break;
+        let v=getN();
+        if(pendingOp){v=doOp(prevVal??0,v,pendingOp);setPendingOp(null);setPrevVal(null);}
+        setTvm(t=>({...t,[id]:v}));setTvmLbl(id==='IY'?'I/Y':id);setDisp(fmtD(v));setFresh(true);setLastAns(v);setCptMode(false);break;
       }
       case 'cpt':setCptMode(true);setTvmLbl("CPT ▶");break;
       case 'cf':
