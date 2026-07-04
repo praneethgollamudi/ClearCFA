@@ -13194,7 +13194,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     <div key={si} style={{marginBottom:si<guide.steps.length-1?16:0}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8}}>
                         <div style={{fontSize:12,fontWeight:700,color:C.text,flex:1}}>{s.label}</div>
-                        <button onClick={()=>{setCalcGuideStep({label:s.label,keys:s.keys,note:s.note});setCalcOpen(true);}}
+                        <button onClick={()=>{try{localStorage.removeItem(CALC_SNAP_KEY);}catch{}setCalcGuideStep({label:s.label,keys:s.keys,note:s.note});setCalcOpen(true);}}
                           style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:6,flexShrink:0,
                             background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                           ▶ Try it
