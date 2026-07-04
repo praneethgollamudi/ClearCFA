@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Reference cards expansion (ca9d6a7)**: Added reference cards to CF (Cash Flow), Amortization, and ICONV (Interest Conversion) calculator sections alongside the existing TVM key reference card. When adding new calculator guide sections or reference materials, ensure consistent formatting and keystroke documentation across all reference cards to support cohesive exam prep experience.
+
+
+**What's New version consolidation (ca9d6a7)**: Versions 2026-07-04 and 2026-07-04-b have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-04-c, 2026-07-04-d, 2026-07-04-e, 2026-07-04-f, and 2026-07-04. Version 2026-07-04-f documents P/Y worksheet workflow fixes and calculator state clearing on guide step entry. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **Note newline rendering fix (b92a12e)**: Fixed newline rendering in calculator notes and reference materials to ensure multi-line explanations display correctly. When adding educational content or notes to calculator guides or reference cards, test newline formatting across all screen sizes to prevent text overflow or truncation.
 
 
@@ -999,7 +1005,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1794800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1794900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
