@@ -1166,12 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-01
-{version:"2026-07-01",slides:[
-{emoji:"✨",color:C.reward,bg:C.reward,title:"5 New Study Features",sub:"UX · 2026-07-01 update",desc:"We've added post-quiz drill shortcuts, mock exam topic breakdowns, essay self-assessment tools, a smart mock scheduler, and explanation ratings to help you study smarter. These features let you drill weak spots faster, track mock performance by topic, and give feedback on explanations you find helpful or unclear.",tip:"After your next quiz, look for the drill CTA to immediately review questions you missed."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Clearer Pacing Indicators",sub:"Bug Fix · 2026-07-01 update",desc:"The pacing chip no longer shows a misleading floor when you're ahead of schedule. This gives you accurate feedback on whether you're on track to finish your study plan on time.",tip:"Check your pacing chip on the dashboard—it now only shows a floor if you're actually behind."},
-{emoji:"🧭",color:C.accentLight,bg:C.accentLight,title:"Streamlined More Menu",sub:"UX · 2026-07-01 update",desc:"We've reorganised the More menu to remove redundant shortcuts and keep it focused on what you actually use. Navigation is now faster and less cluttered.",tip:"Open the More menu to see the updated layout with your most-used study tools front and centre."},
-]},
 // WN_VER:2026-07-02
 {version:"2026-07-02",slides:[
 {emoji:"🚀",color:C.reward,bg:C.reward,title:"Share & Track Your Progress",sub:"Study Tools · 2026-07-02 update",desc:"ClearCFA now includes viral & effectiveness features that let you share your study wins and track what's actually moving your scores. Built-in analytics show which study methods work best for you across all three CFA levels.",tip:"After completing a mock exam, check the new effectiveness breakdown by topic to focus your retakes where you need them most."},
@@ -1192,6 +1186,11 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-03
 {version:"2026-07-03",slides:[
 {emoji:"🛠️",color:C.hard,bg:C.hard,title:"Calc Trainer Crash Fixed",sub:"Bug Fix · 2026-07-03 update",desc:"Resolved a ReferenceError that was crashing the Calc Trainer Learn tab, preventing you from practicing calculations smoothly. You can now study formulas and calculations without interruptions.",tip:"Open Calc Trainer and navigate to the Learn tab—it should now load without errors."},
+]},
+// WN_VER:2026-07-04
+{version:"2026-07-04",slides:[
+{emoji:"🛡️",color:C.easy,bg:C.easy,title:"Calc Trainer Stability Fixed",sub:"Bug Fix · 2026-07-04 update",desc:"We've resolved crashes in the Calc Trainer Learn tab that prevented you from accessing practice problems. You can now study calculations smoothly without interruptions.",tip:"Open Calc Trainer and refresh to load the latest stable version."},
+{emoji:"⚡",color:C.reward,bg:C.reward,title:"Fresh Content Loads Instantly",sub:"Study Tools · 2026-07-04 update",desc:"The app now forces a cache refresh when you enter the Calc Trainer Learn tab, ensuring you always see the most up-to-date problems and solutions. No more stale or outdated study material slowing you down.",tip:"You don't need to manually clear your cache—it happens automatically when you study."},
 ]},
 // WN_END
 ];
