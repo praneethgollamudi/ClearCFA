@@ -4935,6 +4935,8 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
   const [tvmLbl,setTvmLbl]=uS("");
   const [mem,setMem]=uS(snap?.mem||0);
   const [py,setPy]=uS(snap?.py||1);
+  const [cy,setCy]=uS(snap?.cy||1);
+  const [pyField,setPyField]=uS('py');
   const [pyMode,setPyMode]=uS(false);
   const [cfMode,setCfMode]=uS(false);
   const [cfFlows,setCfFlows]=uS([]);
@@ -5064,7 +5066,7 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
       if(id==='PV'){const w=makeWs('amort');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
       if(id==='5'){const w=makeWs('iconv');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
       if(id==='8'){const w=makeWs('delta');setWs(w);setTvmLbl(w.fields[0].name);setDisp(w.fields[0].value);setFresh(true);return;}
-      if(id==='cpt'){return;}
+      if(id==='cpt'){if(pyMode){setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");}return;}
       if(id==='npv'&&cfFlows.length>0){setCfNPVMode(true);setCfFlowsForNPV([...cfFlows]);setDisp("0");setFresh(true);setTvmLbl("I =");return;}
       return;
     }
@@ -5072,15 +5074,28 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
     // ── P/Y mode ──
     if(pyMode){
       if(DIGITS.includes(id)){setDisp(p=>fresh||(p==='0')?(setFresh(false),id):p.length<4?p+id:p);setFresh(false);return;}
-      if(id==='eq'||id==='enter'||id==='N'||id==='IY'){const v=Math.max(1,Math.min(365,parseInt(disp)||1));setPy(v);setPyMode(false);setDisp(String(v));setFresh(true);setTvmLbl("P/Y");return;}
-      if(id==='ce'){setPyMode(false);setDisp(String(py));setFresh(true);setTvmLbl("");return;}
+      if(id==='dot'){if(!disp.includes('.')){setDisp(p=>(fresh?'0':p)+'.');setFresh(false);}return;}
+      if(id==='neg'){const v=parseFloat(disp)||0;setDisp(fmtD(-v));setFresh(true);return;}
+      if(id==='down'||id==='enter'||id==='eq'||id==='N'||id==='IY'){
+        const v=Math.max(1,Math.min(365,parseInt(disp)||1));
+        if(pyField==='py'){setPy(v);setPyField('cy');setDisp(String(cy));setFresh(true);setTvmLbl("C/Y =");return;}
+        else{setCy(v);setPyMode(false);setPyField('py');setDisp(String(v));setFresh(true);setTvmLbl("C/Y");return;}
+      }
+      if(id==='up'){
+        if(pyField==='cy'){const v=Math.max(1,Math.min(365,parseInt(disp)||1));setCy(v);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");return;}
+        return;
+      }
+      if(id==='ce'){
+        if(pyField==='cy'){setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("P/Y =");return;}
+        setPyMode(false);setPyField('py');setDisp(String(py));setFresh(true);setTvmLbl("");return;
+      }
       return;
     }
 
     // ── NPV I= mode ──
     if(cfNPVMode){
       if(!DIGITS.includes(id)&&id!=='dot'&&id!=='neg'){
-        if(id==='eq'||id==='enter'){const irateV=getN();setCfNPVMode(false);const npv=calcNPVValue(cfFlowsForNPV,irateV);setDisp(fmtD(npv));setFresh(true);setLastAns(npv);setTvmLbl("NPV");return;}
+        if(id==='eq'||id==='enter'||id==='down'){const irateV=getN();setCfNPVMode(false);const npv=calcNPVValue(cfFlowsForNPV,irateV);setDisp(fmtD(npv));setFresh(true);setLastAns(npv);setTvmLbl("NPV");return;}
         if(id==='ce'){setCfNPVMode(false);setDisp("0");setFresh(true);setTvmLbl("");return;}
         return;
       }
@@ -5102,7 +5117,7 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
 
     // ── CF mode ──
     if(cfMode){
-      if(id==='cf'){const v=getN();const next=[...cfFlows,v];setCfFlows(next);showMsg(`CF${next.length-1}=${fmtD(v)}`);setDisp("0");setFresh(true);setTvmLbl(`CF${next.length}`);return;}
+      if(id==='cf'||id==='enter'||id==='down'){const v=getN();const next=[...cfFlows,v];setCfFlows(next);showMsg(`CF${next.length-1}=${fmtD(v)}`);setDisp("0");setFresh(true);setTvmLbl(`CF${next.length}`);return;}
       if(id==='irr'){const allF=fresh?cfFlows:[...cfFlows,getN()];if(allF.length<2){showMsg("Need ≥2 CFs");return;}setCfMode(false);const irr=calcIRRValue(allF);setDisp(fmtD(irr));setFresh(true);setLastAns(irr);setTvmLbl("IRR %");return;}
       if(id==='npv'){const allF=fresh?cfFlows:[...cfFlows,getN()];if(allF.length<1){showMsg("Enter CF0 first");return;}setCfMode(false);setCfNPVMode(true);setCfFlowsForNPV(allF);setDisp("0");setFresh(true);setTvmLbl("I =");return;}
       if(id==='ce'){if(!fresh){setDisp("0");setFresh(true);}else{setCfMode(false);setCfFlows([]);setTvmLbl("");showMsg("CF cleared");}return;}
@@ -5183,7 +5198,7 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
         if(!cfMode&&cfFlows.length>=2){const irr=calcIRRValue(cfFlows);setDisp(fmtD(irr));setFresh(true);setLastAns(irr);setTvmLbl("IRR %");}
         else showMsg("Press CF first");break;
       case 'off':
-        try{localStorage.setItem(CALC_SNAP_KEY,JSON.stringify({disp,pendingOp,prevVal,lastB,fresh,isBGN,tvm,mem,py}));}catch{}
+        try{localStorage.setItem(CALC_SNAP_KEY,JSON.stringify({disp,pendingOp,prevVal,lastB,fresh,isBGN,tvm,mem,py,cy}));}catch{}
         onClose();break;
       default:break;
     }
@@ -5277,9 +5292,10 @@ function CFACalculator({onClose, onMinimize=null, guideStep=null}){
           {cfMode&&<span style={{fontSize:8,fontWeight:800,padding:"1px 6px",borderRadius:20,background:"#0c2a5030",color:"#7dd3fc",border:"1px solid #2563eb44"}}>CF</span>}
           {ws&&<span style={{fontSize:8,fontWeight:800,padding:"1px 6px",borderRadius:20,background:"#14402030",color:"#4ade80",border:"1px solid #16643544"}}>{ws.type.toUpperCase()}</span>}
           {parenStack.length>0&&<span style={{fontSize:8,fontWeight:800,padding:"1px 6px",borderRadius:20,background:"#1a2a3030",color:"#94a3b8",border:"1px solid #33445544"}}>{`(`.repeat(parenStack.length)}</span>}
-          {py!==1&&!ws&&<span style={{fontSize:8,color:"#334466",fontFamily:"monospace"}}>P/Y={py}</span>}
+          {pyMode&&<span style={{fontSize:8,fontWeight:800,padding:"1px 6px",borderRadius:20,background:"#10301030",color:"#4ade80",border:"1px solid #16643544"}}>{pyField==='py'?"P/Y":"C/Y"}</span>}
+          {py!==1&&!ws&&!pyMode&&<span style={{fontSize:8,color:"#334466",fontFamily:"monospace"}}>P/Y={py}</span>}
           <div style={{display:"flex",gap:4}}>
-            {onMinimize&&<button onClick={()=>{try{localStorage.setItem(CALC_SNAP_KEY,JSON.stringify({disp,pendingOp,prevVal,lastB,fresh,isBGN,tvm,mem,py}));}catch{}onMinimize(disp);}} style={{background:"#1a1a2e",border:"1px solid #2a2a48",color:"#8888cc",cursor:"pointer",fontSize:10,borderRadius:7,padding:"5px 10px",fontWeight:700}}>⊟</button>}
+            {onMinimize&&<button onClick={()=>{try{localStorage.setItem(CALC_SNAP_KEY,JSON.stringify({disp,pendingOp,prevVal,lastB,fresh,isBGN,tvm,mem,py,cy}));}catch{}onMinimize(disp);}} style={{background:"#1a1a2e",border:"1px solid #2a2a48",color:"#8888cc",cursor:"pointer",fontSize:10,borderRadius:7,padding:"5px 10px",fontWeight:700}}>⊟</button>}
             <button onClick={onClose} style={{background:"#1a1a2e",border:"1px solid #2a2a48",color:"#8888cc",cursor:"pointer",fontSize:10,borderRadius:7,padding:"5px 12px",fontWeight:700}}>✓ Done</button>
           </div>
         </div>
