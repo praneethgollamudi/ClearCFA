@@ -1077,6 +1077,21 @@ const LIGHT_PALETTE = {
 };
 const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}})();
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
+class CalcLearnBoundary extends React.Component{
+  constructor(p){super(p);this.state={err:null};}
+  static getDerivedStateFromError(e){return{err:e};}
+  render(){
+    if(this.state.err)return(
+      <div style={{padding:"28px 20px",textAlign:"center",background:C.surface,borderRadius:12,border:`1px solid ${C.hard}44`}}>
+        <div style={{fontSize:28,marginBottom:8}}>🔧</div>
+        <div style={{fontSize:14,fontWeight:700,color:C.hard,marginBottom:6}}>Learn tab error — please report this</div>
+        <div style={{fontSize:10,color:C.muted,fontFamily:"monospace",wordBreak:"break-all",marginBottom:12}}>{String(this.state.err)}</div>
+        <button onClick={()=>this.setState({err:null})} style={{padding:"8px 18px",borderRadius:8,border:"none",background:C.accent,color:"#fff",cursor:"pointer",fontWeight:700,fontSize:12}}>Retry</button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 const REEL_TOPIC_COLORS={
   "Ethics":"#6366f1",
   "Quantitative Methods":"#818cf8",
@@ -13120,6 +13135,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
       {/* ── LEARN TAB ── */}
       {calcTrainerTab==="learn"&&(
+        <CalcLearnBoundary>
         <div style={{animation:"fadeIn 0.2s ease"}}>
           <div style={{fontSize:12,color:C.muted,marginBottom:14,lineHeight:1.6}}>
             Step-by-step keystroke guides for every BA II Plus workflow tested on the CFA exam. Tap a section to expand.
@@ -13172,6 +13188,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </button>
           </div>
         </div>
+        </CalcLearnBoundary>
       )}
 
       {/* ── PRACTICE TAB ── */}
