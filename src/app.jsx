@@ -1166,12 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04-b
-{version:"2026-07-04-b",slides:[
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother Calculator Navigation",sub:"UX · 2026-07-04 update",desc:"Fixed button navigation in the BA II Plus calculator tool so you can move between functions without friction. Faster calculations mean more time drilling questions instead of fighting the interface.",tip:"Try tabbing through calculator buttons—navigation should now feel seamless."},
-{emoji:"📚",color:C.hard,bg:C.hard,title:"Clearer Drill Card Design",sub:"Study Tools · 2026-07-02 update",desc:"Redesigned drill cards with color-coded topic headers and improved visual hierarchy so you instantly recognize which topic you're studying. Better visual scanning helps you retain topic context faster.",tip:"Look for the colored header bar on each drill card—it matches your topic color throughout the app."},
-{emoji:"⚙️",color:C.easy,bg:C.easy,title:"Calc Trainer Stability Improved",sub:"Bug Fix · 2026-07-03 update",desc:"Resolved crashes in the Calc Trainer Learn tab and added error recovery so your study session won't drop unexpectedly. You can now focus on mastering calculations without technical interruptions.",tip:"The Learn tab now handles edge cases gracefully—keep studying without fear of losing progress."},
-]},
 // WN_VER:2026-07-04-c
 {version:"2026-07-04-c",slides:[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Navigation Fixed",sub:"Study Tools · 2026-07-04 update",desc:"BA II Plus calculator button navigation now works smoothly without interruption. You can move between functions and modes reliably during practice problems.",tip:"Try the Calc Trainer—button presses now respond instantly when switching between 2nd function operations."},
@@ -1194,6 +1188,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Workflow Fixes",sub:"Study Tools · 2026-07-04 update",desc:"Fixed the P/Y worksheet to properly save values with ENTER and advance through fields with the down arrow, while QUIT now confirms before exiting. Also cleared the 2ND function flag and improved step feedback in the calculator guide to prevent confusion.",tip:"When working through calculator problems in the guide, watch for clearer step-by-step feedback and smoother navigation between worksheet fields."},
 {emoji:"📖",color:C.easy,bg:C.easy,title:"Cleaner Calculator Learning Mode",sub:"UX · 2026-07-04 update",desc:"The calculator now clears its state when you open it from a guide step, so you start each lesson with a clean slate. This eliminates confusion from leftover values or settings from previous problems.",tip:"Each time you tap into the calculator from a guide step, you'll see a fresh workspace ready for the new problem."},
 ]},
+// WN_VER:2026-07-04
+{version:"2026-07-04",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"TVM Reference Card Added",sub:"Study Tools · 2026-07-04 update",desc:"New Time Value of Money key reference card now available in your study materials. Quick access to essential TVM formulas and concepts helps you stay sharp during practice sessions.",tip:"Find it in your Study Tools section whenever you need a fast TVM formula lookup."},
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Workflow Improvements",sub:"UX · 2026-07-04 update",desc:"P/Y worksheet now responds intuitively—ENTER saves in place, down arrow advances to the next field, and QUIT exits with a confirmation prompt. Calculator guide steps now clear properly and provide live feedback as you work through them.",tip:"Try using ENTER and arrow keys in the P/Y worksheet to feel the smoother workflow."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Note Formatting Fixed",sub:"Bug Fix · 2026-07-04 update",desc:"Note newlines now render correctly across all platforms, making your study notes cleaner and easier to read. Better formatting means your custom notes stay organized just as you intended.",tip:"Check any notes you've saved with line breaks—they'll display properly now."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1214,12 +1214,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1228,6 +1222,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-04
+{date:"2026-07-04",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
