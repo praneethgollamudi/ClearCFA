@@ -1166,11 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04
-{version:"2026-07-04",slides:[
-{emoji:"🛡️",color:C.easy,bg:C.easy,title:"Calc Trainer Stability Fixed",sub:"Bug Fix · 2026-07-04 update",desc:"We've resolved crashes in the Calc Trainer Learn tab that prevented you from accessing practice problems. You can now study calculations smoothly without interruptions.",tip:"Open Calc Trainer and refresh to load the latest stable version."},
-{emoji:"⚡",color:C.reward,bg:C.reward,title:"Fresh Content Loads Instantly",sub:"Study Tools · 2026-07-04 update",desc:"The app now forces a cache refresh when you enter the Calc Trainer Learn tab, ensuring you always see the most up-to-date problems and solutions. No more stale or outdated study material slowing you down.",tip:"You don't need to manually clear your cache—it happens automatically when you study."},
-]},
 // WN_VER:2026-07-04-b
 {version:"2026-07-04-b",slides:[
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother Calculator Navigation",sub:"UX · 2026-07-04 update",desc:"Fixed button navigation in the BA II Plus calculator tool so you can move between functions without friction. Faster calculations mean more time drilling questions instead of fighting the interface.",tip:"Try tabbing through calculator buttons—navigation should now feel seamless."},
@@ -1193,6 +1188,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-04-e",slides:[
 {emoji:"🧮",color:C.accentLight,bg:C.easy,title:"Clearer Calculator Guide Steps",sub:"Study Tools · 2026-07-04 update",desc:"Calculator guide strips now properly clear the 2ND function flag between steps and provide better feedback on each action. This prevents confusion when practicing multi-step BA II Plus problems on exam prep.",tip:"Watch the guide highlight change as you work through calculator sequences—it's now more reliable."},
 {emoji:"✅",color:C.medium,bg:C.medium,title:"Smoother Calculator Navigation",sub:"UX · 2026-07-04 update",desc:"Fixed button navigation and snap behavior when opening the calculator from a guide step. You can now switch between the guide and calculator without losing your place or seeing stale calculator states.",tip:"Try opening the calculator from a guide step—it now snaps cleanly without lingering previews."},
+]},
+// WN_VER:2026-07-04-f
+{version:"2026-07-04-f",slides:[
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Workflow Fixes",sub:"Study Tools · 2026-07-04 update",desc:"Fixed the P/Y worksheet to properly save values with ENTER and advance through fields with the down arrow, while QUIT now confirms before exiting. Also cleared the 2ND function flag and improved step feedback in the calculator guide to prevent confusion.",tip:"When working through calculator problems in the guide, watch for clearer step-by-step feedback and smoother navigation between worksheet fields."},
+{emoji:"📖",color:C.easy,bg:C.easy,title:"Cleaner Calculator Learning Mode",sub:"UX · 2026-07-04 update",desc:"The calculator now clears its state when you open it from a guide step, so you start each lesson with a clean slate. This eliminates confusion from leftover values or settings from previous problems.",tip:"Each time you tap into the calculator from a guide step, you'll see a fresh workspace ready for the new problem."},
 ]},
 // WN_END
 ];
@@ -1220,12 +1220,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-01
-{date:"2026-07-01",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -1234,6 +1228,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-02
 {date:"2026-07-02",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-04
+{date:"2026-07-04",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
