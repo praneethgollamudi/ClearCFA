@@ -13106,6 +13106,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {label:"Set decimal places to 4",keys:["[2ND]","[FORMAT]","4","[ENTER]","[2ND]","[QUIT]"],note:"FORMAT controls how many decimal places are shown. 4 decimal places gives the precision expected in CFA answer choices (e.g. 6.1234%). The calculator stores full precision internally — this only changes what you see on screen."},
       ]},
       {title:"TVM — Bond Pricing & Loans",icon:"🏦",steps:[
+        {label:"What the 5 TVM keys mean",keys:[],note:"N = Number of periods (years, months, etc.). For a 10-year annual bond, N=10; for monthly, N=120.\n\nI/Y = Interest rate per period as a % — enter 6 for 6%, not 0.06. For a semi-annual bond with 8% YTM, enter I/Y=4 (half the annual rate).\n\nPV = Present Value — what the investment is worth today. Enter as NEGATIVE when it is cash you pay out (buying a bond, taking a loan). Enter as POSITIVE when you receive it.\n\nPMT = Payment per period — the regular cash flow (bond coupon, loan instalment). Positive if you receive it (coupons), negative if you pay it (loan payment).\n\nFV = Future Value — the lump sum at the end. For bonds, FV = face value (usually 1000). For a loan paid off, FV = 0.\n\nCPT = Compute — press CPT then the unknown key to solve. The other 4 must already be entered."},
         {label:"PV of a bond: 5-year 8% annual coupon, YTM 6%, FV 1000",keys:["[2ND]","[CLR TVM]","5","[N]","6","[I/Y]","80","[PMT]","1000","[FV]","[CPT]","[PV]"],note:"Result: −1,084.25. Negative = cash you pay out (purchase price). PMT is positive because you receive coupons."},
         {label:"Semi-annual bond: 10-year 6% coupon, YTM 8%, FV 1000",keys:["[2ND]","[CLR TVM]","20","[N]","4","[I/Y]","30","[PMT]","1000","[FV]","[CPT]","[PV]"],note:"Double N (10×2=20), halve I/Y (8/2=4%), halve PMT (60/2=30). Result: −864.10. Premium/discount logic: YTM > coupon → discount."},
         {label:"Solve for YTM: bond costs $950, 5-yr, 7% annual coupon, FV 1000",keys:["[2ND]","[CLR TVM]","5","[N]","[−]","950","[PV]","70","[PMT]","1000","[FV]","[CPT]","[I/Y]"],note:"Result: 8.12% YTM. Enter PV as negative (you pay to buy). The calculator iterates — may take 1-2 seconds."},
@@ -13209,13 +13210,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     <div key={si} style={{marginBottom:si<guide.steps.length-1?16:0}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8}}>
                         <div style={{fontSize:12,fontWeight:700,color:C.text,flex:1}}>{s.label}</div>
-                        <button onClick={()=>{try{localStorage.removeItem(CALC_SNAP_KEY);}catch{}setCalcGuideStep({label:s.label,keys:s.keys,note:s.note});setCalcOpen(true);}}
+                        {s.keys.length>0&&<button onClick={()=>{try{localStorage.removeItem(CALC_SNAP_KEY);}catch{}setCalcGuideStep({label:s.label,keys:s.keys,note:s.note});setCalcOpen(true);}}
                           style={{fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:6,flexShrink:0,
                             background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                           ▶ Try it
-                        </button>
+                        </button>}
                       </div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:7}}>
+                      {s.keys.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:7}}>
                         {s.keys.map((k,ki)=>(
                           k.startsWith("[")?
                             <span key={ki} style={{fontFamily:"monospace",fontSize:11,fontWeight:800,background:theme==='light'?"#eff6ff":"#1e293b",color:theme==='light'?"#1d4ed8":"#93c5fd",border:`1px solid ${C.accent}44`,padding:"3px 8px",borderRadius:5,letterSpacing:"0.03em"}}>{k}</span>
@@ -13224,8 +13225,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
                           :
                             <span key={ki} style={{fontFamily:"monospace",fontSize:11,fontWeight:700,background:C.surfaceHigh,color:C.accentLight,border:`1px solid ${C.border}`,padding:"3px 8px",borderRadius:5}}>{k}</span>
                         ))}
-                      </div>
-                      <div style={{fontSize:11,color:C.muted,lineHeight:1.65,background:`${C.accent}08`,borderRadius:7,padding:"7px 10px"}}>{s.note}</div>
+                      </div>}
+                      <div style={{fontSize:11,color:C.muted,lineHeight:1.65,background:`${C.accent}08`,borderRadius:7,padding:"7px 10px",whiteSpace:"pre-line"}}>{s.note}</div>
                     </div>
                   ))}
                 </div>
