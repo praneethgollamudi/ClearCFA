@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version reordering (f47b7af)**: Versions 2026-07-04-d and 2026-07-04-e have been removed from WHATS_NEW_SLIDES array and replaced with consolidated 2026-07-04-c and reordered 2026-07-04-d; currently active versions are 2026-07-04-f, 2026-07-04-b, 2026-07-04-c, 2026-07-04-d, and 2026-07-04. Always verify against active list when adding future versions to prevent duplicate messaging and maintain chronological clarity.
+
+
+**YTM guide sign entry fix (f47b7af)**: The Yield-to-Maturity guide now uses [+/-] sign change button for negative Present Value entry instead of requiring manual sign handling. When modifying YTM or similar financial calculation guides, use the [+/-] button for sign changes to match calculator behavior and prevent user confusion.
+
+
 **What's New version consolidation (6ebf5a0)**: Versions 2026-07-04-c and 2026-07-04-d have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-04-e, 2026-07-04-f, 2026-07-04-b, and 2026-07-04. Version 2026-07-04-b now consolidates reference cards expansion and P/Y worksheet workflow improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1017,7 +1023,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1795100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1795200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
