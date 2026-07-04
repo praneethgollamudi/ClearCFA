@@ -1166,11 +1166,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04-f
-{version:"2026-07-04-f",slides:[
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Workflow Fixes",sub:"Study Tools · 2026-07-04 update",desc:"Fixed the P/Y worksheet to properly save values with ENTER and advance through fields with the down arrow, while QUIT now confirms before exiting. Also cleared the 2ND function flag and improved step feedback in the calculator guide to prevent confusion.",tip:"When working through calculator problems in the guide, watch for clearer step-by-step feedback and smoother navigation between worksheet fields."},
-{emoji:"📖",color:C.easy,bg:C.easy,title:"Cleaner Calculator Learning Mode",sub:"UX · 2026-07-04 update",desc:"The calculator now clears its state when you open it from a guide step, so you start each lesson with a clean slate. This eliminates confusion from leftover values or settings from previous problems.",tip:"Each time you tap into the calculator from a guide step, you'll see a fresh workspace ready for the new problem."},
-]},
 // WN_VER:2026-07-04
 {version:"2026-07-04",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"TVM Reference Card Added",sub:"Study Tools · 2026-07-04 update",desc:"New Time Value of Money key reference card now available in your study materials. Quick access to essential TVM formulas and concepts helps you stay sharp during practice sessions.",tip:"Find it in your Study Tools section whenever you need a fast TVM formula lookup."},
@@ -1193,6 +1188,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"We've added quick-reference cards to the Cash Flows, Amortization, and Interest Conversion sections so you can instantly see formulas and key concepts without leaving your practice. These cards help reinforce critical CFA formulas during your study sessions.",tip:"Look for the reference card icon in CF, Amortization, and ICONV lessons to pull up instant formula guides."},
 {emoji:"🔧",color:C.medium,bg:C.medium,title:"TVM Calculator Entry Fixed",sub:"Bug Fix · 2026-07-04 update",desc:"We fixed sign entry and operator handling in the Time Value of Money calculator so your inputs are stored correctly and calculations stay accurate. This ensures your TVM practice questions evaluate properly every time.",tip:"When entering negative cash flows or using operators in TVM, your values will now display and calculate correctly."},
 ]},
+// WN_VER:2026-07-04-e
+{version:"2026-07-04-e",slides:[
+{emoji:"📚",color:C.reward,bg:C.reward,title:"Reference Cards for Financial Calcs",sub:"Study Tools · 2026-07-04 update",desc:"Reference cards are now available in Cash Flow, Amortization, and Interest Conversion sections to help you quickly recall formulas and concepts during practice. These quick-reference guides reduce lookup time and reinforce key relationships you'll need on exam day.",tip:"Check the reference card icon in each section to review formulas before tackling difficult problems."},
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother TVM & Cash Flow Entry",sub:"UX · 2026-07-04 update",desc:"Time Value of Money and cash flow input now properly stores pending calculations and resets display state, making multi-step problems feel seamless. You'll spend less time fighting the calculator interface and more time mastering the concepts.",tip:"Try entering a multi-step TVM problem—the calculator now behaves like a real financial calculator with proper operator evaluation."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Clearer Negative PV Entry Guide",sub:"Bug Fix · 2026-07-04 update",desc:"The YTM guide now clearly uses the [+/−] sign-change button to show how to enter negative present values. This removes confusion around sign conventions that often trips up test-takers.",tip:"When working through YTM problems, look for the [+/−] button to properly enter cash outflows."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
@@ -1201,8 +1202,8 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-02
-{date:"2026-07-02",entries:[
+// AC_VER:2026-07-04
+{date:"2026-07-04",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
