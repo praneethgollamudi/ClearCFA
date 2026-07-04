@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**BA II Plus calculator button navigation fix (6afbafe)**: Fixed button navigation logic in BA II Plus calculator to ensure keystroke sequences and guide strip references work correctly during interactive calculator practice. When enhancing calculator features or keystroke handling, test button state transitions thoroughly to prevent navigation breakage.
+
+
+**What's New version consolidation (6afbafe)**: Versions 2026-07-01 and 2026-07-01-f have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-02, 2026-07-02-b, 2026-07-02-c, 2026-07-03, and 2026-07-04. Version 2026-07-03 documents Calc Trainer Learn tab crash fix. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **Drill card visual consolidation (a4748bb)**: Drill card redesign documented in version 2026-07-02-c now emphasizes color-coded topic headers and improved visual hierarchy. When rendering drill cards, ensure topic-specific colors are applied consistently to headers for better scannability and topic reinforcement across all quiz result summaries.
 
 
@@ -957,7 +963,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1794200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1794300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
