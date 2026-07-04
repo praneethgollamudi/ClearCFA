@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (6ebf5a0)**: Versions 2026-07-04-c and 2026-07-04-d have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-04-e, 2026-07-04-f, 2026-07-04-b, and 2026-07-04. Version 2026-07-04-b now consolidates reference cards expansion and P/Y worksheet workflow improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**TVM key display reset after storage (6ebf5a0)**: The BA II Plus TVM calculator now resets the display to 0 after storing a TVM key value to fix sign entry behavior. When modifying TVM storage logic, ensure the display is cleared to allow users to enter negative values correctly on subsequent inputs.
+
+
 **What's New version consolidation (038617b)**: Versions 2026-07-04-b and 2026-07-04-c have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-04-d, 2026-07-04-e, 2026-07-04-f, and 2026-07-04. Version 2026-07-04 documents TVM reference card, P/Y worksheet workflow, and note formatting improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1011,7 +1017,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1795000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1795100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
