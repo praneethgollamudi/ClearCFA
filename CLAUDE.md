@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Calculator snap clear on guide step open (4a414ab)**: The BA II Plus calculator now clears its snap/position state when opening from a guide step, preventing UI overlap or visual glitches during calculator-assisted learning. When enhancing calculator integration with guide steps, ensure state is reset to prevent lingering visual artifacts.
+
+
+**What's New version consolidation (4a414ab)**: Versions 2026-07-02 and 2026-07-02-b have been removed from WHATS_NEW_SLIDES array; currently active versions are 2026-07-02-c, 2026-07-03, 2026-07-04, 2026-07-04-b, and 2026-07-04-c. Version 2026-07-04-b and 2026-07-04-c document calculator navigation fixes and Calc Trainer stability improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **Calc Trainer cache refresh on Learn tab entry (caac09d)**: The app now forces a cache refresh when entering the Calc Trainer Learn tab to ensure users always see up-to-date problems and solutions. When modifying Learn tab entry logic or content delivery, maintain this cache-busting behavior to prevent stale educational content.
 
 
@@ -972,7 +978,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1794400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1794500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
