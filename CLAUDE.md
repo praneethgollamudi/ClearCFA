@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**App architecture refactor: utils.js and calculator.jsx separation (d43b633)**: Core utility functions (storage, auth, data transformations) now live in utils.js while calculator-specific logic resides in calculator.jsx. When adding features, maintain this separation: general utilities → utils.js, calculator UI/logic → calculator.jsx, to preserve code organization established by this refactor.
+
+
+**BA II Plus keystroke display for calculator questions (d81f23c)**: The app now shows exact BA II Plus keystrokes for exam questions that are calculator-applicable. When adding new question types or calculator-assisted content, ensure keystroke sequences are documented and tested against the BA II Plus emulator behavior to maintain accuracy for exam preparation.
+
+
 **App architecture refactor (d43b633)**: The monolithic src/app.jsx has been split into utils.js and calculator.jsx to improve maintainability and code organization. When adding new features or modifying existing logic, ensure utility functions remain in utils.js and calculator-specific code stays in calculator.jsx to maintain the separation of concerns established by this refactor.
 
 
@@ -1034,7 +1040,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1795300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1795400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
