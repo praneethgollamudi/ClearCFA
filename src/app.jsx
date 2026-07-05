@@ -259,10 +259,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05
-{version:"2026-07-05",slides:[
-,
-]},
 // WN_VER:2026-07-05-b
 {version:"2026-07-05-b",slides:[
 {emoji:"🧮",color:C.accentLight,bg:C.accentLight,title:"BA II Plus Keystrokes Shown",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside solutions. This bridges the gap between understanding the concept and executing it on your actual exam calculator.",tip:"Look for the keystroke guide on any question tagged with calculator usage—practice these sequences during review to build muscle memory."},
@@ -285,6 +281,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystroke Guide",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now show the exact keystrokes needed on a BA II Plus financial calculator. This eliminates guesswork and helps you practice with the actual tool you'll use on exam day.",tip:"Look for the calculator keystroke walkthrough when answering quantitative problems."},
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Question Hints",sub:"AI · 2026-07-05 update",desc:"When AI hints aren't available, calculator-based questions now fall back to rule-based hints instantly. You get helpful guidance every time, keeping your study momentum going without delays.",tip:"Try asking for a hint on a cached quantitative question—it arrives instantly now."},
 {emoji:"📋",color:C.easy,bg:C.easy,title:"Cleaner Daily Card Interface",sub:"UX · 2026-07-05 update",desc:"The Daily Question card now collapses to a compact state after you answer, keeping your screen less cluttered. You can focus on your next question or review without visual noise.",tip:"Answer a Daily Question and watch the card shrink—tap it anytime to expand and review."},
+]},
+// WN_VER:2026-07-05-f
+{version:"2026-07-05-f",slides:[
+{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups & Leaderboards",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with other CFA candidates to collaborate, share progress, and compete on leaderboards. Studying together keeps you motivated and lets you learn from peers preparing for the same exam.",tip:"Tap the Study Groups tab to create a new group or join an existing one with your study partners."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints",sub:"AI · 2026-07-05 update",desc:"AI-powered calculator hints now load instantly from cache on repeated questions, eliminating wait time. You get guidance when you need it without slowing down your practice momentum.",tip:"Notice how hint suggestions appear immediately when you encounter similar questions you've seen before."},
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Daily Question Cards",sub:"UX · 2026-07-05 update",desc:"Daily practice cards now collapse to a compact view after you answer, keeping your screen uncluttered and ready for the next question. You focus on learning, not scrolling.",tip:"Answer a Daily Question and watch the card collapse—tap it again to expand and review your answer."},
 ]},
 // WN_END
 ];
@@ -324,8 +326,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
+// AC_VER:2026-07-05
+{date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
