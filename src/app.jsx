@@ -268,6 +268,18 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
+// WN_VER:2026-07-05
+{version:"2026-07-05",slides:[
+{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups directly in the app and track progress on live leaderboards. Collaborate with peers preparing for the same CFA level and stay motivated through friendly competition.",tip:"Start a group with classmates and watch your collective study streaks climb the leaderboard."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints Offline",sub:"AI · 2026-07-05 update",desc:"Calculator hints now work instantly on cached questions, even without internet. You'll get smart fallback guidance to solve tricky quantitative problems whenever you need it.",tip:"Try answering a financial math question on airplane mode—hints still appear in seconds."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Cleaner Quiz Card Design",sub:"UX · 2026-07-05 update",desc:"Daily question cards now collapse to a compact done-state after you answer. Your study feed stays focused and uncluttered as you work through more questions.",tip:"Notice how answered cards shrink automatically, keeping your dashboard clean and fast-scrolling."},
+]},
+// WN_VER:2026-07-05-b
+{version:"2026-07-05-b",slides:[
+{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with real-time leaderboards to track your progress against peers. Collaborate and compete with other CFA candidates preparing for the same exam level.",tip:"Head to the Study Groups tab to create your first group or join one using an invite code."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Calculator Hints",sub:"AI · 2026-07-05 update",desc:"Calculator hints now intelligently fall back to rule-based logic, ensuring you get guidance even on cached questions. Better hints mean faster problem-solving during your study sessions.",tip:"When you're stuck on a calculation, tap the hint button to see step-by-step guidance."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother Study Experience",sub:"UX · 2026-07-05 update",desc:"Added quick abort and cancel buttons, offline question seeds, and easier sharing so you spend less time managing the app and more time learning. Session stability improvements prevent interruptions during exams.",tip:"Try the new share button to send questions to study partners instantly."},
+]},
 // WN_VER:2026-07-05-d
 {version:"2026-07-05-d",slides:[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes On-Demand",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside explanations. This bridges the gap between understanding the concept and executing it on your physical calculator during the exam.",tip:"Look for the keystroke guide when answering financial math questions—practice the button sequence until it's muscle memory."},
@@ -286,21 +298,9 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints",sub:"AI · 2026-07-05 update",desc:"AI-powered calculator hints now load instantly from cache on repeated questions, eliminating wait time. You get guidance when you need it without slowing down your practice momentum.",tip:"Notice how hint suggestions appear immediately when you encounter similar questions you've seen before."},
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Daily Question Cards",sub:"UX · 2026-07-05 update",desc:"Daily practice cards now collapse to a compact view after you answer, keeping your screen uncluttered and ready for the next question. You focus on learning, not scrolling.",tip:"Answer a Daily Question and watch the card collapse—tap it again to expand and review your answer."},
 ]},
-// WN_VER:2026-07-05
-{version:"2026-07-05",slides:[
-{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups directly in the app and track progress on live leaderboards. Collaborate with peers preparing for the same CFA level and stay motivated through friendly competition.",tip:"Start a group with classmates and watch your collective study streaks climb the leaderboard."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints Offline",sub:"AI · 2026-07-05 update",desc:"Calculator hints now work instantly on cached questions, even without internet. You'll get smart fallback guidance to solve tricky quantitative problems whenever you need it.",tip:"Try answering a financial math question on airplane mode—hints still appear in seconds."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Cleaner Quiz Card Design",sub:"UX · 2026-07-05 update",desc:"Daily question cards now collapse to a compact done-state after you answer. Your study feed stays focused and uncluttered as you work through more questions.",tip:"Notice how answered cards shrink automatically, keeping your dashboard clean and fast-scrolling."},
-]},
-// WN_VER:2026-07-05-b
-{version:"2026-07-05-b",slides:[
-{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with real-time leaderboards to track your progress against peers. Collaborate and compete with other CFA candidates preparing for the same exam level.",tip:"Head to the Study Groups tab to create your first group or join one using an invite code."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Calculator Hints",sub:"AI · 2026-07-05 update",desc:"Calculator hints now intelligently fall back to rule-based logic, ensuring you get guidance even on cached questions. Better hints mean faster problem-solving during your study sessions.",tip:"When you're stuck on a calculation, tap the hint button to see step-by-step guidance."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother Study Experience",sub:"UX · 2026-07-05 update",desc:"Added quick abort and cancel buttons, offline question seeds, and easier sharing so you spend less time managing the app and more time learning. Session stability improvements prevent interruptions during exams.",tip:"Try the new share button to send questions to study partners instantly."},
-]},
 // WN_END
 ];
-const WHATS_NEW_VERSION=WHATS_NEW_SLIDES[WHATS_NEW_SLIDES.length-1].version;
+const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
 
 // Admin-only changelog — internal/infra changes not shown to regular users
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
@@ -4640,7 +4640,7 @@ function CFAMock(){
   const [tourDismissed,setTourDismissed]=useState(()=>{try{return!!localStorage.getItem(TOUR_KEY);}catch{return false;}});
   const [lastSeenWN,setLastSeenWN]=useState(()=>{try{return localStorage.getItem(WHATS_NEW_KEY)||"";}catch{return "";}});
   const whatsNewDismissed=lastSeenWN===WHATS_NEW_VERSION;
-  const unseenSlides=WHATS_NEW_SLIDES.filter(e=>e.version>lastSeenWN).slice(-3).flatMap(e=>e.slides);
+  const unseenSlides=WHATS_NEW_SLIDES.filter(e=>e.version>lastSeenWN).sort((a,b)=>a.version<b.version?-1:1).slice(-3).flatMap(e=>e.slides);
   const [proTourDismissed,setProTourDismissed]=useState(()=>{try{return!!localStorage.getItem(PRO_TOUR_KEY);}catch{return false;}});
   const [screenOnboard,setScreenOnboard]=useState(()=>{try{return JSON.parse(localStorage.getItem(SCREEN_ONBOARD_KEY)||"{}");}catch{return {};}});
   const [checklistDismissed,setChecklistDismissed]=useState(()=>{try{return!!localStorage.getItem(CHECKLIST_KEY);}catch{return false;}});
