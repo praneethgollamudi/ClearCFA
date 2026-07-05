@@ -62,9 +62,12 @@ const SM2_INTERVALS= [1,3,7,16,35,70];
 // Lets non-signed-in users try the app immediately without API calls.
 const OFFLINE_SEED_QS = {
   "Ethics": {"Code of Ethics & Standards": [
-    {id:"s_et_1",question:"A CFA candidate overhears material nonpublic information about a merger in an elevator and tips off a colleague. Which Standard is most likely violated?",options:{A:"Standard II-A: Material Nonpublic Information",B:"Standard VI-B: Priority of Transactions",C:"Standard I-C: Misrepresentation"},answer:"A",explanation:"Tipping someone about MNPI violates Standard II-A even if the tipper does not personally trade on the information."},
-    {id:"s_et_2",question:"When applicable law conflicts with the CFA Standards and provides less protection to clients, a member must:",options:{A:"Follow applicable law only",B:"Follow whichever standard provides greater protection to clients and the market",C:"Follow the CFA Standards only regardless of local law"},answer:"B",explanation:"Members must adhere to the stricter of applicable law and the Code and Standards — whichever offers greater protection to clients and market integrity."},
-    {id:"s_et_3",question:"Under Standard VI-B: Priority of Transactions, which trade must be executed first?",options:{A:"Employer proprietary account",B:"Client account",C:"Member's personal account"},answer:"B",explanation:"Client interests take priority over both employer proprietary accounts and the member's own personal transactions."},
+    {id:"s_et_1",question:"A CFA candidate overhears material nonpublic information about a merger in an elevator and tips off a colleague. Which Standard is most likely violated?",options:{A:"Standard II-A: Material Nonpublic Information",B:"Standard VI-B: Priority of Transactions",C:"Standard I-C: Misrepresentation"},answer:"A",explanation:"Correct: A. Tipping someone about MNPI violates Standard II-A even if the tipper does not personally trade on the information."},
+    {id:"s_et_2",question:"When applicable law conflicts with the CFA Standards and provides less protection to clients, a member must:",options:{A:"Follow applicable law only",B:"Follow whichever standard provides greater protection to clients and the market",C:"Follow the CFA Standards only regardless of local law"},answer:"B",explanation:"Correct: B. Members must adhere to the stricter of applicable law and the Code and Standards — whichever offers greater protection to clients and market integrity."},
+    {id:"s_et_3",question:"Under Standard VI-B: Priority of Transactions, which trade must be executed first?",options:{A:"Employer proprietary account",B:"Client account",C:"Member's personal account"},answer:"B",explanation:"Correct: B. Client interests take priority over both employer proprietary accounts and the member's own personal transactions."},
+    {id:"s_et_4",question:"A portfolio manager receives an expensive gift from a broker whose trades she frequently executes. According to Standard I-B (Independence and Objectivity), she should:",options:{A:"Accept the gift because it does not directly influence specific investment decisions",B:"Decline or disclose the gift to her employer and obtain written approval",C:"Accept the gift provided its value is below a de minimis threshold set by the firm"},answer:"B",explanation:"Correct: B. Standard I-B requires members to disclose and obtain written permission from their employer before accepting any gift or benefit that could impair independence, regardless of its value."},
+    {id:"s_et_5",question:"Standard III-C (Suitability) requires a member to:",options:{A:"Invest clients solely in products with the highest risk-adjusted returns",B:"Ensure investments are suitable for the client's risk tolerance, time horizon, and IPS",C:"Recommend only products his firm has approved for distribution"},answer:"B",explanation:"Correct: B. Suitability requires matching recommendations to each client's unique circumstances — risk capacity, liquidity needs, time horizon, and objectives as documented in the IPS."},
+    {id:"s_et_6",question:"A supervisor who fails to prevent a subordinate's violations of the Code and Standards is most likely violating which Standard?",options:{A:"Standard IV-C: Responsibilities of Supervisors",B:"Standard I-A: Knowledge of the Law",C:"Standard II-B: Market Manipulation"},answer:"A",explanation:"Correct: A. Standard IV-C holds supervisors responsible for ensuring that employees they oversee comply with applicable laws and the Code and Standards. Failure to establish adequate compliance procedures is itself a violation."},
   ]},
   "Quantitative Methods": {"Time Value of Money": [
     {id:"s_qm_1",question:"If market interest rates rise, the present value of a fixed annuity will:",options:{A:"Increase, because higher rates reflect stronger cash flows",B:"Decrease, because future cash flows are discounted at a higher rate",C:"Remain unchanged, because the annuity payments are fixed"},answer:"B",explanation:"Present value is inversely related to the discount rate. Higher rates reduce the PV of fixed future cash flows."},
@@ -87,14 +90,20 @@ const OFFLINE_SEED_QS = {
     {id:"s_ci_3",question:"Degree of operating leverage (DOL) is highest for firms with:",options:{A:"High variable costs relative to fixed costs",B:"High fixed costs relative to variable costs",C:"Equal fixed and variable costs"},answer:"B",explanation:"DOL = (Revenue − Variable Costs) / EBIT. High fixed costs mean a small change in revenue causes a large change in operating income — higher sensitivity (higher DOL)."},
   ]},
   "Equity": {"Equity Valuation – DDM & Multiples": [
-    {id:"s_eq_1",question:"The Gordon Growth Model (constant-growth DDM) assumes dividends grow at:",options:{A:"A constant rate in perpetuity",B:"A high rate initially, then declining to a stable rate",C:"The same rate as the overall economy"},answer:"A",explanation:"The Gordon Growth Model (P = D1 / (r − g)) requires a single constant dividend growth rate forever. Multi-stage models are needed when growth varies over time."},
-    {id:"s_eq_2",question:"Enterprise Value / EBITDA is preferred over P/E when comparing companies that differ in:",options:{A:"Revenue growth rates",B:"Capital structures and depreciation policies",C:"Dividend payout ratios"},answer:"B",explanation:"EV/EBITDA is capital-structure neutral (EV includes debt; EBITDA excludes interest) and adds back depreciation, making it useful when D&A or leverage differs across peers."},
-    {id:"s_eq_3",question:"A stock with beta of 1.5 relative to the market will:",options:{A:"Move approximately 1.5 times as much as the market in percentage terms",B:"Have 1.5 times the total risk (standard deviation) of the market",C:"Always outperform the market over any holding period"},answer:"A",explanation:"Beta measures systematic (market) risk sensitivity. A beta of 1.5 implies the stock tends to move 1.5% for every 1% market move. Total risk also includes unsystematic risk."},
+    {id:"s_eq_1",question:"The Gordon Growth Model (constant-growth DDM) assumes dividends grow at:",options:{A:"A constant rate in perpetuity",B:"A high rate initially, then declining to a stable rate",C:"The same rate as the overall economy"},answer:"A",explanation:"Correct: A. The Gordon Growth Model (P = D1 / (r − g)) requires a single constant dividend growth rate forever. Multi-stage models are needed when growth varies over time."},
+    {id:"s_eq_2",question:"Enterprise Value / EBITDA is preferred over P/E when comparing companies that differ in:",options:{A:"Revenue growth rates",B:"Capital structures and depreciation policies",C:"Dividend payout ratios"},answer:"B",explanation:"Correct: B. EV/EBITDA is capital-structure neutral (EV includes debt; EBITDA excludes interest) and adds back depreciation, making it useful when D&A or leverage differs across peers."},
+    {id:"s_eq_3",question:"A stock with beta of 1.5 relative to the market will:",options:{A:"Move approximately 1.5 times as much as the market in percentage terms",B:"Have 1.5 times the total risk (standard deviation) of the market",C:"Always outperform the market over any holding period"},answer:"A",explanation:"Correct: A. Beta measures systematic (market) risk sensitivity. A beta of 1.5 implies the stock tends to move 1.5% for every 1% market move. Total risk also includes unsystematic risk."},
+    {id:"s_eq_4",question:"The justified P/E ratio based on the Gordon Growth Model equals:",options:{A:"Earnings per share divided by the required return",B:"Dividend payout ratio divided by (required return minus growth rate)",C:"Price divided by forecasted earnings one year ahead"},answer:"B",explanation:"Correct: B. From the GGM: P₀ = D₁/(r−g) = (EPS × payout)/(r−g), so P/E = payout/(r−g). Higher payout, lower required return, or higher growth all raise the justified P/E."},
+    {id:"s_eq_5",question:"Price-to-book (P/B) ratio is most useful for valuing companies in which industry?",options:{A:"Software firms with minimal tangible assets",B:"Financial institutions such as banks and insurance companies",C:"Consumer discretionary companies with high brand value"},answer:"B",explanation:"Correct: B. Banks and insurers hold mostly financial assets whose book values closely approximate fair market value. For asset-light businesses like software firms, book value is uninformative."},
+    {id:"s_eq_6",question:"Free Cash Flow to Equity (FCFE) is most accurately defined as:",options:{A:"Net income plus depreciation minus capital expenditures",B:"Cash flow from operations minus capital expenditures plus net new debt borrowing",C:"Operating income minus taxes minus changes in working capital"},answer:"B",explanation:"Correct: B. FCFE = CFO − CapEx + Net borrowing. It represents the cash available to equity holders after funding operations, reinvestment, and debt service obligations."},
   ]},
   "Fixed Income": {"Bond Features & Pricing": [
-    {id:"s_fi_1",question:"The price of a bond and its yield-to-maturity have a:",options:{A:"Direct (positive) relationship — higher yield means higher price",B:"Inverse (negative) relationship — higher yield means lower price",C:"Variable relationship that depends on the coupon rate"},answer:"B",explanation:"When yields rise, the present value of future cash flows falls, so bond prices fall. This inverse price-yield relationship is fundamental to fixed income."},
-    {id:"s_fi_2",question:"A callable bond issued in the same market as an otherwise identical non-callable bond will typically have:",options:{A:"A lower yield to compensate for the call feature's value to the issuer",B:"A higher yield because investors demand compensation for call risk",C:"The same yield since the call option does not affect expected cash flows"},answer:"B",explanation:"Callable bonds give the issuer the right to redeem at a disadvantageous time for the investor (when rates fall). Investors require a higher yield as compensation for this reinvestment/call risk."},
-    {id:"s_fi_3",question:"A bond trading at a premium to par value has:",options:{A:"A coupon rate lower than its yield-to-maturity",B:"A coupon rate higher than its yield-to-maturity",C:"A coupon rate equal to its yield-to-maturity"},answer:"B",explanation:"Premium bonds have coupon rates above market yields (YTM). Investors pay more than par because they receive above-market coupon income. Discount bonds have coupons below YTM."},
+    {id:"s_fi_1",question:"The price of a bond and its yield-to-maturity have a:",options:{A:"Direct (positive) relationship — higher yield means higher price",B:"Inverse (negative) relationship — higher yield means lower price",C:"Variable relationship that depends on the coupon rate"},answer:"B",explanation:"Correct: B. When yields rise, the present value of future cash flows falls, so bond prices fall. This inverse price-yield relationship is fundamental to fixed income."},
+    {id:"s_fi_2",question:"A callable bond issued in the same market as an otherwise identical non-callable bond will typically have:",options:{A:"A lower yield to compensate for the call feature's value to the issuer",B:"A higher yield because investors demand compensation for call risk",C:"The same yield since the call option does not affect expected cash flows"},answer:"B",explanation:"Correct: B. Callable bonds give the issuer the right to redeem at a disadvantageous time for the investor (when rates fall). Investors require a higher yield as compensation for this reinvestment/call risk."},
+    {id:"s_fi_3",question:"A bond trading at a premium to par value has:",options:{A:"A coupon rate lower than its yield-to-maturity",B:"A coupon rate higher than its yield-to-maturity",C:"A coupon rate equal to its yield-to-maturity"},answer:"B",explanation:"Correct: B. Premium bonds have coupon rates above market yields (YTM). Investors pay more than par because they receive above-market coupon income. Discount bonds have coupons below YTM."},
+    {id:"s_fi_4",question:"Modified duration measures a bond's:",options:{A:"Number of years to recover the bond's cost from its cash flows",B:"Approximate percentage price change for a 1% change in yield",C:"Sensitivity to changes in credit spreads rather than benchmark yields"},answer:"B",explanation:"Correct: B. Modified duration ≈ −ΔP/P ÷ Δy. A bond with modified duration of 5 will lose approximately 5% in price for a 1 percentage point rise in yield."},
+    {id:"s_fi_5",question:"A normal (upward-sloping) yield curve most commonly reflects:",options:{A:"Expectations of falling interest rates in the future",B:"Higher compensation demanded by investors for longer maturities",C:"Central bank policy of keeping short-term rates artificially high"},answer:"B",explanation:"Correct: B. A normal yield curve slopes upward because investors demand a term premium — additional compensation for holding longer-maturity bonds, which carry greater price risk and uncertainty."},
+    {id:"s_fi_6",question:"The option-adjusted spread (OAS) of a bond is best described as:",options:{A:"The yield spread over Treasuries before removing any embedded option value",B:"The spread over the benchmark yield curve after removing the value of embedded options",C:"The additional yield required to compensate for credit risk only"},answer:"B",explanation:"Correct: B. OAS strips out the option component from the nominal spread, leaving only the spread attributable to credit risk and liquidity. It allows fair comparison of bonds with and without embedded options."},
   ]},
   "Derivatives": {"Derivative Features & Markets": [
     {id:"s_de_1",question:"A long forward contract obligates the buyer to:",options:{A:"Purchase the underlying asset at the agreed forward price at expiration",B:"Purchase or sell depending on which outcome is more favourable",C:"Receive a cash payment equal to any price appreciation"},answer:"A",explanation:"Forward contracts are obligations, not rights. The long party must buy the underlying at the forward price at expiration regardless of the prevailing spot price."},
@@ -4559,6 +4568,7 @@ function CFAMock(){
   const [sessionSaved,setSessionSaved]=useState(null); // null=not attempted, true=ok, false=failed
   const generatingRef=useRef(false); // debounce double-tap
   const genIdRef=useRef(0); // generation nonce — guards against stale async completing after cancel+restart
+  const genAbortRef=useRef(null); // AbortController for the current in-flight callClaude request
   const lastGenParamsRef=useRef(null); // for tap-to-retry
   const prequizPassProbRef=useRef(null);
   const srSessionResults=useRef({correct:0,total:0});
@@ -5447,11 +5457,12 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
     setAdminStatsLoading(false);
   };
 
-  const callClaude=async(prompt,maxTokens=8000,{retries=2,retryDelay=8000,model="claude-haiku-4-5-20251001",feature=""}={})=>{
+  const callClaude=async(prompt,maxTokens=8000,{retries=2,retryDelay=8000,model="claude-haiku-4-5-20251001",feature="",signal=null}={})=>{
     if(!navigator.onLine) throw new Error("No internet — check your connection and retry.");
     let lastError;
     let currentMaxTokens=maxTokens;
     for(let attempt=0;attempt<retries;attempt++){
+      if(signal?.aborted)throw Object.assign(new Error("Cancelled"),{cancelled:true});
       if(attempt>0){
         // Exponential backoff: 8s, 16s, 32s
         const delay=retryDelay*Math.pow(2,attempt-1);
@@ -5460,11 +5471,14 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
       }
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),45000);
+      const onExtAbort=()=>controller.abort();
+      signal?.addEventListener('abort',onExtAbort);
       try{
         const modelName=model;
         const userId=typeof authUser!=="undefined"&&authUser?.id?authUser.id:"";
         const res=await fetch(AI_PROXY_URL,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},signal:controller.signal,body:JSON.stringify({requestType:"generate",userId,prompt,maxTokens:currentMaxTokens,model:modelName})});
         clearTimeout(timeout);
+        signal?.removeEventListener('abort',onExtAbort);
         // Quota exceeded (our server-side daily limit) — do NOT retry
         if(res.status===429){
           const body=await res.json().catch(()=>({}));
@@ -5520,6 +5534,9 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         return raw;
       }catch(e){
         clearTimeout(timeout);
+        signal?.removeEventListener('abort',onExtAbort);
+        if(e.cancelled)throw e; // user-initiated cancel — propagate immediately, no retry
+        if(e.name==="AbortError"&&signal?.aborted)throw Object.assign(new Error("Cancelled"),{cancelled:true});
         if(e.name==="AbortError"){lastError=new Error("Timed out — API is slow, try again.");continue;}
         // Don't retry non-rate-limit errors
         if(!e.message?.includes("Rate limit")&&!e.message?.includes("rate limit")){
@@ -5785,6 +5802,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null,multiModules=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
     const myGenId=++genIdRef.current;
+    genAbortRef.current?.abort();
+    const genAbort=new AbortController();
+    genAbortRef.current=genAbort;
     setNextActionText(""); setNextActionLoading(false);
     setDuelCreating(false);
     lastGenParamsRef.current={t,st,diff,cnt,m,isVignette,st2};
@@ -5923,13 +5943,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(isVignette){
         const vignetteCount=Math.max(1,Math.ceil(cnt/3));
         const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null,activeLOS,cfaLevel);
-        const rawVig=await callClaude(vigPrompt,2000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`});
+        const rawVig=await callClaude(vigPrompt,2000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`,signal:genAbort.signal});
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
         const tightMax={3:1500,5:2200,10:4500,15:6500,20:8000}[cnt]||(cnt*450);
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`});
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`,signal:genAbort.signal});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
@@ -6051,6 +6071,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           }
         }catch{}
       }
+      if(e.cancelled){clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;return;}
       const msg=e.message||"Unknown error";
       setError(msg.includes("Rate limit")||msg.includes("retries failed")
         ? "API is busy — please wait a minute and try again."
@@ -6614,7 +6635,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           );
         })}
       </div>
-      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+      <button onClick={()=>{genAbortRef.current?.abort();++genIdRef.current;setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
         Cancel
       </button>
     </div>
@@ -7347,13 +7368,17 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:13,fontWeight:700,color:C.accentLight,background:C.accent+"20",border:`1px solid ${C.accent}33`,borderRadius:8,padding:"4px 12px",letterSpacing:"0.12em"}}>{studyGroup.code}</div>
             <button onClick={()=>{
               const url=`${window.location.origin}${window.location.pathname}?sg=${studyGroup.code}`;
-              try{navigator.clipboard.writeText(url);}catch{}
-              showToast("📋","Invite link copied!","Share it with your study partners.");
+              if(navigator.share){
+                navigator.share({title:"Join my CFA study group on ClearCFA",text:`Use code ${studyGroup.code} to join my study group`,url}).catch(()=>{});
+              } else {
+                try{navigator.clipboard.writeText(url);}catch{}
+                showToast("📋","Invite link copied!","Share it with your study partners.");
+              }
             }} style={{fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,background:C.surface,border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
-              Copy invite link
+              {navigator.share?"📤 Share invite":"📋 Copy invite link"}
             </button>
           </div>
-          <div style={{fontSize:11,color:C.muted}}>Share the code or link so friends can join your group.</div>
+          <div style={{fontSize:11,color:C.muted,userSelect:"all",wordBreak:"break-all"}}>{`${window.location.origin}${window.location.pathname}?sg=${studyGroup.code}`}</div>
         </div>
 
         {/* Leaderboard */}
@@ -9481,7 +9506,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           );
         })}
       </div>
-      <button onClick={()=>{setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+      <button onClick={()=>{genAbortRef.current?.abort();++genIdRef.current;setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
         Cancel
       </button>
     </div>
