@@ -4557,6 +4557,7 @@ function CFAMock(){
   const [importError,setImportError]=useState("");
   const [sessionSaved,setSessionSaved]=useState(null); // null=not attempted, true=ok, false=failed
   const generatingRef=useRef(false); // debounce double-tap
+  const genIdRef=useRef(0); // generation nonce — guards against stale async completing after cancel+restart
   const lastGenParamsRef=useRef(null); // for tap-to-retry
   const prequizPassProbRef=useRef(null);
   const srSessionResults=useRef({correct:0,total:0});
@@ -5782,6 +5783,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
   const generateQuestions=async(t,st,diff,cnt,m="guided",isVignette=false,st2=null,multiModules=null)=>{
     if(generatingRef.current){return;} generatingRef.current=true;
+    const myGenId=++genIdRef.current;
     setNextActionText(""); setNextActionLoading(false);
     setDuelCreating(false);
     lastGenParamsRef.current={t,st,diff,cnt,m,isVignette,st2};
@@ -5900,6 +5902,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           storageSet(QCACHE_KEY,qCacheRef.current);
           setLoadingProgress(100);setLoadingMsg("Questions ready!");
           await new Promise(r=>setTimeout(r,250));
+          if(genIdRef.current!==myGenId){clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;return;}
           setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
           setVignetteMode(false);
           setQuestions(fingerprintQuestions(finalQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
@@ -6009,6 +6012,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       // Clear pending gen — generation succeeded
       setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}
       await new Promise(r=>setTimeout(r,350));
+      if(genIdRef.current!==myGenId){clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;return;}
       setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
       setVignetteMode(isVignette);
       setQuestions(isVignette?finalQs:fingerprintQuestions(finalQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
@@ -6036,6 +6040,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}
             clearInterval(progressInterval);
             await new Promise(r=>setTimeout(r,350));
+            if(genIdRef.current!==myGenId){setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;return;}
             setTopic(t);setSubtopic(usedSt);setDifficulty(diff);setCount(cnt);setMode(m);
             setVignetteMode(false);
             setQuestions(fingerprintQuestions(offlineQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
