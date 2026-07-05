@@ -259,11 +259,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04-d
-{version:"2026-07-04-d",slides:[
-{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"We've added quick-reference cards to the Cash Flows, Amortization, and Interest Conversion sections so you can instantly see formulas and key concepts without leaving your practice. These cards help reinforce critical CFA formulas during your study sessions.",tip:"Look for the reference card icon in CF, Amortization, and ICONV lessons to pull up instant formula guides."},
-{emoji:"🔧",color:C.medium,bg:C.medium,title:"TVM Calculator Entry Fixed",sub:"Bug Fix · 2026-07-04 update",desc:"We fixed sign entry and operator handling in the Time Value of Money calculator so your inputs are stored correctly and calculations stay accurate. This ensures your TVM practice questions evaluate properly every time.",tip:"When entering negative cash flows or using operators in TVM, your values will now display and calculate correctly."},
-]},
 // WN_VER:2026-07-04-e
 {version:"2026-07-04-e",slides:[
 {emoji:"📚",color:C.reward,bg:C.reward,title:"Reference Cards for Financial Calcs",sub:"Study Tools · 2026-07-04 update",desc:"Reference cards are now available in Cash Flow, Amortization, and Interest Conversion sections to help you quickly recall formulas and concepts during practice. These quick-reference guides reduce lookup time and reinforce key relationships you'll need on exam day.",tip:"Check the reference card icon in each section to review formulas before tackling difficult problems."},
@@ -284,6 +279,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes Shown",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display the exact BA II Plus keystrokes needed to solve them. This removes guesswork and trains you on the precise button sequence you'll use on exam day.",tip:"Look for the keystroke sequence displayed alongside calculator questions—practice typing them out to build muscle memory."},
 {emoji:"🔧",color:C.medium,bg:C.medium,title:"Improved AI Diagnosis Reliability",sub:"Bug Fix · 2026-07-05 update",desc:"Fixed the AI diagnosis feature so it consistently connects your question to the right analysis. You'll now get more accurate, targeted insights into gaps in your understanding.",tip:"Use the AI diagnosis button after a tough question to see personalized explanations tied to your mistake."},
 {emoji:"📖",color:C.easy,bg:C.easy,title:"YTM Calculator Guide Enhanced",sub:"Study Tools · 2026-07-05 update",desc:"The YTM guide now correctly shows how to enter negative present values using the [+/−] sign-change button on your BA II Plus. This prevents costly entry errors on yield-to-maturity problems.",tip:"When working through YTM problems, refer to the keystroke guide to confirm the right way to input negative cash flows."},
+]},
+// WN_VER:2026-07-05-d
+{version:"2026-07-05-d",slides:[
+{emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes On-Demand",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside explanations. This bridges the gap between understanding the concept and executing it on your physical calculator during the exam.",tip:"Look for the keystroke guide when answering financial math questions—practice the button sequence until it's muscle memory."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Daily Questions Load Faster",sub:"UX · 2026-07-05 update",desc:"Daily question cards now collapse to a compact view once you've answered them, reducing visual clutter and letting you move through your study queue more smoothly. More questions reviewed in less time means higher retention.",tip:"Watch your Daily Q section compress after each answer—it's your visual cue that you're making progress."},
+{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"AI Diagnosis Now Works Reliably",sub:"AI · 2026-07-05 update",desc:"Fixed a critical bug in the AI diagnosis button that was preventing it from analyzing your answers correctly. You can now confidently use AI-powered feedback to understand *why* you got a question wrong.",tip:"Tap the AI diagnosis button after a tough question to get personalized insights on your knowledge gaps."},
 ]},
 // WN_END
 ];
@@ -335,8 +336,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
+// AC_VER:2026-07-05
+{date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
