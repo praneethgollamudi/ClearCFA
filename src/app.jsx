@@ -4712,6 +4712,7 @@ function CFAMock(){
   const [sgJoinCode,setSgJoinCode]=useState("");
   const [sgCreateName,setSgCreateName]=useState("");
   const [sgLoading,setSgLoading]=useState(false);
+  const [sgError,setSgError]=useState("");
   const [notifEnabled,setNotifEnabled]=useState(()=>{try{return localStorage.getItem("cfa_notif_v1")==="1";}catch{return false;}});
   const [reelAnswer,setReelAnswer]=useState(null);
   const [reelRevealed,setReelRevealed]=useState(false);
@@ -5061,6 +5062,25 @@ function CFAMock(){
       sessionStorage.removeItem(DUEL_KEY);
     }catch{}
   },[]);
+
+  // Pre-fill study group join from ?sg= invite link
+  useEffect(()=>{
+    try{
+      const code=sessionStorage.getItem('cfa_sg_invite');
+      if(!code) return;
+      sessionStorage.removeItem('cfa_sg_invite');
+      setSgJoinCode(code);
+      setSgScreen(true);
+    }catch{}
+  },[]);
+
+  // Load group leaderboard when study group screen opens
+  useEffect(()=>{
+    if(!sgScreen||!studyGroup?.groupId||!authUser?.id) return;
+    fetchGroupLeaderboard(SB_CFG,authUser,studyGroup.groupId)
+      .then(rows=>setGroupLeaderboard(rows))
+      .catch(()=>{});
+  },[sgScreen,studyGroup?.groupId]);
 
   // Daily notification check
   useEffect(()=>{
@@ -7331,7 +7351,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {/* Leaderboard */}
         {groupLeaderboard.length>0&&(
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:12}}>This Week's Leaderboard</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase"}}>This Week's Leaderboard</div>
+              <button onClick={()=>fetchGroupLeaderboard(SB_CFG,authUser,studyGroup.groupId).then(setGroupLeaderboard).catch(()=>{})} style={{fontSize:10,color:C.muted,background:"none",border:"none",cursor:"pointer",padding:"2px 6px"}}>↻ Refresh</button>
+            </div>
             {groupLeaderboard.map((m,i)=>(
               <div key={m.userId} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<groupLeaderboard.length-1?`1px solid ${C.border}`:"none"}}>
                 <div style={{width:24,height:24,borderRadius:"50%",background:i===0?C.reward+"30":C.surface,border:`1px solid ${i===0?C.reward:C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:i===0?C.reward:C.muted,flexShrink:0}}>
@@ -7347,8 +7370,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         )}
 
-        <button onClick={()=>{
-          setStudyGroup(null);
+        <button onClick={async()=>{
+          if(studyGroup?.groupId&&authUser?.id) await leaveStudyGroup(SB_CFG,authUser,studyGroup.groupId).catch(()=>{});
+          setStudyGroup(null);setGroupLeaderboard([]);
           try{localStorage.removeItem(SG_KEY);}catch{}
           showToast("👋","Left group","You've left the study group.");
         }} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,background:"none",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
@@ -7360,17 +7384,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {/* Create Group */}
         <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
           <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:10}}>Create a group</div>
-          <input value={sgCreateName} onChange={e=>setSgCreateName(e.target.value)} placeholder="Group name (e.g. CFA L1 June 2026)"
+          <input value={sgCreateName} onChange={e=>{setSgCreateName(e.target.value);setSgError("");}} placeholder="Group name (e.g. CFA L1 June 2026)"
             style={{width:"100%",padding:"10px 12px",borderRadius:9,fontSize:13,border:`1px solid ${C.border}`,background:C.bg,color:C.text,marginBottom:10,outline:"none"}}/>
           <button disabled={!sgCreateName.trim()||sgLoading||!authUser?.id} onClick={async()=>{
             if(!authUser?.id){showToast("🔒","Sign in required","Create an account to use study groups.");return;}
-            setSgLoading(true);
-            const code=Math.random().toString(36).slice(2,8).toUpperCase();
-            const group={groupId:`local_${Date.now()}`,code,name:sgCreateName.trim(),createdBy:authUser.id};
-            setStudyGroup(group);
-            try{localStorage.setItem(SG_KEY,JSON.stringify(group));}catch{}
-            setSgCreateName("");setSgLoading(false);
-            showToast("👥","Group created!",`Code: ${code} — share with friends.`);
+            setSgLoading(true);setSgError("");
+            try{
+              const group=await createStudyGroup(SB_CFG,authUser,sgCreateName.trim());
+              setStudyGroup(group);
+              try{localStorage.setItem(SG_KEY,JSON.stringify(group));}catch{}
+              setSgCreateName("");
+              showToast("👥","Group created!",`Code: ${group.code} — share with friends.`);
+            }catch(e){setSgError(e.message||"Could not create group. Try again.");}
+            setSgLoading(false);
           }} style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:sgCreateName.trim()&&!sgLoading&&authUser?.id?"pointer":"not-allowed",opacity:sgCreateName.trim()&&!sgLoading&&authUser?.id?1:0.5}}>
             {sgLoading?"Creating…":"Create Group →"}
           </button>
@@ -7379,20 +7405,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {/* Join Group */}
         <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",marginBottom:14}}>
           <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:10}}>Join a group</div>
-          <input value={sgJoinCode} onChange={e=>setSgJoinCode(e.target.value.toUpperCase().slice(0,6))} placeholder="Enter 6-char code"
-            style={{width:"100%",padding:"10px 12px",borderRadius:9,fontSize:13,border:`1px solid ${C.border}`,background:C.bg,color:C.text,marginBottom:10,outline:"none",letterSpacing:"0.12em",fontWeight:700}}/>
-          <button disabled={sgJoinCode.length!==6||sgLoading||!authUser?.id} onClick={()=>{
+          <input value={sgJoinCode} onChange={e=>{setSgJoinCode(e.target.value.toUpperCase().slice(0,6));setSgError("");}} placeholder="Enter 6-char code"
+            style={{width:"100%",padding:"10px 12px",borderRadius:9,fontSize:13,border:`1px solid ${sgError?C.hard:C.border}`,background:C.bg,color:C.text,marginBottom:10,outline:"none",letterSpacing:"0.12em",fontWeight:700}}/>
+          <button disabled={sgJoinCode.length!==6||sgLoading||!authUser?.id} onClick={async()=>{
             if(!authUser?.id){showToast("🔒","Sign in required","Create an account to join study groups.");return;}
-            const group={groupId:`joined_${sgJoinCode}`,code:sgJoinCode,name:`Group ${sgJoinCode}`,createdBy:null};
-            setStudyGroup(group);
-            try{localStorage.setItem(SG_KEY,JSON.stringify(group));}catch{}
-            setSgJoinCode("");
-            showToast("👥","Joined!",`You've joined group ${sgJoinCode}.`);
+            setSgLoading(true);setSgError("");
+            try{
+              const group=await joinStudyGroupByCode(SB_CFG,authUser,sgJoinCode);
+              setStudyGroup(group);
+              try{localStorage.setItem(SG_KEY,JSON.stringify(group));}catch{}
+              setSgJoinCode("");
+              showToast("👥","Joined!",`You've joined ${group.name}.`);
+            }catch(e){setSgError(e.message||"Could not join group. Check the code and try again.");}
+            setSgLoading(false);
           }} style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:sgJoinCode.length===6&&!sgLoading&&authUser?.id?`linear-gradient(135deg,${C.accent},${C.accentLight})`:"none",color:sgJoinCode.length===6&&!sgLoading&&authUser?.id?"#fff":C.muted,border:sgJoinCode.length===6&&!sgLoading&&authUser?.id?"none":`1px solid ${C.border}`,cursor:sgJoinCode.length===6&&!sgLoading&&authUser?.id?"pointer":"not-allowed",opacity:sgJoinCode.length===6&&authUser?.id?1:0.5}}>
-            Join Group →
+            {sgLoading?"Joining…":"Join Group →"}
           </button>
         </div>
 
+        {sgError&&<div style={{fontSize:12,color:C.hard,textAlign:"center",marginBottom:10}}>{sgError}</div>}
         {!authUser?.id&&<div style={{textAlign:"center",fontSize:12,color:C.muted,lineHeight:1.6}}>Sign in or create a free account to use study groups.</div>}
       </div>
     )}
@@ -12041,6 +12072,7 @@ function ToastManager(){
 // Capture referral code from URL before React boots
 try{const ref=new URLSearchParams(window.location.search).get('ref');if(ref){sessionStorage.setItem('cfa_ref',ref);}}catch{}
 try{const duel=new URLSearchParams(window.location.search).get('duel');if(duel){sessionStorage.setItem(DUEL_KEY,duel);}}catch{}
+try{const sgc=new URLSearchParams(window.location.search).get('sg');if(sgc){sessionStorage.setItem('cfa_sg_invite',sgc.toUpperCase().slice(0,6));}}catch{}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CFAMock));

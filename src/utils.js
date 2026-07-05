@@ -143,6 +143,87 @@ async function submitFeedback(cfg, {userId="anon", rating=0, category="General",
   }catch{return false;}
 }
 
+// ─── Study Groups ─────────────────────────────────────────────────────────────
+async function createStudyGroup(cfg, auth, name){
+  const bearer=auth?.accessToken||cfg.key;
+  const code=Math.random().toString(36).slice(2,8).toUpperCase();
+  const res=await fetch(`${cfg.url}/rest/v1/study_groups`,{
+    method:"POST",
+    headers:{"apikey":cfg.key,"Authorization":`Bearer ${bearer}`,"Content-Type":"application/json","Prefer":"return=representation"},
+    body:JSON.stringify({name,code,created_by:auth.id})
+  });
+  if(!res.ok) throw new Error(await res.text().catch(()=>"Create failed"));
+  const rows=await res.json();
+  const g=rows[0];
+  await fetch(`${cfg.url}/rest/v1/group_members`,{
+    method:"POST",
+    headers:{"apikey":cfg.key,"Authorization":`Bearer ${bearer}`,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates,return=minimal"},
+    body:JSON.stringify({group_id:g.id,user_id:auth.id,display_name:auth.email||auth.id.slice(0,8)})
+  });
+  return {groupId:g.id,code:g.code,name:g.name};
+}
+
+async function joinStudyGroupByCode(cfg, auth, code){
+  const bearer=auth?.accessToken||cfg.key;
+  const res=await fetch(`${cfg.url}/rest/v1/study_groups?code=eq.${encodeURIComponent(code)}&limit=1`,{
+    headers:{"apikey":cfg.key,"Authorization":`Bearer ${bearer}`}
+  });
+  if(!res.ok) throw new Error("Network error");
+  const rows=await res.json();
+  if(!rows||rows.length===0) throw new Error("Group not found — check the code and try again.");
+  const g=rows[0];
+  const r2=await fetch(`${cfg.url}/rest/v1/group_members`,{
+    method:"POST",
+    headers:{"apikey":cfg.key,"Authorization":`Bearer ${bearer}`,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates,return=minimal"},
+    body:JSON.stringify({group_id:g.id,user_id:auth.id,display_name:auth.email||auth.id.slice(0,8)})
+  });
+  if(!r2.ok&&r2.status!==409) throw new Error("Could not join group");
+  return {groupId:g.id,code:g.code,name:g.name};
+}
+
+async function leaveStudyGroup(cfg, auth, groupId){
+  const bearer=auth?.accessToken||cfg.key;
+  await fetch(`${cfg.url}/rest/v1/group_members?group_id=eq.${encodeURIComponent(groupId)}&user_id=eq.${encodeURIComponent(auth.id)}`,{
+    method:"DELETE",
+    headers:{"apikey":cfg.key,"Authorization":`Bearer ${bearer}`}
+  });
+}
+
+async function fetchGroupLeaderboard(cfg, auth, groupId){
+  const bearer=auth?.accessToken||cfg.key;
+  const mRes=await fetch(`${cfg.url}/rest/v1/group_members?group_id=eq.${encodeURIComponent(groupId)}&select=user_id,display_name`,{
+    headers:{"apikey":cfg.key,"Authorization":`Bearer ${bearer}`}
+  });
+  const members=await mRes.json().catch(()=>[]);
+  if(!Array.isArray(members)||members.length===0) return [];
+  const userIds=members.map(m=>m.user_id);
+  const now=new Date();
+  const d=now.getDay();
+  const mon=new Date(now);
+  mon.setDate(now.getDate()-(d===0?6:d-1));
+  const mondayKey=mon.toISOString().slice(0,10);
+  const sRes=await fetch(`${cfg.url}/rest/v1/sessions?user_id=in.(${userIds.join(",")})&select=user_id,data&order=updated_at.desc`,{
+    headers:{"apikey":cfg.key,"Authorization":`Bearer ${bearer}`}
+  });
+  const sessionRows=await sRes.json().catch(()=>[]);
+  const seen=new Set();
+  const memberMap={};
+  members.forEach(m=>{memberMap[m.user_id]={userId:m.user_id,displayName:m.display_name||"Member",questions:0,accuracy:0,sessions:0};});
+  (Array.isArray(sessionRows)?sessionRows:[]).forEach(row=>{
+    if(seen.has(row.user_id)) return;
+    seen.add(row.user_id);
+    if(!memberMap[row.user_id]) return;
+    try{
+      const data=JSON.parse(row.data||"{}");
+      const wh=(data.history||[]).filter(h=>h.dateKey>=mondayKey);
+      memberMap[row.user_id].questions=wh.reduce((s,h)=>s+(h.total||0),0);
+      memberMap[row.user_id].accuracy=wh.length?Math.round(wh.reduce((s,h)=>s+(h.pct||0),0)/wh.length):0;
+      memberMap[row.user_id].sessions=wh.length;
+    }catch{}
+  });
+  return Object.values(memberMap).sort((a,b)=>b.questions-a.questions);
+}
+
 // ─── SM-2 ─────────────────────────────────────────────────────────────────────
 function sm2Update(card,correct){
   let{interval=0,repetitions=0,ef=2.5}=card;
