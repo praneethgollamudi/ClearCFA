@@ -591,21 +591,30 @@ git push origin main && git push origin main:claude/index-html-github-pages-cfa8
 | `src/data/los.js` | ~2070 | LOS curriculum data (L1/L2/L3), misconceptions, formulas, power notes |
 | `src/data/ethics.js` | ~183 | Ethics case studies |
 | `src/data/q-templates.js` | ~493 | Question generation templates |
-| `src/app.jsx` | ~10,150 | Everything else — utils, components, CFAMock, screens |
+| `src/utils.js` | ~907 | Pure utility functions — React destructure, data getters, auth, SM-2, dedup, prompts, analytics, pass probability. No JSX. |
+| `src/calculator.jsx` | ~552 | `CFACalculator` component only. Uses `C.*` inside JSX (safe — resolved at render time after C is defined in app.jsx). |
+| `src/app.jsx` | ~12,000 | App constants, `C` design tokens definition, `WHATS_NEW_SLIDES`, all other components, `CFAMock`, screens, `ToastManager` |
 
 ### src/app.jsx Structure (top to bottom)
 
 | Lines | Contents |
 |-------|----------|
-| ~1–5 | React destructure |
-| ~6–150 | Level-aware data getters (`getActiveLOS`, `getMisconceptions`, etc.) |
-| ~150–400 | Storage, SM-2, dedup, prompts, analytics, pass probability |
-| ~400–750 | App constants (storage keys, design tokens, pricing) |
-| ~750–1800 | Small components (`Badge`, `StatCard`, `ScoreRing`, etc.) + formula/revision helpers |
-| ~1800–3300 | `UpgradeModal`, `FeedbackModal`, `LessonSection`, `RevisionScreen` |
-| ~3300–4500 | `SlideOverlay`, `StudyPathScreen`, `FixToPassScreen`, `CFACalculator`, `LofiPlayer`, `ReferralCard` |
-| ~4500–10100 | `CFAMock` — main component (all state, effects, screen renders) |
-| ~10100+ | `ToastManager` |
+| ~1–170 | App constants (storage keys, exam date, pricing) + `C` design tokens definition |
+| ~170–1000 | Small components (`Badge`, `StatCard`, `ScoreRing`, etc.) + formula/revision helpers + `callAIChat` |
+| ~1000–2200 | `UpgradeModal`, `FeedbackModal`, `LessonSection`, `RevisionScreen` |
+| ~2200–3300 | `SlideOverlay`, `StudyPathScreen`, `FixToPassScreen`, `LofiPlayer`, `ReferralCard`, `WeaknessRadar` |
+| ~3300–12000 | `CFAMock` — main component (all state, effects, screen renders, `CALC_GUIDES`) |
+| ~12000+ | `ToastManager` |
+
+### src/utils.js contents (top to bottom)
+
+| Lines | Contents |
+|-------|----------|
+| ~1 | React destructure (`useState`, `useEffect`, etc.) |
+| ~7–11 | Level-aware data getters (`getActiveLOS`, `getMisconceptions`, etc.) |
+| ~14–46 | Supabase/AI constants (`SUPABASE_URL`, `SUPABASE_KEY`, `AI_PROXY_URL`) |
+| ~47–146 | Auth helpers + Google login |
+| ~147–908 | SM-2, dedup, prompts, analytics, pass probability, pace, `getMockTopicBreakdown` |
 
 Use `grep "SCREEN:"` to get a full screen index with line numbers. Each screen block is preceded by:
 

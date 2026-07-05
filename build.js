@@ -13,7 +13,9 @@ const SOURCE_FILES = [
   'src/data/los.js',          // LOS curriculum data (L1/L2/L3) — no deps
   'src/data/ethics.js',       // Ethics case studies — no deps
   'src/data/q-templates.js',  // Question templates — no deps
-  'src/app.jsx',              // Everything else (utils, components, CFAMock)
+  'src/utils.js',             // Pure utility functions (SM-2, prompts, analytics) — no JSX
+  'src/calculator.jsx',       // CFACalculator component — no module-level C.* refs
+  'src/app.jsx',              // Constants, C definition, components, CFAMock, screens
 ];
 
 const src = SOURCE_FILES.map(f => {
