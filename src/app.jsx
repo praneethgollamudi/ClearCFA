@@ -259,12 +259,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04-c
-{version:"2026-07-04-c",slides:[
-{emoji:"📚",color:C.accentLight,bg:C.easy,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"We've added quick-reference cards to the Cash Flow, Amortization, and Interest Conversion sections so you can instantly recall formulas and key concepts without leaving your calculator. These cards are designed to reinforce the most testable material at a glance.",tip:"Look for the reference icon in CF, Amortization, and ICONV—use them while practicing problems to build muscle memory before exam day."},
-{emoji:"🎛️",color:C.medium,bg:C.medium,title:"Smarter P/Y Worksheet Controls",sub:"UX · 2026-07-04 update",desc:"The P/Y worksheet now responds intuitively to your inputs: ENTER saves your entry in place, the down arrow moves to the next field, and QUIT safely exits with a confirmation prompt. This matches how financial calculators work, reducing friction and mistakes.",tip:"Press ENTER to confirm each value, then use ↓ to navigate—no more unexpected exits or lost entries."},
-{emoji:"✅",color:C.hard,bg:C.hard,title:"Fixed TVM and Cash Flow Calculations",sub:"Bug Fix · 2026-07-04 update",desc:"We fixed a critical bug where pending operations weren't evaluated before storing values in the TVM and Cash Flow engines. Now your calculations are always accurate, even when you're chaining operations together quickly.",tip:"If you've noticed unexpected results in complex TVM chains or CF sequences, try your problems again—they should solve correctly now."},
-]},
 // WN_VER:2026-07-04-d
 {version:"2026-07-04-d",slides:[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"We've added quick-reference cards to the Cash Flows, Amortization, and Interest Conversion sections so you can instantly see formulas and key concepts without leaving your practice. These cards help reinforce critical CFA formulas during your study sessions.",tip:"Look for the reference card icon in CF, Amortization, and ICONV lessons to pull up instant formula guides."},
@@ -284,6 +278,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-05-b",slides:[
 {emoji:"🧮",color:C.accentLight,bg:C.accentLight,title:"BA II Plus Keystrokes Shown",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside solutions. This bridges the gap between understanding the concept and executing it on your actual exam calculator.",tip:"Look for the keystroke guide on any question tagged with calculator usage—practice these sequences during review to build muscle memory."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Fixed Negative Value Entry",sub:"Bug Fix · 2026-07-05 update",desc:"Time Value of Money calculations now correctly handle negative present values using the [+/−] sign change key, matching BA II Plus behavior. This fixes calculation errors that could occur when working through YTM and bond pricing problems.",tip:"When entering a negative PV in a TVM question, use [+/−] to toggle the sign—the display will now update correctly and carry through to your answer."},
+]},
+// WN_VER:2026-07-05-c
+{version:"2026-07-05-c",slides:[
+{emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes Shown",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display the exact BA II Plus keystrokes needed to solve them. This removes guesswork and trains you on the precise button sequence you'll use on exam day.",tip:"Look for the keystroke sequence displayed alongside calculator questions—practice typing them out to build muscle memory."},
+{emoji:"🔧",color:C.medium,bg:C.medium,title:"Improved AI Diagnosis Reliability",sub:"Bug Fix · 2026-07-05 update",desc:"Fixed the AI diagnosis feature so it consistently connects your question to the right analysis. You'll now get more accurate, targeted insights into gaps in your understanding.",tip:"Use the AI diagnosis button after a tough question to see personalized explanations tied to your mistake."},
+{emoji:"📖",color:C.easy,bg:C.easy,title:"YTM Calculator Guide Enhanced",sub:"Study Tools · 2026-07-05 update",desc:"The YTM guide now correctly shows how to enter negative present values using the [+/−] sign-change button on your BA II Plus. This prevents costly entry errors on yield-to-maturity problems.",tip:"When working through YTM problems, refer to the keystroke guide to confirm the right way to input negative cash flows."},
 ]},
 // WN_END
 ];
@@ -341,8 +341,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
+// AC_VER:2026-07-05
+{date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
