@@ -8296,14 +8296,32 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const answered=dailyQ.answered;
       const userAns=dailyQ.userAnswer;
       const correct=dq&&userAns===dq.answer;
+      if(answered&&dq){
+        // Collapsed "done" state
+        return(
+          <div style={{background:correct?C.easy+"12":C.hard+"10",border:`1px solid ${correct?C.easy:C.hard}33`,borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between",animation:"fadeIn 0.3s ease"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:18}}>{correct?"✅":"❌"}</span>
+              <div>
+                <div style={{fontSize:11,fontWeight:800,color:C.accentLight,letterSpacing:"0.05em",textTransform:"uppercase"}}>📅 Daily Q · {localDateKey()}</div>
+                <div style={{fontSize:12,color:correct?C.easy:C.hard,fontWeight:700,marginTop:1}}>{correct?"Correct!":"Wrong — answer was "+dq.answer}</div>
+              </div>
+            </div>
+            <button onClick={()=>{
+              const shareText=`${correct?"🟢":"🔴"} Today's CFA Daily Q · ${dq._topic||""} · ${correct?"Got it!":"Missed it"} · Streak: ${getStreak(history)}d\n📚 clearcfa.com`;
+              if(navigator.share)navigator.share({title:"ClearCFA Daily Q",text:shareText}).catch(()=>{});
+              else{try{navigator.clipboard.writeText(shareText);}catch{}showToast("📋","Copied!","Share text ready");}
+            }} style={{padding:"6px 10px",borderRadius:8,fontSize:11,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>
+              📤 Share
+            </button>
+          </div>
+        );
+      }
       return(
         <div style={{background:`linear-gradient(135deg,${C.accent}14,${C.accent}06)`,border:`1px solid ${C.accent}33`,borderRadius:14,padding:"14px 16px",marginBottom:12,animation:"fadeIn 0.3s ease"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-            <div style={{fontSize:11,fontWeight:800,color:C.accentLight,letterSpacing:"0.05em",textTransform:"uppercase"}}>📅 Daily Q · {localDateKey()}</div>
-            {answered&&<span style={{fontSize:10,fontWeight:800,color:correct?C.easy:C.hard,background:correct?C.easy+"20":C.hard+"20",borderRadius:6,padding:"2px 7px"}}>{correct?"✓ Correct":"✗ Wrong"}</span>}
-          </div>
+          <div style={{fontSize:11,fontWeight:800,color:C.accentLight,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:8}}>📅 Daily Q · {localDateKey()}</div>
           {dq&&<div style={{fontSize:13,fontWeight:600,color:C.text,lineHeight:1.5,marginBottom:10}}>{dq.question}</div>}
-          {dq&&!answered&&(
+          {dq&&(
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {Object.entries(dq.options||{}).map(([k,v])=>(
                 <button key={k} onClick={()=>{
@@ -8314,27 +8332,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   {k}. {v}
                 </button>
               ))}
-            </div>
-          )}
-          {answered&&dq&&(
-            <div style={{marginTop:4}}>
-              <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                {Object.entries(dq.options||{}).map(([k,v])=>{
-                  const isCorrect=k===dq.answer;
-                  const isUser=k===userAns;
-                  const bg=isCorrect?C.easy+"25":isUser&&!isCorrect?C.hard+"22":"transparent";
-                  const border=isCorrect?C.easy:isUser&&!isCorrect?C.hard:C.border;
-                  return(<div key={k} style={{padding:"8px 12px",borderRadius:8,fontSize:12,border:`1px solid ${border}`,background:bg,color:isCorrect?C.easy:isUser&&!isCorrect?C.hard:C.muted}}>{k}. {v}</div>);
-                })}
-              </div>
-              {dq.explanation&&<div style={{marginTop:8,fontSize:12,color:C.textMid,lineHeight:1.6,paddingLeft:10,borderLeft:`2px solid ${C.accent}55`}}>{dq.explanation}</div>}
-              <button onClick={()=>{
-                const shareText=`${correct?"🟢":"🔴"} Today's CFA Daily Q · ${dq._topic||""} · ${correct?"Got it!":"Missed it"} · Streak: ${getStreak(history)}d\n📚 clearcfa.com`;
-                if(navigator.share)navigator.share({title:"ClearCFA Daily Q",text:shareText}).catch(()=>{});
-                else{try{navigator.clipboard.writeText(shareText);}catch{}showToast("📋","Copied!","Share text ready");}
-              }} style={{marginTop:10,width:"100%",padding:"9px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
-                📤 Share today's result
-              </button>
             </div>
           )}
         </div>
