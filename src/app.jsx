@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05-b
-{version:"2026-07-05-b",slides:[
-{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with real-time leaderboards to track your progress against peers. Collaborate and compete with other CFA candidates preparing for the same exam level.",tip:"Head to the Study Groups tab to create your first group or join one using an invite code."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Calculator Hints",sub:"AI · 2026-07-05 update",desc:"Calculator hints now intelligently fall back to rule-based logic, ensuring you get guidance even on cached questions. Better hints mean faster problem-solving during your study sessions.",tip:"When you're stuck on a calculation, tap the hint button to see step-by-step guidance."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother Study Experience",sub:"UX · 2026-07-05 update",desc:"Added quick abort and cancel buttons, offline question seeds, and easier sharing so you spend less time managing the app and more time learning. Session stability improvements prevent interruptions during exams.",tip:"Try the new share button to send questions to study partners instantly."},
-]},
 // WN_VER:2026-07-05-d
 {version:"2026-07-05-d",slides:[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes On-Demand",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside explanations. This bridges the gap between understanding the concept and executing it on your physical calculator during the exam.",tip:"Look for the keystroke guide when answering financial math questions—practice the button sequence until it's muscle memory."},
@@ -319,6 +313,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Smoother Dialog Experience",sub:"UX · 2026-07-05 update",desc:"Fixed persistent overlay issues so dismissing updates and notifications now works reliably every time. You'll spend less time fighting the UI and more time studying.",tip:"Notice that 'Got it' buttons and dialog closes now respond immediately without getting stuck."},
 {emoji:"🌐",color:C.medium,bg:C.medium,title:"Better Offline & Performance",sub:"Offline · 2026-07-05 update",desc:"Enhanced offline study seed generation and fixed session conflicts that could disrupt your progress. Your study data now syncs reliably whether you're online or prepping without connection.",tip:"Download your study materials for offline access and trust that your session will stay stable across app restarts."},
 ]},
+// WN_VER:2026-07-05
+{version:"2026-07-05",slides:[
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smoother Study Session Controls",sub:"UX · 2026-07-05 update",desc:"We've refined how you abort, cancel, and share during study sessions — making these actions faster and more intuitive. You'll spend less time navigating menus and more time mastering exam concepts.",tip:"Look for clearer confirmation states when ending or adjusting your study sessions."},
+{emoji:"📚",color:C.medium,bg:C.medium,title:"Better Offline & Daily Question Flow",sub:"Study Tools · 2026-07-05 update",desc:"Daily Question rotation and offline seed handling now work more reliably, with improved empty-state messaging on the leaderboard. Your study streak and offline access are now rock-solid.",tip:"Check your Daily Question to see the freshly updated problem for today."},
+{emoji:"⏱️",color:C.reward,bg:C.reward,title:"Accurate Time Estimates & Session Stability",sub:"Bug Fix · 2026-07-05 update",desc:"Fixed a session conflict that could cause stale data to overwrite your active study progress, and improved ETA accuracy so you know exactly how long each study block will take. Your session data is now trustworthy.",tip:"Check the ETA at the start of your next quiz — it should now match your actual study pace."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -333,8 +333,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
+// AC_VER:2026-07-05
+{date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
