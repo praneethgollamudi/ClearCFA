@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**App architecture refactor (d43b633)**: The monolithic src/app.jsx has been split into utils.js and calculator.jsx to improve maintainability and code organization. When adding new features or modifying existing logic, ensure utility functions remain in utils.js and calculator-specific code stays in calculator.jsx to maintain the separation of concerns established by this refactor.
+
+
 **What's New version reordering (f47b7af)**: Versions 2026-07-04-d and 2026-07-04-e have been removed from WHATS_NEW_SLIDES array and replaced with consolidated 2026-07-04-c and reordered 2026-07-04-d; currently active versions are 2026-07-04-f, 2026-07-04-b, 2026-07-04-c, 2026-07-04-d, and 2026-07-04. Always verify against active list when adding future versions to prevent duplicate messaging and maintain chronological clarity.
 
 
@@ -986,7 +989,6 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 ### Storage keys
 | localStorage value | Constant |
 |---|---|
-| `cfa_backup_v7` | `BACKUP_KEY` |
 | `cfa_mock_v7` | `STORAGE_KEY` |
 | `cfa_sr_v7` | `SR_KEY` |
 | `cfa_qdb_v7` | `QDB_KEY` |
@@ -1032,7 +1034,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1795200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1795300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
