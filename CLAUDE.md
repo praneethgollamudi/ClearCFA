@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Study Groups leaderboard scope (7a16812)**: Study group leaderboards display real-time member rankings fetched from Supabase with proper authentication context. When querying or updating leaderboard data, ensure the Supabase client scope is limited to the current group and authenticated user to prevent cross-group data leakage.
+
+
+**Session race condition fix (8fe6efd)**: Session generation now checks for active sessions before creating new ones, preventing stale sessions from overwriting the current user's active session state. When modifying session creation or authentication flows, verify that session checks occur before state mutation to maintain data consistency across concurrent user actions.
+
+
+**What's New version consolidation (8fe6efd)**: Versions 2026-07-04-e and 2026-07-05 have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-05-b, 2026-07-05-c, 2026-07-05-d, 2026-07-05-e, and 2026-07-05-f. Versions 2026-07-05-e and 2026-07-05-f consolidate BA II Plus keystroke display, rule-based hint fallback, Daily Q collapse, Study Groups integration, and leaderboard features. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (7a16812)**: Versions 2026-07-04-d and 2026-07-04-e have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-05, 2026-07-05-b, 2026-07-05-c, 2026-07-05-d, and 2026-07-05-e. Version 2026-07-05-d and 2026-07-05-e consolidate BA II Plus keystroke display, Daily Q collapse, rule-based hint fallback, and AI diagnosis fixes. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1067,7 +1076,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1795800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1795900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
