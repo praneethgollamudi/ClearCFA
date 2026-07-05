@@ -259,11 +259,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05-b
-{version:"2026-07-05-b",slides:[
-{emoji:"🧮",color:C.accentLight,bg:C.accentLight,title:"BA II Plus Keystrokes Shown",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside solutions. This bridges the gap between understanding the concept and executing it on your actual exam calculator.",tip:"Look for the keystroke guide on any question tagged with calculator usage—practice these sequences during review to build muscle memory."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Fixed Negative Value Entry",sub:"Bug Fix · 2026-07-05 update",desc:"Time Value of Money calculations now correctly handle negative present values using the [+/−] sign change key, matching BA II Plus behavior. This fixes calculation errors that could occur when working through YTM and bond pricing problems.",tip:"When entering a negative PV in a TVM question, use [+/−] to toggle the sign—the display will now update correctly and carry through to your answer."},
-]},
 // WN_VER:2026-07-05-c
 {version:"2026-07-05-c",slides:[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes Shown",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display the exact BA II Plus keystrokes needed to solve them. This removes guesswork and trains you on the precise button sequence you'll use on exam day.",tip:"Look for the keystroke sequence displayed alongside calculator questions—practice typing them out to build muscle memory."},
@@ -287,6 +282,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups & Leaderboards",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with other CFA candidates to collaborate, share progress, and compete on leaderboards. Studying together keeps you motivated and lets you learn from peers preparing for the same exam.",tip:"Tap the Study Groups tab to create a new group or join an existing one with your study partners."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints",sub:"AI · 2026-07-05 update",desc:"AI-powered calculator hints now load instantly from cache on repeated questions, eliminating wait time. You get guidance when you need it without slowing down your practice momentum.",tip:"Notice how hint suggestions appear immediately when you encounter similar questions you've seen before."},
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Daily Question Cards",sub:"UX · 2026-07-05 update",desc:"Daily practice cards now collapse to a compact view after you answer, keeping your screen uncluttered and ready for the next question. You focus on learning, not scrolling.",tip:"Answer a Daily Question and watch the card collapse—tap it again to expand and review your answer."},
+]},
+// WN_VER:2026-07-05
+{version:"2026-07-05",slides:[
+{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups directly in the app and track progress on live leaderboards. Collaborate with peers preparing for the same CFA level and stay motivated through friendly competition.",tip:"Start a group with classmates and watch your collective study streaks climb the leaderboard."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints Offline",sub:"AI · 2026-07-05 update",desc:"Calculator hints now work instantly on cached questions, even without internet. You'll get smart fallback guidance to solve tricky quantitative problems whenever you need it.",tip:"Try answering a financial math question on airplane mode—hints still appear in seconds."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Cleaner Quiz Card Design",sub:"UX · 2026-07-05 update",desc:"Daily question cards now collapse to a compact done-state after you answer. Your study feed stays focused and uncluttered as you work through more questions.",tip:"Notice how answered cards shrink automatically, keeping your dashboard clean and fast-scrolling."},
 ]},
 // WN_END
 ];
@@ -320,8 +321,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
+// AC_VER:2026-07-05
+{date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
