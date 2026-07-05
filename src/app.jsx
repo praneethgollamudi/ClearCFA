@@ -268,12 +268,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05
-{version:"2026-07-05",slides:[
-{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups directly in the app and track progress on live leaderboards. Collaborate with peers preparing for the same CFA level and stay motivated through friendly competition.",tip:"Start a group with classmates and watch your collective study streaks climb the leaderboard."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints Offline",sub:"AI · 2026-07-05 update",desc:"Calculator hints now work instantly on cached questions, even without internet. You'll get smart fallback guidance to solve tricky quantitative problems whenever you need it.",tip:"Try answering a financial math question on airplane mode—hints still appear in seconds."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Cleaner Quiz Card Design",sub:"UX · 2026-07-05 update",desc:"Daily question cards now collapse to a compact done-state after you answer. Your study feed stays focused and uncluttered as you work through more questions.",tip:"Notice how answered cards shrink automatically, keeping your dashboard clean and fast-scrolling."},
-]},
 // WN_VER:2026-07-05-b
 {version:"2026-07-05-b",slides:[
 {emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with real-time leaderboards to track your progress against peers. Collaborate and compete with other CFA candidates preparing for the same exam level.",tip:"Head to the Study Groups tab to create your first group or join one using an invite code."},
@@ -298,6 +292,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints",sub:"AI · 2026-07-05 update",desc:"AI-powered calculator hints now load instantly from cache on repeated questions, eliminating wait time. You get guidance when you need it without slowing down your practice momentum.",tip:"Notice how hint suggestions appear immediately when you encounter similar questions you've seen before."},
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Daily Question Cards",sub:"UX · 2026-07-05 update",desc:"Daily practice cards now collapse to a compact view after you answer, keeping your screen uncluttered and ready for the next question. You focus on learning, not scrolling.",tip:"Answer a Daily Question and watch the card collapse—tap it again to expand and review your answer."},
 ]},
+// WN_VER:2026-07-05-c
+{version:"2026-07-05-c",slides:[
+{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with real-time leaderboards to track progress alongside peers. Collaborative learning helps reinforce concepts and keeps you motivated through the CFA curriculum.",tip:"Start or find a study group in the Groups tab to see live rankings of your cohort's performance."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Smoother Dialog Experience",sub:"UX · 2026-07-05 update",desc:"Fixed persistent overlay issues so dismissing updates and notifications now works reliably every time. You'll spend less time fighting the UI and more time studying.",tip:"Notice that 'Got it' buttons and dialog closes now respond immediately without getting stuck."},
+{emoji:"🌐",color:C.medium,bg:C.medium,title:"Better Offline & Performance",sub:"Offline · 2026-07-05 update",desc:"Enhanced offline study seed generation and fixed session conflicts that could disrupt your progress. Your study data now syncs reliably whether you're online or prepping without connection.",tip:"Download your study materials for offline access and trust that your session will stay stable across app restarts."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -318,8 +318,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
+// AC_VER:2026-07-05
+{date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
