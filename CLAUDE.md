@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New 'Got it' button persistence fix (97db805)**: The What's New overlay 'Got it' buttons now properly dismiss the overlay and prevent it from re-appearing on subsequent visits. When modifying What's New modal state management or persistence logic, ensure dismissal state is correctly saved and respected to prevent overlay loop regression.
+
+
+**Offline seed questions Ethics expansion (97db805)**: OFFLINE_SEED_QS Ethics suite now includes 6 questions (s_et_1 through s_et_6) covering MNPI, Standards hierarchy, gift disclosure, suitability, and supervisor responsibilities. All explanations use the "Correct: [option]" prefix format. When adding or modifying offline seed questions, maintain this prefix convention for consistency across all question types.
+
+
 **Four UX improvements deployed (cbdd9fd)**: Recent release added abort/cancel request handling, share functionality, offline seed expansion, and answer format validation. When implementing async operations or new user actions, ensure abort signals are properly propagated and cancel handlers clean up pending API calls to prevent orphaned requests.
 
 
@@ -1082,7 +1088,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1796000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1796100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
