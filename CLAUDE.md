@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**AI diagnosis argument order fix (0db1e7c)**: The callAIChat function now receives arguments in the correct order (question, answer, mode) to ensure AI diagnosis reliably connects user errors to the right analysis. When invoking AI diagnosis from question cards or feedback UI, verify argument order matches the function signature to prevent analysis mismatch.
+
+
+**Daily Q card done-state collapse (fde2299)**: The Daily Question card now collapses to a compact done-state immediately after the user answers a question, reducing visual clutter and encouraging progression through multiple questions. When modifying the Daily Q UI or feedback flow, maintain this collapse behavior to preserve the streamlined study experience.
+
+
+**What's New version consolidation (fde2299–d81f23c)**: Versions 2026-07-04-b and 2026-07-04-c have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-04-d, 2026-07-04-e, 2026-07-05, 2026-07-05-b, and 2026-07-05-c. Version 2026-07-05-c consolidates BA II Plus keystroke display, AI diagnosis reliability fix, and YTM sign-entry improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (0db1e7c–d81f23c)**: Versions 2026-07-04 and 2026-07-04-b have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-04-c, 2026-07-04-d, 2026-07-05, and 2026-07-05-b. Version 2026-07-05-b consolidates BA II Plus keystroke display feature and negative value entry fix. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1046,7 +1055,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1795500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1795600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
