@@ -4,6 +4,18 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**ETA display polish (a4de3b2)**: Estimated time-to-completion calculations and displays have been refined for accuracy and clarity. When modifying time estimation logic or study progress calculations, validate ETA outputs against actual study session durations to maintain user trust in completion predictions.
+
+
+**Leaderboard empty state handling (a4de3b2)**: Study Groups leaderboard now includes explicit empty state display when no members have answered questions yet. When updating leaderboard rendering logic, ensure empty states are properly detected and displayed to prevent confusing blank screens before data loads.
+
+
+**Daily Question rotation logic (a4de3b2)**: Daily Question feature now includes rotation logic to cycle through different questions across user sessions. When modifying Daily Q state management or persistence, verify that question rotation respects session boundaries and doesn't display the same question repeatedly within a user's study window.
+
+
+**Offline seed questions Quantitative Methods & Economics expansion (a4de3b2)**: OFFLINE_SEED_QS now includes 6 additional Quantitative Methods questions (s_qm_4 through s_qm_6) covering joint probability, Type I/II errors, and regression coefficients, plus 6 Economics questions (s_ec_4 through s_ec_6) covering GDP components, monetary policy transmission, and PPP. All new explanations use the "Correct: [option]" prefix format. When expanding offline seeds further, maintain consistent prefix conventions across all topics.
+
+
 **What's New 'Got it' button persistence fix (97db805)**: The What's New overlay 'Got it' buttons now properly dismiss the overlay and prevent it from re-appearing on subsequent visits. When modifying What's New modal state management or persistence logic, ensure dismissal state is correctly saved and respected to prevent overlay loop regression.
 
 
@@ -1088,7 +1100,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1796100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1796200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
