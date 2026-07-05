@@ -259,12 +259,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04
-{version:"2026-07-04",slides:[
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"TVM Reference Card Added",sub:"Study Tools · 2026-07-04 update",desc:"New Time Value of Money key reference card now available in your study materials. Quick access to essential TVM formulas and concepts helps you stay sharp during practice sessions.",tip:"Find it in your Study Tools section whenever you need a fast TVM formula lookup."},
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Workflow Improvements",sub:"UX · 2026-07-04 update",desc:"P/Y worksheet now responds intuitively—ENTER saves in place, down arrow advances to the next field, and QUIT exits with a confirmation prompt. Calculator guide steps now clear properly and provide live feedback as you work through them.",tip:"Try using ENTER and arrow keys in the P/Y worksheet to feel the smoother workflow."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Note Formatting Fixed",sub:"Bug Fix · 2026-07-04 update",desc:"Note newlines now render correctly across all platforms, making your study notes cleaner and easier to read. Better formatting means your custom notes stay organized just as you intended.",tip:"Check any notes you've saved with line breaks—they'll display properly now."},
-]},
 // WN_VER:2026-07-04-b
 {version:"2026-07-04-b",slides:[
 {emoji:"📚",color:C.easy,bg:C.easy,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"Quick-reference cards are now available for Cash Flow, Amortization, Interest Conversion, and Time Value of Money sections. These cards summarize formulas and key concepts at a glance, helping you review critical material faster during study sessions.",tip:"Check the reference cards before tackling practice problems to reinforce formulas and definitions."},
@@ -286,6 +280,10 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📚",color:C.reward,bg:C.reward,title:"Reference Cards for Financial Calcs",sub:"Study Tools · 2026-07-04 update",desc:"Reference cards are now available in Cash Flow, Amortization, and Interest Conversion sections to help you quickly recall formulas and concepts during practice. These quick-reference guides reduce lookup time and reinforce key relationships you'll need on exam day.",tip:"Check the reference card icon in each section to review formulas before tackling difficult problems."},
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother TVM & Cash Flow Entry",sub:"UX · 2026-07-04 update",desc:"Time Value of Money and cash flow input now properly stores pending calculations and resets display state, making multi-step problems feel seamless. You'll spend less time fighting the calculator interface and more time mastering the concepts.",tip:"Try entering a multi-step TVM problem—the calculator now behaves like a real financial calculator with proper operator evaluation."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Clearer Negative PV Entry Guide",sub:"Bug Fix · 2026-07-04 update",desc:"The YTM guide now clearly uses the [+/−] sign-change button to show how to enter negative present values. This removes confusion around sign conventions that often trips up test-takers.",tip:"When working through YTM problems, look for the [+/−] button to properly enter cash outflows."},
+]},
+// WN_VER:2026-07-05
+{version:"2026-07-05",slides:[
+,
 ]},
 // WN_END
 ];
