@@ -9885,6 +9885,27 @@ Return ONLY a JSON array — no prose, no markdown fences:
           }:null,q.concept||q.los_tested||"")}
           {q.los_tested&&<div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.muted}}><span style={{color:C.accentLight,fontWeight:700}}>LOS tested: </span>{q.los_tested}</div>}
           {q.misconception_targeted&&<div style={{marginTop:6,fontSize:11,color:C.muted}}><span style={{fontWeight:700}}>Distractor targets: </span>{q.misconception_targeted}</div>}
+          {q.calc_steps?.applicable&&(()=>{
+            const wsColors={"TVM":"#3b82f6","CF":"#22c55e","ICONV":"#f59e0b","Amort":"#a855f7"};
+            const wsColor=wsColors[q.calc_steps.worksheet]||C.accentLight;
+            return(
+              <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                  <span style={{fontSize:11,fontWeight:700,color:"#f59e0b"}}>⚡</span>
+                  <span style={{fontSize:11,fontWeight:700,color:C.text}}>BA II Plus shortcut</span>
+                  <span style={{fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:8,background:wsColor+"22",color:wsColor,border:`1px solid ${wsColor}44`}}>{q.calc_steps.worksheet}</span>
+                </div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4,alignItems:"center",marginBottom:q.calc_steps.result?6:8}}>
+                  {(q.calc_steps.keys||[]).map((k,i)=>{
+                    const isFn=k.startsWith("[")&&k.endsWith("]");
+                    return <span key={i} style={{fontFamily:"monospace",fontSize:11,fontWeight:700,padding:"3px 8px",borderRadius:5,background:isFn?`${C.accent}33`:"#ffffff14",color:isFn?C.accentLight:C.text,border:`1px solid ${isFn?C.accent+"44":C.border}`}}>{k}</span>;
+                  })}
+                </div>
+                {q.calc_steps.result&&<div style={{fontSize:12,fontWeight:700,color:C.easy,marginBottom:8}}>→ {q.calc_steps.result}</div>}
+                <button onClick={()=>setCalcOpen(true)} style={{padding:"5px 11px",borderRadius:7,fontSize:11,fontWeight:700,background:`${C.accent}22`,color:C.accentLight,border:`1px solid ${C.accent}44`,cursor:"pointer"}}>▶ Open Calculator</button>
+              </div>
+            );
+          })()}
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
             <span style={{fontSize:10,color:C.muted}}>Was this explanation helpful?</span>
             {[{v:1,label:"👍"},{v:-1,label:"👎"}].map(({v,label})=>(
