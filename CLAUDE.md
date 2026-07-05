@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (7a16812)**: Versions 2026-07-04-d and 2026-07-04-e have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-05, 2026-07-05-b, 2026-07-05-c, 2026-07-05-d, and 2026-07-05-e. Version 2026-07-05-d and 2026-07-05-e consolidate BA II Plus keystroke display, Daily Q collapse, rule-based hint fallback, and AI diagnosis fixes. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**Study Groups Supabase integration (7a16812)**: Study Groups feature now uses Supabase for real-time create/join/leave/leaderboard operations. When modifying Study Groups functionality, ensure all CRUD operations and leaderboard queries are routed through Supabase client and authenticated properly to maintain data consistency across user sessions.
+
+
 **What's New version consolidation (c6d16c7)**: Versions 2026-07-04-c and 2026-07-04-d have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-04-e, 2026-07-05, 2026-07-05-b, 2026-07-05-c, and 2026-07-05-d. Version 2026-07-05-c consolidates BA II Plus keystroke display, AI diagnosis reliability fix, and YTM sign-entry improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1061,7 +1067,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1795700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1795800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
