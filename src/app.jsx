@@ -10298,7 +10298,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               try{
                 const wrongConcepts=wrongs.slice(0,5).map(q=>q.concept||q.los_tested||q.question.slice(0,60)).join("; ");
                 const prompt=`CFA L${cfaLevel} coach. Student scored ${sessionPct}% on ${subtopic}. Wrong answers: ${wrongConcepts}. In exactly 2 sentences: (1) name the specific concept gap, (2) one targeted drill action to fix it. Be direct.`;
-                const result=await callAIChat([{role:"user",content:prompt}],authUser?.accessToken,cfaLevel);
+                const result=await callAIChat(authUser.id,[{role:"user",content:prompt}],200,cfaLevel,{throws:true});
                 setNextActionText(result);
               }catch(e){
                 if(e.quotaExceeded)setUpgradeModal({reason:"chat_limit"});
