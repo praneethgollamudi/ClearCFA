@@ -259,12 +259,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04-e
-{version:"2026-07-04-e",slides:[
-{emoji:"📚",color:C.reward,bg:C.reward,title:"Reference Cards for Financial Calcs",sub:"Study Tools · 2026-07-04 update",desc:"Reference cards are now available in Cash Flow, Amortization, and Interest Conversion sections to help you quickly recall formulas and concepts during practice. These quick-reference guides reduce lookup time and reinforce key relationships you'll need on exam day.",tip:"Check the reference card icon in each section to review formulas before tackling difficult problems."},
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother TVM & Cash Flow Entry",sub:"UX · 2026-07-04 update",desc:"Time Value of Money and cash flow input now properly stores pending calculations and resets display state, making multi-step problems feel seamless. You'll spend less time fighting the calculator interface and more time mastering the concepts.",tip:"Try entering a multi-step TVM problem—the calculator now behaves like a real financial calculator with proper operator evaluation."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Clearer Negative PV Entry Guide",sub:"Bug Fix · 2026-07-04 update",desc:"The YTM guide now clearly uses the [+/−] sign-change button to show how to enter negative present values. This removes confusion around sign conventions that often trips up test-takers.",tip:"When working through YTM problems, look for the [+/−] button to properly enter cash outflows."},
-]},
 // WN_VER:2026-07-05
 {version:"2026-07-05",slides:[
 ,
@@ -285,6 +279,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes On-Demand",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside explanations. This bridges the gap between understanding the concept and executing it on your physical calculator during the exam.",tip:"Look for the keystroke guide when answering financial math questions—practice the button sequence until it's muscle memory."},
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Daily Questions Load Faster",sub:"UX · 2026-07-05 update",desc:"Daily question cards now collapse to a compact view once you've answered them, reducing visual clutter and letting you move through your study queue more smoothly. More questions reviewed in less time means higher retention.",tip:"Watch your Daily Q section compress after each answer—it's your visual cue that you're making progress."},
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"AI Diagnosis Now Works Reliably",sub:"AI · 2026-07-05 update",desc:"Fixed a critical bug in the AI diagnosis button that was preventing it from analyzing your answers correctly. You can now confidently use AI-powered feedback to understand *why* you got a question wrong.",tip:"Tap the AI diagnosis button after a tough question to get personalized insights on your knowledge gaps."},
+]},
+// WN_VER:2026-07-05-e
+{version:"2026-07-05-e",slides:[
+{emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystroke Guide",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now show the exact keystrokes needed on a BA II Plus financial calculator. This eliminates guesswork and helps you practice with the actual tool you'll use on exam day.",tip:"Look for the calculator keystroke walkthrough when answering quantitative problems."},
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Question Hints",sub:"AI · 2026-07-05 update",desc:"When AI hints aren't available, calculator-based questions now fall back to rule-based hints instantly. You get helpful guidance every time, keeping your study momentum going without delays.",tip:"Try asking for a hint on a cached quantitative question—it arrives instantly now."},
+{emoji:"📋",color:C.easy,bg:C.easy,title:"Cleaner Daily Card Interface",sub:"UX · 2026-07-05 update",desc:"The Daily Question card now collapses to a compact state after you answer, keeping your screen less cluttered. You can focus on your next question or review without visual noise.",tip:"Answer a Daily Question and watch the card shrink—tap it anytime to expand and review."},
 ]},
 // WN_END
 ];
@@ -330,8 +330,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
+// AC_VER:2026-07-05
+{date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
