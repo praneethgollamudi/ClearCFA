@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Four UX improvements deployed (cbdd9fd)**: Recent release added abort/cancel request handling, share functionality, offline seed expansion, and answer format validation. When implementing async operations or new user actions, ensure abort signals are properly propagated and cancel handlers clean up pending API calls to prevent orphaned requests.
+
+
+**Offline seed questions expansion (cbdd9fd)**: OFFLINE_SEED_QS now includes 6 Ethics questions (s_et_1 through s_et_6) covering MNPI, Standards hierarchy, gift disclosure, suitability, and supervisor responsibilities. When adding offline seed questions, ensure explanations are prefixed with "Correct: [option]" to maintain consistency with the expanded Ethics suite.
+
+
 **Study Groups leaderboard scope (7a16812)**: Study group leaderboards display real-time member rankings fetched from Supabase with proper authentication context. When querying or updating leaderboard data, ensure the Supabase client scope is limited to the current group and authenticated user to prevent cross-group data leakage.
 
 
@@ -1076,7 +1082,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1795900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1796000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
