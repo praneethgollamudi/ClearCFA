@@ -259,11 +259,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-04-b
-{version:"2026-07-04-b",slides:[
-{emoji:"📚",color:C.easy,bg:C.easy,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"Quick-reference cards are now available for Cash Flow, Amortization, Interest Conversion, and Time Value of Money sections. These cards summarize formulas and key concepts at a glance, helping you review critical material faster during study sessions.",tip:"Check the reference cards before tackling practice problems to reinforce formulas and definitions."},
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Smoother Financial Calculator Workflow",sub:"UX · 2026-07-04 update",desc:"The P/Y worksheet and calculator guide now respond intuitively to your inputs: ENTER saves your entry, the down arrow advances to the next field, and QUIT exits with a confirmation prompt. Step-by-step feedback also clarifies which mode you're in.",tip:"Use ENTER and the down arrow to navigate the P/Y worksheet quickly without re-entering data."},
-]},
 // WN_VER:2026-07-04-c
 {version:"2026-07-04-c",slides:[
 {emoji:"📚",color:C.accentLight,bg:C.easy,title:"Reference Cards for Key Topics",sub:"Study Tools · 2026-07-04 update",desc:"We've added quick-reference cards to the Cash Flow, Amortization, and Interest Conversion sections so you can instantly recall formulas and key concepts without leaving your calculator. These cards are designed to reinforce the most testable material at a glance.",tip:"Look for the reference icon in CF, Amortization, and ICONV—use them while practicing problems to build muscle memory before exam day."},
@@ -284,6 +279,11 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-05
 {version:"2026-07-05",slides:[
 ,
+]},
+// WN_VER:2026-07-05-b
+{version:"2026-07-05-b",slides:[
+{emoji:"🧮",color:C.accentLight,bg:C.accentLight,title:"BA II Plus Keystrokes Shown",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside solutions. This bridges the gap between understanding the concept and executing it on your actual exam calculator.",tip:"Look for the keystroke guide on any question tagged with calculator usage—practice these sequences during review to build muscle memory."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Fixed Negative Value Entry",sub:"Bug Fix · 2026-07-05 update",desc:"Time Value of Money calculations now correctly handle negative present values using the [+/−] sign change key, matching BA II Plus behavior. This fixes calculation errors that could occur when working through YTM and bond pricing problems.",tip:"When entering a negative PV in a TVM question, use [+/−] to toggle the sign—the display will now update correctly and carry through to your answer."},
 ]},
 // WN_END
 ];
@@ -347,8 +347,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
+// AC_VER:2026-07-05
+{date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
