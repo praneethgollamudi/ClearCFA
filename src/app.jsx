@@ -268,12 +268,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05-c
-{version:"2026-07-05-c",slides:[
-{emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes Shown",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display the exact BA II Plus keystrokes needed to solve them. This removes guesswork and trains you on the precise button sequence you'll use on exam day.",tip:"Look for the keystroke sequence displayed alongside calculator questions—practice typing them out to build muscle memory."},
-{emoji:"🔧",color:C.medium,bg:C.medium,title:"Improved AI Diagnosis Reliability",sub:"Bug Fix · 2026-07-05 update",desc:"Fixed the AI diagnosis feature so it consistently connects your question to the right analysis. You'll now get more accurate, targeted insights into gaps in your understanding.",tip:"Use the AI diagnosis button after a tough question to see personalized explanations tied to your mistake."},
-{emoji:"📖",color:C.easy,bg:C.easy,title:"YTM Calculator Guide Enhanced",sub:"Study Tools · 2026-07-05 update",desc:"The YTM guide now correctly shows how to enter negative present values using the [+/−] sign-change button on your BA II Plus. This prevents costly entry errors on yield-to-maturity problems.",tip:"When working through YTM problems, refer to the keystroke guide to confirm the right way to input negative cash flows."},
-]},
 // WN_VER:2026-07-05-d
 {version:"2026-07-05-d",slides:[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes On-Demand",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside explanations. This bridges the gap between understanding the concept and executing it on your physical calculator during the exam.",tip:"Look for the keystroke guide when answering financial math questions—practice the button sequence until it's muscle memory."},
@@ -297,6 +291,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups directly in the app and track progress on live leaderboards. Collaborate with peers preparing for the same CFA level and stay motivated through friendly competition.",tip:"Start a group with classmates and watch your collective study streaks climb the leaderboard."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints Offline",sub:"AI · 2026-07-05 update",desc:"Calculator hints now work instantly on cached questions, even without internet. You'll get smart fallback guidance to solve tricky quantitative problems whenever you need it.",tip:"Try answering a financial math question on airplane mode—hints still appear in seconds."},
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Cleaner Quiz Card Design",sub:"UX · 2026-07-05 update",desc:"Daily question cards now collapse to a compact done-state after you answer. Your study feed stays focused and uncluttered as you work through more questions.",tip:"Notice how answered cards shrink automatically, keeping your dashboard clean and fast-scrolling."},
+]},
+// WN_VER:2026-07-05-b
+{version:"2026-07-05-b",slides:[
+{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with real-time leaderboards to track your progress against peers. Collaborate and compete with other CFA candidates preparing for the same exam level.",tip:"Head to the Study Groups tab to create your first group or join one using an invite code."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Calculator Hints",sub:"AI · 2026-07-05 update",desc:"Calculator hints now intelligently fall back to rule-based logic, ensuring you get guidance even on cached questions. Better hints mean faster problem-solving during your study sessions.",tip:"When you're stuck on a calculation, tap the hint button to see step-by-step guidance."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother Study Experience",sub:"UX · 2026-07-05 update",desc:"Added quick abort and cancel buttons, offline question seeds, and easier sharing so you spend less time managing the app and more time learning. Session stability improvements prevent interruptions during exams.",tip:"Try the new share button to send questions to study partners instantly."},
 ]},
 // WN_END
 ];
@@ -324,8 +324,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
+// AC_VER:2026-07-05
+{date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
