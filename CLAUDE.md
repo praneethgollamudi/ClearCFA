@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Pass probability stability after easy sessions (da7b4bb)**: Pass probability calculations now remain stable after completing easy difficulty sessions, preventing artificial drops in readiness scores. When modifying difficulty scaling or performance history updates, ensure pass probability calculations account for session difficulty context to maintain score consistency across varying challenge levels.
+
+
+**What's New version consolidation (da7b4bb)**: Versions 2026-07-06-c and 2026-07-06-d have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-06-e, 2026-07-06-f, and 2026-07-06-b. Version 2026-07-06-b consolidates multi-module session question count fixes, question deduplication improvements, and session history metadata preservation. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **Calculator keystroke display truncation (6f7a6f8)**: Calculator step sequences now display full keystroke text instead of ellipsis abbreviations. When modifying calculator step rendering or keystroke display logic, ensure text truncation is not applied to keystroke sequences to maintain clarity of calculation steps.
 
 
@@ -1160,7 +1166,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1797200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1797300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
