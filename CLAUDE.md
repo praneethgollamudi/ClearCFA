@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Multi-module session module coverage tracking (2aa628d)**: Multi-module drill sessions now properly credit all covered modules in user progress, preventing scenarios where combining modules skips updating performance for non-primary topics. When modifying multi-select drill completion logic or progress tracking, ensure all selected modules are credited in performanceHistory regardless of drill question distribution to maintain accurate per-module readiness assessment.
+
+
+**What's New version consolidation (2aa628d)**: Versions 2026-07-05-f and 2026-07-05-c have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-05, 2026-07-06, 2026-07-06-b, 2026-07-06-c, and 2026-07-06-d. Versions 2026-07-06-c and 2026-07-06-d consolidate Super Focus Mode, adaptive difficulty scaling, multi-module drill selection, and offline/ETA polish. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **Multi-module drill loading state display (75f6ff1)**: Multi-module drill sessions now show correct loading indicators during initialization. When modifying drill loading screens or multi-select drill logic, ensure loading display reflects actual drill preparation state across all selected modules to prevent UX confusion during session startup.
 
 
@@ -1130,7 +1136,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1796600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1796800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
