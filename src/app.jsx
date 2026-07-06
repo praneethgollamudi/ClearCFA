@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05-f
-{version:"2026-07-05-f",slides:[
-{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups & Leaderboards",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with other CFA candidates to collaborate, share progress, and compete on leaderboards. Studying together keeps you motivated and lets you learn from peers preparing for the same exam.",tip:"Tap the Study Groups tab to create a new group or join an existing one with your study partners."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter Calculator Hints",sub:"AI · 2026-07-05 update",desc:"AI-powered calculator hints now load instantly from cache on repeated questions, eliminating wait time. You get guidance when you need it without slowing down your practice momentum.",tip:"Notice how hint suggestions appear immediately when you encounter similar questions you've seen before."},
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Daily Question Cards",sub:"UX · 2026-07-05 update",desc:"Daily practice cards now collapse to a compact view after you answer, keeping your screen uncluttered and ready for the next question. You focus on learning, not scrolling.",tip:"Answer a Daily Question and watch the card collapse—tap it again to expand and review your answer."},
-]},
 // WN_VER:2026-07-05-c
 {version:"2026-07-05-c",slides:[
 {emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with real-time leaderboards to track progress alongside peers. Collaborative learning helps reinforce concepts and keeps you motivated through the CFA curriculum.",tip:"Start or find a study group in the Groups tab to see live rankings of your cohort's performance."},
@@ -319,6 +313,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Smart Drills Match Your Level",sub:"Study Tools · 2026-07-06 update",desc:"Drill buttons on the readiness screen now adapt their difficulty based on your performance, showing you the right challenge level automatically. This keeps you in the optimal learning zone without manual tweaking.",tip:"Check your readiness screen—drill buttons will now suggest Easy, Medium, or Hard based on your recent quiz results."},
 {emoji:"🔒",color:C.reward,bg:C.reward,title:"Uninterrupted Focus Mode",sub:"Study Tools · 2026-07-06 update",desc:"Super Focus Mode now prevents accidental app switches and keeps your screen awake during study sessions, plus tracks any tab changes you make. Stay locked in on your exam prep without distractions.",tip:"Enable Super Focus Mode in settings before a study session to activate screen lock and tab-switch alerts."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother App Experience",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed ETA calculations, offline question seeding, leaderboard empty states, and daily question rotation. Your study sessions now flow seamlessly whether online or offline.",tip:"Your offline question bank now refreshes reliably, and the leaderboard won't show blank screens."},
+]},
+// WN_VER:2026-07-06-c
+{version:"2026-07-06-c",slides:[
+{emoji:"🧠",color:C.hard,bg:C.hard,title:"Stay Locked In with Super Focus",sub:"Study Tools · 2026-07-06 update",desc:"New Super Focus Mode prevents tab-switching distractions during drill sessions and keeps your screen awake so you never lose momentum. Perfect for uninterrupted study blocks when you need to power through tough topics.",tip:"Enable Super Focus Mode before tackling a weak topic to eliminate phone distractions and maximize retention."},
+{emoji:"🎚️",color:C.medium,bg:C.medium,title:"Smarter Difficulty That Scales With You",sub:"AI · 2026-07-06 update",desc:"Drill sessions now adapt their difficulty based on your readiness level, and you can combine multiple modules into one session for flexible practice. The app learns your strengths and weaknesses to serve the right challenge at the right time.",tip:"Try selecting multiple modules on the readiness screen to create a custom mixed drill that matches your study goals."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Polished Experience, Fewer Hiccups",sub:"Bug Fix · 2026-07-06 update",desc:"We fixed ETA display accuracy, improved offline seed reliability, fixed the empty leaderboard state, and corrected Daily Question rotation. These refinements ensure a smoother, more predictable study experience across all devices.",tip:"Check your Daily Question rotation—it now refreshes correctly so you always get fresh practice."},
 ]},
 // WN_END
 ];
@@ -376,8 +376,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-05
-{date:"2026-07-05",entries:[
+// AC_VER:2026-07-06
+{date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
