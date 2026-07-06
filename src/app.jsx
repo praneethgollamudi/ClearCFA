@@ -5888,7 +5888,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setSessionDraft(null);
     srProcessedRef.current=new Set();
     setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
-    setLoadingContext({topic:t,subtopic:st,count:cnt,difficulty:diff,mode:m,isVignette:!!isVignette});
+    setLoadingContext({topic:t,subtopic:st,count:cnt,difficulty:diff,mode:m,isVignette:!!isVignette,modules:multiModules});
     loadingStartRef.current=Date.now();
     // Persist params so a page reload can offer to retry
     const pendingEntry={ts:Date.now(),t,st,diff,cnt,m,isVignette:!!isVignette};
@@ -6677,7 +6677,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <span style={{fontSize:12,color:C.accentLight,fontWeight:600}}>{loadingContext.count} {loadingContext.isVignette?"vignette Qs":"questions"}</span>
           <span style={{fontSize:12,color:C.muted}}>·</span>
           <span style={{fontSize:12,color:C.text,fontWeight:600,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{loadingContext.topic}</span>
-          {loadingContext.subtopic&&loadingContext.subtopic!==loadingContext.topic&&(
+          {loadingContext.modules?(
+            <><span style={{fontSize:12,color:C.muted}}>·</span><span style={{fontSize:11,color:C.muted}}>{loadingContext.modules.length} modules</span></>
+          ):loadingContext.subtopic&&loadingContext.subtopic!==loadingContext.topic&&(
             <><span style={{fontSize:12,color:C.muted}}>›</span><span style={{fontSize:11,color:C.muted,maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{loadingContext.subtopic}</span></>
           )}
         </div>
@@ -11209,7 +11211,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 const multiMods=selMods.map(mod=>({t:m.topic,st:mod}));
                 return(
                   <div style={{display:"flex",gap:7,alignItems:"center"}}>
-                    <button onClick={()=>{setMode("guided");setReadinessPillSel(prev=>({...prev,[m.topic]:[]}));generateQuestions(m.topic,selMods[0],diff,10,"guided",false,null,selMods.length>1?multiMods:null);}} style={{flex:1,padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                    <button onClick={()=>{setMode("guided");setReadinessPillSel(prev=>({...prev,[m.topic]:[]}));generateQuestions(m.topic,selMods[0],diff,Math.min(selMods.length*5,20),"guided",false,null,selMods.length>1?multiMods:null);}} style={{flex:1,padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
                       Drill {selMods.length} module{selMods.length>1?"s":""} · {diff} →
                     </button>
                     <button onClick={()=>setReadinessPillSel(prev=>({...prev,[m.topic]:[]}))} style={{padding:"9px 12px",borderRadius:8,fontSize:11,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",whiteSpace:"nowrap"}}>Clear</button>
