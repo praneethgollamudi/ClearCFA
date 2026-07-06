@@ -289,13 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06
-{version:"2026-07-06",slides:[
-{emoji:"🎯",color:C.reward,bg:C.reward,title:"Super Focus Mode Keeps You On Track",sub:"Study Tools · 2026-07-06 update",desc:"New Super Focus Mode tracks tab switches and keeps your screen awake so you stay locked in on practice questions without distractions. This helps you build real exam-day focus habits while studying.",tip:"Enable Super Focus Mode before a timed quiz to see your focus score at the end."},
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"See Exact Calculator Keystrokes",sub:"Study Tools · 2026-07-06 update",desc:"Calculator-applicable questions now show you the exact BA II Plus keystrokes needed to solve them. You'll learn the precise button sequence so you're confident and fast on exam day.",tip:"Look for the calculator keystroke walkthrough when you review a question marked as calculator-applicable."},
-{emoji:"👥",color:C.accentLight,bg:C.accentLight,title:"Study Groups Now Fully Live",sub:"Study Tools · 2026-07-06 update",desc:"Study Groups are now connected to real-time syncing so you can create groups, invite friends, and see live leaderboards as everyone studies together. Prep alongside your peers and stay motivated.",tip:"Create or join a group in the Study Groups tab and invite classmates to compare progress."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Smoother Daily Questions & Offline",sub:"UX · 2026-07-06 update",desc:"Daily Questions now collapse neatly after you answer, offline mode works better with improved seed handling, and the leaderboard shows a friendlier empty state. Small touches that make the app feel more polished.",tip:"Notice how your Daily Question card compacts after submission so you can move on to the next one faster."},
-]},
 // WN_VER:2026-07-06-b
 {version:"2026-07-06-b",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Smart Drills Match Your Level",sub:"Study Tools · 2026-07-06 update",desc:"Drill buttons on the readiness screen now adapt their difficulty based on your performance, showing you the right challenge level automatically. This keeps you in the optimal learning zone without manual tweaking.",tip:"Check your readiness screen—drill buttons will now suggest Easy, Medium, or Hard based on your recent quiz results."},
@@ -319,6 +312,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Study Multiple Modules Together",sub:"Study Tools · 2026-07-06 update",desc:"You can now select and drill across multiple CFA modules in a single session, letting you build connections between topics. This helps you prepare for integrated exam questions that span multiple areas.",tip:"Tap the module pills on the readiness screen to combine any modules into one adaptive drill."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Difficulty Matching Your Level",sub:"AI · 2026-07-06 update",desc:"Drill difficulty now adapts based on your readiness level before you start, and adjusts dynamically as you progress through multi-module sessions. You'll spend less time on questions that are too easy or too hard, and more time on material you actually need.",tip:"Notice the difficulty shift as you answer questions — the app is tuning to your performance in real time."},
 {emoji:"✅",color:C.reward,bg:C.reward,title:"Accurate Progress Across All Drills",sub:"Bug Fix · 2026-07-06 update",desc:"Multi-module drill sessions now correctly record progress and module coverage, fixing cases where some modules weren't being credited. Your study streak and readiness scores now reflect exactly what you've covered.",tip:"After completing a multi-module drill, check your module progress to confirm all topics are marked complete."},
+]},
+// WN_VER:2026-07-06-f
+{version:"2026-07-06-f",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Drill Sessions",sub:"Study Tools · 2026-07-06 update",desc:"You can now select multiple modules at once on the readiness screen to combine them into a single focused drill session. This helps you build connections across related topics and study more efficiently.",tip:"Tap multiple module pills to create a custom combined session targeting exactly the areas you want to strengthen."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter Question Deduplication",sub:"Bug Fix · 2026-07-06 update",desc:"We fixed how the app tracks which questions you've already seen, even when studying offline or across multiple sessions. You'll no longer encounter duplicate question stems, keeping your practice time focused and productive.",tip:"Your offline study sessions now sync seamlessly with your seen-questions history when you reconnect."},
+{emoji:"🔄",color:C.medium,bg:C.medium,title:"Accurate Multi-Module Credit",sub:"Bug Fix · 2026-07-06 update",desc:"Multi-module drill sessions now correctly credit all modules you've covered toward your progress tracking. Previously, some modules weren't being counted—now your readiness scores reflect your actual work.",tip:"Check your progress dashboard to see all modules from combined sessions now properly reflected in your coverage stats."},
 ]},
 // WN_END
 ];
@@ -358,8 +357,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-05
-{date:"2026-07-05",entries:[
+// AC_VER:2026-07-06
+{date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
