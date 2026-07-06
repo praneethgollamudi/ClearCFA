@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Calculator keystroke display truncation (6f7a6f8)**: Calculator step sequences now display full keystroke text instead of ellipsis abbreviations. When modifying calculator step rendering or keystroke display logic, ensure text truncation is not applied to keystroke sequences to maintain clarity of calculation steps.
+
+
+**What's New version consolidation (6f7a6f8)**: Versions 2026-07-06-b and 2026-07-06-c have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-06, 2026-07-06-d, 2026-07-06-e, and 2026-07-06-f. Version 2026-07-06 consolidates multi-module progress tracking, question deduplication, and session history preservation fixes. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **Multi-module drill question count calibration (78a94ff)**: Multi-module drill sessions now generate appropriate question counts by properly accounting for combined module difficulty and user performance across all selected modules. When modifying multi-module drill initialization or question count calculations, ensure adaptive scaling considers cumulative difficulty of all selected modules to prevent under-scoping combined sessions.
 
 
@@ -1154,7 +1160,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1797100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1797200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
