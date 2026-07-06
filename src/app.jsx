@@ -6028,7 +6028,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
-        const tightMax={3:1500,5:2200,10:4500,15:6500,20:8000}[cnt]||(cnt*450);
+        const baseMax={3:1500,5:2200,10:4500,15:6500,20:8000}[cnt]||(cnt*450);
+        const tightMax=multiModules?.length>1?Math.round(baseMax*1.6):baseMax;
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
         const now=Date.now();
         const seenStems=Object.values(qdb).filter(v=>v.topic===t&&(now-v.seen)<QDB_FRESHNESS_MS&&v.stem).sort((a,b)=>b.seen-a.seen).map(v=>v.stem);
@@ -6096,10 +6097,21 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
       const fresh=filterNewQuestions(parsed_clean,qdb);
       // Prefer unseen; if not enough, take least-recently-seen sorted (oldest first) to minimise repeats
-      const finalQs=fresh.length>=cnt?fresh.slice(0,cnt):(()=>{
+      let finalQs=fresh.length>=cnt?fresh.slice(0,cnt):(()=>{
         const sorted=[...parsed_clean].sort((a,b)=>(qdb[hashQuestion(a)]?.seen||0)-(qdb[hashQuestion(b)]?.seen||0));
         return sorted.slice(0,cnt);
       })();
+      // If validation culled too many, top up from offline cache so user gets close to requested count
+      if(finalQs.length<Math.ceil(cnt*0.7)){
+        try{
+          const offlineCache=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
+          const offlinePool=(offlineCache[t]?.[st]||[]).concat(
+            multiModules?.length>1?multiModules.flatMap(mm=>(offlineCache[mm.t]?.[mm.st]||[])):[]
+          );
+          const offlineFresh=filterNewQuestions(offlinePool,qdb).filter(q=>!finalQs.some(fq=>fq.id===q.id));
+          finalQs=[...finalQs,...offlineFresh].slice(0,cnt);
+        }catch{}
+      }
       // Cache successful non-vignette sets for reuse
       if(!isVignette&&parsed_clean.length>=5){
         qCacheRef.current=qcAdd(qCacheRef.current,t,st,diff,parsed_clean);
