@@ -5206,6 +5206,7 @@ function CFAMock(){
   const subtopicRef=useRef("");
   const difficultyRef=useRef("Medium");
   const modeRef=useRef("guided");
+  const multiModulesRef=useRef(null);
   useEffect(()=>{window.scrollTo(0,0);document.body.scrollTop=0;document.documentElement.scrollTop=0;const t=setTimeout(()=>{window.scrollTo(0,0);document.body.scrollTop=0;document.documentElement.scrollTop=0;window.scrollTo({top:0,left:0,behavior:'instant'});},100);return()=>clearTimeout(t);},[currentQ]);
   useEffect(()=>{questionsRef.current=questions;},[questions]);
   useEffect(()=>{answersRef.current=answers;},[answers]);
@@ -5383,6 +5384,7 @@ function CFAMock(){
     // Build session object
     const session={
       id:Date.now(),topic:t,subtopic:st,difficulty:diff,mode:m,
+      ...(multiModulesRef.current?.length>1&&{subtopics:multiModulesRef.current.map(mm=>mm.st)}),
       score,total:qs.length,pct,timeTaken:elapsed,
       avgSecsPerQ:qs.length>0?Math.round(elapsed/qs.length):0,
       qTimes:{...qTimesRef.current},
@@ -5887,6 +5889,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
     setSessionDraft(null);
     srProcessedRef.current=new Set();
+    multiModulesRef.current=multiModules;
     setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
     setLoadingContext({topic:t,subtopic:st,count:cnt,difficulty:diff,mode:m,isVignette:!!isVignette,modules:multiModules});
     loadingStartRef.current=Date.now();

@@ -659,7 +659,7 @@ function getModuleReadiness(history,losData=null){
   return Object.entries(activeLos).map(([topic,{weight,modules}])=>{
     const moduleNames=Object.keys(modules);
     const sessions=history.filter(h=>h.topic===topic);
-    const modulesCovered=[...new Set(sessions.map(h=>h.subtopic))];
+    const modulesCovered=[...new Set(sessions.flatMap(h=>h.subtopics||[h.subtopic]))];
     const coverage=modulesCovered.length/moduleNames.length;
     let wCorrect=0,wTotal=0;
     sessions.forEach(s=>{const ageDays=(now-s.id)/86400000;const w=ageDays<=7?3:ageDays<=30?2:1;const sc=s.score??s.correct??Math.round(((s.pct||0)/100)*(s.total||0));wCorrect+=sc*w;wTotal+=(s.total||0)*w;});
@@ -676,7 +676,7 @@ function getModuleReadiness(history,losData=null){
     readiness=Math.min(99,readiness);
     const untouchedModules=moduleNames.filter(m=>!modulesCovered.includes(m));
     const moduleStats={};
-    moduleNames.forEach(m=>{const ms=sessions.filter(h=>h.subtopic===m);moduleStats[m]=ms.length?{pct:Math.round(ms.reduce((s,h)=>s+(h.pct||0),0)/ms.length),sessions:ms.length,totalQs:ms.reduce((s,h)=>s+(h.total||0),0)}:null;});
+    moduleNames.forEach(m=>{const ms=sessions.filter(h=>h.subtopic===m||(h.subtopics&&h.subtopics.includes(m)));moduleStats[m]=ms.length?{pct:Math.round(ms.reduce((s,h)=>s+(h.pct||0),0)/ms.length),sessions:ms.length,totalQs:ms.reduce((s,h)=>s+(h.total||0),0)}:null;});
     // LOS mastery per module
     const losStats={};
     moduleNames.forEach(m=>{losStats[m]=getLOSMastery(history,topic,m);});
