@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06-e
-{version:"2026-07-06-e",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Study Multiple Modules Together",sub:"Study Tools · 2026-07-06 update",desc:"You can now select and drill across multiple CFA modules in a single session, letting you build connections between topics. This helps you prepare for integrated exam questions that span multiple areas.",tip:"Tap the module pills on the readiness screen to combine any modules into one adaptive drill."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Difficulty Matching Your Level",sub:"AI · 2026-07-06 update",desc:"Drill difficulty now adapts based on your readiness level before you start, and adjusts dynamically as you progress through multi-module sessions. You'll spend less time on questions that are too easy or too hard, and more time on material you actually need.",tip:"Notice the difficulty shift as you answer questions — the app is tuning to your performance in real time."},
-{emoji:"✅",color:C.reward,bg:C.reward,title:"Accurate Progress Across All Drills",sub:"Bug Fix · 2026-07-06 update",desc:"Multi-module drill sessions now correctly record progress and module coverage, fixing cases where some modules weren't being credited. Your study streak and readiness scores now reflect exactly what you've covered.",tip:"After completing a multi-module drill, check your module progress to confirm all topics are marked complete."},
-]},
 // WN_VER:2026-07-06-f
 {version:"2026-07-06-f",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Drill Sessions",sub:"Study Tools · 2026-07-06 update",desc:"You can now select multiple modules at once on the readiness screen to combine them into a single focused drill session. This helps you build connections across related topics and study more efficiently.",tip:"Tap multiple module pills to create a custom combined session targeting exactly the areas you want to strengthen."},
@@ -319,6 +313,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎓",color:C.medium,bg:C.medium,title:"Better Multi-Module Study Sessions",sub:"Study Tools · 2026-07-06 update",desc:"Multi-topic study sessions now generate the correct number of questions across all selected modules. Previously, sessions were creating too few questions, limiting your practice breadth.",tip:"Create a session spanning multiple readings to get comprehensive coverage without needing multiple study runs."},
 {emoji:"🔄",color:C.hard,bg:C.hard,title:"Session History Retains Your Metadata",sub:"Bug Fix · 2026-07-06 update",desc:"Session history now preserves exam level and subtopic information when you reload your progress. Your study tracking stays complete and accurate across app restarts.",tip:"Review your session history to see which topics and levels you've covered without losing tracking details."},
 ]},
+// WN_VER:2026-07-06-d
+{version:"2026-07-06-d",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Pass Probability Stays Accurate",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where your pass probability would incorrectly drop after completing easy practice sessions. Your predicted score now reflects your actual performance without unexpected dips.",tip:"Check your Pass Probability dashboard after your next easy session—it should now hold steady or improve."},
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Steps Now Complete",sub:"Study Tools · 2026-07-06 update",desc:"Fixed calculator keystroke sequences that were showing incomplete ellipsis (…) instead of full step-by-step breakdowns. You can now see every calculation detail to understand exactly how to solve problems.",tip:"Tap into a calculator solution to see the complete keystroke sequence without truncation."},
+{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Sessions More Balanced",sub:"Study Tools · 2026-07-06 update",desc:"Fixed multi-module study sessions that were generating too few questions, which limited your practice breadth. Sessions now deliver appropriate question counts across all selected modules for deeper coverage.",tip:"When creating a multi-module session, you'll now get balanced question distribution across all topics you select."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -333,8 +333,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-05
-{date:"2026-07-05",entries:[
+// AC_VER:2026-07-06
+{date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
