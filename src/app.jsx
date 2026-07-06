@@ -11189,7 +11189,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 );
               })}
             </div>
-            <button onClick={()=>{const t=m.untouchedModules[0]||m.modules[0];setMode("guided");generateQuestions(m.topic,t,notStarted?"Easy":"Medium",10);}} style={{width:"100%",padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>{notStarted?`Start ${m.topic} →`:m.readiness>=70?"Drill to stay sharp →":"Drill Weakest Module →"}</button>
+            <button onClick={()=>{const t=m.untouchedModules[0]||m.modules[0];setMode("guided");const diff=notStarted?"Easy":m.accuracy>=80?"Hard":m.accuracy>=60?"Medium":"Easy";generateQuestions(m.topic,t,diff,10);}} style={{width:"100%",padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>{notStarted?`Start ${m.topic} →`:m.readiness>=70?"Drill to stay sharp →":"Drill Weakest Module →"}</button>
           </div>
         );
       })}
