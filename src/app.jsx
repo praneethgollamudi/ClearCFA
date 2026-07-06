@@ -4974,7 +4974,9 @@ function CFAMock(){
             id:s.id,topic:s.topic,subtopic:s.subtopic,difficulty:s.difficulty,
             mode:s.mode,score:s.score,total:s.total,pct:s.pct,
             timeTaken:s.timeTaken||0,date:s.date,dateKey:s.dateKey,
-            wrongCount:s.wrongCount||(s.wrongs?.length||0),wrongs:[]
+            wrongCount:s.wrongCount||(s.wrongs?.length||0),wrongs:[],
+            level:s.level,
+            ...(s.subtopics&&{subtopics:s.subtopics}),
           }));
           allAttempts=[{key:STORAGE_KEY,found:true,count:bestHistory.length}];
         } else {
