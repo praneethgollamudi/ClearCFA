@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06-d
-{version:"2026-07-06-d",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Combine Modules for Custom Drills",sub:"Study Tools · 2026-07-06 update",desc:"You can now select multiple modules at once on the readiness screen to create combined drill sessions tailored to your study plan. This lets you practice cross-module concepts and build deeper connections between topics.",tip:"Tap multiple module pills before starting a drill to mix and match topics in a single session."},
-{emoji:"🧠",color:C.medium,bg:C.medium,title:"Smarter Adaptive Difficulty Control",sub:"AI · 2026-07-06 update",desc:"Drill buttons on the readiness screen now show adaptive difficulty levels, and multi-module sessions intelligently adjust question complexity based on your performance. You get better-calibrated practice that matches your current mastery level.",tip:"Look for difficulty indicators next to drill options to pick the right challenge level for your prep stage."},
-{emoji:"⚡",color:C.hard,bg:C.hard,title:"Stay Focused with Super Focus Mode",sub:"UX · 2026-07-06 update",desc:"A new Super Focus Mode minimizes distractions by tracking tab switches and keeping your screen active during intense study sessions. Eliminate interruptions and maintain flow while you work through critical exam content.",tip:"Enable Super Focus Mode when tackling your most challenging topics to block context-switching and stay in the zone."},
-]},
 // WN_VER:2026-07-06-e
 {version:"2026-07-06-e",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Study Multiple Modules Together",sub:"Study Tools · 2026-07-06 update",desc:"You can now select and drill across multiple CFA modules in a single session, letting you build connections between topics. This helps you prepare for integrated exam questions that span multiple areas.",tip:"Tap the module pills on the readiness screen to combine any modules into one adaptive drill."},
@@ -319,6 +313,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🔄",color:C.medium,bg:C.medium,title:"Smarter Question Deduplication",sub:"Study Tools · 2026-07-06 update",desc:"Improved question deduplication logic to eliminate duplicate question stems more reliably, even when working offline or reloading your session history. This means you'll see fresher variety in your practice questions and won't waste time on repeats.",tip:"Your offline sessions now sync and deduplicate properly when you go back online—check that previously seen questions don't reappear."},
 {emoji:"✅",color:C.reward,bg:C.reward,title:"Session History Stays Accurate",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where reloading your session history would strip away important details like exam level and subtopic filters. Your past session metadata is now preserved exactly as you created it.",tip:"Open an old practice session and reload—you'll now see the full level and subtopic information intact."},
 ]},
+// WN_VER:2026-07-06-c
+{version:"2026-07-06-c",slides:[
+{emoji:"📊",color:C.easy,bg:C.easy,title:"Full Calculator Keystroke Steps",sub:"UX · 2026-07-06 update",desc:"Calculator solution steps now display the complete keystroke sequence instead of truncating with ellipsis. You can now follow every button press and operation without missing critical calculation details.",tip:"Check your practice questions with calculator solutions to see the full step-by-step keystroke breakdown."},
+{emoji:"🎓",color:C.medium,bg:C.medium,title:"Better Multi-Module Study Sessions",sub:"Study Tools · 2026-07-06 update",desc:"Multi-topic study sessions now generate the correct number of questions across all selected modules. Previously, sessions were creating too few questions, limiting your practice breadth.",tip:"Create a session spanning multiple readings to get comprehensive coverage without needing multiple study runs."},
+{emoji:"🔄",color:C.hard,bg:C.hard,title:"Session History Retains Your Metadata",sub:"Bug Fix · 2026-07-06 update",desc:"Session history now preserves exam level and subtopic information when you reload your progress. Your study tracking stays complete and accurate across app restarts.",tip:"Review your session history to see which topics and levels you've covered without losing tracking details."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -339,8 +339,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-05
-{date:"2026-07-05",entries:[
+// AC_VER:2026-07-06
+{date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
