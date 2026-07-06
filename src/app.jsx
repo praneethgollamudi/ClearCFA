@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06-c
-{version:"2026-07-06-c",slides:[
-{emoji:"🧠",color:C.hard,bg:C.hard,title:"Stay Locked In with Super Focus",sub:"Study Tools · 2026-07-06 update",desc:"New Super Focus Mode prevents tab-switching distractions during drill sessions and keeps your screen awake so you never lose momentum. Perfect for uninterrupted study blocks when you need to power through tough topics.",tip:"Enable Super Focus Mode before tackling a weak topic to eliminate phone distractions and maximize retention."},
-{emoji:"🎚️",color:C.medium,bg:C.medium,title:"Smarter Difficulty That Scales With You",sub:"AI · 2026-07-06 update",desc:"Drill sessions now adapt their difficulty based on your readiness level, and you can combine multiple modules into one session for flexible practice. The app learns your strengths and weaknesses to serve the right challenge at the right time.",tip:"Try selecting multiple modules on the readiness screen to create a custom mixed drill that matches your study goals."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Polished Experience, Fewer Hiccups",sub:"Bug Fix · 2026-07-06 update",desc:"We fixed ETA display accuracy, improved offline seed reliability, fixed the empty leaderboard state, and corrected Daily Question rotation. These refinements ensure a smoother, more predictable study experience across all devices.",tip:"Check your Daily Question rotation—it now refreshes correctly so you always get fresh practice."},
-]},
 // WN_VER:2026-07-06-d
 {version:"2026-07-06-d",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Combine Modules for Custom Drills",sub:"Study Tools · 2026-07-06 update",desc:"You can now select multiple modules at once on the readiness screen to create combined drill sessions tailored to your study plan. This lets you practice cross-module concepts and build deeper connections between topics.",tip:"Tap multiple module pills before starting a drill to mix and match topics in a single session."},
@@ -318,6 +312,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Sessions Now Track Correctly",sub:"Study Tools · 2026-07-06 update",desc:"Fixed an issue where multi-module drill sessions weren't properly crediting all covered modules toward your progress. Your study metrics now accurately reflect every topic you've practiced, giving you a true picture of exam readiness.",tip:"Check your module progress after running a multi-module drill—you'll see all covered areas now correctly marked."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Questions Load Reliably Across Sessions",sub:"Bug Fix · 2026-07-06 update",desc:"Resolved a deduplication bug that sometimes caused question stems to reappear and offline tracking to lose sync during question database loads. Your study sessions now flow smoothly without duplicate prompts or lost practice history.",tip:"Resume a saved session after going offline—you'll notice cleaner question flow and no duplicate stems."},
 {emoji:"💾",color:C.medium,bg:C.medium,title:"Session History Preserves All Details",sub:"Offline · 2026-07-06 update",desc:"Fixed a problem where reloading a session would strip away important level and subtopic metadata from your history. Your saved sessions now retain complete information, making it easier to review and revisit specific topics later.",tip:"Open an older session from your history and reload it—all topic details and levels are now preserved."},
+]},
+// WN_VER:2026-07-06-b
+{version:"2026-07-06-b",slides:[
+{emoji:"📚",color:C.easy,bg:C.easy,title:"Multi-Module Sessions Now Complete",sub:"Study Tools · 2026-07-06 update",desc:"Fixed an issue where multi-module study sessions were generating fewer questions than expected and not properly crediting all covered modules. Now when you combine multiple topics into one session, you'll get the full question set and accurate progress tracking across all selected modules.",tip:"Start a multi-module session and check your session history—all covered modules should now be listed with complete credit."},
+{emoji:"🔄",color:C.medium,bg:C.medium,title:"Smarter Question Deduplication",sub:"Study Tools · 2026-07-06 update",desc:"Improved question deduplication logic to eliminate duplicate question stems more reliably, even when working offline or reloading your session history. This means you'll see fresher variety in your practice questions and won't waste time on repeats.",tip:"Your offline sessions now sync and deduplicate properly when you go back online—check that previously seen questions don't reappear."},
+{emoji:"✅",color:C.reward,bg:C.reward,title:"Session History Stays Accurate",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where reloading your session history would strip away important details like exam level and subtopic filters. Your past session metadata is now preserved exactly as you created it.",tip:"Open an old practice session and reload—you'll now see the full level and subtopic information intact."},
 ]},
 // WN_END
 ];
@@ -345,8 +345,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-05
-{date:"2026-07-05",entries:[
+// AC_VER:2026-07-06
+{date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
