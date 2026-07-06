@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (e73da89)**: Versions 2026-07-05-d and 2026-07-05-e have been removed from WHATS_NEW_SLIDES; current active versions are 2026-07-05-f and 2026-07-06. Version 2026-07-06 consolidates Super Focus Mode, calculator keystrokes, Study Groups real-time syncing, and Daily Q/offline polish. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**Multi-select module pills on readiness screen (77b7fa9)**: Readiness screen now supports multi-select module pills for combined drill sessions across topics. When modifying readiness screen drill logic or module selection state, ensure multi-select state is properly tracked and passed to drill initialization to maintain combined session scope.
+
+
 **What's New version 2026-07-06 (e73da89)**: Added new What's New version 2026-07-06 documenting Super Focus Mode with tab-switch tracking and wake lock functionality. When adding future What's New versions, verify that consolidated versions (e.g., 2026-07-05-b, 2026-07-05-d) are removed to avoid duplicate feature messaging.
 
 
@@ -1115,7 +1121,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1796400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1796500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
