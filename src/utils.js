@@ -263,7 +263,7 @@ function filterNewQuestions(questions,qdb){
 }
 function addToQDB(questions,qdb){
   const updated={...qdb};
-  questions.forEach(q=>{const h=hashQuestion(q);updated[h]={seen:Date.now(),topic:q._topic,subtopic:q._subtopic};});
+  questions.forEach(q=>{const h=hashQuestion(q);updated[h]={seen:Date.now(),topic:q._topic,subtopic:q._subtopic,stem:(q.question||"").slice(0,80)};});
   // Cap at 2000 entries — prune oldest to prevent unbounded growth
   const entries=Object.entries(updated);
   if(entries.length>2000){
@@ -301,7 +301,7 @@ function buildDynamicContext(topic, module, srDeck, levelHistory){
   return{weakLOS,userMisconceptions,timingSignal,hasData:moduleCards.length>0};
 }
 
-function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null,dynCtx=null,multiModuleList=null){
+function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null,dynCtx=null,multiModuleList=null,seenStems=[]){
   const activeLos=losData||LOS;
   const activeMisc=miscData||MISCONCEPTIONS;
   // multiModuleList=[{t,st},...] when user selected multiple topics/modules
@@ -359,6 +359,8 @@ function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=nul
     ?`CFA Level 3 format: Frame every question around a PORTFOLIO MANAGEMENT decision — client objectives, IPS constraints, asset allocation, or risk management. Questions should require the candidate to recommend or justify, not just recall. Complexity: ${difficulty==="Easy"?"straightforward client-context application":difficulty==="Medium"?"trade-off analysis with supporting rationale":"multi-constraint portfolio construction or behavioural bias evaluation"}.`
     :`Difficulty: ${difficulty==="Easy"?"recall/definition":difficulty==="Medium"?"apply formula to scenario with numbers":"multi-step analysis or nuanced judgment"}`;
 
+  const avoidBlock=seenStems.length?`\nDO NOT repeat or closely paraphrase any of these recently seen question stems (write entirely different scenarios):\n${seenStems.slice(0,20).map((s,i)=>`${i+1}. "${s}"`).join("\n")}\n`:"";
+
   return `CFA L${level} question generator. ${moduleHeader} | Difficulty: ${difficulty} | Generate: ${count} questions${isMulti?" spread across ALL listed modules. Each question must clearly specify which module it covers.":""}.
 
 LOS (test these):
@@ -366,8 +368,7 @@ ${losText}
 
 Misconceptions to use in wrong options: ${misconceptions}
 
-${levelGuidance}${personalisedSection}
-
+${levelGuidance}${personalisedSection}${avoidBlock}
 Return ONLY a JSON array, no markdown:
 [{"id":1,"question":"...","options":{"A":"...","B":"...","C":"..."},"answer":"A","explanation":"...","concept":"3-5 word tag","los_tested":"LOS text","misconception_targeted":"error exploited","distractor_explanations":{"B":"1 sentence why B is wrong","C":"1 sentence why C is wrong"},"calc_steps":{"applicable":true,"worksheet":"TVM","keys":["[2ND]","[CLR TVM]","5","[N]","6","[I/Y]","80","[PMT]","1000","[FV]","[CPT]","[PV]"],"result":"−1,084.25"}}]
 

@@ -5056,6 +5056,7 @@ function CFAMock(){
       // API key no longer stored client-side — AI routed through backend proxy
       try{const d=await storageGet("cfa_exam_date");if(d&&typeof d==="string"){setExamDate(new Date(d));setExamDateInput(d);}}catch{}
       try{const qc=await storageGet(QCACHE_KEY);if(qc&&typeof qc==="object")qCacheRef.current=qc;}catch{}
+      try{const savedQdb=await storageGet(QDB_KEY);if(savedQdb&&typeof savedQdb==="object")setQdb(savedQdb);}catch{}
       setQdbLoaded(true);
 
       // Load cached focus suggestions (only use if from today)
@@ -5945,6 +5946,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
             setVignetteMode(false);
             setQuestions(fingerprintQuestions(offlineQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+            setQdb(prev=>addToQDB(offlineQs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
             setScreen("quiz");
             setLoading(false);setLoadingProgress(0);generatingRef.current=false;
             return;
@@ -6027,7 +6029,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       } else {
         const tightMax={3:1500,5:2200,10:4500,15:6500,20:8000}[cnt]||(cnt*450);
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`,signal:genAbort.signal});
+        const now=Date.now();
+        const seenStems=Object.values(qdb).filter(v=>v.topic===t&&(now-v.seen)<QDB_FRESHNESS_MS&&v.stem).sort((a,b)=>b.seen-a.seen).map(v=>v.stem);
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`,signal:genAbort.signal});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
@@ -6143,6 +6147,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             setTopic(t);setSubtopic(usedSt);setDifficulty(diff);setCount(cnt);setMode(m);
             setVignetteMode(false);
             setQuestions(fingerprintQuestions(offlineQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+            setQdb(prev=>addToQDB(offlineQs.map(q=>({...q,_topic:t,_subtopic:usedSt})),prev));
             setScreen("quiz");
             setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
             return;
