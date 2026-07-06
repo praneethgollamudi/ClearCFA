@@ -567,7 +567,8 @@ function calcXP(session) {
   const diffBonus = { Easy:1, Medium:1.5, Hard:2.2 }[session.difficulty] || 1;
   const speedBonus = session.timeTaken < session.total * 60 ? 1.2 : 1;
   const streakBonus = 1; // applied externally
-  return Math.round(base * diffBonus * speedBonus * streakBonus);
+  const focusBonus = session.focusSwitches===0&&session.focusSwitches!==undefined ? 50 : 0;
+  return Math.round(base * diffBonus * speedBonus * streakBonus) + focusBonus;
 }
 function getTotalXP(history) { return history.reduce((s,h) => s + calcXP(h), 0); }
 function getLevel(xp) {
@@ -4756,6 +4757,15 @@ function CFAMock(){
   const [reelXpPop,setReelXpPop]=useState(false);
   const reelTouchY=useRef(null);
   const reelFeedBase=useRef([]);
+  // ─── Super Focus Mode ──────────────────────────────────────────────────────
+  const [focusModeEnabled,setFocusModeEnabled]=useState(()=>{try{return localStorage.getItem("cfa_focus_mode_v1")==="1";}catch{return false;}});
+  const [focusSwitches,setFocusSwitches]=useState(0);
+  const [focusTotalAwayMs,setFocusTotalAwayMs]=useState(0);
+  const [focusReturnOverlay,setFocusReturnOverlay]=useState(null);
+  const focusAwayStartRef=useRef(null);
+  const focusSwitchesRef=useRef(0);
+  const focusTotalAwayMsRef=useRef(0);
+  const wakeLockRef=useRef(null);
 
   useEffect(()=>{
     if(screen!=="reels")return;
@@ -4817,6 +4827,39 @@ function CFAMock(){
       generateFocus();
     }
   },[needsFocusRefresh,historyLoaded,srLoaded]);
+
+  // ─── Super Focus Mode: visibilitychange + Wake Lock ───────────────────────
+  useEffect(()=>{
+    if(screen!=="quiz"||!focusModeEnabled){
+      // Release wake lock when not in a focus quiz
+      if(wakeLockRef.current){wakeLockRef.current.release().catch(()=>{});wakeLockRef.current=null;}
+      return;
+    }
+    const onVis=()=>{
+      if(document.hidden){
+        focusAwayStartRef.current=Date.now();
+      } else {
+        if(focusAwayStartRef.current!=null){
+          const ms=Date.now()-focusAwayStartRef.current;
+          focusAwayStartRef.current=null;
+          focusSwitchesRef.current+=1;
+          focusTotalAwayMsRef.current+=ms;
+          setFocusSwitches(focusSwitchesRef.current);
+          setFocusTotalAwayMs(focusTotalAwayMsRef.current);
+          setFocusReturnOverlay({awayMs:ms});
+        }
+      }
+    };
+    document.addEventListener("visibilitychange",onVis);
+    // Screen Wake Lock — keeps phone screen on during study
+    if(navigator.wakeLock){
+      navigator.wakeLock.request("screen").then(lock=>{wakeLockRef.current=lock;}).catch(()=>{});
+    }
+    return()=>{
+      document.removeEventListener("visibilitychange",onVis);
+      if(wakeLockRef.current){wakeLockRef.current.release().catch(()=>{});wakeLockRef.current=null;}
+    };
+  },[screen,focusModeEnabled]);
 
   // Mirror history into a ref so endQuiz can always read current value
   useEffect(()=>{historyRef.current=history;},[history]);
@@ -5348,6 +5391,7 @@ function CFAMock(){
       level:cfaLevel,
       confidenceData:computeCalibration(qs,ans,confidenceLogRef.current),
       ...(omMode&&{isOfficeMode:true}),
+      ...(focusModeEnabled&&{focusSwitches:focusSwitchesRef.current,focusAwayMs:focusTotalAwayMsRef.current}),
     };
 
     setLastSession(session);
@@ -5832,6 +5876,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
     genAbortRef.current=genAbort;
     setNextActionText(""); setNextActionLoading(false);
     setDuelCreating(false);
+    // Reset focus mode counters for the new session
+    focusSwitchesRef.current=0; focusTotalAwayMsRef.current=0;
+    focusAwayStartRef.current=null;
+    setFocusSwitches(0); setFocusTotalAwayMs(0); setFocusReturnOverlay(null);
     lastGenParamsRef.current={t,st,diff,cnt,m,isVignette,st2};
     prequizPassProbRef.current=passProbability?.probability??null;
     try{localStorage.removeItem(SESSION_DRAFT_KEY);}catch{}
@@ -9732,6 +9780,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     </div>
 
+    {/* Focus Mode toggle */}
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:focusModeEnabled?`${C.accent}12`:C.surface,border:`1px solid ${focusModeEnabled?C.accent+"44":C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:14,cursor:"pointer"}} onClick={()=>{const next=!focusModeEnabled;setFocusModeEnabled(next);try{localStorage.setItem("cfa_focus_mode_v1",next?"1":"0");}catch{};}}>
+      <div>
+        <div style={{fontSize:13,fontWeight:700,color:focusModeEnabled?C.accentLight:C.text}}>🎯 Super Focus Mode</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:2}}>Tracks tab switches · keeps screen on · shows focus score</div>
+      </div>
+      <div style={{width:38,height:22,borderRadius:11,background:focusModeEnabled?C.accent:"#444",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+        <div style={{position:"absolute",top:3,left:focusModeEnabled?18:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s",boxShadow:"0 1px 4px #0006"}}/>
+      </div>
+    </div>
     {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:14}}>{error}</div>}
     {(()=>{
       const ready=mode==="interleaved"||(selTopics.length>0&&selSubtopics.length>0);
@@ -9789,6 +9847,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
     );
     const q=questions[currentQ];const answered=answers[q.id];const isLast=currentQ===questions.length-1;
     return wrap(<>
+      {/* Super Focus Mode: return overlay */}
+      {focusModeEnabled&&focusReturnOverlay&&(
+        <div onClick={()=>setFocusReturnOverlay(null)} style={{position:"fixed",inset:0,zIndex:400,background:"#00000099",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,animation:"fadeIn 0.2s ease"}}>
+          <div style={{background:C.surface,borderRadius:16,padding:"28px 24px",textAlign:"center",maxWidth:320,width:"100%",border:`1px solid ${C.hard}44`,boxShadow:"0 8px 40px #000a"}}>
+            <div style={{fontSize:36,marginBottom:8}}>👁</div>
+            <div style={{fontSize:16,fontWeight:800,color:C.hard,marginBottom:6}}>You left ClearCFA</div>
+            <div style={{fontSize:13,color:C.muted,lineHeight:1.6,marginBottom:16}}>
+              {focusReturnOverlay.awayMs<60000
+                ?`${Math.round(focusReturnOverlay.awayMs/1000)}s away`
+                :`${Math.round(focusReturnOverlay.awayMs/60000)}m ${Math.round((focusReturnOverlay.awayMs%60000)/1000)}s away`}
+              {" — "}{focusSwitches===1?"first distraction this session":`${focusSwitches} distractions so far`}
+            </div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:18,fontStyle:"italic"}}>Every question you answer now puts distance between you and the candidates who didn't come back.</div>
+            <button onClick={()=>setFocusReturnOverlay(null)} style={{width:"100%",padding:"12px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+              Back to studying →
+            </button>
+          </div>
+        </div>
+      )}
       {/* Floating calculator button */}
       <button onClick={()=>setCalcOpen(true)} title="Open BA II Plus Calculator"
         style={{position:"fixed",bottom:82,right:16,zIndex:270,width:46,height:46,borderRadius:"50%",background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",border:"1px solid #2563eb55",color:"#93c5fd",fontSize:20,cursor:"pointer",boxShadow:"0 4px 16px #0008",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>
@@ -9802,7 +9879,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
           {(()=>{const idealLeft=(questions.length-currentQ)*90;const paceRatio=timeLeft/Math.max(1,idealLeft);const paceCol=paceRatio>1.1?C.easy:paceRatio>0.8?C.medium:C.hard;const paceLabel=paceRatio>1.1?"Ahead":paceRatio>0.8?"On track":"Speed up";return timeLeft>0&&questions.length>1?<span style={{fontSize:10,color:paceCol,fontWeight:700,padding:"3px 7px",borderRadius:6,background:paceCol+"18"}}>{paceLabel}</span>:null;})()}
         </div>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:13,color:C.muted}}><span style={{color:C.accentLight,fontWeight:800}}>{currentQ+1}</span>/{questions.length}</span>{q._isVignette&&<span style={{fontSize:11,color:C.accent,fontWeight:700,opacity:0.85}}>· V{(q._vignetteIdx||0)+1}</span>}<Badge color={diffC[difficulty]}>{difficulty}</Badge></div>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          {focusModeEnabled&&<span style={{fontSize:10,fontWeight:700,color:focusSwitches===0?C.easy:C.hard,padding:"3px 7px",borderRadius:6,background:(focusSwitches===0?C.easy:C.hard)+"18",border:`1px solid ${(focusSwitches===0?C.easy:C.hard)}44`}}>{focusSwitches===0?"🎯 Focused":`👁 ${focusSwitches}×`}</span>}
+          <span style={{fontSize:13,color:C.muted}}><span style={{color:C.accentLight,fontWeight:800}}>{currentQ+1}</span>/{questions.length}</span>{q._isVignette&&<span style={{fontSize:11,color:C.accent,fontWeight:700,opacity:0.85}}>· V{(q._vignetteIdx||0)+1}</span>}<Badge color={diffC[difficulty]}>{difficulty}</Badge>
+        </div>
       </div>
       {exitConfirm&&(
         <div style={{background:C.surface,border:`1px solid ${C.hard}44`,borderRadius:12,padding:"16px",marginBottom:14,animation:"fadeIn 0.15s ease"}}>
@@ -10219,9 +10299,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
           {sessionSaved===true?"✓ Session saved":sessionSaved===false?"⚠ Storage full — tap Home → backup your data":null}
         </div>
         {lastSession&&<div style={{marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-          <span style={{fontSize:13,fontWeight:800,color:C.rewardLight}}>+{calcXP(lastSession)} XP</span>
+          <span style={{fontSize:13,fontWeight:800,color:C.rewardLight}}>+{calcXP(lastSession)}{lastSession.focusSwitches===0&&lastSession.focusSwitches!==undefined?" +50 🎯":""} XP</span>
           <span style={{fontSize:11,color:C.muted}}>earned · {levelInfo.label} · Level {levelInfo.level}</span>
         </div>}
+        {/* Focus score */}
+        {lastSession?.focusSwitches!==undefined&&(()=>{
+          const sw=lastSession.focusSwitches;
+          const ms=lastSession.focusAwayMs||0;
+          const awayStr=ms<60000?`${Math.round(ms/1000)}s lost`:`${Math.round(ms/60000)}m ${Math.round((ms%60000)/1000)}s lost`;
+          const perfect=sw===0;
+          const col=perfect?C.easy:sw<=1?C.medium:C.hard;
+          return(
+            <div style={{marginTop:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:col+"12",border:`1px solid ${col}33`,borderRadius:8,padding:"7px 14px"}}>
+              <span style={{fontSize:14}}>{perfect?"🎯":sw<=1?"⚠️":"📵"}</span>
+              <span style={{fontSize:12,fontWeight:700,color:col}}>
+                {perfect?"Perfect focus — zero distractions":sw===1?`1 distraction · ${awayStr}`:`${sw} distractions · ${awayStr}`}
+              </span>
+            </div>
+          );
+        })()}
         {prequizPassProbRef.current!==null&&passProbability&&(()=>{
           const before=prequizPassProbRef.current;
           const after=passProbability.probability;
