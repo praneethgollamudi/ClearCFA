@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Multi-module drill loading state display (75f6ff1)**: Multi-module drill sessions now show correct loading indicators during initialization. When modifying drill loading screens or multi-select drill logic, ensure loading display reflects actual drill preparation state across all selected modules to prevent UX confusion during session startup.
+
+
+**Multi-module drill adaptive count (75f6ff1)**: Multi-module drill sessions now calculate question count adaptively based on combined module difficulty and user performance history. When modifying drill initialization for multi-select sessions, ensure adaptive count respects historical performance across all selected modules to prevent over/under-scoping combined drills.
+
+
+**What's New version consolidation (75f6ff1)**: Versions 2026-07-05-e and 2026-07-05-f have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-05-c, 2026-07-05-d, 2026-07-06, 2026-07-06-b, and 2026-07-06-c. Version 2026-07-06-b and 2026-07-06-c consolidate adaptive drill difficulty, Super Focus Mode tab-switch tracking, and offline polish. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (e73da89)**: Versions 2026-07-05-d and 2026-07-05-e have been removed from WHATS_NEW_SLIDES; current active versions are 2026-07-05-f and 2026-07-06. Version 2026-07-06 consolidates Super Focus Mode, calculator keystrokes, Study Groups real-time syncing, and Daily Q/offline polish. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1121,7 +1130,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1796500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1796600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
