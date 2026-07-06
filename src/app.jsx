@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05
-{version:"2026-07-05",slides:[
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smoother Study Session Controls",sub:"UX · 2026-07-05 update",desc:"We've refined how you abort, cancel, and share during study sessions — making these actions faster and more intuitive. You'll spend less time navigating menus and more time mastering exam concepts.",tip:"Look for clearer confirmation states when ending or adjusting your study sessions."},
-{emoji:"📚",color:C.medium,bg:C.medium,title:"Better Offline & Daily Question Flow",sub:"Study Tools · 2026-07-05 update",desc:"Daily Question rotation and offline seed handling now work more reliably, with improved empty-state messaging on the leaderboard. Your study streak and offline access are now rock-solid.",tip:"Check your Daily Question to see the freshly updated problem for today."},
-{emoji:"⏱️",color:C.reward,bg:C.reward,title:"Accurate Time Estimates & Session Stability",sub:"Bug Fix · 2026-07-05 update",desc:"Fixed a session conflict that could cause stale data to overwrite your active study progress, and improved ETA accuracy so you know exactly how long each study block will take. Your session data is now trustworthy.",tip:"Check the ETA at the start of your next quiz — it should now match your actual study pace."},
-]},
 // WN_VER:2026-07-06
 {version:"2026-07-06",slides:[
 {emoji:"🎯",color:C.reward,bg:C.reward,title:"Super Focus Mode Keeps You On Track",sub:"Study Tools · 2026-07-06 update",desc:"New Super Focus Mode tracks tab switches and keeps your screen awake so you stay locked in on practice questions without distractions. This helps you build real exam-day focus habits while studying.",tip:"Enable Super Focus Mode before a timed quiz to see your focus score at the end."},
@@ -319,6 +313,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Combine Modules for Custom Drills",sub:"Study Tools · 2026-07-06 update",desc:"You can now select multiple modules at once on the readiness screen to create combined drill sessions tailored to your study plan. This lets you practice cross-module concepts and build deeper connections between topics.",tip:"Tap multiple module pills before starting a drill to mix and match topics in a single session."},
 {emoji:"🧠",color:C.medium,bg:C.medium,title:"Smarter Adaptive Difficulty Control",sub:"AI · 2026-07-06 update",desc:"Drill buttons on the readiness screen now show adaptive difficulty levels, and multi-module sessions intelligently adjust question complexity based on your performance. You get better-calibrated practice that matches your current mastery level.",tip:"Look for difficulty indicators next to drill options to pick the right challenge level for your prep stage."},
 {emoji:"⚡",color:C.hard,bg:C.hard,title:"Stay Focused with Super Focus Mode",sub:"UX · 2026-07-06 update",desc:"A new Super Focus Mode minimizes distractions by tracking tab switches and keeping your screen active during intense study sessions. Eliminate interruptions and maintain flow while you work through critical exam content.",tip:"Enable Super Focus Mode when tackling your most challenging topics to block context-switching and stay in the zone."},
+]},
+// WN_VER:2026-07-06-e
+{version:"2026-07-06-e",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Study Multiple Modules Together",sub:"Study Tools · 2026-07-06 update",desc:"You can now select and drill across multiple CFA modules in a single session, letting you build connections between topics. This helps you prepare for integrated exam questions that span multiple areas.",tip:"Tap the module pills on the readiness screen to combine any modules into one adaptive drill."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Difficulty Matching Your Level",sub:"AI · 2026-07-06 update",desc:"Drill difficulty now adapts based on your readiness level before you start, and adjusts dynamically as you progress through multi-module sessions. You'll spend less time on questions that are too easy or too hard, and more time on material you actually need.",tip:"Notice the difficulty shift as you answer questions — the app is tuning to your performance in real time."},
+{emoji:"✅",color:C.reward,bg:C.reward,title:"Accurate Progress Across All Drills",sub:"Bug Fix · 2026-07-06 update",desc:"Multi-module drill sessions now correctly record progress and module coverage, fixing cases where some modules weren't being credited. Your study streak and readiness scores now reflect exactly what you've covered.",tip:"After completing a multi-module drill, check your module progress to confirm all topics are marked complete."},
 ]},
 // WN_END
 ];
@@ -364,8 +364,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-05
-{date:"2026-07-05",entries:[
+// AC_VER:2026-07-06
+{date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
