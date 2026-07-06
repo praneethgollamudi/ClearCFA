@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05-c
-{version:"2026-07-05-c",slides:[
-{emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups Now Live",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with real-time leaderboards to track progress alongside peers. Collaborative learning helps reinforce concepts and keeps you motivated through the CFA curriculum.",tip:"Start or find a study group in the Groups tab to see live rankings of your cohort's performance."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Smoother Dialog Experience",sub:"UX · 2026-07-05 update",desc:"Fixed persistent overlay issues so dismissing updates and notifications now works reliably every time. You'll spend less time fighting the UI and more time studying.",tip:"Notice that 'Got it' buttons and dialog closes now respond immediately without getting stuck."},
-{emoji:"🌐",color:C.medium,bg:C.medium,title:"Better Offline & Performance",sub:"Offline · 2026-07-05 update",desc:"Enhanced offline study seed generation and fixed session conflicts that could disrupt your progress. Your study data now syncs reliably whether you're online or prepping without connection.",tip:"Download your study materials for offline access and trust that your session will stay stable across app restarts."},
-]},
 // WN_VER:2026-07-05
 {version:"2026-07-05",slides:[
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smoother Study Session Controls",sub:"UX · 2026-07-05 update",desc:"We've refined how you abort, cancel, and share during study sessions — making these actions faster and more intuitive. You'll spend less time navigating menus and more time mastering exam concepts.",tip:"Look for clearer confirmation states when ending or adjusting your study sessions."},
@@ -319,6 +313,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧠",color:C.hard,bg:C.hard,title:"Stay Locked In with Super Focus",sub:"Study Tools · 2026-07-06 update",desc:"New Super Focus Mode prevents tab-switching distractions during drill sessions and keeps your screen awake so you never lose momentum. Perfect for uninterrupted study blocks when you need to power through tough topics.",tip:"Enable Super Focus Mode before tackling a weak topic to eliminate phone distractions and maximize retention."},
 {emoji:"🎚️",color:C.medium,bg:C.medium,title:"Smarter Difficulty That Scales With You",sub:"AI · 2026-07-06 update",desc:"Drill sessions now adapt their difficulty based on your readiness level, and you can combine multiple modules into one session for flexible practice. The app learns your strengths and weaknesses to serve the right challenge at the right time.",tip:"Try selecting multiple modules on the readiness screen to create a custom mixed drill that matches your study goals."},
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Polished Experience, Fewer Hiccups",sub:"Bug Fix · 2026-07-06 update",desc:"We fixed ETA display accuracy, improved offline seed reliability, fixed the empty leaderboard state, and corrected Daily Question rotation. These refinements ensure a smoother, more predictable study experience across all devices.",tip:"Check your Daily Question rotation—it now refreshes correctly so you always get fresh practice."},
+]},
+// WN_VER:2026-07-06-d
+{version:"2026-07-06-d",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Combine Modules for Custom Drills",sub:"Study Tools · 2026-07-06 update",desc:"You can now select multiple modules at once on the readiness screen to create combined drill sessions tailored to your study plan. This lets you practice cross-module concepts and build deeper connections between topics.",tip:"Tap multiple module pills before starting a drill to mix and match topics in a single session."},
+{emoji:"🧠",color:C.medium,bg:C.medium,title:"Smarter Adaptive Difficulty Control",sub:"AI · 2026-07-06 update",desc:"Drill buttons on the readiness screen now show adaptive difficulty levels, and multi-module sessions intelligently adjust question complexity based on your performance. You get better-calibrated practice that matches your current mastery level.",tip:"Look for difficulty indicators next to drill options to pick the right challenge level for your prep stage."},
+{emoji:"⚡",color:C.hard,bg:C.hard,title:"Stay Focused with Super Focus Mode",sub:"UX · 2026-07-06 update",desc:"A new Super Focus Mode minimizes distractions by tracking tab switches and keeping your screen active during intense study sessions. Eliminate interruptions and maintain flow while you work through critical exam content.",tip:"Enable Super Focus Mode when tackling your most challenging topics to block context-switching and stay in the zone."},
 ]},
 // WN_END
 ];
@@ -370,8 +370,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-05
-{date:"2026-07-05",entries:[
+// AC_VER:2026-07-06
+{date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
