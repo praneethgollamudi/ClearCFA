@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Offline seed questions expansion scope (a4de3b2)**: OFFLINE_SEED_QS now totals 21 seeded questions across Ethics (6), Quantitative Methods (6), Economics (6), and Financial Statement Analysis (3). When expanding offline seeds further, maintain the "Correct: [option]" prefix convention and track total question count to ensure balanced topic coverage for new users.
+
+
+**Super Focus Mode with tab-switch tracking and Wake Lock (9189fda)**: Super Focus Mode now detects tab switches and enforces wake lock to prevent screen dimming during study sessions. When modifying focus mode state management or implementing new focus features, ensure tab visibility changes are tracked and wake lock cleanup occurs on mode exit to prevent battery drain.
+
+
 **ETA display polish (a4de3b2)**: Estimated time-to-completion calculations and displays have been refined for accuracy and clarity. When modifying time estimation logic or study progress calculations, validate ETA outputs against actual study session durations to maintain user trust in completion predictions.
 
 
@@ -1100,7 +1106,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1796200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1796300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
