@@ -10095,6 +10095,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   </div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,alignItems:"center",marginBottom:q.calc_steps.result?6:8}}>
                     {(q.calc_steps.keys||[]).map((k,i)=>{
+                      if(k==="…"||k==="..."||k==="…")return <span key={i} style={{fontSize:11,color:C.muted,fontStyle:"italic",padding:"0 2px"}}>repeat↓</span>;
                       const isFn=k.startsWith("[")&&k.endsWith("]");
                       return <span key={i} style={{fontFamily:"monospace",fontSize:11,fontWeight:700,padding:"3px 8px",borderRadius:5,background:isFn?`${C.accent}33`:"#ffffff14",color:isFn?C.accentLight:C.text,border:`1px solid ${isFn?C.accent+"44":C.border}`}}>{k}</span>;
                     })}
