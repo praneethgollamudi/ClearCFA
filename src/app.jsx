@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05-d
-{version:"2026-07-05-d",slides:[
-{emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystrokes On-Demand",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now display exact BA II Plus keystroke sequences alongside explanations. This bridges the gap between understanding the concept and executing it on your physical calculator during the exam.",tip:"Look for the keystroke guide when answering financial math questions—practice the button sequence until it's muscle memory."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Daily Questions Load Faster",sub:"UX · 2026-07-05 update",desc:"Daily question cards now collapse to a compact view once you've answered them, reducing visual clutter and letting you move through your study queue more smoothly. More questions reviewed in less time means higher retention.",tip:"Watch your Daily Q section compress after each answer—it's your visual cue that you're making progress."},
-{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"AI Diagnosis Now Works Reliably",sub:"AI · 2026-07-05 update",desc:"Fixed a critical bug in the AI diagnosis button that was preventing it from analyzing your answers correctly. You can now confidently use AI-powered feedback to understand *why* you got a question wrong.",tip:"Tap the AI diagnosis button after a tough question to get personalized insights on your knowledge gaps."},
-]},
 // WN_VER:2026-07-05-e
 {version:"2026-07-05-e",slides:[
 {emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystroke Guide",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now show the exact keystrokes needed on a BA II Plus financial calculator. This eliminates guesswork and helps you practice with the actual tool you'll use on exam day.",tip:"Look for the calculator keystroke walkthrough when answering quantitative problems."},
@@ -318,6 +312,13 @@ const WHATS_NEW_SLIDES=[
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smoother Study Session Controls",sub:"UX · 2026-07-05 update",desc:"We've refined how you abort, cancel, and share during study sessions — making these actions faster and more intuitive. You'll spend less time navigating menus and more time mastering exam concepts.",tip:"Look for clearer confirmation states when ending or adjusting your study sessions."},
 {emoji:"📚",color:C.medium,bg:C.medium,title:"Better Offline & Daily Question Flow",sub:"Study Tools · 2026-07-05 update",desc:"Daily Question rotation and offline seed handling now work more reliably, with improved empty-state messaging on the leaderboard. Your study streak and offline access are now rock-solid.",tip:"Check your Daily Question to see the freshly updated problem for today."},
 {emoji:"⏱️",color:C.reward,bg:C.reward,title:"Accurate Time Estimates & Session Stability",sub:"Bug Fix · 2026-07-05 update",desc:"Fixed a session conflict that could cause stale data to overwrite your active study progress, and improved ETA accuracy so you know exactly how long each study block will take. Your session data is now trustworthy.",tip:"Check the ETA at the start of your next quiz — it should now match your actual study pace."},
+]},
+// WN_VER:2026-07-06
+{version:"2026-07-06",slides:[
+{emoji:"🎯",color:C.reward,bg:C.reward,title:"Super Focus Mode Keeps You On Track",sub:"Study Tools · 2026-07-06 update",desc:"New Super Focus Mode tracks tab switches and keeps your screen awake so you stay locked in on practice questions without distractions. This helps you build real exam-day focus habits while studying.",tip:"Enable Super Focus Mode before a timed quiz to see your focus score at the end."},
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"See Exact Calculator Keystrokes",sub:"Study Tools · 2026-07-06 update",desc:"Calculator-applicable questions now show you the exact BA II Plus keystrokes needed to solve them. You'll learn the precise button sequence so you're confident and fast on exam day.",tip:"Look for the calculator keystroke walkthrough when you review a question marked as calculator-applicable."},
+{emoji:"👥",color:C.accentLight,bg:C.accentLight,title:"Study Groups Now Fully Live",sub:"Study Tools · 2026-07-06 update",desc:"Study Groups are now connected to real-time syncing so you can create groups, invite friends, and see live leaderboards as everyone studies together. Prep alongside your peers and stay motivated.",tip:"Create or join a group in the Study Groups tab and invite classmates to compare progress."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Smoother Daily Questions & Offline",sub:"UX · 2026-07-06 update",desc:"Daily Questions now collapse neatly after you answer, offline mode works better with improved seed handling, and the leaderboard shows a friendlier empty state. Small touches that make the app feel more polished.",tip:"Notice how your Daily Question card compacts after submission so you can move on to the next one faster."},
 ]},
 // WN_END
 ];
