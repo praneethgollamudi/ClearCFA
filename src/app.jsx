@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-05-e
-{version:"2026-07-05-e",slides:[
-{emoji:"🧮",color:C.hard,bg:C.hard,title:"BA II Plus Keystroke Guide",sub:"Study Tools · 2026-07-05 update",desc:"Calculator-applicable questions now show the exact keystrokes needed on a BA II Plus financial calculator. This eliminates guesswork and helps you practice with the actual tool you'll use on exam day.",tip:"Look for the calculator keystroke walkthrough when answering quantitative problems."},
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smarter Daily Question Hints",sub:"AI · 2026-07-05 update",desc:"When AI hints aren't available, calculator-based questions now fall back to rule-based hints instantly. You get helpful guidance every time, keeping your study momentum going without delays.",tip:"Try asking for a hint on a cached quantitative question—it arrives instantly now."},
-{emoji:"📋",color:C.easy,bg:C.easy,title:"Cleaner Daily Card Interface",sub:"UX · 2026-07-05 update",desc:"The Daily Question card now collapses to a compact state after you answer, keeping your screen less cluttered. You can focus on your next question or review without visual noise.",tip:"Answer a Daily Question and watch the card shrink—tap it anytime to expand and review."},
-]},
 // WN_VER:2026-07-05-f
 {version:"2026-07-05-f",slides:[
 {emoji:"👥",color:C.reward,bg:C.reward,title:"Study Groups & Leaderboards",sub:"Study Tools · 2026-07-05 update",desc:"Create or join study groups with other CFA candidates to collaborate, share progress, and compete on leaderboards. Studying together keeps you motivated and lets you learn from peers preparing for the same exam.",tip:"Tap the Study Groups tab to create a new group or join an existing one with your study partners."},
@@ -320,6 +314,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"👥",color:C.accentLight,bg:C.accentLight,title:"Study Groups Now Fully Live",sub:"Study Tools · 2026-07-06 update",desc:"Study Groups are now connected to real-time syncing so you can create groups, invite friends, and see live leaderboards as everyone studies together. Prep alongside your peers and stay motivated.",tip:"Create or join a group in the Study Groups tab and invite classmates to compare progress."},
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Smoother Daily Questions & Offline",sub:"UX · 2026-07-06 update",desc:"Daily Questions now collapse neatly after you answer, offline mode works better with improved seed handling, and the leaderboard shows a friendlier empty state. Small touches that make the app feel more polished.",tip:"Notice how your Daily Question card compacts after submission so you can move on to the next one faster."},
 ]},
+// WN_VER:2026-07-06-b
+{version:"2026-07-06-b",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Smart Drills Match Your Level",sub:"Study Tools · 2026-07-06 update",desc:"Drill buttons on the readiness screen now adapt their difficulty based on your performance, showing you the right challenge level automatically. This keeps you in the optimal learning zone without manual tweaking.",tip:"Check your readiness screen—drill buttons will now suggest Easy, Medium, or Hard based on your recent quiz results."},
+{emoji:"🔒",color:C.reward,bg:C.reward,title:"Uninterrupted Focus Mode",sub:"Study Tools · 2026-07-06 update",desc:"Super Focus Mode now prevents accidental app switches and keeps your screen awake during study sessions, plus tracks any tab changes you make. Stay locked in on your exam prep without distractions.",tip:"Enable Super Focus Mode in settings before a study session to activate screen lock and tab-switch alerts."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother App Experience",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed ETA calculations, offline question seeding, leaderboard empty states, and daily question rotation. Your study sessions now flow seamlessly whether online or offline.",tip:"Your offline question bank now refreshes reliably, and the leaderboard won't show blank screens."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -328,12 +328,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-04
-{date:"2026-07-04",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-05
 {date:"2026-07-05",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -384,6 +378,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-05
 {date:"2026-07-05",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-06
+{date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
