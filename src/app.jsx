@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06-b
-{version:"2026-07-06-b",slides:[
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Smart Drills Match Your Level",sub:"Study Tools · 2026-07-06 update",desc:"Drill buttons on the readiness screen now adapt their difficulty based on your performance, showing you the right challenge level automatically. This keeps you in the optimal learning zone without manual tweaking.",tip:"Check your readiness screen—drill buttons will now suggest Easy, Medium, or Hard based on your recent quiz results."},
-{emoji:"🔒",color:C.reward,bg:C.reward,title:"Uninterrupted Focus Mode",sub:"Study Tools · 2026-07-06 update",desc:"Super Focus Mode now prevents accidental app switches and keeps your screen awake during study sessions, plus tracks any tab changes you make. Stay locked in on your exam prep without distractions.",tip:"Enable Super Focus Mode in settings before a study session to activate screen lock and tab-switch alerts."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Smoother App Experience",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed ETA calculations, offline question seeding, leaderboard empty states, and daily question rotation. Your study sessions now flow seamlessly whether online or offline.",tip:"Your offline question bank now refreshes reliably, and the leaderboard won't show blank screens."},
-]},
 // WN_VER:2026-07-06-c
 {version:"2026-07-06-c",slides:[
 {emoji:"🧠",color:C.hard,bg:C.hard,title:"Stay Locked In with Super Focus",sub:"Study Tools · 2026-07-06 update",desc:"New Super Focus Mode prevents tab-switching distractions during drill sessions and keeps your screen awake so you never lose momentum. Perfect for uninterrupted study blocks when you need to power through tough topics.",tip:"Enable Super Focus Mode before tackling a weak topic to eliminate phone distractions and maximize retention."},
@@ -318,6 +312,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Drill Sessions",sub:"Study Tools · 2026-07-06 update",desc:"You can now select multiple modules at once on the readiness screen to combine them into a single focused drill session. This helps you build connections across related topics and study more efficiently.",tip:"Tap multiple module pills to create a custom combined session targeting exactly the areas you want to strengthen."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter Question Deduplication",sub:"Bug Fix · 2026-07-06 update",desc:"We fixed how the app tracks which questions you've already seen, even when studying offline or across multiple sessions. You'll no longer encounter duplicate question stems, keeping your practice time focused and productive.",tip:"Your offline study sessions now sync seamlessly with your seen-questions history when you reconnect."},
 {emoji:"🔄",color:C.medium,bg:C.medium,title:"Accurate Multi-Module Credit",sub:"Bug Fix · 2026-07-06 update",desc:"Multi-module drill sessions now correctly credit all modules you've covered toward your progress tracking. Previously, some modules weren't being counted—now your readiness scores reflect your actual work.",tip:"Check your progress dashboard to see all modules from combined sessions now properly reflected in your coverage stats."},
+]},
+// WN_VER:2026-07-06
+{version:"2026-07-06",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Sessions Now Track Correctly",sub:"Study Tools · 2026-07-06 update",desc:"Fixed an issue where multi-module drill sessions weren't properly crediting all covered modules toward your progress. Your study metrics now accurately reflect every topic you've practiced, giving you a true picture of exam readiness.",tip:"Check your module progress after running a multi-module drill—you'll see all covered areas now correctly marked."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Questions Load Reliably Across Sessions",sub:"Bug Fix · 2026-07-06 update",desc:"Resolved a deduplication bug that sometimes caused question stems to reappear and offline tracking to lose sync during question database loads. Your study sessions now flow smoothly without duplicate prompts or lost practice history.",tip:"Resume a saved session after going offline—you'll notice cleaner question flow and no duplicate stems."},
+{emoji:"💾",color:C.medium,bg:C.medium,title:"Session History Preserves All Details",sub:"Offline · 2026-07-06 update",desc:"Fixed a problem where reloading a session would strip away important level and subtopic metadata from your history. Your saved sessions now retain complete information, making it easier to review and revisit specific topics later.",tip:"Open an older session from your history and reload it—all topic details and levels are now preserved."},
 ]},
 // WN_END
 ];
@@ -351,8 +351,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-05
-{date:"2026-07-05",entries:[
+// AC_VER:2026-07-06
+{date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
