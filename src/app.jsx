@@ -4758,6 +4758,7 @@ function CFAMock(){
   const [reelXpPop,setReelXpPop]=useState(false);
   const reelTouchY=useRef(null);
   const reelFeedBase=useRef([]);
+  const [readinessPillSel,setReadinessPillSel]=useState({});  // {[topic]: string[]}
   // ─── Super Focus Mode ──────────────────────────────────────────────────────
   const [focusModeEnabled,setFocusModeEnabled]=useState(()=>{try{return localStorage.getItem("cfa_focus_mode_v1")==="1";}catch{return false;}});
   const [focusSwitches,setFocusSwitches]=useState(0);
@@ -11181,15 +11182,42 @@ Return ONLY a JSON array — no prose, no markdown fences:
               {m.modules.map(mod=>{
                 const stats=m.moduleStats[mod];
                 const los=m.losStats[mod];
-                const diff=stats?(stats.pct<50?"Easy":"Medium"):"Easy";
+                const isSel=(readinessPillSel[m.topic]||[]).includes(mod);
+                const accCol=stats?(stats.pct>=70?C.easy:stats.pct>=50?C.medium:C.hard):C.muted;
                 return(
-                  <button key={mod} onClick={()=>{setMode("guided");generateQuestions(m.topic,mod,diff,10);}} title={`${los?.total||0} LOS · tap to drill`} style={{fontSize:10,padding:"3px 8px",borderRadius:5,fontWeight:600,cursor:"pointer",background:stats?(stats.pct>=70?C.easy+"22":stats.pct>=50?C.medium+"22":C.hard+"18"):C.dim,color:stats?(stats.pct>=70?C.easy:stats.pct>=50?C.medium:C.hard):C.muted,border:`1px solid ${stats?(stats.pct>=70?C.easy+"33":stats.pct>=50?C.medium+"33":C.hard+"33"):C.border}`}}>
-                    {mod.length>18?mod.slice(0,18)+"…":mod}{stats?` ${stats.pct}%`:""}<span style={{opacity:0.45}}> {los?.total}LOS</span>
+                  <button key={mod} onClick={()=>{
+                    setReadinessPillSel(prev=>{
+                      const cur=prev[m.topic]||[];
+                      const next=isSel?cur.filter(x=>x!==mod):[...cur,mod];
+                      return{...prev,[m.topic]:next};
+                    });
+                  }} title={`${los?.total||0} LOS · tap to select`} style={{fontSize:10,padding:"3px 8px",borderRadius:5,fontWeight:600,cursor:"pointer",transition:"all 0.15s",
+                    background:isSel?C.accent+"33":stats?(stats.pct>=70?C.easy+"22":stats.pct>=50?C.medium+"22":C.hard+"18"):C.dim,
+                    color:isSel?C.accentLight:accCol,
+                    border:`1.5px solid ${isSel?C.accent:stats?(stats.pct>=70?C.easy+"33":stats.pct>=50?C.medium+"33":C.hard+"33"):C.border}`,
+                    boxShadow:isSel?`0 0 0 1px ${C.accent}44`:"none"}}>
+                    {isSel?"✓ ":""}{mod.length>18?mod.slice(0,18)+"…":mod}{stats?` ${stats.pct}%`:""}<span style={{opacity:0.45}}> {los?.total}LOS</span>
                   </button>
                 );
               })}
             </div>
-            <button onClick={()=>{const t=m.untouchedModules[0]||m.modules[0];setMode("guided");const diff=notStarted?"Easy":m.accuracy>=80?"Hard":m.accuracy>=60?"Medium":"Easy";generateQuestions(m.topic,t,diff,10);}} style={{width:"100%",padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>{notStarted?`Start ${m.topic} →`:m.readiness>=70?"Drill to stay sharp →":"Drill Weakest Module →"}</button>
+            {(()=>{
+              const selMods=readinessPillSel[m.topic]||[];
+              if(selMods.length>0){
+                const minAcc=selMods.reduce((mn,mod)=>Math.min(mn,m.moduleStats[mod]?.pct??0),100);
+                const diff=minAcc>=80?"Hard":minAcc>=60?"Medium":"Easy";
+                const multiMods=selMods.map(mod=>({t:m.topic,st:mod}));
+                return(
+                  <div style={{display:"flex",gap:7,alignItems:"center"}}>
+                    <button onClick={()=>{setMode("guided");setReadinessPillSel(prev=>({...prev,[m.topic]:[]}));generateQuestions(m.topic,selMods[0],diff,10,"guided",false,null,selMods.length>1?multiMods:null);}} style={{flex:1,padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                      Drill {selMods.length} module{selMods.length>1?"s":""} · {diff} →
+                    </button>
+                    <button onClick={()=>setReadinessPillSel(prev=>({...prev,[m.topic]:[]}))} style={{padding:"9px 12px",borderRadius:8,fontSize:11,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer",whiteSpace:"nowrap"}}>Clear</button>
+                  </div>
+                );
+              }
+              return(<button onClick={()=>{const t=m.untouchedModules[0]||m.modules[0];setMode("guided");const diff=notStarted?"Easy":m.accuracy>=80?"Hard":m.accuracy>=60?"Medium":"Easy";generateQuestions(m.topic,t,diff,10);}} style={{width:"100%",padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>{notStarted?`Start ${m.topic} →`:m.readiness>=70?"Drill to stay sharp →":"Drill Weakest Module →"}</button>);
+            })()}
           </div>
         );
       })}
