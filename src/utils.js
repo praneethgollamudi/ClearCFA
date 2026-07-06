@@ -814,14 +814,18 @@ function getTopicTrends(history){
 function getPassProbability(history, moduleReadiness, daysLeft) {
   if (history.length < 3) return null;
 
-  // Weighted accuracy across all sessions (recency-weighted)
+  // Difficulty multiplier: scale pct so Easy sessions don't look like Hard regressions
+  const diffMult = d => d === 'Hard' ? 1.15 : d === 'Medium' ? 1.0 : 0.88;
+
+  // Weighted accuracy across all sessions (recency + difficulty weighted)
   const now = Date.now();
   let wCorrect = 0, wTotal = 0;
   history.forEach(s => {
     const ageDays = (now - s.id) / 86400000;
     const w = ageDays <= 7 ? 3 : ageDays <= 14 ? 2 : 1;
+    const dm = diffMult(s.difficulty);
     const sScore = s.score ?? s.correct ?? Math.round(((s.pct||0)/100)*(s.total||0));
-    wCorrect += sScore * w; wTotal += (s.total ?? 0) * w;
+    wCorrect += sScore * dm * w; wTotal += (s.total ?? 0) * dm * w;
   });
   const currentAccuracy = wTotal > 0 ? (wCorrect / wTotal) * 100 : 0;
 
@@ -830,11 +834,12 @@ function getPassProbability(history, moduleReadiness, daysLeft) {
   const coveredWeight = moduleReadiness.reduce((s, m) => s + (m.sessions > 0 ? m.weight : 0), 0);
   const coverageFactor = coveredWeight / totalWeight;
 
-  // Trajectory: improving or declining?
-  const recentSessions = history.slice(0, 5);
-  const olderSessions = history.slice(5, 10);
-  const recentAvg = recentSessions.length ? recentSessions.reduce((s, h) => s + (h.pct||0), 0) / recentSessions.length : currentAccuracy;
-  const olderAvg = olderSessions.length ? olderSessions.reduce((s, h) => s + (h.pct||0), 0) / olderSessions.length : recentAvg;
+  // Trajectory: improving or declining? Use larger windows for stability
+  const adjPct = h => Math.min(100, (h.pct||0) * diffMult(h.difficulty));
+  const recentSessions = history.slice(0, 8);
+  const olderSessions = history.slice(8, 16);
+  const recentAvg = recentSessions.length ? recentSessions.reduce((s, h) => s + adjPct(h), 0) / recentSessions.length : currentAccuracy;
+  const olderAvg = olderSessions.length ? olderSessions.reduce((s, h) => s + adjPct(h), 0) / olderSessions.length : recentAvg;
   const trajectory = recentAvg - olderAvg; // positive = improving
 
   // Time factor: days left relative to what's needed
@@ -859,7 +864,7 @@ function getPassProbability(history, moduleReadiness, daysLeft) {
 
   // Adjustments
   const coverageAdj = (coverageFactor - 0.5) * 15; // ±7.5 points
-  const trajectoryAdj = Math.min(10, Math.max(-10, trajectory * 0.5)); // ±10 points
+  const trajectoryAdj = Math.min(7, Math.max(-7, trajectory * 0.4)); // ±7 points
   const timeAdj = (timeFactor - 0.5) * 10; // ±5 points
 
   const finalProb = Math.round(Math.min(95, Math.max(5, accuracyProbBase + coverageAdj + trajectoryAdj + timeAdj)));
