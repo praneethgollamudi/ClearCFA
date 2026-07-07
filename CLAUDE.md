@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (17df29b)**: Versions 2026-07-06-f and 2026-07-06 have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-06-b, 2026-07-06-c, 2026-07-06-d, 2026-07-07. Version 2026-07-07 introduces combined module drill sessions and Super Focus Mode. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**Per-session LOS coverage tracking (17df29b)**: Question generation now prioritizes Learning Outcomes (LOS) that haven't been tested in the current session, tracking coverage per-session rather than globally. When modifying question selection or difficulty scaling, ensure untested LOS within the active session are prioritized to improve coverage diversity within single study blocks.
+
+
 **Same-day question repeat prevention (0d79422)**: The app now prevents question repeats across multiple sessions within the same day to maintain focused practice. When modifying session question selection or daily session tracking, ensure questions answered in any session on the current date are excluded from subsequent sessions that day to prevent redundant practice.
 
 
@@ -1178,7 +1184,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1797500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1797600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
