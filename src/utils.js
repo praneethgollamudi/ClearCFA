@@ -301,7 +301,7 @@ function buildDynamicContext(topic, module, srDeck, levelHistory){
   return{weakLOS,userMisconceptions,timingSignal,hasData:moduleCards.length>0};
 }
 
-function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null,dynCtx=null,multiModuleList=null,seenStems=[]){
+function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null,dynCtx=null,multiModuleList=null,seenStems=[],testedLOS=[]){
   const activeLos=losData||LOS;
   const activeMisc=miscData||MISCONCEPTIONS;
   // multiModuleList=[{t,st},...] when user selected multiple topics/modules
@@ -314,17 +314,24 @@ function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=nul
     : `Topic: ${topic} | Module: ${module}`;
   const verbsForDiff=LOS_VERB_DIFFICULTY[difficulty];
 
-  // Prioritise weak LOS from SR errors, then difficulty-verb-matched LOS, then rest
+  // Prioritise: weak (SR errors) → untested (never seen) → verb-matched → rest
   const weakLOSTexts=dynCtx?.weakLOS||[];
   const verbMatched=losStatements.filter(l=>verbsForDiff.some(v=>l.toLowerCase().startsWith(v)||l.toLowerCase().includes(` ${v} `)));
   const weakMatched=losStatements.filter(l=>weakLOSTexts.some(w=>l.slice(0,50)===w.slice(0,50)||w.slice(0,50)===l.slice(0,50)));
+  // Mark LOS already seen in previous sessions for this module
+  const testedNorm=testedLOS.map(t=>t.toLowerCase().replace(/\s+/g,' ').slice(0,50));
+  const isTestedLOS=l=>testedNorm.some(t=>t===l.toLowerCase().replace(/\s+/g,' ').slice(0,50)||t.includes(l.slice(0,30).toLowerCase())||l.toLowerCase().includes(t.slice(0,30)));
   const remaining=losStatements.filter(l=>!weakMatched.includes(l));
-  const orderedLOS=[...weakMatched,...remaining.filter(l=>verbMatched.includes(l)),...remaining.filter(l=>!verbMatched.includes(l))];
+  const untestedRemaining=remaining.filter(l=>!isTestedLOS(l));
+  const testedRemaining=remaining.filter(l=>isTestedLOS(l));
+  // Final order: weak → untested (discovery) → tested verb-matched → tested rest
+  const orderedLOS=[...weakMatched,...untestedRemaining.filter(l=>verbMatched.includes(l)),...untestedRemaining.filter(l=>!verbMatched.includes(l)),...testedRemaining.filter(l=>verbMatched.includes(l)),...testedRemaining.filter(l=>!verbMatched.includes(l))];
   const allLOS=(orderedLOS.length?orderedLOS:losStatements).slice(0,count+2);
 
   const losText=allLOS.map((l,i)=>{
     const isWeak=weakLOSTexts.some(w=>l.slice(0,50)===w.slice(0,50)||w.slice(0,50)===l.slice(0,50));
-    return `${i+1}. ${isWeak?`⚠ [MISSED] `:""}${l}`;
+    const isNew=testedLOS.length>0&&!isTestedLOS(l)&&!isWeak;
+    return `${i+1}. ${isWeak?`⚠ [MISSED] `:isNew?`★ [NEW] `:""}${l}`;
   }).join("\n");
 
   // Misconceptions: user's actual proven errors first, then generic topic-level ones
@@ -336,11 +343,14 @@ function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=nul
 
   // Personalised section injected into the prompt when we have SR history
   let personalisedSection="";
-  if(dynCtx?.hasData){
+  if(dynCtx?.hasData||untestedRemaining.length>0){
     const parts=[];
+    if(untestedRemaining.length>0&&testedLOS.length>0){
+      parts.push(`★ [NEW] marks LOS this student has NEVER been tested on — prioritise these in at least ${Math.min(untestedRemaining.length,Math.ceil(count*0.5))} of your ${count} questions to maximise curriculum coverage.`);
+    }
     if(weakLOSTexts.length){
-      const targetCount=Math.min(weakLOSTexts.length,Math.ceil(count*0.6));
-      parts.push(`STUDENT BLIND SPOTS — repeated errors in this module. Weight at least ${targetCount} of your ${count} questions toward the ⚠ [MISSED] LOS above.`);
+      const targetCount=Math.min(weakLOSTexts.length,Math.ceil(count*0.4));
+      parts.push(`⚠ [MISSED] marks repeated SR errors. Include at least ${targetCount} question(s) on these.`);
     }
     if(dynCtx.userMisconceptions.length){
       parts.push(`PROVEN student errors to exploit in distractors:\n${dynCtx.userMisconceptions.map(m=>`• ${m}`).join("\n")}`);
@@ -546,8 +556,13 @@ function getDaysToExam(){return Math.max(0,Math.ceil((EXAM_DATE-new Date())/8640
 function getLOSMastery(history,topic,module){
   const losStatements=LOS[topic]?.modules[module]||[];
   const sessions=history.filter(h=>h.topic===topic&&h.subtopic===module);
-  const testedLOS=new Set(sessions.flatMap(s=>s.wrongs?.map(w=>w.los_tested)||[]));
-  return{total:losStatements.length,tested:Math.min(sessions.length*2,losStatements.length),untested:Math.max(0,losStatements.length-Math.min(sessions.length*2,losStatements.length))};
+  const actualCovered=new Set(sessions.flatMap(s=>s.coveredLOS||[]));
+  const oldSessions=sessions.filter(s=>!s.coveredLOS||!s.coveredLOS.length);
+  const approxFromOld=Math.min(oldSessions.length*2,losStatements.length);
+  const tested=actualCovered.size>0
+    ?Math.min(Math.max(actualCovered.size,approxFromOld),losStatements.length)
+    :approxFromOld;
+  return{total:losStatements.length,tested,untested:losStatements.length-tested,coveredSet:actualCovered};
 }
 
 function getWrongAnswerPatterns(history){

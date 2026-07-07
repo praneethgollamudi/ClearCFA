@@ -5395,6 +5395,7 @@ function CFAMock(){
       dateKey:localDateKey(),
       wrongCount:qs.filter(q=>ans[q.id]!==q.answer).length,
       wrongs:[],
+      coveredLOS:[...new Set(qs.map(q=>(q.los_tested||"").slice(0,120)).filter(Boolean))],
       level:cfaLevel,
       confidenceData:computeCalibration(qs,ans,confidenceLogRef.current),
       ...(omMode&&{isOfficeMode:true}),
@@ -6034,7 +6035,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
         const now=Date.now();
         const seenStems=Object.values(qdb).filter(v=>v.topic===t&&(now-v.seen)<QDB_FRESHNESS_MS&&v.stem).sort((a,b)=>b.seen-a.seen).map(v=>v.stem);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`,signal:genAbort.signal});
+        const testedLOS=levelHistory.filter(h=>h.topic===t&&(multiModules?.length>1?multiModules.some(mm=>mm.st===h.subtopic):h.subtopic===st)).flatMap(h=>h.coveredLOS||[]);
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems,testedLOS),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`,signal:genAbort.signal});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
@@ -11290,7 +11292,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 {Object.entries(modules).map(([mod,stmts])=>{
                   const modSessions=topicSessions.filter(h=>h.subtopic===mod);
                   const modPct=modSessions.length?Math.round(modSessions.reduce((s,h)=>s+(h.pct||0),0)/modSessions.length):null;
-                  return stmts.map((_,i)=><LOSHeatmapCell key={`${mod}_${i}`} tested={modPct!==null} pct={modPct||0}/>);
+                  const allCoveredLOS=modSessions.flatMap(s=>s.coveredLOS||[]);
+                  const hasNewData=allCoveredLOS.length>0;
+                  const oldSessionsCount=modSessions.filter(s=>!s.coveredLOS||!s.coveredLOS.length).length;
+                  const confirmedCount=new Set(allCoveredLOS).size;
+                  const estimatedFromOld=Math.min(oldSessionsCount*2,stmts.length);
+                  const totalCovered=Math.min(Math.max(confirmedCount,estimatedFromOld),stmts.length);
+                  return stmts.map((_,i)=><LOSHeatmapCell key={`${mod}_${i}`} tested={modPct!==null&&(hasNewData?i<totalCovered:true)} pct={modPct||0}/>);
                 })}
               </div>
             </div>
