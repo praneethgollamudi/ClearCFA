@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06
-{version:"2026-07-06",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Sessions Now Track Correctly",sub:"Study Tools · 2026-07-06 update",desc:"Fixed an issue where multi-module drill sessions weren't properly crediting all covered modules toward your progress. Your study metrics now accurately reflect every topic you've practiced, giving you a true picture of exam readiness.",tip:"Check your module progress after running a multi-module drill—you'll see all covered areas now correctly marked."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Questions Load Reliably Across Sessions",sub:"Bug Fix · 2026-07-06 update",desc:"Resolved a deduplication bug that sometimes caused question stems to reappear and offline tracking to lose sync during question database loads. Your study sessions now flow smoothly without duplicate prompts or lost practice history.",tip:"Resume a saved session after going offline—you'll notice cleaner question flow and no duplicate stems."},
-{emoji:"💾",color:C.medium,bg:C.medium,title:"Session History Preserves All Details",sub:"Offline · 2026-07-06 update",desc:"Fixed a problem where reloading a session would strip away important level and subtopic metadata from your history. Your saved sessions now retain complete information, making it easier to review and revisit specific topics later.",tip:"Open an older session from your history and reload it—all topic details and levels are now preserved."},
-]},
 // WN_VER:2026-07-06-b
 {version:"2026-07-06-b",slides:[
 {emoji:"📚",color:C.easy,bg:C.easy,title:"Multi-Module Sessions Now Complete",sub:"Study Tools · 2026-07-06 update",desc:"Fixed an issue where multi-module study sessions were generating fewer questions than expected and not properly crediting all covered modules. Now when you combine multiple topics into one session, you'll get the full question set and accurate progress tracking across all selected modules.",tip:"Start a multi-module session and check your session history—all covered modules should now be listed with complete credit."},
@@ -319,6 +313,13 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🌀",color:C.medium,bg:C.medium,title:"Super Focus Mode Now Available",sub:"Study Tools · 2026-07-07 update",desc:"Stay locked into your study session with tab-switch tracking and device wake lock—the app prevents accidental context switches and keeps your screen active. You'll complete more focused, uninterrupted study blocks.",tip:"Enable Super Focus Mode before a timed drill to eliminate distractions and maintain momentum."},
 {emoji:"🐛",color:C.easy,bg:C.easy,title:"Session History & Readiness Accuracy Fixed",sub:"Bug Fix · 2026-07-07 update",desc:"Fixed multiple issues that were corrupting session tracking and pass probability calculations—your readiness score now reflects your true performance, and session history correctly preserves all metadata across app reloads.",tip:"Check your readiness screen; you'll notice your delta bar is now stable and reflects accurate probabilities."},
 ]},
+// WN_VER:2026-07-07-b
+{version:"2026-07-07-b",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Clearer Readiness at a Glance",sub:"UX · 2026-07-07 update",desc:"The readiness screen now uses a ±-centred delta bar instead of a trajectory bar, giving you an instant visual sense of whether you're improving or slipping on each topic. This makes it easier to spot which areas need immediate attention before your exam.",tip:"Tap any topic's delta bar to drill down into your recent session performance."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-07 update",desc:"Fixed an issue where the same question could appear twice in a single study session, interrupting your flow and wasting study time. You'll now see fresh content throughout each session, keeping your practice efficient and focused.",tip:"Resume a session you paused earlier—you won't encounter repeats across your breaks."},
+{emoji:"🧮",color:C.medium,bg:C.medium,title:"Complete Calculator Steps Visible",sub:"Bug Fix · 2026-07-07 update",desc:"Calculator keystroke sequences now display in full instead of cutting off with an ellipsis, so you can see the exact steps taken to solve each problem. This clarity helps you understand the calculation method and catch where you might have gone wrong.",tip:"Check the calculator steps on any quantitative question to follow the exact button sequence."},
+{emoji:"📈",color:C.reward,bg:C.reward,title:"Pass Probability Stays Stable",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where completing easy questions would cause your overall pass probability to drop unexpectedly, which was demotivating and misleading. Your pass probability now accurately reflects your true progress, even after breezy practice sessions.",tip:"Notice your pass probability curve staying steady or climbing—it's now a trustworthy indicator of exam readiness."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -327,12 +328,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-05
-{date:"2026-07-05",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-06
 {date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -383,6 +378,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-06
 {date:"2026-07-06",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-07
+{date:"2026-07-07",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
