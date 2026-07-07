@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06-b
-{version:"2026-07-06-b",slides:[
-{emoji:"📚",color:C.easy,bg:C.easy,title:"Multi-Module Sessions Now Complete",sub:"Study Tools · 2026-07-06 update",desc:"Fixed an issue where multi-module study sessions were generating fewer questions than expected and not properly crediting all covered modules. Now when you combine multiple topics into one session, you'll get the full question set and accurate progress tracking across all selected modules.",tip:"Start a multi-module session and check your session history—all covered modules should now be listed with complete credit."},
-{emoji:"🔄",color:C.medium,bg:C.medium,title:"Smarter Question Deduplication",sub:"Study Tools · 2026-07-06 update",desc:"Improved question deduplication logic to eliminate duplicate question stems more reliably, even when working offline or reloading your session history. This means you'll see fresher variety in your practice questions and won't waste time on repeats.",tip:"Your offline sessions now sync and deduplicate properly when you go back online—check that previously seen questions don't reappear."},
-{emoji:"✅",color:C.reward,bg:C.reward,title:"Session History Stays Accurate",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where reloading your session history would strip away important details like exam level and subtopic filters. Your past session metadata is now preserved exactly as you created it.",tip:"Open an old practice session and reload—you'll now see the full level and subtopic information intact."},
-]},
 // WN_VER:2026-07-06-c
 {version:"2026-07-06-c",slides:[
 {emoji:"📊",color:C.easy,bg:C.easy,title:"Full Calculator Keystroke Steps",sub:"UX · 2026-07-06 update",desc:"Calculator solution steps now display the complete keystroke sequence instead of truncating with ellipsis. You can now follow every button press and operation without missing critical calculation details.",tip:"Check your practice questions with calculator solutions to see the full step-by-step keystroke breakdown."},
@@ -319,6 +313,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-07 update",desc:"Fixed an issue where the same question could appear twice in a single study session, interrupting your flow and wasting study time. You'll now see fresh content throughout each session, keeping your practice efficient and focused.",tip:"Resume a session you paused earlier—you won't encounter repeats across your breaks."},
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Complete Calculator Steps Visible",sub:"Bug Fix · 2026-07-07 update",desc:"Calculator keystroke sequences now display in full instead of cutting off with an ellipsis, so you can see the exact steps taken to solve each problem. This clarity helps you understand the calculation method and catch where you might have gone wrong.",tip:"Check the calculator steps on any quantitative question to follow the exact button sequence."},
 {emoji:"📈",color:C.reward,bg:C.reward,title:"Pass Probability Stays Stable",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where completing easy questions would cause your overall pass probability to drop unexpectedly, which was demotivating and misleading. Your pass probability now accurately reflects your true progress, even after breezy practice sessions.",tip:"Notice your pass probability curve staying steady or climbing—it's now a trustworthy indicator of exam readiness."},
+]},
+// WN_VER:2026-07-07-c
+{version:"2026-07-07-c",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Question Selection",sub:"AI · 2026-07-07 update",desc:"ClearCFA now prioritises untested Learning Outcomes in question generation and tracks your coverage per study session. This ensures you spend time on gaps rather than re-drilling familiar material.",tip:"Check your session summary to see which LOS you've covered today—focus tomorrow's prep on the ones you haven't tested yet."},
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Clearer Readiness At a Glance",sub:"UX · 2026-07-07 update",desc:"The readiness screen now shows your progress delta (±) centered on zero, making it instantly obvious whether you're improving or slipping. This replaces the trajectory bar for faster, more intuitive assessment.",tip:"Glance at the ± readiness indicator before each session to see your momentum since yesterday."},
+{emoji:"🛠️",color:C.medium,bg:C.medium,title:"No More Repeated Questions",sub:"Bug Fix · 2026-07-07 update",desc:"Fixed an issue where the same question could appear twice in a single day across different study sessions. Your practice time now stays fresh and maximises learning efficiency.",tip:"You'll notice cleaner, more varied question sets—no more \"didn't I just see this?\""},
 ]},
 // WN_END
 ];
@@ -376,8 +376,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-06
-{date:"2026-07-06",entries:[
+// AC_VER:2026-07-07
+{date:"2026-07-07",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
