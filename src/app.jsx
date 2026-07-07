@@ -11097,7 +11097,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {[
           {label:"Current accuracy (recency-weighted)",value:`${passProbability.currentAccuracy}%`,color:passProbability.currentAccuracy>=70?C.easy:passProbability.currentAccuracy>=60?C.medium:C.hard,pct:passProbability.currentAccuracy},
           {label:"Curriculum coverage (% of exam weight tested)",value:`${passProbability.coveragePct}%`,color:passProbability.coveragePct>=60?C.easy:passProbability.coveragePct>=40?C.medium:C.hard,pct:passProbability.coveragePct},
-          {label:"Score trajectory (recent vs older sessions)",value:passProbability.trajectory>0?`+${passProbability.trajectory}% ↑`:passProbability.trajectory<0?`${passProbability.trajectory}% ↓`:"Flat →",color:passProbability.trajectory>0?C.easy:passProbability.trajectory<0?C.hard:C.muted,pct:Math.min(100,50+passProbability.trajectory*2)},
         ].map((f,i)=>(
           <div key={i} style={{marginBottom:14}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
@@ -11109,6 +11108,31 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </div>
           </div>
         ))}
+        {/* Trajectory — ±-centred bar: green extends right, red extends left */}
+        {(()=>{
+          const traj=passProbability.trajectory;
+          const col=traj>0?C.easy:traj<0?C.hard:C.muted;
+          const halfW=Math.min(50,Math.abs(traj)*2);
+          return(
+            <div style={{marginBottom:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                <span style={{fontSize:12,color:C.muted}}>Score trajectory (recent vs older sessions)</span>
+                <span style={{fontSize:12,fontWeight:800,color:col}}>{traj>0?`+${traj}% ↑`:traj<0?`${traj}% ↓`:"Flat →"}</span>
+              </div>
+              <div style={{height:5,background:C.dim,borderRadius:3,position:"relative"}}>
+                <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:1,background:C.border,zIndex:1}}/>
+                {traj!==0&&<div style={{position:"absolute",top:0,bottom:0,
+                  ...(traj>0?{left:"50%",width:`${halfW}%`,borderRadius:"0 3px 3px 0"}:{right:"50%",width:`${halfW}%`,borderRadius:"3px 0 0 3px"}),
+                  background:col,transition:"width 0.6s ease"}}/>}
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:3}}>
+                <span style={{fontSize:9,color:C.muted,opacity:0.5}}>declining</span>
+                <span style={{fontSize:9,color:C.muted,opacity:0.5}}>flat</span>
+                <span style={{fontSize:9,color:C.muted,opacity:0.5}}>improving</span>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     )}
 
