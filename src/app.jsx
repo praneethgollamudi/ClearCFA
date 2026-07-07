@@ -5939,7 +5939,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           const offlineCache=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
           const cached=(offlineCache[t]?.[st]||[]);
           const fresh=filterNewQuestions(cached,qdb);
-          const pool=fresh.length>=Math.ceil(cnt*0.5)?fresh:cached;
+          const pool=fresh; // never fall back to seen questions
           if(pool.length>=Math.min(cnt,3)){
             const offlineQs=pool.slice(0,cnt);
             setLoadingProgress(100);setLoadingMsg(`${offlineQs.length} questions ready (offline cache)`);
@@ -6096,10 +6096,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
       });
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
       const fresh=filterNewQuestions(parsed_clean,qdb);
-      // Prefer unseen; if not enough, take least-recently-seen sorted (oldest first) to minimise repeats
+      // Prefer unseen; fallback hard-blocks questions seen in the last 24 hours
+      const SAME_DAY_MS=24*60*60*1000;
       let finalQs=fresh.length>=cnt?fresh.slice(0,cnt):(()=>{
-        const sorted=[...parsed_clean].sort((a,b)=>(qdb[hashQuestion(a)]?.seen||0)-(qdb[hashQuestion(b)]?.seen||0));
-        return sorted.slice(0,cnt);
+        const notToday=parsed_clean.filter(q=>{const h=hashQuestion(q);return !qdb[h]||(now-qdb[h].seen)>SAME_DAY_MS;});
+        if(notToday.length>=cnt)return notToday.slice(0,cnt);
+        // Still short — top up with oldest seen from other days (never same-day)
+        const todaySeen=new Set(parsed_clean.filter(q=>{const h=hashQuestion(q);return qdb[h]&&(now-qdb[h].seen)<=SAME_DAY_MS;}).map(q=>hashQuestion(q)));
+        const sorted=[...parsed_clean].filter(q=>!todaySeen.has(hashQuestion(q))).sort((a,b)=>(qdb[hashQuestion(a)]?.seen||0)-(qdb[hashQuestion(b)]?.seen||0));
+        return [...notToday,...sorted].slice(0,cnt);
       })();
       // If validation culled too many, top up from offline cache so user gets close to requested count
       if(finalQs.length<Math.ceil(cnt*0.7)){
@@ -6147,7 +6152,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           const anyInTopic=Object.values(offlineCache[t]||{}).flat().filter(q=>!qualityFlags[q.id]);
           const candidates=specific.length>=Math.min(cnt,3)?specific:anyInTopic;
           const fresh=filterNewQuestions(candidates,qdb);
-          const pool=fresh.length>=Math.ceil(cnt*0.5)?fresh:candidates;
+          const pool=fresh; // never fall back to seen questions
           const minQs=Math.min(cnt,3);
           if(pool.length>=minQs){
             const offlineQs=pool.slice(0,cnt);
