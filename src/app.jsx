@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06-f
-{version:"2026-07-06-f",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Drill Sessions",sub:"Study Tools · 2026-07-06 update",desc:"You can now select multiple modules at once on the readiness screen to combine them into a single focused drill session. This helps you build connections across related topics and study more efficiently.",tip:"Tap multiple module pills to create a custom combined session targeting exactly the areas you want to strengthen."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter Question Deduplication",sub:"Bug Fix · 2026-07-06 update",desc:"We fixed how the app tracks which questions you've already seen, even when studying offline or across multiple sessions. You'll no longer encounter duplicate question stems, keeping your practice time focused and productive.",tip:"Your offline study sessions now sync seamlessly with your seen-questions history when you reconnect."},
-{emoji:"🔄",color:C.medium,bg:C.medium,title:"Accurate Multi-Module Credit",sub:"Bug Fix · 2026-07-06 update",desc:"Multi-module drill sessions now correctly credit all modules you've covered toward your progress tracking. Previously, some modules weren't being counted—now your readiness scores reflect your actual work.",tip:"Check your progress dashboard to see all modules from combined sessions now properly reflected in your coverage stats."},
-]},
 // WN_VER:2026-07-06
 {version:"2026-07-06",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Sessions Now Track Correctly",sub:"Study Tools · 2026-07-06 update",desc:"Fixed an issue where multi-module drill sessions weren't properly crediting all covered modules toward your progress. Your study metrics now accurately reflect every topic you've practiced, giving you a true picture of exam readiness.",tip:"Check your module progress after running a multi-module drill—you'll see all covered areas now correctly marked."},
@@ -318,6 +312,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Pass Probability Stays Accurate",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where your pass probability would incorrectly drop after completing easy practice sessions. Your predicted score now reflects your actual performance without unexpected dips.",tip:"Check your Pass Probability dashboard after your next easy session—it should now hold steady or improve."},
 {emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Steps Now Complete",sub:"Study Tools · 2026-07-06 update",desc:"Fixed calculator keystroke sequences that were showing incomplete ellipsis (…) instead of full step-by-step breakdowns. You can now see every calculation detail to understand exactly how to solve problems.",tip:"Tap into a calculator solution to see the complete keystroke sequence without truncation."},
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Sessions More Balanced",sub:"Study Tools · 2026-07-06 update",desc:"Fixed multi-module study sessions that were generating too few questions, which limited your practice breadth. Sessions now deliver appropriate question counts across all selected modules for deeper coverage.",tip:"When creating a multi-module session, you'll now get balanced question distribution across all topics you select."},
+]},
+// WN_VER:2026-07-07
+{version:"2026-07-07",slides:[
+{emoji:"🎯",color:C.reward,bg:C.reward,title:"Combined Module Drill Sessions",sub:"Study Tools · 2026-07-07 update",desc:"Select multiple modules at once on the readiness screen to create focused drill sessions that span related topics. This lets you build connections across subtopics and test integrated knowledge the way the exam does.",tip:"Tap multiple module pills to activate combined-session mode, then use adaptive difficulty to match your readiness level."},
+{emoji:"🌀",color:C.medium,bg:C.medium,title:"Super Focus Mode Now Available",sub:"Study Tools · 2026-07-07 update",desc:"Stay locked into your study session with tab-switch tracking and device wake lock—the app prevents accidental context switches and keeps your screen active. You'll complete more focused, uninterrupted study blocks.",tip:"Enable Super Focus Mode before a timed drill to eliminate distractions and maintain momentum."},
+{emoji:"🐛",color:C.easy,bg:C.easy,title:"Session History & Readiness Accuracy Fixed",sub:"Bug Fix · 2026-07-07 update",desc:"Fixed multiple issues that were corrupting session tracking and pass probability calculations—your readiness score now reflects your true performance, and session history correctly preserves all metadata across app reloads.",tip:"Check your readiness screen; you'll notice your delta bar is now stable and reflects accurate probabilities."},
 ]},
 // WN_END
 ];
