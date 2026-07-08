@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Free tier pricing display (7ecc5c7)**: Free tier pricing now correctly displays rupee currency symbol instead of dollar sign. When modifying pricing display or currency formatting, ensure localization context is respected to show appropriate currency symbols for regional pricing tiers.
+
+
+**What's New version consolidation (7ecc5c7)**: Versions 2026-07-06 and 2026-07-06-b have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-06-c, 2026-07-06-d, 2026-07-07, and 2026-07-07-b. Version 2026-07-07-b consolidates delta bar readiness visualization, same-day question repeat prevention, and calculator keystroke display. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (17df29b)**: Versions 2026-07-06-f and 2026-07-06 have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-06-b, 2026-07-06-c, 2026-07-06-d, 2026-07-07. Version 2026-07-07 introduces combined module drill sessions and Super Focus Mode. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1184,7 +1190,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1797600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1797700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
