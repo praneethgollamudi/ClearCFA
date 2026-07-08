@@ -7147,7 +7147,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             {/* Free tier */}
             <div style={{flex:1,background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 14px"}}>
               <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Free</div>
-              <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>$0</div>
+              <div style={{fontSize:26,fontWeight:900,color:C.text,lineHeight:1}}>₹0</div>
               <div style={{fontSize:10,color:C.muted,marginBottom:14}}>always</div>
               {[["10 AI Qs/day",true],["Spaced repetition",true],["Pass probability",true],["CFA Level 1 only",true],["AI Coach",false],["L2 + L3",false],["Unlimited Qs",false]].map(([f,incl])=>(
                 <div key={f} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:incl?C.textMid:C.muted,marginBottom:5,opacity:incl?1:0.5}}>
