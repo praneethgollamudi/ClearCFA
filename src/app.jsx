@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06-c
-{version:"2026-07-06-c",slides:[
-{emoji:"📊",color:C.easy,bg:C.easy,title:"Full Calculator Keystroke Steps",sub:"UX · 2026-07-06 update",desc:"Calculator solution steps now display the complete keystroke sequence instead of truncating with ellipsis. You can now follow every button press and operation without missing critical calculation details.",tip:"Check your practice questions with calculator solutions to see the full step-by-step keystroke breakdown."},
-{emoji:"🎓",color:C.medium,bg:C.medium,title:"Better Multi-Module Study Sessions",sub:"Study Tools · 2026-07-06 update",desc:"Multi-topic study sessions now generate the correct number of questions across all selected modules. Previously, sessions were creating too few questions, limiting your practice breadth.",tip:"Create a session spanning multiple readings to get comprehensive coverage without needing multiple study runs."},
-{emoji:"🔄",color:C.hard,bg:C.hard,title:"Session History Retains Your Metadata",sub:"Bug Fix · 2026-07-06 update",desc:"Session history now preserves exam level and subtopic information when you reload your progress. Your study tracking stays complete and accurate across app restarts.",tip:"Review your session history to see which topics and levels you've covered without losing tracking details."},
-]},
 // WN_VER:2026-07-06-d
 {version:"2026-07-06-d",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Pass Probability Stays Accurate",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where your pass probability would incorrectly drop after completing easy practice sessions. Your predicted score now reflects your actual performance without unexpected dips.",tip:"Check your Pass Probability dashboard after your next easy session—it should now hold steady or improve."},
@@ -319,6 +313,10 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Question Selection",sub:"AI · 2026-07-07 update",desc:"ClearCFA now prioritises untested Learning Outcomes in question generation and tracks your coverage per study session. This ensures you spend time on gaps rather than re-drilling familiar material.",tip:"Check your session summary to see which LOS you've covered today—focus tomorrow's prep on the ones you haven't tested yet."},
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Clearer Readiness At a Glance",sub:"UX · 2026-07-07 update",desc:"The readiness screen now shows your progress delta (±) centered on zero, making it instantly obvious whether you're improving or slipping. This replaces the trajectory bar for faster, more intuitive assessment.",tip:"Glance at the ± readiness indicator before each session to see your momentum since yesterday."},
 {emoji:"🛠️",color:C.medium,bg:C.medium,title:"No More Repeated Questions",sub:"Bug Fix · 2026-07-07 update",desc:"Fixed an issue where the same question could appear twice in a single day across different study sessions. Your practice time now stays fresh and maximises learning efficiency.",tip:"You'll notice cleaner, more varied question sets—no more \"didn't I just see this?\""},
+]},
+// WN_VER:2026-07-08
+{version:"2026-07-08",slides:[
+{emoji:"💱",color:C.easy,bg:C.easy,title:"Correct Free Tier Pricing Display",sub:"Bug Fix · 2026-07-08 update",desc:"Fixed free tier pricing that was incorrectly showing a dollar sign instead of the rupee symbol. You'll now see accurate currency formatting for your region when reviewing plan options.",tip:"Check your pricing page to confirm the correct currency symbol now appears for your location."},
 ]},
 // WN_END
 ];
