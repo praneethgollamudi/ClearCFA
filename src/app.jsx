@@ -4613,6 +4613,8 @@ function CFAMock(){
   const [reminderTime,setReminderTime]=useState(()=>localStorage.getItem(REMINDER_TIME_KEY)||"");
   const [essayAnswers,setEssayAnswers]=useState({});
   const [essayRevealed,setEssayRevealed]=useState({});
+  const [essayGrades,setEssayGrades]=useState({});
+  const [essayGrading,setEssayGrading]=useState({});
   const [weeklyPlan,setWeeklyPlan]=useState(()=>{try{const p=localStorage.getItem(PLAN_KEY);return p?JSON.parse(p):null;}catch{return null;}});
   const [todayStarted,setTodayStarted]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_today_started")||"{}");}catch{return {};}});
   const [focusDone,setFocusDone]=useState(()=>{try{const s=JSON.parse(localStorage.getItem("cfa_focus_done")||"null");if(s&&s.date===localDateKey())return s.done||{};}catch{}return {};});
@@ -4751,6 +4753,10 @@ function CFAMock(){
   const [sgLoading,setSgLoading]=useState(false);
   const [sgError,setSgError]=useState("");
   const [notifEnabled,setNotifEnabled]=useState(()=>{try{return localStorage.getItem("cfa_notif_v1")==="1";}catch{return false;}});
+  const [leaderboard,setLeaderboard]=useState([]);
+  const [leaderboardOpt,setLeaderboardOpt]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_lb_opt_v1")||"null");}catch{return null;}});
+  const [leaderboardName,setLeaderboardName]=useState("");
+  const [leaderboardJoining,setLeaderboardJoining]=useState(false);
   const [reelAnswer,setReelAnswer]=useState(null);
   const [reelRevealed,setReelRevealed]=useState(false);
   const [reelSessionCount,setReelSessionCount]=useState(0);
@@ -5168,6 +5174,20 @@ function CFAMock(){
       .then(rows=>setGroupLeaderboard(rows))
       .catch(()=>{});
   },[sgScreen,studyGroup?.groupId]);
+
+  // Load public weekly leaderboard when screen=home
+  useEffect(()=>{
+    if(screen!=="home"||!authUser?.id) return;
+    const fetchLB=async()=>{
+      try{
+        const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_weekly_leaderboard`,{
+          method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:"{}",
+        });
+        if(res.ok){const rows=await res.json();setLeaderboard(rows||[]);}
+      }catch{}
+    };
+    fetchLB();
+  },[screen,authUser?.id]);
 
   // Daily notification check
   useEffect(()=>{
@@ -8981,6 +9001,77 @@ Return ONLY a JSON array — no prose, no markdown fences:
       );
     })()}
 
+    {/* Social opt-in leaderboard */}
+    {authUser&&(()=>{
+      const myRank=leaderboard.findIndex(r=>r.display_name===leaderboardOpt?.displayName);
+      return(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{fontSize:13,fontWeight:800}}>🏆 Weekly Leaderboard</div>
+            {leaderboard.length>0&&<div style={{fontSize:10,color:C.muted}}>questions this week</div>}
+          </div>
+          {leaderboard.length>0?(
+            <>
+              {leaderboard.slice(0,5).map((r,i)=>{
+                const isMe=leaderboardOpt?.optedIn&&r.display_name===leaderboardOpt?.displayName;
+                const medals=["🥇","🥈","🥉"];
+                return(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<Math.min(leaderboard.length,5)-1?`1px solid ${C.border}`:"none",background:isMe?C.accent+"0a":"none",borderRadius:isMe?7:0,paddingLeft:isMe?8:0}}>
+                    <span style={{fontSize:13,width:18,textAlign:"center"}}>{medals[i]||`${i+1}`}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:12,fontWeight:700,color:isMe?C.accentLight:C.text}}>{r.display_name}{isMe?" (you)":""}</div>
+                      <div style={{fontSize:10,color:C.muted}}>{r.accuracy_this_week}% accuracy</div>
+                    </div>
+                    <div style={{fontSize:13,fontWeight:800,color:C.accentLight}}>{r.questions_this_week}Q</div>
+                  </div>
+                );
+              })}
+              {myRank>4&&(
+                <div style={{fontSize:11,color:C.muted,marginTop:8,textAlign:"center"}}>You are #{myRank+1} on the leaderboard</div>
+              )}
+            </>
+          ):(
+            <div style={{fontSize:12,color:C.muted,marginBottom:10}}>No one has opted in yet — be the first!</div>
+          )}
+          {!leaderboardOpt?.optedIn?(
+            <div style={{marginTop:leaderboard.length>0?12:0,borderTop:leaderboard.length>0?`1px solid ${C.border}`:"none",paddingTop:leaderboard.length>0?12:0}}>
+              <div style={{fontSize:12,color:C.muted,marginBottom:8}}>Show your study progress on the leaderboard?</div>
+              <div style={{display:"flex",gap:7}}>
+                <input value={leaderboardName} onChange={e=>setLeaderboardName(e.target.value)}
+                  placeholder="Display name (e.g. CFA_Alice)" maxLength={20}
+                  style={{flex:1,padding:"8px 10px",borderRadius:8,fontSize:12,background:C.dim,border:`1px solid ${C.border}`,color:C.text,outline:"none"}}/>
+                <button onClick={async()=>{
+                  if(!leaderboardName.trim())return;
+                  setLeaderboardJoining(true);
+                  try{
+                    await upsertLeaderboardOpt(SB_CFG,authUser,leaderboardName.trim(),true);
+                    const opt={optedIn:true,displayName:leaderboardName.trim()};
+                    setLeaderboardOpt(opt);
+                    try{localStorage.setItem("cfa_lb_opt_v1",JSON.stringify(opt));}catch{}
+                    showToast("🏆","You're on the leaderboard!","Study hard and climb the ranks.",true);
+                    const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_weekly_leaderboard`,{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json"},body:"{}"});
+                    if(res.ok)setLeaderboard(await res.json());
+                  }catch{}
+                  setLeaderboardJoining(false);
+                }} disabled={!leaderboardName.trim()||leaderboardJoining} style={{padding:"8px 14px",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:leaderboardName.trim()&&!leaderboardJoining?"pointer":"not-allowed",opacity:leaderboardName.trim()&&!leaderboardJoining?1:0.6,flexShrink:0}}>
+                  {leaderboardJoining?"…":"Join"}
+                </button>
+              </div>
+            </div>
+          ):(
+            <button onClick={async()=>{
+              try{await upsertLeaderboardOpt(SB_CFG,authUser,leaderboardOpt.displayName,false);}catch{}
+              const opt={...leaderboardOpt,optedIn:false};
+              setLeaderboardOpt(opt);
+              try{localStorage.setItem("cfa_lb_opt_v1",JSON.stringify(opt));}catch{}
+            }} style={{marginTop:10,width:"100%",padding:"7px",borderRadius:8,fontSize:11,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+              Leave leaderboard
+            </button>
+          )}
+        </div>
+      );
+    })()}
+
     {/* Referral card */}
     {authUser&&<div style={{textAlign:"center",fontSize:12,color:C.muted,marginBottom:8}}>🎓 <strong style={{color:C.text}}>{COMMUNITY_COUNT}+</strong> CFA candidates preparing for August 2026</div>}
     {authUser&&<ReferralCard userId={authUser.id} cfg={SB_CFG} setUpgradeModal={setUpgradeModal}/>}
@@ -9342,7 +9433,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             srSessionResults.current.total++;
             if(correct)srSessionResults.current.correct++;
             const key=Object.keys(srDeck).find(k=>srDeck[k].question===card.question)||`sr_${Date.now()}`;
-            setSrDeck(prev=>{const existing=prev[key]||card;const updated=sm2Update(existing,correct);if(!correct)updated.wrongCount=(existing.wrongCount||0)+1;else updated.wrongCount=Math.max(0,(existing.wrongCount||0)-1);return{...prev,[key]:updated};});
+            setSrDeck(prev=>{const existing=prev[key]||card;const updated=sm2Update(existing,correct);if(!correct)updated.wrongCount=(existing.wrongCount||0)+1;else updated.wrongCount=Math.max(0,(existing.wrongCount||0)-1);if(updated.mastered&&!existing.mastered)setTimeout(()=>showToast("🎓","Card Mastered!",`${card.concept||card.topic} — retired from deck after 6 correct answers.`,true),400);return{...prev,[key]:updated};});
             setSrAnswer(null);
             setReviewAiPanel(null);
             if(srIdx<srQueue.length-1)setSrIdx(i=>i+1);else setScreen("home");
@@ -9827,7 +9918,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {(()=>{
       const ready=mode==="interleaved"||(selTopics.length>0&&selSubtopics.length>0);
       const multiMods=selSubtopics.length>1
-        ? selTopics.flatMap(t=>(activeTopicMap[t]?.subtopics||[]).filter(s=>selSubtopics.includes(s)).map(s=>({t,st:s})))
+        ? (()=>{
+            const mods=selTopics.flatMap(t=>(activeTopicMap[t]?.subtopics||[]).filter(s=>selSubtopics.includes(s)).map(s=>({t,st:s})));
+            const total=warmupEnabled?count+3:count;
+            const weights=mods.map(m=>{const mr=moduleReadiness.find(r=>r.topic===m.t&&r.modules?.includes(m.st));const acc=mr?.accuracy??50;return Math.max(1,100-acc);});
+            const wSum=weights.reduce((s,w)=>s+w,0);
+            return mods.map((m,i)=>({...m,targetCount:Math.max(1,Math.round(weights[i]/wSum*total))}));
+          })()
         : null;
       const primaryT=selTopics[0]||"";
       const primarySt=selSubtopics[0]||"";
@@ -10040,6 +10137,51 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{background:C.surface,border:`1px solid ${C.accent}44`,borderRadius:11,padding:"14px 16px",marginBottom:12}}>
           <div style={{fontSize:10,fontWeight:700,color:C.accentLight,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Your answer</div>
           <div style={{fontSize:12,color:C.textMid,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{essayAnswers[q.id]}</div>
+        </div>
+      )}
+      {mode==="essay"&&essayRevealed[q.id]&&essayAnswers[q.id]&&authUser?.id&&cfaLevel==="3"&&(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"13px 15px",marginBottom:12}}>
+          {!essayGrades[q.id]&&!essayGrading[q.id]&&(
+            <button onClick={async()=>{
+              setEssayGrading(g=>({...g,[q.id]:true}));
+              try{
+                const prompt=`You are a CFA Level 3 examiner. Grade this constructed response.\n\nQuestion: ${q.question}\n\nModel answer: ${q.explanation||Object.values(q.options||{}).join(' / ')}\n\nStudent response: ${essayAnswers[q.id]}\n\nRespond with a JSON object:\n{"score":X,"maxScore":10,"feedback":"2-3 sentences: what was correct, what was missing, how to improve"}\n\nScore 0-10 based on accuracy, completeness, and use of CFA terminology. Return ONLY the JSON.`;
+                const raw=await callAIChat(authUser.id,[{role:"user",content:prompt}],300,cfaLevel,{throws:true});
+                let grade;try{grade=JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0]||"{}");}catch{grade={score:0,maxScore:10,feedback:raw.slice(0,200)};}
+                setEssayGrades(g=>({...g,[q.id]:grade}));
+              }catch(e){
+                if(e.quotaExceeded)setUpgradeModal({reason:"chat_limit"});
+                else setEssayGrades(g=>({...g,[q.id]:{score:0,maxScore:10,feedback:"Grading unavailable — check connection."}}));
+              }
+              setEssayGrading(g=>({...g,[q.id]:false}));
+            }} style={{width:"100%",padding:"10px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent}22,${C.accent}11)`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+              🎓 Grade my response →
+            </button>
+          )}
+          {essayGrading[q.id]&&(
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"4px 0"}}>
+              <div style={{width:13,height:13,border:`2px solid ${C.accent}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
+              <span style={{fontSize:12,color:C.muted}}>Grading your response…</span>
+            </div>
+          )}
+          {essayGrades[q.id]&&(()=>{
+            const g=essayGrades[q.id];const pct=Math.round((g.score||0)/(g.maxScore||10)*100);
+            const col=pct>=70?C.easy:pct>=50?C.medium:C.hard;
+            return(
+              <div>
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+                  <div style={{width:44,height:44,borderRadius:"50%",background:col+"22",border:`2px solid ${col}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <span style={{fontSize:13,fontWeight:800,color:col}}>{g.score||0}</span>
+                  </div>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700,color:col}}>{g.score||0}/{g.maxScore||10} · {pct}%</div>
+                    <div style={{fontSize:10,color:C.muted}}>AI Essay Grade</div>
+                  </div>
+                </div>
+                <div style={{fontSize:12,color:C.textMid,lineHeight:1.65}}>{g.feedback}</div>
+              </div>
+            );
+          })()}
         </div>
       )}
       {mode==="essay"&&essayRevealed[q.id]&&!answered&&(
@@ -10620,15 +10762,37 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:12,fontWeight:700,color:qScore.quality>=80?C.easy:qScore.quality>=65?C.medium:C.hard,marginTop:8}}>Overall quality: {qScore.quality}/100</div>
         </div>
       )}
-      {slowQs.length>0&&(
-        <div style={{background:`${C.hard}10`,border:`1px solid ${C.hard}33`,borderRadius:10,padding:"10px 14px",marginBottom:10}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.hard,marginBottom:4}}>⏱ Slow questions ({slowQs.length}) — over 90 seconds each</div>
-          {slowQs.map(q=>(
-            <div key={q.id} style={{fontSize:11,color:C.muted,paddingLeft:8,marginBottom:2}}>• {q.concept||q.topic} — {lastSession.qTimes[q.id]}s</div>
-          ))}
-          <div style={{fontSize:10,color:C.muted,marginTop:6}}>Aim for 90s per question on exam day</div>
-        </div>
-      )}
+      {lastSession?.qTimes&&Object.keys(lastSession.qTimes).length>0&&(()=>{
+        const qtimes=lastSession.qTimes;
+        const qWithTimes=questions.filter(q=>qtimes[q.id]!=null).map(q=>({q,t:qtimes[q.id]||0}));
+        if(!qWithTimes.length)return null;
+        const maxT=Math.max(...qWithTimes.map(x=>x.t),90);
+        return(
+          <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"13px 15px",marginBottom:12}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:10}}>⏱ Per-Question Pacing</div>
+            {qWithTimes.map(({q,t},i)=>{
+              const col=t<=60?C.easy:t<=90?C.medium:C.hard;
+              const pct=Math.min(100,Math.round(t/maxT*100));
+              const correct=answers[q.id]===q.answer;
+              return(
+                <div key={q.id} style={{marginBottom:7}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                    <span style={{fontSize:11,color:correct?C.easy:C.hard}}>{correct?"✓":"✗"} Q{i+1} {(q.concept||q.topic||"").split(" ").slice(0,3).join(" ")}</span>
+                    <span style={{fontSize:11,fontWeight:700,color:col}}>{t}s</span>
+                  </div>
+                  <div style={{height:5,background:C.border,borderRadius:3,position:"relative"}}>
+                    <div style={{height:"100%",width:`${pct}%`,background:col,borderRadius:3,transition:"width 0.4s ease"}}/>
+                    {maxT>90&&<div style={{position:"absolute",top:0,bottom:0,left:`${Math.min(100,Math.round(90/maxT*100))}%`,width:1,background:C.medium,opacity:0.6}}/>}
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{fontSize:10,color:C.muted,marginTop:6}}>
+              🟢 ≤60s · 🟡 ≤90s · 🔴 >90s &nbsp;·&nbsp; target: 90s/question
+            </div>
+          </div>
+        );
+      })()}
 
       {wrongs.length>0&&<div style={{background:C.surface,border:`1px solid ${C.accent}33`,borderRadius:9,padding:"10px 14px",marginBottom:12,fontSize:12,color:C.muted}}>📋 {wrongs.length} wrong answer{wrongs.length!==1?"s":""} added to SR deck with LOS tags + misconception flags.</div>}
 
@@ -11419,7 +11583,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:11,padding:"13px 16px",marginBottom:16}}>
         <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10}}>SR Deck Health</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,textAlign:"center"}}>
-          {[["Total",Object.keys(srDeck).length,C.accentLight],["Due",dueCards.length,dueCards.length>0?C.medium:C.easy],["Leeches",leeches.length,leeches.length>0?C.hard:C.easy],["Mastered",Object.values(srDeck).filter(c=>c.repetitions>=3).length,C.easy]].map(([l,v,col])=>(
+          {[["Total",Object.keys(srDeck).length,C.accentLight],["Due",dueCards.length,dueCards.length>0?C.medium:C.easy],["Leeches",leeches.length,leeches.length>0?C.hard:C.easy],["Mastered",Object.values(srDeck).filter(c=>c.mastered).length,C.easy]].map(([l,v,col])=>(
             <div key={l}><div style={{fontSize:18,fontWeight:800,color:col}}>{v}</div><div style={{fontSize:10,color:C.muted,marginTop:2}}>{l}</div></div>
           ))}
         </div>

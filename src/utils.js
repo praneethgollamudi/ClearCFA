@@ -224,16 +224,26 @@ async function fetchGroupLeaderboard(cfg, auth, groupId){
   return Object.values(memberMap).sort((a,b)=>b.questions-a.questions);
 }
 
+async function upsertLeaderboardOpt(cfg,auth,displayName,optedIn){
+  const bearer=auth?.accessToken||cfg.key;
+  await fetch(`${cfg.url}/rest/v1/leaderboard_opts`,{
+    method:"POST",
+    headers:{"apikey":cfg.key,"Authorization":`Bearer ${bearer}`,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},
+    body:JSON.stringify({user_id:auth.id,display_name:displayName,opted_in:optedIn,updated_at:new Date().toISOString()})
+  });
+}
+
 // ─── SM-2 ─────────────────────────────────────────────────────────────────────
 function sm2Update(card,correct){
   let{interval=0,repetitions=0,ef=2.5}=card;
   if(correct){repetitions+=1;interval=SM2_INTERVALS[Math.min(repetitions-1,SM2_INTERVALS.length-1)];ef=Math.max(1.3,ef+0.1);}
   else{repetitions=0;interval=1;ef=Math.max(1.3,ef-0.2);}
-  return{...card,interval,repetitions,ef,nextReview:localDateKey(new Date(Date.now()+interval*86400000))};
+  const mastered=correct&&repetitions>=6;
+  return{...card,interval,repetitions,ef,nextReview:localDateKey(new Date(Date.now()+interval*86400000)),mastered};
 }
 function localDateKey(date){const d=date||new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
 function getWeekMondayKey(){const d=new Date();const day=d.getDay();const diff=day===0?-6:1-day;const mon=new Date(d.getFullYear(),d.getMonth(),d.getDate()+diff);return localDateKey(mon);}
-function getDueCards(srDeck){const today=localDateKey();return Object.values(srDeck).filter(c=>c.nextReview<=today);}
+function getDueCards(srDeck){const today=localDateKey();return Object.values(srDeck).filter(c=>c.nextReview<=today&&!c.mastered);}
 function getLeeches(srDeck){return Object.values(srDeck).filter(c=>(c.wrongCount||0)>=4);}
 function getForgettingCurve(srDeck){
   const today=new Date();
@@ -371,7 +381,11 @@ function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=nul
 
   const avoidBlock=seenStems.length?`\nDO NOT repeat or closely paraphrase any of these recently seen question stems (write entirely different scenarios):\n${seenStems.slice(0,20).map((s,i)=>`${i+1}. "${s}"`).join("\n")}\n`:"";
 
-  return `CFA L${level} question generator. ${moduleHeader} | Difficulty: ${difficulty} | Generate: ${count} questions${isMulti?" spread across ALL listed modules. Each question must clearly specify which module it covers.":""}.
+  const distributionNote=isMulti&&multiModuleList.some(m=>m.targetCount)
+    ?` Distribute as: ${multiModuleList.map(m=>`${m.st}: ~${m.targetCount||1} questions`).join(', ')}.`
+    :"";
+
+  return `CFA L${level} question generator. ${moduleHeader} | Difficulty: ${difficulty} | Generate: ${count} questions${isMulti?` spread across ALL listed modules. Each question must clearly specify which module it covers.${distributionNote}`:""}.
 
 LOS (test these):
 ${losText}
