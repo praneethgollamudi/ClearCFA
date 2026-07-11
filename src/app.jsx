@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-07
-{version:"2026-07-07",slides:[
-{emoji:"🎯",color:C.reward,bg:C.reward,title:"Combined Module Drill Sessions",sub:"Study Tools · 2026-07-07 update",desc:"Select multiple modules at once on the readiness screen to create focused drill sessions that span related topics. This lets you build connections across subtopics and test integrated knowledge the way the exam does.",tip:"Tap multiple module pills to activate combined-session mode, then use adaptive difficulty to match your readiness level."},
-{emoji:"🌀",color:C.medium,bg:C.medium,title:"Super Focus Mode Now Available",sub:"Study Tools · 2026-07-07 update",desc:"Stay locked into your study session with tab-switch tracking and device wake lock—the app prevents accidental context switches and keeps your screen active. You'll complete more focused, uninterrupted study blocks.",tip:"Enable Super Focus Mode before a timed drill to eliminate distractions and maintain momentum."},
-{emoji:"🐛",color:C.easy,bg:C.easy,title:"Session History & Readiness Accuracy Fixed",sub:"Bug Fix · 2026-07-07 update",desc:"Fixed multiple issues that were corrupting session tracking and pass probability calculations—your readiness score now reflects your true performance, and session history correctly preserves all metadata across app reloads.",tip:"Check your readiness screen; you'll notice your delta bar is now stable and reflects accurate probabilities."},
-]},
 // WN_VER:2026-07-07-b
 {version:"2026-07-07-b",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Clearer Readiness at a Glance",sub:"UX · 2026-07-07 update",desc:"The readiness screen now uses a ±-centred delta bar instead of a trajectory bar, giving you an instant visual sense of whether you're improving or slipping on each topic. This makes it easier to spot which areas need immediate attention before your exam.",tip:"Tap any topic's delta bar to drill down into your recent session performance."},
@@ -318,6 +312,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🔄",color:C.medium,bg:C.medium,title:"No More Duplicate Questions Today",sub:"UX · 2026-07-11 update",desc:"Fixed an issue where the same question could appear twice in a single study session, wasting your prep time. Now each question is unique within the same day, so every question you answer teaches you something new.",tip:"Start a fresh session anytime and you're guaranteed no repeats from earlier today."},
 {emoji:"💵",color:C.reward,bg:C.reward,title:"Correct Pricing Display",sub:"Bug Fix · 2026-07-11 update",desc:"Free tier pricing now displays the correct currency symbol based on your region. If you're in India or another rupee market, you'll see ₹ instead of $ so pricing is clear and accurate.",tip:"Check your subscription screen to confirm your local currency now shows correctly."},
 ]},
+// WN_VER:2026-07-11-b
+{version:"2026-07-11-b",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-11 update",desc:"The app now prioritizes Learning Outcomes you haven't tested yet when generating quizzes, and tracks your coverage per study session. This ensures you're drilling gaps rather than repeating what you already know.",tip:"Check your session coverage stats after each quiz to see which LOS you've strengthened."},
+{emoji:"💰",color:C.easy,bg:C.easy,title:"Correct Pricing for Indian Users",sub:"Bug Fix · 2026-07-07 update",desc:"Fixed a display bug where free-tier pricing showed a dollar sign ($) instead of the Indian rupee symbol (₹). If you're studying in India, you'll now see the correct local currency.",tip:"Your subscription pricing is now displayed in your local currency."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -326,12 +325,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-06
-{date:"2026-07-06",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-06
 {date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -384,6 +377,14 @@ const ADMIN_CHANGELOG=[
 {date:"2026-07-11",entries:[
 "Add growth/retention metrics and MRR to admin dashboard",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-11
+{date:"2026-07-11",entries:[
+"Fix admin dashboard auth failure when JWT token is expired",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Add growth/retention metrics and MRR to admin dashboard",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
