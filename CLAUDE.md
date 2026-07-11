@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (2783ae0)**: Version 2026-07-07 has been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-07-b, 2026-07-08, 2026-07-11, and 2026-07-11-b. Version 2026-07-11-b consolidates per-session LOS prioritization and Indian rupee pricing display fixes. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (1424fa2)**: Versions 2026-07-06-d and 2026-07-07 have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-07-b, 2026-07-08, 2026-07-11, and 2026-07-11-b. Version 2026-07-11 consolidates per-session LOS prioritization, same-day question repeat prevention, and correct regional currency display. Version 2026-07-11-b appears to be a partial duplicate variant still being finalized. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1202,7 +1205,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1798000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1798100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1302,3 +1305,5 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **What's New version consolidation (f144a3e)**: Versions 2026-07-06-b and 2026-07-06-c have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-06-d, 2026-07-07, 2026-07-07-b, 2026-07-07-c, and 2026-07-08. Version 2026-07-07-c consolidates per-session LOS coverage tracking, delta bar readiness visualization, and same-day question repeat prevention. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 **Admin dashboard growth/retention metrics (f144a3e)**: Admin dashboard now includes growth and retention metrics alongside MRR (Monthly Recurring Revenue) for monitoring business health. When implementing new admin features or metrics, ensure analytics data integrates cleanly with existing dashboard state management to provide real-time visibility into subscription trends.
+
+**Essay grading state management (2783ae0)**: Essay questions now support grading state with `essayGrades` and `essayGrading` state variables tracking grade values and grading-in-progress status. When implementing essay grading features or modifying essay answer tracking, ensure grading state is properly persisted alongside answer and reveal state to maintain consistency across sessions.
