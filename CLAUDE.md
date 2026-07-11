@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Admin dashboard metrics expansion (f144a3e)**: Admin dashboard now displays growth metrics, retention analytics, and Monthly Recurring Revenue (MRR) tracking. When adding new metrics or modifying dashboard data fetching, ensure performance metrics are properly aggregated and displayed alongside core business KPIs.
+
+
+**Admin dashboard JWT token expiration handling (5b42172)**: Admin dashboard now gracefully handles expired JWT tokens during authentication rather than failing silently. When modifying admin authentication or token validation logic, ensure expired token detection triggers appropriate re-authentication flow to maintain dashboard accessibility.
+
+
+**What's New version consolidation (17df29b)**: Versions 2026-07-06-c and 2026-07-06-d have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-07, 2026-07-08, and 2026-07-11. Version 2026-07-08 addresses free tier pricing currency display. Version 2026-07-11 consolidates per-session LOS coverage prioritization and same-day question repeat prevention. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **Free tier pricing display (7ecc5c7)**: Free tier pricing now correctly displays rupee currency symbol instead of dollar sign. When modifying pricing display or currency formatting, ensure localization context is respected to show appropriate currency symbols for regional pricing tiers.
 
 
@@ -1190,7 +1199,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1797800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1797900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
