@@ -5486,6 +5486,22 @@ function CFAMock(){
       const newCount=newHistory.filter(h=>h.topic===ht).reduce((s,h)=>s+(h.total||0),0);
       if(prevCount<10&&newCount>=10)showToast("🏅",`${ht.split(" ")[0]} Warrior!`,`10+ questions answered on one of the hardest CFA topics.`,true);
     });
+    // ─── Topic mastery milestone (first time a topic crosses 70%) ──────────
+    {
+      const topicAcc=(arr)=>{const m={};arr.forEach(h=>{if(!m[h.topic])m[h.topic]={c:0,tot:0};m[h.topic].c+=(h.correct||0);m[h.topic].tot+=(h.total||0);});return m;};
+      const prevAcc=topicAcc(historyRef.current.slice(1));
+      const newAcc=topicAcc(newHistory);
+      Object.keys(newAcc).forEach(tp=>{
+        const cur=newAcc[tp];
+        if(cur.tot<10)return;
+        const prev=prevAcc[tp];
+        const prevPct=prev&&prev.tot>0?prev.c/prev.tot:0;
+        const newPct=cur.c/cur.tot;
+        if(prevPct<0.7&&newPct>=0.7){
+          setTimeout(()=>showToast("🏆",`${tp} Mastered!`,`You've hit 70%+ accuracy on ${tp} — that's exam-ready territory!`,true),600);
+        }
+      });
+    }
     // ─────────────────────────────────────────────────────────────────────
 
     // Auto-escalation
