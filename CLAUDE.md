@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (1ee95d3)**: Version 2026-07-07-b has been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-07-c, 2026-07-08, 2026-07-11, 2026-07-11-b, and 2026-07-11-c. Version 2026-07-11-c announces six new effectiveness and social features including leaderboards and progress tracking. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (2783ae0)**: Version 2026-07-07 has been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-07-b, 2026-07-08, 2026-07-11, and 2026-07-11-b. Version 2026-07-11-b consolidates per-session LOS prioritization and Indian rupee pricing display fixes. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1205,7 +1208,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1798100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1798200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1307,3 +1310,7 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **Admin dashboard growth/retention metrics (f144a3e)**: Admin dashboard now includes growth and retention metrics alongside MRR (Monthly Recurring Revenue) for monitoring business health. When implementing new admin features or metrics, ensure analytics data integrates cleanly with existing dashboard state management to provide real-time visibility into subscription trends.
 
 **Essay grading state management (2783ae0)**: Essay questions now support grading state with `essayGrades` and `essayGrading` state variables tracking grade values and grading-in-progress status. When implementing essay grading features or modifying essay answer tracking, ensure grading state is properly persisted alongside answer and reveal state to maintain consistency across sessions.
+
+**Topic mastery toast on 70% accuracy threshold (1ee95d3)**: The app now displays a celebratory toast notification when a topic's accuracy first crosses 70%, providing positive reinforcement for user progress. When modifying accuracy calculations or toast triggers, ensure the 70% threshold is evaluated per-topic and fires only on the first upward crossing to avoid duplicate notifications.
+
+**Essay grading state management (1ee95d3)**: Essay answer grading now uses separate `essayGrades` and `essayGrading` state objects to track graded responses and in-flight grading operations. When implementing essay grading features or persisting essay state, ensure both state objects are properly managed and synced with localStorage to maintain grading history and prevent duplicate submissions.
