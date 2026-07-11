@@ -56,15 +56,22 @@ Deno.serve(async (req: Request) => {
   let isAuthorized = false;
 
   if (accessToken) {
-    // Supabase JWT path (magic link / OAuth)
-    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${accessToken}`, apikey: serviceKey },
-    });
-    if (!userRes.ok) return jsonResponse({ error: 'Auth failed' }, 401);
-    const userInfo = await userRes.json() as { email?: string };
-    if (userInfo.email === ADMIN_EMAIL) isAuthorized = true;
-  } else if (userId) {
-    // Password-based login path — verify userId exists in sessions AND email matches
+    // Supabase JWT path (magic link / OAuth). If the token is expired/invalid,
+    // fall through to the userId check below rather than returning immediately.
+    try {
+      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: { Authorization: `Bearer ${accessToken}`, apikey: serviceKey },
+      });
+      if (userRes.ok) {
+        const userInfo = await userRes.json() as { email?: string };
+        if (userInfo.email === ADMIN_EMAIL) isAuthorized = true;
+      }
+      // If !userRes.ok (expired JWT), fall through to userId check below
+    } catch { /* network error — fall through */ }
+  }
+
+  if (!isAuthorized && userId) {
+    // Password-based login path OR expired-JWT fallback.
     // Note: supabaseSync overwrites the data column so we can't read email from there;
     // instead we trust the email claim from the client and require a valid session to exist.
     const adminUserIdSecret = Deno.env.get('ADMIN_USER_ID');
