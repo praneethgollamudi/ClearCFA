@@ -169,6 +169,23 @@ Deno.serve(async (req: Request) => {
   const wau = new Set(allSessions.filter(s => s.updated_at >= d7ts).map(s => s.user_id)).size;
   const mau = new Set(allSessions.filter(s => s.updated_at >= d30ts).map(s => s.user_id)).size;
 
+  // Growth: first-seen date per user → new user counts
+  const firstSeenMap: Record<string, string> = {};
+  for (const s of allSessions) {
+    if (!firstSeenMap[s.user_id] || s.updated_at < firstSeenMap[s.user_id]) {
+      firstSeenMap[s.user_id] = s.updated_at;
+    }
+  }
+  const newUsersWeek  = Object.values(firstSeenMap).filter(t => t >= d7ts).length;
+  const newUsersMonth = Object.values(firstSeenMap).filter(t => t >= d30ts).length;
+
+  // Session sync volume (each row = one user's cumulative sync, updated_at = last sync time)
+  const sessionSyncsToday = allSessions.filter(s => s.updated_at >= todayISO).length;
+  const sessionSyncsWeek  = allSessions.filter(s => s.updated_at >= d7ISO).length;
+
+  // Stickiness = DAU/MAU %, a standard engagement quality metric
+  const stickiness = mau > 0 ? Math.round(dau / mau * 100) : 0;
+
   const recentSessions = allSessions
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
     .slice(0, 5)
@@ -270,7 +287,7 @@ Deno.serve(async (req: Request) => {
   });
 
   return jsonResponse({
-    users:    { total: totalUsers, dau, wau, mau, recentSessions },
+    users:    { total: totalUsers, dau, wau, mau, recentSessions, newUsersWeek, newUsersMonth, sessionSyncsToday, sessionSyncsWeek, stickiness },
     ai:       { today: aiToday, week: aiWeek, usersAtLimit, activeAiToday, trend },
     chat:     { today: chatToday, week: chatWeek, costToday: chatCostToday, costWeek: chatCostWeek, trend: chatTrend },
     cost:     {

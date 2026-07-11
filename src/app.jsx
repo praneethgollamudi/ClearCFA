@@ -10816,6 +10816,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
           )}
         </Card>
 
+        {/* Growth & Retention */}
+        <Card title="Growth & Retention" icon="📈" accent={C.easy}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+            {[["New users (7d)",s.users.newUsersWeek,C.easy],["New users (30d)",s.users.newUsersMonth,null]].map(([l,v,col])=>(
+              <div key={l} style={{background:C.bg,borderRadius:10,padding:"10px 12px",border:`1px solid ${C.border}`}}>
+                <div style={{fontSize:10,color:C.muted,marginBottom:3}}>{l}</div>
+                <div style={{fontSize:20,fontWeight:800,color:col||C.text}}>{fmt(v)}</div>
+              </div>
+            ))}
+          </div>
+          <Row label="Session syncs today" value={fmt(s.users.sessionSyncsToday)} sub="active studies"/>
+          <Row label="Session syncs (7d)" value={fmt(s.users.sessionSyncsWeek)}/>
+          <Row label="Stickiness (DAU/MAU)" value={`${s.users.stickiness??0}%`} color={(s.users.stickiness??0)>=20?C.easy:(s.users.stickiness??0)>=10?C.medium:C.muted} sub="engagement quality"/>
+          <Row label="AI Qs per active user (7d)" value={s.users.wau>0?Math.round(s.ai.week/s.users.wau).toLocaleString():"—"} sub="questions"/>
+        </Card>
+
         {/* AI Usage */}
         <Card title="AI Usage (free quota)" icon="🤖" accent="#22d3ee">
           <Row label="Questions generated today" value={fmt(s.ai.today)} color={s.ai.today>0?C.easy:C.muted}/>
@@ -10922,6 +10938,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         {/* Revenue */}
         <Card title="Revenue" icon="⭐" accent={C.easy}>
           <Row label="Paid Pro subscribers" value={fmt(s.revenue.proCount)} color={C.easy}/>
+          <Row label="Est. MRR" value={s.revenue.proCount>0?`₹${(s.revenue.proCount*ACTIVE_PRICE).toLocaleString()}`:"₹0"} color={s.revenue.proCount>0?C.reward:C.muted} sub={`at ₹${ACTIVE_PRICE}/mo`}/>
           <Row label="Free users (excl. admin)" value={fmt(s.revenue.freeCount)}/>
           <Row label="Conversion rate" value={`${s.revenue.conversionRate}%`} color={s.revenue.conversionRate>5?C.easy:C.muted}/>
           <Row label="Referral grants issued" value={fmt(s.revenue.referrals)}/>
