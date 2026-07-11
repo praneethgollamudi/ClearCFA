@@ -289,13 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-07-b
-{version:"2026-07-07-b",slides:[
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Clearer Readiness at a Glance",sub:"UX · 2026-07-07 update",desc:"The readiness screen now uses a ±-centred delta bar instead of a trajectory bar, giving you an instant visual sense of whether you're improving or slipping on each topic. This makes it easier to spot which areas need immediate attention before your exam.",tip:"Tap any topic's delta bar to drill down into your recent session performance."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-07 update",desc:"Fixed an issue where the same question could appear twice in a single study session, interrupting your flow and wasting study time. You'll now see fresh content throughout each session, keeping your practice efficient and focused.",tip:"Resume a session you paused earlier—you won't encounter repeats across your breaks."},
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Complete Calculator Steps Visible",sub:"Bug Fix · 2026-07-07 update",desc:"Calculator keystroke sequences now display in full instead of cutting off with an ellipsis, so you can see the exact steps taken to solve each problem. This clarity helps you understand the calculation method and catch where you might have gone wrong.",tip:"Check the calculator steps on any quantitative question to follow the exact button sequence."},
-{emoji:"📈",color:C.reward,bg:C.reward,title:"Pass Probability Stays Stable",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where completing easy questions would cause your overall pass probability to drop unexpectedly, which was demotivating and misleading. Your pass probability now accurately reflects your true progress, even after breezy practice sessions.",tip:"Notice your pass probability curve staying steady or climbing—it's now a trustworthy indicator of exam readiness."},
-]},
 // WN_VER:2026-07-07-c
 {version:"2026-07-07-c",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Question Selection",sub:"AI · 2026-07-07 update",desc:"ClearCFA now prioritises untested Learning Outcomes in question generation and tracks your coverage per study session. This ensures you spend time on gaps rather than re-drilling familiar material.",tip:"Check your session summary to see which LOS you've covered today—focus tomorrow's prep on the ones you haven't tested yet."},
@@ -317,6 +310,10 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-11 update",desc:"The app now prioritizes Learning Outcomes you haven't tested yet when generating quizzes, and tracks your coverage per study session. This ensures you're drilling gaps rather than repeating what you already know.",tip:"Check your session coverage stats after each quiz to see which LOS you've strengthened."},
 {emoji:"💰",color:C.easy,bg:C.easy,title:"Correct Pricing for Indian Users",sub:"Bug Fix · 2026-07-07 update",desc:"Fixed a display bug where free-tier pricing showed a dollar sign ($) instead of the Indian rupee symbol (₹). If you're studying in India, you'll now see the correct local currency.",tip:"Your subscription pricing is now displayed in your local currency."},
 ]},
+// WN_VER:2026-07-11-c
+{version:"2026-07-11-c",slides:[
+{emoji:"🚀",color:C.reward,bg:C.reward,title:"New Study Features Unlock",sub:"Study Tools · 2026-07-11 update",desc:"Six new effectiveness and social features are now live to supercharge your exam prep. Compete with peers, track progress in real-time, and stay motivated through your CFA journey.",tip:"Check the Study Tools section to enable social leaderboards and effectiveness tracking for your study sessions."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -325,12 +322,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-06
-{date:"2026-07-06",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-06
 {date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -387,6 +378,14 @@ const ADMIN_CHANGELOG=[
 "Add growth/retention metrics and MRR to admin dashboard",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-11
+{date:"2026-07-11",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin dashboard auth failure when JWT token is expired",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Add growth/retention metrics and MRR to admin dashboard",
 ]},
 // AC_END
 ];
