@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-07-c
-{version:"2026-07-07-c",slides:[
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Question Selection",sub:"AI · 2026-07-07 update",desc:"ClearCFA now prioritises untested Learning Outcomes in question generation and tracks your coverage per study session. This ensures you spend time on gaps rather than re-drilling familiar material.",tip:"Check your session summary to see which LOS you've covered today—focus tomorrow's prep on the ones you haven't tested yet."},
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Clearer Readiness At a Glance",sub:"UX · 2026-07-07 update",desc:"The readiness screen now shows your progress delta (±) centered on zero, making it instantly obvious whether you're improving or slipping. This replaces the trajectory bar for faster, more intuitive assessment.",tip:"Glance at the ± readiness indicator before each session to see your momentum since yesterday."},
-{emoji:"🛠️",color:C.medium,bg:C.medium,title:"No More Repeated Questions",sub:"Bug Fix · 2026-07-07 update",desc:"Fixed an issue where the same question could appear twice in a single day across different study sessions. Your practice time now stays fresh and maximises learning efficiency.",tip:"You'll notice cleaner, more varied question sets—no more \"didn't I just see this?\""},
-]},
 // WN_VER:2026-07-08
 {version:"2026-07-08",slides:[
 {emoji:"💱",color:C.easy,bg:C.easy,title:"Correct Free Tier Pricing Display",sub:"Bug Fix · 2026-07-08 update",desc:"Fixed free tier pricing that was incorrectly showing a dollar sign instead of the rupee symbol. You'll now see accurate currency formatting for your region when reviewing plan options.",tip:"Check your pricing page to confirm the correct currency symbol now appears for your location."},
@@ -313,6 +307,11 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-11-c
 {version:"2026-07-11-c",slides:[
 {emoji:"🚀",color:C.reward,bg:C.reward,title:"New Study Features Unlock",sub:"Study Tools · 2026-07-11 update",desc:"Six new effectiveness and social features are now live to supercharge your exam prep. Compete with peers, track progress in real-time, and stay motivated through your CFA journey.",tip:"Check the Study Tools section to enable social leaderboards and effectiveness tracking for your study sessions."},
+]},
+// WN_VER:2026-07-11-d
+{version:"2026-07-11-d",slides:[
+{emoji:"🎉",color:C.reward,bg:C.reward,title:"Topic Mastery Celebrations",sub:"Study Tools · 2026-07-11 update",desc:"When your accuracy on any topic first crosses 70%, you'll now get an instant celebration toast to mark the milestone. This keeps you motivated as you progress through each CFA domain.",tip:"Watch for the toast after your next quiz—it's your signal that a topic is clicking."},
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Six New Study Features",sub:"AI · 2026-07-11 update",desc:"We've added six new effectiveness and social features to deepen your learning and community engagement. These tools help you study smarter and stay connected with other CFA candidates.",tip:"Explore the updated Study & Community sections to discover what's new."},
 ]},
 // WN_END
 ];
@@ -346,12 +345,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-06
-{date:"2026-07-06",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-07
 {date:"2026-07-07",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -386,6 +379,13 @@ const ADMIN_CHANGELOG=[
 "Fix admin dashboard auth failure when JWT token is expired",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Add growth/retention metrics and MRR to admin dashboard",
+]},
+// AC_VER:2026-07-11
+{date:"2026-07-11",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin dashboard auth failure when JWT token is expired",
 ]},
 // AC_END
 ];
