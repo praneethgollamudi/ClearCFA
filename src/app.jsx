@@ -4738,6 +4738,7 @@ function CFAMock(){
   const [mockSchedule,setMockSchedule]=useState(()=>{try{return JSON.parse(localStorage.getItem(MOCK_SCHED_KEY)||"[]");}catch{return [];}});
   const [expRatings,setExpRatings]=useState(()=>{try{return JSON.parse(localStorage.getItem(EXP_RATINGS_KEY)||"{}");}catch{return {};}});
   const [dailyQ,setDailyQ]=useState(()=>{try{const s=JSON.parse(localStorage.getItem(DAILY_Q_KEY)||"null");if(s?.date===localDateKey())return s;}catch{}return null;});
+  const [dailyQReview,setDailyQReview]=useState(false);
   const [milestoneOverlay,setMilestoneOverlay]=useState(null);
   const [nextActionText,setNextActionText]=useState("");
   const [nextActionLoading,setNextActionLoading]=useState(false);
@@ -8507,23 +8508,47 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const userAns=dailyQ.userAnswer;
       const correct=dq&&userAns===dq.answer;
       if(answered&&dq){
-        // Collapsed "done" state
+        // Collapsed "done" state — expandable for review
         return(
-          <div style={{background:correct?C.easy+"12":C.hard+"10",border:`1px solid ${correct?C.easy:C.hard}33`,borderRadius:12,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between",animation:"fadeIn 0.3s ease"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:18}}>{correct?"✅":"❌"}</span>
-              <div>
-                <div style={{fontSize:11,fontWeight:800,color:C.accentLight,letterSpacing:"0.05em",textTransform:"uppercase"}}>📅 Daily Q · {localDateKey()}</div>
-                <div style={{fontSize:12,color:correct?C.easy:C.hard,fontWeight:700,marginTop:1}}>{correct?"Correct!":"Wrong — answer was "+dq.answer}</div>
+          <div style={{background:correct?C.easy+"12":C.hard+"10",border:`1px solid ${correct?C.easy:C.hard}33`,borderRadius:12,marginBottom:12,animation:"fadeIn 0.3s ease",overflow:"hidden"}}>
+            <div style={{padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:18}}>{correct?"✅":"❌"}</span>
+                <div>
+                  <div style={{fontSize:11,fontWeight:800,color:C.accentLight,letterSpacing:"0.05em",textTransform:"uppercase"}}>📅 Daily Q · {localDateKey()}</div>
+                  <div style={{fontSize:12,color:correct?C.easy:C.hard,fontWeight:700,marginTop:1}}>{correct?"Correct!":"Wrong — answer was "+dq.answer}</div>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:6,flexShrink:0}}>
+                {!correct&&<button onClick={()=>setDailyQReview(r=>!r)} style={{padding:"6px 10px",borderRadius:8,fontSize:11,fontWeight:700,background:C.hard+"20",border:`1px solid ${C.hard}44`,color:C.hard,cursor:"pointer"}}>
+                  {dailyQReview?"Hide ▲":"Review →"}
+                </button>}
+                <button onClick={()=>{
+                  const shareText=`${correct?"🟢":"🔴"} Today's CFA Daily Q · ${dq._topic||""} · ${correct?"Got it!":"Missed it"} · Streak: ${getStreak(history)}d\n📚 clearcfa.com`;
+                  if(navigator.share)navigator.share({title:"ClearCFA Daily Q",text:shareText}).catch(()=>{});
+                  else{try{navigator.clipboard.writeText(shareText);}catch{}showToast("📋","Copied!","Share text ready");}
+                }} style={{padding:"6px 10px",borderRadius:8,fontSize:11,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                  📤 Share
+                </button>
               </div>
             </div>
-            <button onClick={()=>{
-              const shareText=`${correct?"🟢":"🔴"} Today's CFA Daily Q · ${dq._topic||""} · ${correct?"Got it!":"Missed it"} · Streak: ${getStreak(history)}d\n📚 clearcfa.com`;
-              if(navigator.share)navigator.share({title:"ClearCFA Daily Q",text:shareText}).catch(()=>{});
-              else{try{navigator.clipboard.writeText(shareText);}catch{}showToast("📋","Copied!","Share text ready");}
-            }} style={{padding:"6px 10px",borderRadius:8,fontSize:11,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0}}>
-              📤 Share
-            </button>
+            {dailyQReview&&!correct&&(
+              <div style={{padding:"0 14px 14px",borderTop:`1px solid ${C.hard}22`}}>
+                <div style={{fontSize:13,fontWeight:600,color:C.text,lineHeight:1.5,margin:"10px 0 10px"}}>{dq.question}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:10}}>
+                  {Object.entries(dq.options||{}).map(([k,v])=>{
+                    const isCorrect=k===dq.answer;
+                    const isUserWrong=k===userAns&&!isCorrect;
+                    return(
+                      <div key={k} style={{padding:"9px 12px",borderRadius:9,fontSize:12,fontWeight:isCorrect?700:500,border:`1px solid ${isCorrect?C.easy:isUserWrong?C.hard:C.border}`,background:isCorrect?C.easy+"18":isUserWrong?C.hard+"15":C.surfaceHigh,color:isCorrect?C.easy:isUserWrong?C.hard:C.textMid}}>
+                        {k}. {v} {isCorrect?"✓":isUserWrong?"✗":""}
+                      </div>
+                    );
+                  })}
+                </div>
+                {dq.explanation&&<div style={{fontSize:12,color:C.textMid,lineHeight:1.6,background:C.surface,borderRadius:8,padding:"10px 12px",border:`1px solid ${C.border}`}}>{dq.explanation.replace(/^Correct:\s*[A-D]\.\s*/i,"")}</div>}
+              </div>
+            )}
           </div>
         );
       }
