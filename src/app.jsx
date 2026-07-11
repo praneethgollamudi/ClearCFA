@@ -289,10 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-08
-{version:"2026-07-08",slides:[
-{emoji:"💱",color:C.easy,bg:C.easy,title:"Correct Free Tier Pricing Display",sub:"Bug Fix · 2026-07-08 update",desc:"Fixed free tier pricing that was incorrectly showing a dollar sign instead of the rupee symbol. You'll now see accurate currency formatting for your region when reviewing plan options.",tip:"Check your pricing page to confirm the correct currency symbol now appears for your location."},
-]},
 // WN_VER:2026-07-11
 {version:"2026-07-11",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-11 update",desc:"The app now prioritizes learning outcomes you haven't practiced yet, ensuring each study session builds on gaps rather than repeating familiar material. You'll also see coverage tracked per session so you know exactly which topics you've drilled.",tip:"Watch your session summary highlight which LOS areas are newly covered."},
@@ -312,6 +308,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-11-d",slides:[
 {emoji:"🎉",color:C.reward,bg:C.reward,title:"Topic Mastery Celebrations",sub:"Study Tools · 2026-07-11 update",desc:"When your accuracy on any topic first crosses 70%, you'll now get an instant celebration toast to mark the milestone. This keeps you motivated as you progress through each CFA domain.",tip:"Watch for the toast after your next quiz—it's your signal that a topic is clicking."},
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Six New Study Features",sub:"AI · 2026-07-11 update",desc:"We've added six new effectiveness and social features to deepen your learning and community engagement. These tools help you study smarter and stay connected with other CFA candidates.",tip:"Explore the updated Study & Community sections to discover what's new."},
+]},
+// WN_VER:2026-07-11-e
+{version:"2026-07-11-e",slides:[
+{emoji:"📋",color:C.medium,bg:C.medium,title:"Review Wrong Answers Daily",sub:"Study Tools · 2026-07-11 update",desc:"A new daily wrong-answer review panel surfaces your most recent mistakes in one focused view. Reinforcing errors immediately boosts retention and prevents the same gaps from appearing on exam day.",tip:"Check your wrong-answer panel each morning to target weak spots before they cost you points."},
+{emoji:"🏆",color:C.reward,bg:C.reward,title:"Celebrate Mastery Milestones",sub:"UX · 2026-07-11 update",desc:"You now receive an instant celebration notification when your accuracy on any topic first reaches 70%. This positive reinforcement keeps you motivated and signals which topics are ready for exam-level practice.",tip:"Watch for the mastery toast after your next quiz—it marks the moment a topic clicks."},
+{emoji:"👥",color:C.accentLight,bg:C.accentLight,title:"New Social & Effectiveness Features",sub:"Community · 2026-07-11 update",desc:"Six new social and effectiveness tools have been added to help you connect with other candidates and track your prep impact more deeply. Building accountability and seeing real progress keeps study momentum high.",tip:"Explore the new features in Settings to find which ones best fit your study style."},
 ]},
 // WN_END
 ];
@@ -339,12 +341,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-06
-{date:"2026-07-06",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-07
 {date:"2026-07-07",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -386,6 +382,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin dashboard auth failure when JWT token is expired",
+]},
+// AC_VER:2026-07-11
+{date:"2026-07-11",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
