@@ -18,6 +18,13 @@ create table if not exists group_members (
 alter table study_groups enable row level security;
 alter table group_members enable row level security;
 
+-- Drop policies first so this migration is safe to re-run
+drop policy if exists "member read group" on study_groups;
+drop policy if exists "create group" on study_groups;
+drop policy if exists "member read members" on group_members;
+drop policy if exists "join group" on group_members;
+drop policy if exists "leave group" on group_members;
+
 -- Members can read groups they belong to
 create policy "member read group" on study_groups
   for select using (
