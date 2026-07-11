@@ -289,12 +289,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-06-d
-{version:"2026-07-06-d",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Pass Probability Stays Accurate",sub:"Bug Fix · 2026-07-06 update",desc:"Fixed a bug where your pass probability would incorrectly drop after completing easy practice sessions. Your predicted score now reflects your actual performance without unexpected dips.",tip:"Check your Pass Probability dashboard after your next easy session—it should now hold steady or improve."},
-{emoji:"🧮",color:C.medium,bg:C.medium,title:"Calculator Steps Now Complete",sub:"Study Tools · 2026-07-06 update",desc:"Fixed calculator keystroke sequences that were showing incomplete ellipsis (…) instead of full step-by-step breakdowns. You can now see every calculation detail to understand exactly how to solve problems.",tip:"Tap into a calculator solution to see the complete keystroke sequence without truncation."},
-{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Multi-Module Sessions More Balanced",sub:"Study Tools · 2026-07-06 update",desc:"Fixed multi-module study sessions that were generating too few questions, which limited your practice breadth. Sessions now deliver appropriate question counts across all selected modules for deeper coverage.",tip:"When creating a multi-module session, you'll now get balanced question distribution across all topics you select."},
-]},
 // WN_VER:2026-07-07
 {version:"2026-07-07",slides:[
 {emoji:"🎯",color:C.reward,bg:C.reward,title:"Combined Module Drill Sessions",sub:"Study Tools · 2026-07-07 update",desc:"Select multiple modules at once on the readiness screen to create focused drill sessions that span related topics. This lets you build connections across subtopics and test integrated knowledge the way the exam does.",tip:"Tap multiple module pills to activate combined-session mode, then use adaptive difficulty to match your readiness level."},
@@ -317,6 +311,12 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-08
 {version:"2026-07-08",slides:[
 {emoji:"💱",color:C.easy,bg:C.easy,title:"Correct Free Tier Pricing Display",sub:"Bug Fix · 2026-07-08 update",desc:"Fixed free tier pricing that was incorrectly showing a dollar sign instead of the rupee symbol. You'll now see accurate currency formatting for your region when reviewing plan options.",tip:"Check your pricing page to confirm the correct currency symbol now appears for your location."},
+]},
+// WN_VER:2026-07-11
+{version:"2026-07-11",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-11 update",desc:"The app now prioritizes learning outcomes you haven't practiced yet, ensuring each study session builds on gaps rather than repeating familiar material. You'll also see coverage tracked per session so you know exactly which topics you've drilled.",tip:"Watch your session summary highlight which LOS areas are newly covered."},
+{emoji:"🔄",color:C.medium,bg:C.medium,title:"No More Duplicate Questions Today",sub:"UX · 2026-07-11 update",desc:"Fixed an issue where the same question could appear twice in a single study session, wasting your prep time. Now each question is unique within the same day, so every question you answer teaches you something new.",tip:"Start a fresh session anytime and you're guaranteed no repeats from earlier today."},
+{emoji:"💵",color:C.reward,bg:C.reward,title:"Correct Pricing Display",sub:"Bug Fix · 2026-07-11 update",desc:"Free tier pricing now displays the correct currency symbol based on your region. If you're in India or another rupee market, you'll see ₹ instead of $ so pricing is clear and accurate.",tip:"Check your subscription screen to confirm your local currency now shows correctly."},
 ]},
 // WN_END
 ];
@@ -368,12 +368,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-06
-{date:"2026-07-06",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-07
 {date:"2026-07-07",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -382,6 +376,13 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-07
 {date:"2026-07-07",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-11
+{date:"2026-07-11",entries:[
+"Add growth/retention metrics and MRR to admin dashboard",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
