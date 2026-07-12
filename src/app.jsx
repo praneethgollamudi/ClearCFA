@@ -5809,7 +5809,10 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
       }
       skipTopWait=false;
       const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),45000);
+      // Scale timeout with token budget: Haiku outputs ~100t/s; 8000 tokens ≈ 80s.
+      // Min 45s, max 90s — prevents silent failure on large question sets (15–20 Qs).
+      const timeoutMs=Math.min(90000,Math.max(45000,currentMaxTokens*12));
+      const timeout=setTimeout(()=>controller.abort(),timeoutMs);
       const onExtAbort=()=>controller.abort();
       signal?.addEventListener('abort',onExtAbort);
       try{
