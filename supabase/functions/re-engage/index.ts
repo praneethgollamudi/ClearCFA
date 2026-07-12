@@ -99,6 +99,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: `ClearCFA <${FROM_EMAIL}>`,
+        reply_to: ADMIN_EMAIL,
         to: [t.email],
         subject,
         html: body,
