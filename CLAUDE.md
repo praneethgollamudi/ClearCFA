@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Admin authorization logic simplification (894c794)**: admin-stats endpoint now authorizes via email+userId presence check instead of sessions table lookup. When implementing admin features, rely on ADMIN_EMAILS list and valid userId (64-char SHA-256 hex for password users) for access control—no sessions table validation required.
+
+
 **Leaderboard SQL jsonb casting (78e568c)**: leaderboard SQL function now explicitly casts sessions.data to jsonb to prevent type mismatches. When querying or aggregating session data in SQL functions, ensure jsonb casts are applied to JSON columns for safe operator usage.
 
 
@@ -1329,7 +1332,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1800700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1801300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
