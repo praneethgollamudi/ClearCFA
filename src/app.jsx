@@ -296,12 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12
-{version:"2026-07-12",slides:[
-{emoji:"📅",color:C.accentLight,bg:C.accentLight,title:"Sync Study Plans to Calendar",sub:"Study Tools · 2026-07-12 update",desc:"Export your personalized study schedule directly to your device calendar as .ics files. Stay on track with exam prep by seeing your CFA milestones alongside your daily commitments.",tip:"Open your Study Plan and tap the export icon to add sessions to Apple Calendar, Google Calendar, or Outlook."},
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Official-Weight Mock Exams",sub:"Study Tools · 2026-07-12 update",desc:"New 18-question Exam-Weight Mock sessions now mirror the exact topic distribution of real CFA exams. Practice with confidence knowing your session matches official weighting.",tip:"Start a mock exam and select \"Exam-Weight\" mode to drill topics in realistic proportions."},
-{emoji:"⚡",color:C.medium,bg:C.medium,title:"Challenge Mode Now Toggleable",sub:"UX · 2026-07-12 update",desc:"Quickly enable or disable Challenge Mode difficulty from the setup screen without restarting your session. Adapt your practice intensity on the fly as you progress.",tip:"Look for the Challenge Mode toggle on the Setup screen before starting your next quiz or mock."},
-]},
 // WN_VER:2026-07-12-b
 {version:"2026-07-12-b",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Official Exam-Weight Mock Sessions",sub:"Study Tools · 2026-07-12 update",desc:"New 18-question mock exams now reflect the exact topic weights from the official CFA curriculum. Your practice sessions instantly update your module readiness and pass trend metrics to match real exam difficulty.",tip:"Start an Exam-Weight Mock to see how your weak topics align with what the CFA actually tests most."},
@@ -324,6 +318,10 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-e",slides:[
 {emoji:"📊",color:C.hard,bg:C.hard,title:"Mock Sessions Now Track Progress Accurately",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight Mock sessions now correctly credit your module readiness and update your pass trend score. Previously, these critical practice tests weren't being counted toward your readiness metrics, making it harder to gauge your true exam readiness.",tip:"Take an Exam-Weight Mock today and watch your module readiness bar move."},
 {emoji:"🔔",color:C.reward,bg:C.reward,title:"Stay Motivated Between Study Sessions",sub:"Study Tools · 2026-07-12 update",desc:"We've added Web Push notifications and streak reminders to help you stay consistent with your prep. When you step away from ClearCFA, we'll gently remind you to return and keep your study momentum alive.",tip:"Enable notifications in your browser settings so you don't miss a study streak milestone."},
+]},
+// WN_VER:2026-07-12-f
+{version:"2026-07-12-f",slides:[
+{emoji:"🔔",color:C.reward,bg:C.reward,title:"Stay Motivated with Smart Reminders",sub:"Study Tools · 2026-07-12 update",desc:"We've added web push notifications and streak tracking to help you build consistent study habits. Get timely nudges when you're away, plus visual reminders of your progress to keep momentum going.",tip:"Check your notification settings and enable web push to receive personalized study reminders on your device."},
 ]},
 // WN_END
 ];
