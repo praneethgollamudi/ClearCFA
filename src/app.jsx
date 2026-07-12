@@ -52,6 +52,8 @@ const EXP_RATINGS_KEY      = "cfa_exp_ratings_v1";
 const DAILY_Q_KEY          = "cfa_daily_q_v1";
 const DUEL_KEY             = "cfa_duel_v1";
 const SG_KEY               = "cfa_study_group_v1";
+const PUSH_SUB_KEY         = "cfa_push_sub_v1";
+const VAPID_PUB_KEY        = "BJyw3vH_hMLq348vR8P_uy1tqWJT3NzemwYye8tyBJze8aHLLTKtLi9FrDJc21jP6m_jzbaGdx6pu6sfRo5Cgj64";
 const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","masteryGrid","studyPlan","revision","studyPath","calcTrainer","backup","srReview"]);
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
@@ -4915,6 +4917,10 @@ function CFAMock(){
   const [sgLoading,setSgLoading]=useState(false);
   const [sgError,setSgError]=useState("");
   const [notifEnabled,setNotifEnabled]=useState(()=>{try{return localStorage.getItem("cfa_notif_v1")==="1";}catch{return false;}});
+  const [pushSubbed,setPushSubbed]=useState(()=>{try{return localStorage.getItem(PUSH_SUB_KEY)==="1";}catch{return false;}});
+  const [pushSending,setPushSending]=useState(false);
+  const [reengageSending,setReengageSending]=useState(false);
+  const [adminEngageResult,setAdminEngageResult]=useState(null);
   const [showPassBreakdown,setShowPassBreakdown]=useState(false);
   const [leaderboard,setLeaderboard]=useState([]);
   const [leaderboardOpt,setLeaderboardOpt]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_lb_opt_v1")||"null");}catch{return null;}});
@@ -5749,6 +5755,46 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
     }catch(e){setAdminStatsError(e.message||"Failed to load stats");}
     setAdminStatsLoading(false);
   };
+
+  const subscribePush=async()=>{
+    if(!authUser?.id){showToast("🔒","Sign in first","Create a free account to enable push reminders.");return;}
+    try{
+      const perm=await Notification.requestPermission();
+      if(perm!=="granted"){showToast("🔕","Permission denied","Enable notifications in browser settings.");return;}
+      if(!('serviceWorker' in navigator)||!('PushManager' in window)){showToast("⚠️","Not supported","Your browser doesn't support push notifications.");return;}
+      const reg=await navigator.serviceWorker.ready;
+      let sub=await reg.pushManager.getSubscription();
+      if(!sub){
+        sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUB_KEY)});
+      }
+      const subJson=sub.toJSON();
+      const endpoint=subJson.endpoint;
+      const p256dh=subJson.keys?.p256dh||"";
+      const auth_key=subJson.keys?.auth||"";
+      const res=await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions`,{
+        method:"POST",
+        headers:{apikey:SUPABASE_KEY,"Authorization":`Bearer ${authUser.accessToken||SUPABASE_KEY}`,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},
+        body:JSON.stringify({user_id:authUser.id,endpoint,p256dh,auth_key}),
+      });
+      if(res.ok||res.status===201||res.status===200){
+        setPushSubbed(true);try{localStorage.setItem(PUSH_SUB_KEY,"1");}catch{}
+        setNotifEnabled(true);try{localStorage.setItem("cfa_notif_v1","1");}catch{}
+        showToast("🔔","Push enabled!","You'll receive study reminders even when the app is closed.");
+      } else {
+        showToast("⚠️","Save failed","Notification permission granted but couldn't save subscription.");
+      }
+    }catch(e){
+      if(e.name==="NotAllowedError"){showToast("🔕","Blocked","Enable notifications in browser settings.");}
+      else{showToast("⚠️","Error",e.message||"Could not enable push notifications.");}
+    }
+  };
+
+  function urlBase64ToUint8Array(base64String){
+    const padding="=".repeat((4-base64String.length%4)%4);
+    const base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/");
+    const raw=atob(base64);
+    return Uint8Array.from({length:raw.length},(_,i)=>raw.charCodeAt(i));
+  }
 
   const callClaude=async(prompt,maxTokens=8000,{retries=2,retryDelay=8000,model="claude-haiku-4-5-20251001",feature="",signal=null}={})=>{
     if(!navigator.onLine) throw new Error("No internet — check your connection and retry.");
@@ -8316,18 +8362,37 @@ Return ONLY a JSON array — no prose, no markdown fences:
       ) : (
         <MotivationalBanner daysLeft={daysLeft}/>
       )}
-      {/* Streak at-risk banner */}
-      {streak>0&&!history.some(h=>h.dateKey===localDateKey())&&(
-        <div style={{background:`linear-gradient(135deg,${C.reward}18,${C.reward}08)`,border:`1px solid ${C.reward}44`,borderRadius:12,padding:"11px 14px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:13,fontWeight:800,color:C.rewardLight}}>🔥 {streak}-day streak at risk</div>
-            <div style={{fontSize:11,color:C.muted,marginTop:2}}>Study today to keep it alive — resets at midnight</div>
+      {/* Streak at-risk banner — full panic card */}
+      {streak>0&&!history.some(h=>h.dateKey===localDateKey())&&(()=>{
+        const now=new Date();
+        const midnight=new Date(now);midnight.setHours(24,0,0,0);
+        const msLeft=midnight-now;
+        const hLeft=Math.floor(msLeft/3600000);
+        const mLeft=Math.floor((msLeft%3600000)/60000);
+        const timeLabel=hLeft>0?`${hLeft}h ${mLeft}m left`:`${mLeft}m left`;
+        const critical=hLeft<3;
+        return(
+          <div style={{background:critical?`linear-gradient(135deg,${C.hard}22,${C.hard}0a)`:`linear-gradient(135deg,#f59e0b22,#f59e0b0a)`,border:`2px solid ${critical?C.hard+"99":"#f59e0b99"}`,borderRadius:14,padding:"16px 18px",marginBottom:12,boxShadow:critical?`0 0 20px ${C.hard}22`:undefined}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+              <span style={{fontSize:30,lineHeight:1,flexShrink:0}}>🔥</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:16,fontWeight:900,color:critical?C.hard:"#f59e0b",lineHeight:1.2}}>{streak}-day streak expires tonight</div>
+                <div style={{fontSize:12,color:C.textMid,marginTop:3,fontWeight:500}}>Don't let {streak} days of work disappear at midnight</div>
+              </div>
+              <div style={{textAlign:"right",flexShrink:0}}>
+                <div style={{fontSize:11,color:C.muted}}>resets in</div>
+                <div style={{fontSize:14,fontWeight:800,color:critical?C.hard:"#f59e0b"}}>{timeLabel}</div>
+              </div>
+            </div>
+            <div style={{background:critical?C.hard+"18":"#f59e0b18",borderRadius:8,padding:"7px 12px",marginBottom:10,fontSize:11,color:C.textMid}}>
+              Just 1 session locks in day {streak+1}. Takes less than 5 minutes.
+            </div>
+            <button onClick={()=>{trackUsage("office_mode");setOmMode(true);const pick=pickNextSession(moduleReadiness,daysLeft,history)||{topic:moduleReadiness[0]?.topic,module:moduleReadiness[0]?.modules[0],difficulty:adaptiveOmDifficulty};generateQuestions(pick.topic,pick.module||moduleReadiness[0]?.modules[0],pick.difficulty||adaptiveOmDifficulty,omQCount,"guided");}} style={{width:"100%",padding:"13px",borderRadius:10,fontSize:14,fontWeight:800,background:critical?C.hard:"#f59e0b",border:"none",color:"#fff",cursor:"pointer",boxShadow:critical?`0 4px 14px ${C.hard}55`:`0 4px 14px #f59e0b55`}}>
+              Save my streak — study now →
+            </button>
           </div>
-          <button onClick={()=>{trackUsage("office_mode");setOmMode(true);const pick=pickNextSession(moduleReadiness,daysLeft,history)||{topic:moduleReadiness[0]?.topic,module:moduleReadiness[0]?.modules[0],difficulty:adaptiveOmDifficulty};generateQuestions(pick.topic,pick.module||moduleReadiness[0]?.modules[0],pick.difficulty||adaptiveOmDifficulty,omQCount,"guided");}} style={{padding:"8px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:C.reward+"33",border:`1px solid ${C.reward}66`,color:C.rewardLight,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-            Study →
-          </button>
-        </div>
-      )}
+        );
+      })()}
       {/* Final 30 days intensity ramp */}
       {daysLeft>0&&daysLeft<=30&&authUser&&(()=>{
         const examWeek=daysLeft<=7;
@@ -8861,6 +8926,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
 
+    {/* Push notification opt-in card — shown to signed-in users who haven't subscribed */}
+    {authUser&&!pushSubbed&&(
+      <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}55`,borderRadius:12,padding:"12px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
+        <span style={{fontSize:22,flexShrink:0}}>🔔</span>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:12,fontWeight:800,color:C.accentLight,marginBottom:2}}>Enable daily study reminders</div>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.4}}>Get a push notification when you haven't studied — even when the app is closed</div>
+        </div>
+        <button onClick={subscribePush} style={{padding:"8px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent,border:"none",color:"#fff",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+          Enable →
+        </button>
+      </div>
+    )}
+
     {/* Exam countdown notification toggle + readiness gauge */}
     {passProbability&&(
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
@@ -8872,17 +8951,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </button>
           </div>
           <button onClick={async()=>{
-            if(!notifEnabled){
-              try{
-                const perm=await Notification.requestPermission();
-                if(perm==="granted"){setNotifEnabled(true);try{localStorage.setItem("cfa_notif_v1","1");}catch{}showToast("🔔","Reminders on!","You'll get a daily study nudge.");}
-                else showToast("🔕","Permission denied","Enable notifications in browser settings.");
-              }catch{}
+            if(!pushSubbed){
+              await subscribePush();
             } else {
-              setNotifEnabled(false);try{localStorage.setItem("cfa_notif_v1","0");}catch{}showToast("🔕","Reminders off","Daily nudges paused.");
+              setNotifEnabled(false);setPushSubbed(false);try{localStorage.setItem("cfa_notif_v1","0");localStorage.setItem(PUSH_SUB_KEY,"0");}catch{}showToast("🔕","Reminders off","Push notifications paused.");
             }
-          }} style={{fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:8,background:notifEnabled?C.easy+"22":C.surface,border:`1px solid ${notifEnabled?C.easy:C.border}`,color:notifEnabled?C.easy:C.muted,cursor:"pointer"}}>
-            {notifEnabled?"🔔 On":"🔕 Remind me"}
+          }} style={{fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:8,background:pushSubbed?C.easy+"22":C.accent+"22",border:`1px solid ${pushSubbed?C.easy:C.accent}`,color:pushSubbed?C.easy:C.accentLight,cursor:"pointer"}}>
+            {pushSubbed?"🔔 Push on":"🔔 Enable push"}
           </button>
         </div>
         {showPassBreakdown&&(
@@ -11510,6 +11585,59 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </div>
           ):(
             <div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"16px 0"}}>No flagged questions yet.</div>
+          )}
+        </Card>
+
+        {/* Engagement Tools */}
+        <Card title="Engagement Tools" icon="📣" accent={C.medium}>
+          <div style={{marginBottom:10,fontSize:11,color:C.muted}}>Send push notifications or re-engagement emails to inactive users.</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+            <button onClick={async()=>{
+              setPushSending(true);setAdminEngageResult(null);
+              try{
+                const res=await fetch(`${SUPABASE_URL}/functions/v1/send-push`,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser?.accessToken,userId:authUser?.id,email:authUser?.email})});
+                const data=await res.json();
+                setAdminEngageResult({type:"push",data});
+              }catch(e){setAdminEngageResult({type:"push",error:e.message});}
+              setPushSending(false);
+            }} disabled={pushSending||reengageSending} style={{padding:"9px 16px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent+"22",color:C.accentLight,border:`1px solid ${C.accent}44`,cursor:"pointer"}}>
+              {pushSending?"⏳ Sending…":"📱 Send push to all"}
+            </button>
+            <button onClick={async()=>{
+              setReengageSending(true);setAdminEngageResult(null);
+              try{
+                const res=await fetch(`${SUPABASE_URL}/functions/v1/re-engage`,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser?.accessToken,userId:authUser?.id,email:authUser?.email,dryRun:true})});
+                const data=await res.json();
+                setAdminEngageResult({type:"reengage_dry",data});
+              }catch(e){setAdminEngageResult({type:"reengage_dry",error:e.message});}
+              setReengageSending(false);
+            }} disabled={pushSending||reengageSending} style={{padding:"9px 16px",borderRadius:9,fontSize:12,fontWeight:700,background:C.medium+"22",color:C.medium,border:`1px solid ${C.medium}44`,cursor:"pointer"}}>
+              {reengageSending?"⏳ Checking…":"📧 Preview re-engage (dry run)"}
+            </button>
+            {adminEngageResult?.type==="reengage_dry"&&!adminEngageResult.error&&(
+              <button onClick={async()=>{
+                setReengageSending(true);setAdminEngageResult(null);
+                try{
+                  const res=await fetch(`${SUPABASE_URL}/functions/v1/re-engage`,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser?.accessToken,userId:authUser?.id,email:authUser?.email})});
+                  const data=await res.json();
+                  setAdminEngageResult({type:"reengage",data});
+                }catch(e){setAdminEngageResult({type:"reengage",error:e.message});}
+                setReengageSending(false);
+              }} disabled={pushSending||reengageSending} style={{padding:"9px 16px",borderRadius:9,fontSize:12,fontWeight:700,background:C.hard+"22",color:C.hard,border:`1px solid ${C.hard}44`,cursor:"pointer"}}>
+                ⚡ Send emails now ({adminEngageResult.data?.targets} users)
+              </button>
+            )}
+          </div>
+          {adminEngageResult&&(
+            <div style={{background:adminEngageResult.error?C.hard+"12":C.easy+"12",borderRadius:9,padding:"10px 12px",fontSize:12,color:adminEngageResult.error?C.hard:C.easy}}>
+              {adminEngageResult.error?`Error: ${adminEngageResult.error}`:(()=>{
+                const d=adminEngageResult.data;
+                if(adminEngageResult.type==="push") return `Push sent: ${d.sent} delivered, ${d.failed} failed, ${d.removed} expired subs removed (${d.total} total)`;
+                if(adminEngageResult.type==="reengage_dry") return `Would email ${d.targets} users (${d.breakdown?.neverStudied||0} never studied, ${d.breakdown?.lapsed||0} lapsed ≥3d)`;
+                if(adminEngageResult.type==="reengage") return `Re-engage emails sent: ${d.sent} delivered, ${d.failed} failed of ${d.total}`;
+                return JSON.stringify(d);
+              })()}
+            </div>
           )}
         </Card>
 
