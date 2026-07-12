@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**AI token budget scaling for exam-weight mocks (9ab0110)**: AI request timeouts and token budgets are now scaled proportionally to exam size (L1: 180 Qs vs L2/L3: 88 Qs). When implementing AI-dependent features for exam-weight sessions, ensure timeout and budget calculations account for cfaLevel and question count to prevent 20Q session hangs.
+
+
+**Exam mark-for-review and navigator (d6f2ee9)**: Full exam mode introduces examMarkReview state (`{[qId]:true}`), showExamNav flag for question grid overlay, and examReviewMode for "Review & Submit" interstitial screen. When implementing exam UI navigation or review features, maintain these state objects separately and reset them on quiz start to prevent cross-session contamination.
+
+
+**CBT-authentic full timed mock exam (d6f2ee9)**: Full exam mode now implements authentic CBT experience with level-aware timing and question counts. L1: 135 min/session, 90 Qs/session, 180 total; L2/L3: 132 min/session, 44 Qs/session, 88 total. Exam mode allows re-selection of answers before review submission. When generating exam-weight mocks, respect cfaLevel to scale question generation and session timing accordingly.
+
+
 **Leaderboard SQL jsonb casting (78e568c)**: leaderboard SQL function now explicitly casts sessions.data to jsonb to prevent type mismatches. When querying or aggregating session data in SQL functions, ensure jsonb casts are applied to JSON columns for safe operator usage.
 
 
@@ -1329,7 +1338,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1800700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1801100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
