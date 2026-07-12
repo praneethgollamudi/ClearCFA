@@ -26,7 +26,7 @@ create or replace function get_weekly_leaderboard()
 returns table(display_name text, questions_this_week bigint, accuracy_this_week numeric, rank bigint)
 language sql security definer as $$
   with week_start as (
-    select (date_trunc('week', now() at time zone 'utc'))::text as ws
+    select date_trunc('week', now() at time zone 'utc') as ws
   ),
   opted_users as (
     select user_id, display_name from leaderboard_opts where opted_in = true
@@ -37,7 +37,7 @@ language sql security definer as $$
       sum((s.data->>'total')::int) as total_questions,
       avg((s.data->>'pct')::numeric) as avg_pct
     from sessions s
-    join opted_users ou on s.user_id = ou.user_id
+    join opted_users ou on s.user_id = ou.user_id::text
     where s.updated_at >= (select ws from week_start)
     group by s.user_id
   )
@@ -47,7 +47,7 @@ language sql security definer as $$
     round(coalesce(ws.avg_pct, 0), 1) as accuracy_this_week,
     rank() over (order by coalesce(ws.total_questions, 0) desc) as rank
   from opted_users ou
-  left join weekly_sessions ws on ws.user_id = ou.user_id
+  left join weekly_sessions ws on ws.user_id = ou.user_id::text
   order by questions_this_week desc
   limit 20;
 $$;
