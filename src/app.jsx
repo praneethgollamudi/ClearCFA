@@ -296,10 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-b
-{version:"2026-07-12-b",slides:[
-{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Better Email Notifications",sub:"UX · 2026-07-12 update",desc:"We've improved how re-engagement emails reach you, making sure important study reminders land in your inbox reliably. This helps you stay on track with your CFA prep schedule without missing critical notifications.",tip:"Check your email settings if you want to adjust how often you receive study reminders."},
-]},
 // WN_VER:2026-07-12-c
 {version:"2026-07-12-c",slides:[
 {emoji:"⚡",color:C.accentLight,bg:C.easy,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved how ClearCFA handles AI request failures—the app now retries up to 4 times before giving up, ensuring you get answers to your CFA questions even when the network hiccups. This means fewer frustrating timeouts when you're in study mode.",tip:"If an AI explanation doesn't load on first try, just wait a moment—it's automatically retrying in the background."},
@@ -319,6 +315,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-f",slides:[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved AI resilience so quiz generation and explanations retry up to 4 times if something goes wrong, making study sessions less likely to be interrupted. This means fewer timeouts and smoother learning, especially during peak hours.",tip:"If a question fails to load, the app now quietly retries before showing an error—you'll notice fewer interruptions."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Topic Labels Everywhere",sub:"Study Tools · 2026-07-12 update",desc:"Topic names across Equity and Alternatives now display consistently throughout the app, fixing confusing mismatches in weight warnings and study progress. You'll see the same familiar topic names no matter where you study.",tip:"Check your study dashboard—Equity and Alternatives topics should now look uniform across all screens."},
+]},
+// WN_VER:2026-07-12
+{version:"2026-07-12",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Real CFA CBT Mock Exams",sub:"Study Tools · 2026-07-12 update",desc:"Full timed mock exams now authentically match the real CFA Computer-Based Testing experience, including proper exam duration and question counts for your level. You'll practice under realistic conditions with post-exam review to identify weak areas before test day.",tip:"Start a mock exam to see the CBT interface with hidden tools and strict pacing—exactly like the real exam."},
+{emoji:"⚡",color:C.reward,bg:C.reward,title:"Smarter AI for Mock Exams",sub:"AI · 2026-07-12 update",desc:"AI explanations now scale intelligently for exam-weight questions, giving you deeper insights on topics that matter most for your level. Response timing has been optimized so AI explanations arrive faster without compromising quality.",tip:"Review AI explanations after completing a mock exam—they'll be richer for exam-heavy topics."},
 ]},
 // WN_END
 ];
