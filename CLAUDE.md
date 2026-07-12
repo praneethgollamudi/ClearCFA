@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (39b7423)**: Version 2026-07-12-b has been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-c, 2026-07-12-d, 2026-07-12-e, and 2026-07-12-f. Version 2026-07-12 now announces mock exam features (realistic pacing, no reference tools). Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**Admin authorization simplification (39b7423)**: admin-stats endpoint now authorizes admin users via email+userId presence check only—no sessions table lookup required. When implementing admin features, if a user's email is in ADMIN_EMAILS and they have a valid userId (proving app login), grant access immediately without additional session verification.
+
+
 **Admin authorization logic simplification (894c794)**: admin-stats endpoint now authorizes via email+userId presence check instead of sessions table lookup. When implementing admin features, rely on ADMIN_EMAILS list and valid userId (64-char SHA-256 hex for password users) for access control—no sessions table validation required.
 
 
@@ -1332,7 +1338,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1801300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1801400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
