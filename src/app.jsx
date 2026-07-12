@@ -296,12 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-c
-{version:"2026-07-12-c",slides:[
-{emoji:"📚",color:C.easy,bg:C.easy,title:"Sync Study Plan to Calendar",sub:"Study Tools · 2026-07-12 update",desc:"Export your ClearCFA study schedule directly to your device calendar in .ics format. Your exam prep milestones now integrate seamlessly with your personal schedule, so you never miss a planned study session.",tip:"Visit the Study Plan screen and tap the export button to add all your sessions to Apple Calendar or Google Calendar in one tap."},
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Mock Exams Now Track Progress",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight mock sessions now correctly credit your module readiness and update your pass trend data. You'll see an accurate picture of your prep strength across all topics.",tip:"Check your Dashboard after completing an Exam-Weight mock—your readiness badges and pass probability will now reflect that attempt."},
-{emoji:"🔔",color:C.reward,bg:C.reward,title:"Stay Motivated with Smart Reminders",sub:"UX · 2026-07-12 update",desc:"New web push notifications, re-engagement emails, and a panic streak banner keep you accountable and focused on your CFA prep goals. Get nudged when you're about to lose momentum, so you stay on track.",tip:"Enable push notifications in settings—you'll receive timely reminders if your study streak is at risk or if you haven't logged in recently."},
-]},
 // WN_VER:2026-07-12-d
 {version:"2026-07-12-d",slides:[
 {emoji:"📅",color:C.accentLight,bg:C.accentLight,title:"Export Study Plan to Calendar",sub:"Study Tools · 2026-07-12 update",desc:"Your ClearCFA study schedule now syncs directly to your phone or desktop calendar as .ics files. This keeps your exam prep integrated with the rest of your life, so you never miss a scheduled study session.",tip:"Open your Study Plan and tap Export to Calendar to add all topics to your favorite calendar app."},
@@ -320,6 +314,10 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-12
 {version:"2026-07-12",slides:[
 {emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Improved Email Reliability",sub:"Bug Fix · 2026-07-12 update",desc:"We've fixed critical email delivery issues affecting re-engagement messages and notifications. You'll now reliably receive study reminders and progress updates without interruption.",tip:"Check your inbox (and spam folder) if you haven't seen ClearCFA emails recently—they should arrive consistently now."},
+]},
+// WN_VER:2026-07-12-b
+{version:"2026-07-12-b",slides:[
+{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Better Email Notifications",sub:"UX · 2026-07-12 update",desc:"We've improved how re-engagement emails reach you, making sure important study reminders land in your inbox reliably. This helps you stay on track with your CFA prep schedule without missing critical notifications.",tip:"Check your email settings if you want to adjust how often you receive study reminders."},
 ]},
 // WN_END
 ];
