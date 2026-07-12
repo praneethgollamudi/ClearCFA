@@ -4,18 +4,6 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
-**Admin dashboard multi-email access (f1b0a06)**: Admin dashboard access now uses OWNER_EMAILS array instead of hardcoded ADMIN_EMAIL check. When granting or managing admin access to admin-stats or email preview features, add emails to OWNER_EMAILS constant rather than updating hardcoded email checks.
-
-
-**Post-exam full review state (f1b0a06)**: fullExamReview state now tracks whether user has submitted and entered review-all-questions mode post-exam. This state must be reset to false when starting a new mock (alongside examMarkReview, showExamNav, examReviewMode) to prevent stale review UI on quiz restart.
-
-
-**Level-aware pacing calculation (f1b0a06)**: fullExamMode pacing now uses 180 seconds per question for Level II/III (132 min total) vs. 90 sec default; Level I uses standard 135 min. When calculating exam pacing or time advisories in fullExamMode, apply secsPerQ=180 for cfaLevel!=='1' to maintain CBT-authentic time pressure.
-
-
-**Full exam mode CBT authenticity (f1b0a06)**: fullExamMode now hides calculator button, formula sheet, and power notes tools to simulate real CFA Computer-Based Testing environment. When implementing timed mock features, ensure fullExamMode restricts access to study aids and calculator that are not permitted during actual exam sittings.
-
-
 **Leaderboard SQL jsonb casting (78e568c)**: leaderboard SQL function now explicitly casts sessions.data to jsonb to prevent type mismatches. When querying or aggregating session data in SQL functions, ensure jsonb casts are applied to JSON columns for safe operator usage.
 
 
@@ -1341,7 +1329,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1801300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1800700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
