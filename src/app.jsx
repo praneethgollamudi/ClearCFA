@@ -296,11 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-d
-{version:"2026-07-12-d",slides:[
-{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Question Generation",sub:"AI · 2026-07-12 update",desc:"We've strengthened our AI engine to retry failed requests up to 4 times with smarter handling of rate limits. This means fewer timeouts and more consistent quiz generation when you need it most.",tip:"You'll notice smoother quiz loading, especially during peak study hours."},
-{emoji:"🔔",color:C.reward,bg:C.reward,title:"Fixed Daily Question Notifications",sub:"Study Tools · 2026-07-12 update",desc:"We resolved an issue where daily question reminders weren't saving properly and were sometimes appearing for other users. Now your notification preferences stay exactly as you set them.",tip:"Check your notification settings to re-enable Daily Questions if you'd like them back."},
-]},
 // WN_VER:2026-07-12-e
 {version:"2026-07-12-e",slides:[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter AI Question Generation",sub:"AI · 2026-07-12 update",desc:"ClearCFA's AI now retries failed question generation up to 4 times with smarter fallback logic, so you spend less time waiting and more time studying. Rate limit hiccups no longer interrupt your prep flow.",tip:"Keep generating practice questions—the AI is now resilient enough to handle temporary slowdowns without dropping your session."},
@@ -320,6 +315,10 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-b",slides:[
 ,
 ]},
+// WN_VER:2026-07-12-c
+{version:"2026-07-12-c",slides:[
+{emoji:"🐛",color:C.medium,bg:C.medium,title:"Better Error Messages for Re-Engagement",sub:"Bug Fix · 2026-07-12 update",desc:"We fixed an issue where re-engagement preview errors weren't showing you the real problem. Now you'll see clear, actionable error messages if something goes wrong, including hints about free-plan restrictions.",tip:"If you hit an error when trying to re-engage with ClearCFA, check the message—it now tells you exactly what's happening."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -328,12 +327,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -394,6 +387,15 @@ const ADMIN_CHANGELOG=[
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin-stats auth — email fallback now unconditional, not gated on userId",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin-stats auth for OAuth users — remove length guard on email fallback",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"fix: admin-stats — authorize by email+userId presence, no sessions table check",
 ]},
 // AC_END
 ];
