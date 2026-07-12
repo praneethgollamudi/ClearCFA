@@ -1211,7 +1211,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1798300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1798400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1321,3 +1321,13 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **Daily wrong-answer review panel (adae950)**: App now provides a daily wrong-answer review panel that surfaces questions answered incorrectly across all sessions on the current date. When adding session review features or question filtering, ensure wrong answers are aggregated per-day and made easily accessible for targeted review.
 
 **Topic mastery celebrations (adae950)**: When topic accuracy first crosses 70% threshold in a session, a celebration toast notification is triggered to acknowledge the milestone. When modifying accuracy tracking or progress celebrations, ensure the 70% threshold is checked on first-cross only (not on subsequent re-entries) to avoid duplicate celebratory messaging.
+
+**Exam topic weight guardrails (12c12a3)**: TOPIC_WEIGHTS constant now defines min/max question weight ranges per topic across Level 1, 2, and 3. When generating multi-topic sessions, enforce these ranges to ensure exam-realistic topic distribution. Validate generated question counts against the appropriate level's weight constraints before returning question set.
+
+**LOS source badge on questions (12c12a3)**: Questions now display a source badge indicating the Learning Outcome they test. When rendering question cards, ensure the LOS badge is visible and properly formatted to help users understand coverage and traceability.
+
+**Daily wrong-answer review panel (adae950)**: New screen/component surfaces user's most recent incorrect answers in a dedicated daily review panel. When modifying question history or session results, ensure wrong answers are accessible and sortable by recency to support focused error remediation workflows.
+
+**Topic mastery 70% accuracy milestone (1ee95d3)**: App now detects when a topic's accuracy first crosses 70% and triggers a celebration toast notification. When updating performance metrics or accuracy calculations, ensure milestone detection fires only on the first crossing per topic to avoid duplicate celebrations.
+
+**What's New version consolidation (12c12a3)**: Versions 2026-07-07-b, 2026-07-07-c, 2026-07-08 have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-11, 2026-07-11-b, 2026-07-11-c, 2026-07-11-d, and 2026-07-11-e. Version 2026-07-11-e announces daily wrong-answer review panel. Always verify against active list when adding future versions to prevent duplicate messaging.
