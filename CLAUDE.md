@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Email preview button for re-engage campaigns (f1b0a06)**: Admin dashboard now includes "✉️ Send preview to me" button that sends a test re-engagement email directly to the admin's address. When testing email infrastructure changes, use this button to validate formatting before bulk campaign deployment.
+
+
+**Admin stats email fallback resilience (79f920d)**: admin-stats function now always runs email-based authorization check even when ADMIN_USER_ID secret is set, allowing secondary owner emails (sai.praneeth557@gmail.com) to access admin dashboard. When implementing multi-account admin access, ensure fallback authorization paths are not skipped by primary auth checks.
+
+
+**Admin access multi-email support (79f920d & f1b0a06)**: Admin dashboard access now checks against OWNER_EMAILS array instead of single ADMIN_EMAIL string. Both gspbuilds@gmail.com and sai.praneeth557@gmail.com can access admin stats. When adding new admin features or auth checks, use `OWNER_EMAILS.includes(authUser.email.toLowerCase())` pattern instead of email equality checks.
+
+
 **Leaderboard SQL jsonb casting (78e568c)**: leaderboard SQL function now explicitly casts sessions.data to jsonb to prevent type mismatches. When querying or aggregating session data in SQL functions, ensure jsonb casts are applied to JSON columns for safe operator usage.
 
 
@@ -1329,7 +1338,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1800700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1801300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
