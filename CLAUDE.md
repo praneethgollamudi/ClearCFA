@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (79381e1)**: Versions 2026-07-12-e and 2026-07-12-f have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, and 2026-07-12-e. Version 2026-07-12-d announces calendar export, mock exam progress tracking, and streak/reminder features. Version 2026-07-12-e consolidates mock session progress tracking. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**Admin email update (79381e1)**: Admin contact email has been changed from sai.praneeth557@gmail.com to gspbuilds@gmail.com across all codebase references. When adding new admin features or modifying contact configurations, ensure gspbuilds@gmail.com is used as the canonical admin address.
+
+
 **Reply-To header for re-engagement emails (3ea0245)**: Re-engagement emails now include a Reply-To header alongside FROM_EMAIL. When implementing or modifying email infrastructure, ensure Reply-To is set consistently with FROM_EMAIL to maintain email deliverability and user response routing.
 
 
@@ -1275,7 +1281,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1799400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1799500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
