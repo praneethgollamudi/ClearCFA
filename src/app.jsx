@@ -56,6 +56,11 @@ const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","mas
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
 const SM2_INTERVALS= [1,3,7,16,35,70];
+const TOPIC_WEIGHTS={
+  "1":{"Ethics":[15,20],"Quantitative Methods":[8,12],"Economics":[8,12],"Financial Statement Analysis":[13,17],"Corporate Issuers":[8,12],"Equity Investments":[10,12],"Fixed Income":[10,12],"Derivatives":[5,8],"Alternative Investments":[5,8],"Portfolio Management":[5,8]},
+  "2":{"Ethics":[10,15],"Quantitative Methods":[5,10],"Economics":[5,10],"Financial Statement Analysis":[10,15],"Corporate Issuers":[5,10],"Equity Investments":[10,15],"Fixed Income":[10,15],"Derivatives":[5,10],"Alternative Investments":[5,10],"Portfolio Management":[10,15]},
+  "3":{"Ethics":[10,15],"Behavioral Finance":[5,10],"Capital Market Expectations":[5,10],"Asset Allocation":[5,10],"Fixed Income":[15,20],"Equity Investments":[10,15],"Alternative Investments":[5,10],"Derivatives":[5,10],"Portfolio Management":[10,15],"Trading and Performance":[5,10]}
+};
 
 // ─── OFFLINE QUESTION SEED BANK ──────────────────────────────────────────────
 // Hardcoded fallback questions seeded into OFFLINE_QS_KEY on first load.
@@ -6350,6 +6355,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const lastSessionQuality=useMemo(()=>lastSession?getSessionQuality(lastSession):null,[lastSession]);
   const passProbability=useMemo(()=>getPassProbability(levelHistory,moduleReadiness,daysLeft),[levelHistory,moduleReadiness,daysLeft]);
   const paceStatus=useMemo(()=>getPaceStatus(levelHistory,passProbability,daysLeft),[levelHistory,passProbability,daysLeft]);
+  const topicWeightWarnings=useMemo(()=>{
+    const weights=TOPIC_WEIGHTS[cfaLevel];
+    if(!weights||levelHistory.length<5)return null;
+    const totals={};let totalQs=0;
+    levelHistory.forEach(h=>{if(!h.topic)return;totals[h.topic]=(totals[h.topic]||0)+(h.total||0);totalQs+=(h.total||0);});
+    if(totalQs<20)return null;
+    const under=Object.entries(weights).map(([tp,[mn]])=>{const qs=totals[tp]||0;const pct=totalQs?(qs/totalQs)*100:0;return{topic:tp,pct:Math.round(pct),min:mn,diff:mn-pct};}).filter(w=>w.diff>5).sort((a,b)=>b.diff-a.diff).slice(0,2);
+    return under.length?under:null;
+  },[levelHistory,cfaLevel]);
   useEffect(()=>{
     if(!passProbability||!history.length)return;
     const today=localDateKey();
@@ -8134,6 +8148,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         );
       })()}
+      {/* Topic weight guardrails — warn when under-weight vs CFA exam allocation */}
+      {topicWeightWarnings&&topicWeightWarnings.length>0&&authUser&&(
+        <div style={{background:`${C.medium}12`,border:`1px solid ${C.medium}44`,borderRadius:12,padding:"11px 14px",marginBottom:10,cursor:"pointer"}} onClick={()=>setScreen("readiness")}>
+          <div style={{fontSize:12,fontWeight:800,color:C.medium,marginBottom:5}}>⚠ Exam weight gap detected</div>
+          {topicWeightWarnings.map(w=>(
+            <div key={w.topic} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+              <span style={{fontSize:11,color:C.textMid}}>{w.topic}</span>
+              <span style={{fontSize:11,color:C.medium,fontWeight:700}}>{w.pct}% studied · target ≥{w.min}%</span>
+            </div>
+          ))}
+          <div style={{fontSize:11,color:C.muted,marginTop:5}}>These topics carry exam weight you haven't practised. Tap to drill →</div>
+        </div>
+      )}
       {/* Resume interrupted session banner */}
       {sessionDraft&&(()=>{
         const mins=Math.round((Date.now()-sessionDraft.ts)/60000);
@@ -10159,7 +10186,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,padding:"16px 18px",marginBottom:14,fontSize:14,lineHeight:1.8,fontWeight:500}}>{questionText}</div>
           </>
         );
-      })():<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,padding:"20px 22px",marginBottom:14,fontSize:14,lineHeight:1.8}}>{q.question}</div>}
+      })():<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:13,padding:"20px 22px",marginBottom:10,fontSize:14,lineHeight:1.8}}>{q.question}</div>}
+      <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:10}}>
+        {q.los_tested&&<span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:5,background:`${C.accentLight}15`,color:C.accentLight,border:`1px solid ${C.accentLight}30`,letterSpacing:"0.03em"}}>📌 LOS {q.los_tested}</span>}
+        <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:5,background:C.surface,color:C.muted,border:`1px solid ${C.border}`}}>AI · 2026 LOS</span>
+        {(q._topic||topic)&&<span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:5,background:C.surface,color:C.muted,border:`1px solid ${C.border}`}}>{q._topic||topic}</span>}
+      </div>
       {mode==="essay"&&!essayRevealed[q.id]&&(
         <div style={{marginBottom:14}}>
           <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>Your written answer</div>
