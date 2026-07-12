@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**AI fetch timeout scaling (e0426a0)**: AI request timeout now scales dynamically with token budget (formula: `Math.min(90000, Math.max(45000, currentMaxTokens * 12))`), preventing silent hangs on large question sets (15–20 Qs). When implementing AI-dependent features with variable token budgets, rely on this scaling to ensure timeouts accommodate token output time (~100 tokens/sec for Haiku).
+
+
 **Leaderboard SQL jsonb casting (78e568c)**: leaderboard SQL function now explicitly casts sessions.data to jsonb to prevent type mismatches. When querying or aggregating session data in SQL functions, ensure jsonb casts are applied to JSON columns for safe operator usage.
 
 
@@ -1329,7 +1332,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1800700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1800800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
