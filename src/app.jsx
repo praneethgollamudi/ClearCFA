@@ -296,10 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12
-{version:"2026-07-12",slides:[
-{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Improved Email Reliability",sub:"Bug Fix · 2026-07-12 update",desc:"We've fixed critical email delivery issues affecting re-engagement messages and notifications. You'll now reliably receive study reminders and progress updates without interruption.",tip:"Check your inbox (and spam folder) if you haven't seen ClearCFA emails recently—they should arrive consistently now."},
-]},
 // WN_VER:2026-07-12-b
 {version:"2026-07-12-b",slides:[
 {emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Better Email Notifications",sub:"UX · 2026-07-12 update",desc:"We've improved how re-engagement emails reach you, making sure important study reminders land in your inbox reliably. This helps you stay on track with your CFA prep schedule without missing critical notifications.",tip:"Check your email settings if you want to adjust how often you receive study reminders."},
@@ -318,6 +314,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter AI Question Generation",sub:"AI · 2026-07-12 update",desc:"ClearCFA's AI now retries failed question generation up to 4 times with smarter fallback logic, so you spend less time waiting and more time studying. Rate limit hiccups no longer interrupt your prep flow.",tip:"Keep generating practice questions—the AI is now resilient enough to handle temporary slowdowns without dropping your session."},
 {emoji:"🎯",color:C.medium,bg:C.medium,title:"Clearer Topic Progress Alerts",sub:"Study Tools · 2026-07-12 update",desc:"Topic weight warnings now use consistent naming for Equity and Alternatives, so you won't see confusing duplicate alerts about the same subject area. Your study plan guidance is now clearer and more actionable.",tip:"Check your topic warnings—they now accurately reflect which areas need more focus without redundant messages."},
 {emoji:"🔒",color:C.hard,bg:C.hard,title:"Daily Questions Now Isolated per User",sub:"Bug Fix · 2026-07-12 update",desc:"Fixed a data isolation issue where daily question assignments and push notification subscriptions weren't properly separated between users. Each student now sees only their own assigned questions and receives only their own notifications.",tip:"If you share a device with others, each person's daily question streaks and notifications are now completely private."},
+]},
+// WN_VER:2026-07-12-f
+{version:"2026-07-12-f",slides:[
+{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved AI resilience so quiz generation and explanations retry up to 4 times if something goes wrong, making study sessions less likely to be interrupted. This means fewer timeouts and smoother learning, especially during peak hours.",tip:"If a question fails to load, the app now quietly retries before showing an error—you'll notice fewer interruptions."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Topic Labels Everywhere",sub:"Study Tools · 2026-07-12 update",desc:"Topic names across Equity and Alternatives now display consistently throughout the app, fixing confusing mismatches in weight warnings and study progress. You'll see the same familiar topic names no matter where you study.",tip:"Check your study dashboard—Equity and Alternatives topics should now look uniform across all screens."},
 ]},
 // WN_END
 ];
