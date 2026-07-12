@@ -4,6 +4,18 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (57aece5)**: Versions 2026-07-12-e and 2026-07-12-f have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, and 2026-07-12-e. Version 2026-07-12-d announces AI retry improvements and daily question isolation. Version 2026-07-12-e announces AI resilience, topic naming clarity, and user data isolation. Always verify against active list when adding future versions.
+
+
+**Daily Question user isolation fix (c312adf)**: Daily question assignments and push notification subscriptions are now properly isolated per user. When implementing or modifying user data storage or push features, ensure user context is correctly scoped to prevent data leakage between users sharing the same device or browser.
+
+
+**AI retry resilience upgrade (9ac45b3)**: AI request retry logic now attempts up to 4 times with improved rate-limit handling before timeout. When implementing AI-dependent features (question generation, explanations), rely on this resilience—users should experience fewer failures during peak hours without requiring manual intervention.
+
+
+**Topic name normalization (57aece5)**: "Alternative Investments" has been normalized to "Alternatives" across all topic references, including HARD_TOPICS_LIST and topic weight warnings. When adding or referencing CFA exam topics, use "Alternatives" as the canonical name to avoid duplicate weight alerts and inconsistent UI messaging.
+
+
 **Pro access for founder/tester (175720b)**: sai.praneeth557@gmail.com has been added to OWNER_EMAILS alongside gspbuilds@gmail.com to restore Pro tier access for the founder. Maintain both emails in OWNER_EMAILS—do not consolidate or remove sai.praneeth557@gmail.com unless explicitly instructed.
 
 
@@ -1299,7 +1311,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1800000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1800100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
