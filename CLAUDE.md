@@ -4,6 +4,21 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**LOS source badges and exam topic weights (12c12a3)**: Questions now display Learning Outcome Statement source badges with associated exam topic weightings. Question generation respects realistic topic distributions based on CFA exam blueprints. When modifying question selection or difficulty scaling, ensure topic weight constraints are enforced to prevent over-practicing low-weight areas.
+
+
+**Pass probability explainability drawer (3129d2d)**: Incorrect answers now display an explainability drawer that breaks down probability reasoning step-by-step. When modifying answer feedback or explanation display, ensure probability concept breakdowns are accurate and accessible to users who got questions wrong.
+
+
+**AI Study Notes generator (90e0fa3)**: Revision screen Notes tab now includes AI-powered study note generation. When adding or modifying AI features, ensure note generation respects topic context and user mastery level to provide appropriately scoped summaries.
+
+
+**Challenge Mode toggle (4643366)**: Setup screen now includes a Challenge Mode toggle option. When modifying setup flow or session configuration options, ensure Challenge Mode preference is properly persisted and respected during question generation and difficulty scaling.
+
+
+**What's New version consolidation (4643366)**: Versions 2026-07-11-b and 2026-07-11-c have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-11-d, 2026-07-11-e, 2026-07-12, 2026-07-12-b, and 2026-07-12-c. Version 2026-07-12-b announces pass probability explainability drawer and LOS source badges with exam topic weightings. Version 2026-07-12-c announces AI-powered study notes generator for Revision screen. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (90e0fa3)**: Versions 2026-07-11 and 2026-07-11-b have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-11-c, 2026-07-11-d, 2026-07-11-e, 2026-07-12, and 2026-07-12-b. Version 2026-07-12 announces LOS source badges with exam topic weights, daily wrong-answer review panel, and 70% topic mastery milestones. Version 2026-07-12-b announces pass probability explainability drawer for incorrect answers. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1217,7 +1232,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1798600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1798700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
