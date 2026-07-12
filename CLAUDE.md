@@ -1250,7 +1250,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1799000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1799100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1384,3 +1384,7 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **AI Study Notes generator (90e0fa3)**: Revision screen notes tab now includes an AI-powered study notes generator. When adding or modifying note-taking features, ensure the generator integrates with existing note display logic and respects user-generated notes storage without overwriting manual entries.
 
 **Pass probability explainability drawer (3129d2d)**: New explainability drawer breaks down probability reasoning behind incorrect answers, showing step-by-step logic for where reasoning diverged. When modifying answer feedback or explanation systems, ensure probability insights are correctly calculated and clearly surfaced after wrong answers to support targeted misconception correction.
+
+**Exam-Weight Mock sessions pass trend and module readiness (02e6aca)**: Exam-Weight Mock sessions now properly credit module readiness progression and pass trend analytics when users complete 18-question sessions. When modifying mock session completion logic or analytics tracking, ensure Exam-Weight sessions update both topic mastery and pass probability trends identically to standard sessions.
+
+**What's New version consolidation (02e6aca)**: Versions 2026-07-12 and 2026-07-12-b have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-c, 2026-07-12-d, 2026-07-12-e, 2026-07-12-f. Version 2026-07-12-f announces Exam-Weight Mock sessions, AI Study Notes, and Challenge Mode toggleability. Always verify against active list when adding future versions to prevent duplicate messaging.
