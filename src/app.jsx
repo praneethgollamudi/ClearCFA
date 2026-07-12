@@ -2649,6 +2649,37 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
     try{localStorage.setItem(DYNAMIC_PN_KEY,JSON.stringify(updated));}catch{}
   };
 
+  const generateFullTopicNotes = async (topic) => {
+    if(!userId) return;
+    if(!isPro){ onUpgrade&&onUpgrade({reason:"learn"}); return; }
+    const genKey=`__full__${topic}`;
+    if(pnGenerating[genKey]) return;
+    const existing=dynamicPN[topic]||[];
+    if(existing.some(m=>m._fullTopic)) return;
+    setPnGenerating(s=>({...s,[genKey]:true}));
+    const rd=topicReadiness.find(r=>r.topic===topic);
+    const perfCtx=rd?.accuracy!=null?`Student accuracy: ${rd.accuracy}% across ${rd.sessions} session(s).`:"No prior practice on record.";
+    const prompt=`CFA Level ${cfaLevel} exam instructor. Write high-yield study notes for the topic "${topic}". ${perfCtx}\n\nCover exactly 4 key modules/subtopics within "${topic}". For EACH module use this format:\n\nMODULE: [module name]\nRULES\n• [exam-critical rule 1]\n• [rule 2]\n• [rule 3]\nTRAPS\n• [common exam mistake 1]\n• [common mistake 2]\nMNEMONIC\n[one memorable phrase or acronym]\n\nBe precise and exam-focused. No intro or closing text. Output all 4 modules.`;
+    try{
+      const reply=await callAIChat(userId,[{role:"user",content:prompt}],900,cfaLevel);
+      if(!reply) return;
+      const blocks=reply.split(/(?=MODULE:)/i).map(b=>b.trim()).filter(b=>b.startsWith("MODULE:"));
+      const mods=blocks.map(block=>{
+        const nameMatch=block.match(/^MODULE:\s*(.+)/i);
+        if(!nameMatch) return null;
+        const name=nameMatch[1].trim();
+        const rest=block.slice(nameMatch[0].length);
+        return{...parsePNAIResponse(rest,name),_fullTopic:true};
+      }).filter(Boolean);
+      if(!mods.length) return;
+      const updated={...dynamicPN,[topic]:[...existing,...mods]};
+      setDynamicPN(updated);
+      try{localStorage.setItem(DYNAMIC_PN_KEY,JSON.stringify(updated));}catch{}
+    }finally{
+      setPnGenerating(s=>({...s,[genKey]:false}));
+    }
+  };
+
   const generateFormulaForConcept = async (card) => {
     const name=((card.subtopic||card.concept||"").trim());
     if(!name||!userId) return;
@@ -2873,6 +2904,27 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
           <div style={{fontSize:13,color:C.text,fontWeight:600}}>{focusConcept}</div>
         </div>
       )}
+
+      {/* ── AI STUDY NOTES GENERATOR ── */}
+      {tab==="notes" && topicData && (()=>{
+        const genKey=`__full__${selTopic}`;
+        const isGenerating=pnGenerating[genKey];
+        const alreadyFull=(dynamicPN[selTopic]||[]).some(m=>m._fullTopic);
+        if(alreadyFull) return null;
+        return(
+          <div style={{marginBottom:12}}>
+            <button onClick={()=>generateFullTopicNotes(selTopic)} disabled={isGenerating||!userId}
+              style={{width:"100%",padding:"12px 14px",borderRadius:11,fontSize:12,fontWeight:700,border:`1.5px solid ${C.accent}55`,
+                background:isGenerating?`${C.accent}08`:`${C.accent}15`,
+                color:isGenerating?C.muted:C.accentLight,cursor:isGenerating||!userId?"default":"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",gap:7,transition:"background 0.15s"}}>
+              <span style={{fontSize:15}}>{isGenerating?"⏳":"✨"}</span>
+              <span>{isGenerating?`Generating AI notes for ${selTopic.split(" ")[0]}…`:`Generate AI Study Notes — ${selTopic}`}</span>
+              {!isPro&&!isGenerating&&<span style={{fontSize:10,background:`${C.accent}22`,padding:"2px 6px",borderRadius:4,color:C.accent,fontWeight:800,letterSpacing:"0.04em"}}>PRO</span>}
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ── POWER NOTES TAB ── */}
       {tab==="notes" && topicData && (
