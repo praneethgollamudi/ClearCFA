@@ -6,6 +6,26 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function sendBrevo(apiKey: string, from: string, to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "api-key": apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sender: { name: "ClearCFA", email: from },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+    if (res.ok) return { ok: true };
+    const text = await res.text().catch(() => `HTTP ${res.status}`);
+    return { ok: false, error: text || `Brevo HTTP ${res.status}` };
+  } catch (err: unknown) {
+    return { ok: false, error: `Network error: ${String(err)}` };
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
@@ -13,13 +33,11 @@ serve(async (req) => {
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "gspbuilds@gmail.com";
   const ADMIN_EMAILS = [ADMIN_EMAIL, "sai.praneeth557@gmail.com"];
-  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-  // Resend's shared sender works on the free plan without a verified domain.
-  // Once you own a domain, set FROM_EMAIL secret to e.g. "ClearCFA <noreply@yourdomain.com>"
-  const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "onboarding@resend.dev";
+  const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
+  const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || ADMIN_EMAIL;
 
-  if (!RESEND_API_KEY) {
-    return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), { status: 500, headers: CORS });
+  if (!BREVO_API_KEY) {
+    return new Response(JSON.stringify({ error: "BREVO_API_KEY not configured" }), { status: 500, headers: CORS });
   }
 
   const body = await req.json().catch(() => ({}));
@@ -35,42 +53,26 @@ serve(async (req) => {
     }
   }
 
-  // Test send: always deliver to ADMIN_EMAIL (Resend free-plan shared sender only
-  // allows delivery to the account owner's verified email address).
+  // Test send: preview email to ADMIN_EMAIL
   if (testTo) {
-    const previewTo = ADMIN_EMAIL; // always gspbuilds@gmail.com — Resend free-plan restriction
     const subject = "ClearCFA — re-engagement email preview";
     const html = buildLapsedEmail(5);
-    try {
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: `ClearCFA <${FROM_EMAIL}>`, reply_to: ADMIN_EMAIL, to: [previewTo], subject, html }),
-      });
-      const resText = await res.text().catch(() => "");
-      if (res.ok) {
-        return new Response(JSON.stringify({ sent: 1, testTo: previewTo, note: `Preview sent to ${previewTo} — check that inbox` }), { headers: { ...CORS, "Content-Type": "application/json" } });
-      } else {
-        const errMsg = resText || `Resend HTTP ${res.status}`;
-        return new Response(JSON.stringify({ error: errMsg }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
-      }
-    } catch (err: unknown) {
-      return new Response(JSON.stringify({ error: `Network error: ${String(err)}` }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+    const result = await sendBrevo(BREVO_API_KEY, FROM_EMAIL, ADMIN_EMAIL, subject, html);
+    if (result.ok) {
+      return new Response(JSON.stringify({ sent: 1, testTo: ADMIN_EMAIL, note: `Preview sent to ${ADMIN_EMAIL}` }), { headers: { ...CORS, "Content-Type": "application/json" } });
     }
+    return new Response(JSON.stringify({ error: result.error }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
   }
 
   // Find inactive users: signed up 3+ days ago and never studied, OR studied but not in 3+ days
   const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  // Get all auth users via admin API
   const { data: usersPage, error: usersErr } = await sb.auth.admin.listUsers({ page: 1, perPage: 500 });
   if (usersErr) {
     return new Response(JSON.stringify({ error: usersErr.message }), { status: 500, headers: CORS });
   }
   const allUsers = usersPage.users || [];
 
-  // Get sessions table — last activity per user
   const { data: sessions } = await sb.from("sessions").select("user_id, updated_at").order("updated_at", { ascending: false });
   const lastActivityByUser: Record<string, string> = {};
   for (const s of sessions || []) {
@@ -84,15 +86,12 @@ serve(async (req) => {
     const createdAt = u.created_at;
     const lastActivity = lastActivityByUser[u.id] || null;
 
-    // Skip users created less than 3 days ago (still onboarding window)
     if (new Date(createdAt) > new Date(threeDaysAgo)) continue;
 
     if (!lastActivity) {
-      // Signed up 3+ days ago, never studied
       const daysInactive = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
       targets.push({ email: u.email, type: "never_studied", lastActivity: null, daysInactive });
     } else if (new Date(lastActivity) < new Date(threeDaysAgo)) {
-      // Studied before but lapsed
       const daysInactive = Math.floor((Date.now() - new Date(lastActivity).getTime()) / 86400000);
       targets.push({ email: u.email, type: "lapsed", lastActivity, daysInactive });
     }
@@ -112,31 +111,16 @@ serve(async (req) => {
       ? "Your CFA prep is waiting — 5 min to get started"
       : `Your CFA streak is on the line — ${t.daysInactive} days since you last studied`;
 
-    const body = t.type === "never_studied"
+    const html = t.type === "never_studied"
       ? buildNeverStudiedEmail(t.daysInactive)
       : buildLapsedEmail(t.daysInactive);
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: `ClearCFA <${FROM_EMAIL}>`,
-        reply_to: ADMIN_EMAIL,
-        to: [t.email],
-        subject,
-        html: body,
-      }),
-    });
-
-    if (res.ok) {
+    const result = await sendBrevo(BREVO_API_KEY, FROM_EMAIL, t.email, subject, html);
+    if (result.ok) {
       sent++;
     } else {
       failed++;
-      const err = await res.text().catch(() => res.statusText);
-      errors.push(`${t.email}: ${err}`);
+      errors.push(`${t.email}: ${result.error}`);
     }
   }
 
