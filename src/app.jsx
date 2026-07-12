@@ -12453,11 +12453,41 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const plan=studyPlanData||[];
     const today=plan[0];
     const typeColor={learn:C.accent,review:C.medium,ethics:C.easy};
+    const exportICS=()=>{
+      if(!plan.length)return;
+      const now=new Date();
+      const pad=n=>String(n).padStart(2,'0');
+      const icsDate=(baseDate,addDays)=>{
+        const d=new Date(baseDate);d.setDate(d.getDate()+addDays);
+        return`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+      };
+      const escape=s=>(s||'').replace(/[\\,;]/g,'\\$&').replace(/\n/g,'\\n');
+      const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//ClearCFA//Study Plan//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+      plan.slice(0,60).forEach((day)=>{
+        const d=icsDate(now,day.dayNum-1);
+        const uid=`clearcfa-${d}-${(day.topic||'').replace(/\s/g,'').slice(0,10)}@clearcfa.com`;
+        const summ=`CFA L${cfaLevel} Study: ${(day.topic||'').split(' ').slice(0,3).join(' ')}`;
+        const desc=escape(`${day.module} · ${day.count} questions · ${day.difficulty} · ${day.type}\nClearCFA — clearcfa.com`);
+        lines.push('BEGIN:VEVENT',`UID:${uid}`,`DTSTART;VALUE=DATE:${d}`,`DTEND;VALUE=DATE:${d}`,`SUMMARY:${escape(summ)}`,`DESCRIPTION:${desc}`,'END:VEVENT');
+      });
+      lines.push('END:VCALENDAR');
+      const blob=new Blob([lines.join('\r\n')],{type:'text/calendar'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='clearcfa-study-plan.ics';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      showToast("📅","Calendar exported","Import clearcfa-study-plan.ics into Google Calendar, Outlook, or Apple Calendar.");
+    };
     return(<>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <div><h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📅 2-Month Study Plan</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>Personalised to your weak topics · {daysLeft} days to exam</div></div>
         <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
       </div>
+      {plan.length>0&&(
+        <button onClick={exportICS} style={{width:"100%",padding:"10px 14px",borderRadius:10,marginBottom:14,fontSize:12,fontWeight:700,background:`${C.accent}15`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          📆 Export to Calendar (.ics)
+          <span style={{fontSize:10,fontWeight:600,color:C.muted}}>Google · Outlook · Apple</span>
+        </button>
+      )}
       {today&&(
         <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"16px",marginBottom:16}}>
           <div style={{fontSize:10,fontWeight:800,color:C.accentLight,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>Today's Session</div>
