@@ -296,12 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-e
-{version:"2026-07-12-e",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter AI Question Generation",sub:"AI · 2026-07-12 update",desc:"ClearCFA's AI now retries failed question generation up to 4 times with smarter fallback logic, so you spend less time waiting and more time studying. Rate limit hiccups no longer interrupt your prep flow.",tip:"Keep generating practice questions—the AI is now resilient enough to handle temporary slowdowns without dropping your session."},
-{emoji:"🎯",color:C.medium,bg:C.medium,title:"Clearer Topic Progress Alerts",sub:"Study Tools · 2026-07-12 update",desc:"Topic weight warnings now use consistent naming for Equity and Alternatives, so you won't see confusing duplicate alerts about the same subject area. Your study plan guidance is now clearer and more actionable.",tip:"Check your topic warnings—they now accurately reflect which areas need more focus without redundant messages."},
-{emoji:"🔒",color:C.hard,bg:C.hard,title:"Daily Questions Now Isolated per User",sub:"Bug Fix · 2026-07-12 update",desc:"Fixed a data isolation issue where daily question assignments and push notification subscriptions weren't properly separated between users. Each student now sees only their own assigned questions and receives only their own notifications.",tip:"If you share a device with others, each person's daily question streaks and notifications are now completely private."},
-]},
 // WN_VER:2026-07-12-f
 {version:"2026-07-12-f",slides:[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved AI resilience so quiz generation and explanations retry up to 4 times if something goes wrong, making study sessions less likely to be interrupted. This means fewer timeouts and smoother learning, especially during peak hours.",tip:"If a question fails to load, the app now quietly retries before showing an error—you'll notice fewer interruptions."},
@@ -319,6 +313,10 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-c",slides:[
 {emoji:"🐛",color:C.medium,bg:C.medium,title:"Better Error Messages for Re-Engagement",sub:"Bug Fix · 2026-07-12 update",desc:"We fixed an issue where re-engagement preview errors weren't showing you the real problem. Now you'll see clear, actionable error messages if something goes wrong, including hints about free-plan restrictions.",tip:"If you hit an error when trying to re-engage with ClearCFA, check the message—it now tells you exactly what's happening."},
 ]},
+// WN_VER:2026-07-12-d
+{version:"2026-07-12-d",slides:[
+{emoji:"🐛",color:C.medium,bg:C.medium,title:"Re-engagement Emails Now Working",sub:"Bug Fix · 2026-07-12 update",desc:"Fixed an issue where re-engagement preview emails weren't sending due to email service limitations. You'll now receive timely reminders to get back on track with your study schedule.",tip:"Check your inbox for re-engagement emails to jump back into your prep at the right moment."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -327,12 +325,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -396,6 +388,14 @@ const ADMIN_CHANGELOG=[
 "Fix admin-stats auth for OAuth users — remove length guard on email fallback",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: admin-stats — authorize by email+userId presence, no sessions table check",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin-stats auth — email fallback now unconditional, not gated on userId",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin-stats auth for OAuth users — remove length guard on email fallback",
 ]},
 // AC_END
 ];
