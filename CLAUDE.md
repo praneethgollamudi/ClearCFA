@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (bac486b)**: Versions 2026-07-12-c and 2026-07-12-d have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-b, 2026-07-12-e, and 2026-07-12-f. Version 2026-07-12-b announces Exam-Weight Mock sessions, calendar export (.ics), and LinkedIn share cards. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**Web Push subscription constants (784302a)**: App uses PUSH_SUB_KEY (`"cfa_push_sub_v1"`) for localStorage and VAPID_PUB_KEY (`"BJyw3vH_hMLq348vR8P_uy1tqWJT3NzemwYye8tyBJze8aHLLTKtLi9FrDJc21jP6m_jzbaGdx6pu6sfRo5Cgj64"`) for push notifications. When modifying push infrastructure or storage, preserve both constants and ensure VAPID key matches server configuration.
+
+
+**Resend shared sender for re-engagement emails (bac486b)**: Re-engagement email FROM_EMAIL uses Resend's shared sender until a custom domain is acquired. When implementing email features or modifying sender configuration, ensure FROM_EMAIL respects the Resend shared domain constraint to prevent delivery failures.
+
+
 **Exam-Weight Mock crediting bug fix (02e6aca)**: Exam-Weight Mock sessions now properly credit module readiness scores and pass trend calculations. When modifying mock session result handling or readiness calculation, ensure Exam-Weight sessions update metrics identically to standard sessions.
 
 
@@ -1260,7 +1269,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1799200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1799300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
