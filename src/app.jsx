@@ -296,11 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-e
-{version:"2026-07-12-e",slides:[
-{emoji:"📊",color:C.hard,bg:C.hard,title:"Mock Sessions Now Track Progress Accurately",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight Mock sessions now correctly credit your module readiness and update your pass trend score. Previously, these critical practice tests weren't being counted toward your readiness metrics, making it harder to gauge your true exam readiness.",tip:"Take an Exam-Weight Mock today and watch your module readiness bar move."},
-{emoji:"🔔",color:C.reward,bg:C.reward,title:"Stay Motivated Between Study Sessions",sub:"Study Tools · 2026-07-12 update",desc:"We've added Web Push notifications and streak reminders to help you stay consistent with your prep. When you step away from ClearCFA, we'll gently remind you to return and keep your study momentum alive.",tip:"Enable notifications in your browser settings so you don't miss a study streak milestone."},
-]},
 // WN_VER:2026-07-12-f
 {version:"2026-07-12-f",slides:[
 {emoji:"🔔",color:C.reward,bg:C.reward,title:"Stay Motivated with Smart Reminders",sub:"Study Tools · 2026-07-12 update",desc:"We've added web push notifications and streak tracking to help you build consistent study habits. Get timely nudges when you're away, plus visual reminders of your progress to keep momentum going.",tip:"Check your notification settings and enable web push to receive personalized study reminders on your device."},
@@ -316,6 +311,11 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-12-c
 {version:"2026-07-12-c",slides:[
 {emoji:"⚡",color:C.accentLight,bg:C.easy,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved how ClearCFA handles AI request failures—the app now retries up to 4 times before giving up, ensuring you get answers to your CFA questions even when the network hiccups. This means fewer frustrating timeouts when you're in study mode.",tip:"If an AI explanation doesn't load on first try, just wait a moment—it's automatically retrying in the background."},
+]},
+// WN_VER:2026-07-12-d
+{version:"2026-07-12-d",slides:[
+{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Question Generation",sub:"AI · 2026-07-12 update",desc:"We've strengthened our AI engine to retry failed requests up to 4 times with smarter handling of rate limits. This means fewer timeouts and more consistent quiz generation when you need it most.",tip:"You'll notice smoother quiz loading, especially during peak study hours."},
+{emoji:"🔔",color:C.reward,bg:C.reward,title:"Fixed Daily Question Notifications",sub:"Study Tools · 2026-07-12 update",desc:"We resolved an issue where daily question reminders weren't saving properly and were sometimes appearing for other users. Now your notification preferences stay exactly as you set them.",tip:"Check your notification settings to re-enable Daily Questions if you'd like them back."},
 ]},
 // WN_END
 ];
