@@ -6,6 +6,10 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+}
+
 async function sendBrevo(apiKey: string, from: string, to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -29,104 +33,105 @@ async function sendBrevo(apiKey: string, from: string, to: string, subject: stri
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "gspbuilds@gmail.com";
-  const ADMIN_EMAILS = [ADMIN_EMAIL, "sai.praneeth557@gmail.com"];
-  const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
-  const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || ADMIN_EMAIL;
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "gspbuilds@gmail.com";
+    const ADMIN_EMAILS = [ADMIN_EMAIL, "sai.praneeth557@gmail.com"];
+    const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
+    const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || ADMIN_EMAIL;
 
-  if (!BREVO_API_KEY) {
-    return new Response(JSON.stringify({ error: "BREVO_API_KEY not configured" }), { status: 500, headers: CORS });
-  }
-
-  const body = await req.json().catch(() => ({}));
-  const { accessToken, userId, email, dryRun, testTo } = body;
-
-  // Admin auth check
-  const sb = createClient(SUPABASE_URL, SERVICE_KEY);
-  const isAdmin = email && ADMIN_EMAILS.includes(email);
-  if (!isAdmin) {
-    const { data: { user } } = await sb.auth.getUser(accessToken);
-    if (!user || !ADMIN_EMAILS.includes(user.email ?? "")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
+    if (!BREVO_API_KEY) {
+      return json({ error: "BREVO_API_KEY not configured — add it in Supabase project settings under Edge Functions secrets" }, 500);
     }
-  }
 
-  // Test send: preview email to ADMIN_EMAIL
-  if (testTo) {
-    const subject = "ClearCFA — re-engagement email preview";
-    const html = buildLapsedEmail(5);
-    const result = await sendBrevo(BREVO_API_KEY, FROM_EMAIL, ADMIN_EMAIL, subject, html);
-    if (result.ok) {
-      return new Response(JSON.stringify({ sent: 1, testTo: ADMIN_EMAIL, note: `Preview sent to ${ADMIN_EMAIL}` }), { headers: { ...CORS, "Content-Type": "application/json" } });
+    const body = await req.json().catch(() => ({}));
+    const { accessToken, userId, email, dryRun, testTo } = body;
+
+    // Admin auth check
+    const sb = createClient(SUPABASE_URL, SERVICE_KEY);
+    const isAdmin = email && ADMIN_EMAILS.includes(email);
+    if (!isAdmin) {
+      const { data: { user } } = await sb.auth.getUser(accessToken);
+      if (!user || !ADMIN_EMAILS.includes(user.email ?? "")) {
+        return json({ error: "Unauthorized" }, 401);
+      }
     }
-    return new Response(JSON.stringify({ error: result.error }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
-  }
 
-  // Find inactive users: signed up 3+ days ago and never studied, OR studied but not in 3+ days
-  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-
-  const { data: usersPage, error: usersErr } = await sb.auth.admin.listUsers({ page: 1, perPage: 500 });
-  if (usersErr) {
-    return new Response(JSON.stringify({ error: usersErr.message }), { status: 500, headers: CORS });
-  }
-  const allUsers = usersPage.users || [];
-
-  const { data: sessions } = await sb.from("sessions").select("user_id, updated_at").order("updated_at", { ascending: false });
-  const lastActivityByUser: Record<string, string> = {};
-  for (const s of sessions || []) {
-    if (!lastActivityByUser[s.user_id]) lastActivityByUser[s.user_id] = s.updated_at;
-  }
-
-  const targets: { email: string; type: "never_studied" | "lapsed"; lastActivity: string | null; daysInactive: number }[] = [];
-
-  for (const u of allUsers) {
-    if (!u.email || ADMIN_EMAILS.includes(u.email)) continue;
-    const createdAt = u.created_at;
-    const lastActivity = lastActivityByUser[u.id] || null;
-
-    if (new Date(createdAt) > new Date(threeDaysAgo)) continue;
-
-    if (!lastActivity) {
-      const daysInactive = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-      targets.push({ email: u.email, type: "never_studied", lastActivity: null, daysInactive });
-    } else if (new Date(lastActivity) < new Date(threeDaysAgo)) {
-      const daysInactive = Math.floor((Date.now() - new Date(lastActivity).getTime()) / 86400000);
-      targets.push({ email: u.email, type: "lapsed", lastActivity, daysInactive });
+    // Test send: preview email to ADMIN_EMAIL
+    if (testTo) {
+      const subject = "ClearCFA — re-engagement email preview";
+      const html = buildLapsedEmail(5);
+      const result = await sendBrevo(BREVO_API_KEY, FROM_EMAIL, ADMIN_EMAIL, subject, html);
+      if (result.ok) {
+        return json({ sent: 1, testTo: ADMIN_EMAIL, note: `Preview sent to ${ADMIN_EMAIL}` });
+      }
+      return json({ error: result.error || "Brevo send failed (no error detail returned)" }, 500);
     }
-  }
 
-  if (dryRun) {
-    return new Response(JSON.stringify({ dryRun: true, targets: targets.length, breakdown: { neverStudied: targets.filter(t => t.type === "never_studied").length, lapsed: targets.filter(t => t.type === "lapsed").length } }), {
-      headers: { ...CORS, "Content-Type": "application/json" },
-    });
-  }
+    // Find inactive users: signed up 3+ days ago and never studied, OR studied but not in 3+ days
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 
-  let sent = 0, failed = 0;
-  const errors: string[] = [];
-
-  for (const t of targets) {
-    const subject = t.type === "never_studied"
-      ? "Your CFA prep is waiting — 5 min to get started"
-      : `Your CFA streak is on the line — ${t.daysInactive} days since you last studied`;
-
-    const html = t.type === "never_studied"
-      ? buildNeverStudiedEmail(t.daysInactive)
-      : buildLapsedEmail(t.daysInactive);
-
-    const result = await sendBrevo(BREVO_API_KEY, FROM_EMAIL, t.email, subject, html);
-    if (result.ok) {
-      sent++;
-    } else {
-      failed++;
-      errors.push(`${t.email}: ${result.error}`);
+    const { data: usersPage, error: usersErr } = await sb.auth.admin.listUsers({ page: 1, perPage: 500 });
+    if (usersErr) {
+      return json({ error: usersErr.message }, 500);
     }
-  }
+    const allUsers = usersPage.users || [];
 
-  return new Response(JSON.stringify({ sent, failed, total: targets.length, errors: errors.slice(0, 5) }), {
-    headers: { ...CORS, "Content-Type": "application/json" },
-  });
+    const { data: sessions } = await sb.from("sessions").select("user_id, updated_at").order("updated_at", { ascending: false });
+    const lastActivityByUser: Record<string, string> = {};
+    for (const s of sessions || []) {
+      if (!lastActivityByUser[s.user_id]) lastActivityByUser[s.user_id] = s.updated_at;
+    }
+
+    const targets: { email: string; type: "never_studied" | "lapsed"; lastActivity: string | null; daysInactive: number }[] = [];
+
+    for (const u of allUsers) {
+      if (!u.email || ADMIN_EMAILS.includes(u.email)) continue;
+      const createdAt = u.created_at;
+      const lastActivity = lastActivityByUser[u.id] || null;
+
+      if (new Date(createdAt) > new Date(threeDaysAgo)) continue;
+
+      if (!lastActivity) {
+        const daysInactive = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+        targets.push({ email: u.email, type: "never_studied", lastActivity: null, daysInactive });
+      } else if (new Date(lastActivity) < new Date(threeDaysAgo)) {
+        const daysInactive = Math.floor((Date.now() - new Date(lastActivity).getTime()) / 86400000);
+        targets.push({ email: u.email, type: "lapsed", lastActivity, daysInactive });
+      }
+    }
+
+    if (dryRun) {
+      return json({ dryRun: true, targets: targets.length, breakdown: { neverStudied: targets.filter(t => t.type === "never_studied").length, lapsed: targets.filter(t => t.type === "lapsed").length } });
+    }
+
+    let sent = 0, failed = 0;
+    const errors: string[] = [];
+
+    for (const t of targets) {
+      const subject = t.type === "never_studied"
+        ? "Your CFA prep is waiting — 5 min to get started"
+        : `Your CFA streak is on the line — ${t.daysInactive} days since you last studied`;
+
+      const html = t.type === "never_studied"
+        ? buildNeverStudiedEmail(t.daysInactive)
+        : buildLapsedEmail(t.daysInactive);
+
+      const result = await sendBrevo(BREVO_API_KEY, FROM_EMAIL, t.email, subject, html);
+      if (result.ok) {
+        sent++;
+      } else {
+        failed++;
+        errors.push(`${t.email}: ${result.error}`);
+      }
+    }
+
+    return json({ sent, failed, total: targets.length, errors: errors.slice(0, 5) });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    return json({ error: `Function error: ${msg}` }, 500);
+  }
 });
 
 function buildNeverStudiedEmail(daysInactive: number): string {

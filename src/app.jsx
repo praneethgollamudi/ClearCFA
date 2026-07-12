@@ -11884,7 +11884,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 const d=adminEngageResult.data;
                 if(adminEngageResult.type==="push") return `Push sent: ${d.sent} delivered, ${d.failed} failed, ${d.removed} expired subs removed (${d.total} total)`;
                 if(adminEngageResult.type==="reengage_dry") return `Would email ${d.targets} users (${d.breakdown?.neverStudied||0} never studied, ${d.breakdown?.lapsed||0} lapsed ≥3d)`;
-                if(adminEngageResult.type==="reengage_test") return d.sent?`✅ Preview sent to ${d.testTo} — check your inbox`:`Failed: ${d.error||"unknown error"}${d.hint?` — ${d.hint}`:""}`;
+                if(adminEngageResult.type==="reengage_test") return d.sent?`✅ Preview sent to ${d.testTo} — check your inbox`:`Failed: ${d.error||d.message||JSON.stringify(d)||"unknown error"}${d.hint?` — ${d.hint}`:""}`;
 
                 if(adminEngageResult.type==="reengage") return `Re-engage emails sent: ${d.sent} delivered, ${d.failed} failed of ${d.total}${d.errors?.length?` — ${d.errors.slice(0,3).join(" | ")}`:""}`;
 
