@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Leaderboard SQL jsonb casting (78e568c)**: leaderboard SQL function now explicitly casts sessions.data to jsonb to prevent type mismatches. When querying or aggregating session data in SQL functions, ensure jsonb casts are applied to JSON columns for safe operator usage.
+
+
+**Push subscriptions user_id type constraint (7b7229f)**: push_subscriptions.user_id is now TEXT (not UUID) to support both Supabase auth UUIDs and password-based users with 64-char SHA-256 hex strings. When querying or filtering push_subscriptions, cast auth.uid() to text for joins and always drop RLS policies before altering column types in migrations.
+
+
+**Supabase RLS policy idempotency (0a1639e)**: All RLS policies in migrations now use `DROP IF EXISTS` before `CREATE POLICY` to ensure idempotent re-runs. When modifying or adding RLS policies, always drop them first to prevent deployment failures if migrations are replayed.
+
+
 **Supabase RLS idempotency (1d16652)**: study_groups table RLS migration is now idempotent to unblock deployment pipeline. When modifying Supabase migrations, ensure all DDL operations can be safely re-run without errors (e.g., use `IF NOT EXISTS`, `DROP IF EXISTS`) to prevent deployment failures on retry.
 
 
@@ -1320,7 +1329,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1800600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1800700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
