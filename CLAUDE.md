@@ -1320,7 +1320,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1800500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1800600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1484,3 +1484,9 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **Push subscriptions user_id type migration (7b7229f)**: push_subscriptions.user_id column has been converted from UUID to TEXT to support both Supabase auth UUIDs and password-based users (64-char SHA-256 hex strings). RLS policy must be dropped BEFORE altering the column it depends on. FK constraint is removed; access is now gated entirely by the save-push-sub edge function (service role).
 
 **Leaderboard SQL type casting fixes (78e568c, c60895f)**: Leaderboard function now explicitly casts sessions.data to jsonb and joins opted_users.user_id as text to handle mixed UUID/text user_id types. When querying across auth and password-based user sessions, ensure proper type casting to prevent join failures.
+
+**Supabase RLS policy idempotency (b423020, 7b7229f)**: All RLS policy creation statements must be preceded by `DROP POLICY IF EXISTS` to ensure migrations can be safely re-run without conflicts. When adding or modifying RLS policies, always drop them first before creating to maintain deployment pipeline stability.
+
+**Push subscriptions user_id type conversion (7b7229f)**: push_subscriptions.user_id column is now TEXT to support both Supabase auth UUIDs and password-based users (SHA-256 hex strings). When modifying push subscription schema or access control, drop dependent RLS policies BEFORE altering the column type to prevent migration failures.
+
+**Leaderboard sessions.data JSONB casting (78e568c, c60895f)**: Leaderboard SQL function now explicitly casts sessions.data to jsonb and user_id to text in joins. When querying leaderboard or aggregating session metrics, ensure type casting is applied to prevent PostgreSQL type mismatch errors.
