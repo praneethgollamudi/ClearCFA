@@ -294,11 +294,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-11-b
-{version:"2026-07-11-b",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-11 update",desc:"The app now prioritizes Learning Outcomes you haven't tested yet when generating quizzes, and tracks your coverage per study session. This ensures you're drilling gaps rather than repeating what you already know.",tip:"Check your session coverage stats after each quiz to see which LOS you've strengthened."},
-{emoji:"💰",color:C.easy,bg:C.easy,title:"Correct Pricing for Indian Users",sub:"Bug Fix · 2026-07-07 update",desc:"Fixed a display bug where free-tier pricing showed a dollar sign ($) instead of the Indian rupee symbol (₹). If you're studying in India, you'll now see the correct local currency.",tip:"Your subscription pricing is now displayed in your local currency."},
-]},
 // WN_VER:2026-07-11-c
 {version:"2026-07-11-c",slides:[
 {emoji:"🚀",color:C.reward,bg:C.reward,title:"New Study Features Unlock",sub:"Study Tools · 2026-07-11 update",desc:"Six new effectiveness and social features are now live to supercharge your exam prep. Compete with peers, track progress in real-time, and stay motivated through your CFA journey.",tip:"Check the Study Tools section to enable social leaderboards and effectiveness tracking for your study sessions."},
@@ -320,6 +315,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📋",color:C.medium,bg:C.medium,title:"Review Wrong Answers Daily",sub:"Study Tools · 2026-07-12 update",desc:"A new daily wrong-answer review panel surfaces your recent mistakes first thing, making it faster to identify patterns in what you're struggling with. Spaced repetition of your errors dramatically improves retention before test day.",tip:"Check your wrong-answer panel each morning to start your study session with high-impact review."},
 {emoji:"🏆",color:C.reward,bg:C.reward,title:"Celebrate Topic Mastery Milestones",sub:"UX · 2026-07-12 update",desc:"You'll now receive a celebration toast the moment your accuracy in any topic crosses 70%, giving you instant feedback and motivation as you level up. This small win keeps momentum going during long study sessions.",tip:"Watch for the mastery milestone toast—it's your signal that a topic is ready to move to light review."},
 ]},
+// WN_VER:2026-07-12-b
+{version:"2026-07-12-b",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"See Why You Got It Wrong",sub:"Study Tools · 2026-07-12 update",desc:"New explainability drawer breaks down probability concepts behind incorrect answers, showing you exactly where your reasoning went off track. This targeted feedback helps you correct misconceptions faster than generic explanations.",tip:"After a wrong answer, tap the probability insight icon to see the step-by-step logic."},
+{emoji:"🎓",color:C.medium,bg:C.medium,title:"Smarter Question Selection Aligned to Exams",sub:"Study Tools · 2026-07-12 update",desc:"Questions now display their LOS (Learning Outcome Statement) source and exam topic weightings, ensuring you focus on high-impact material that matches actual CFA test blueprints. Study sessions now respect realistic topic distributions so you're not over-practicing low-weight areas.",tip:"Look for the LOS badge on each question to confirm you're drilling the topics that count most."},
+{emoji:"🏆",color:C.reward,bg:C.reward,title:"Daily Review & Mastery Milestones",sub:"UX · 2026-07-12 update",desc:"Your daily wrong-answer review panel surfaces recent mistakes to reinforce weak spots, and you'll now get celebratory feedback when topic accuracy first hits 70%. These moments keep you motivated and focused on steady improvement.",tip:"Check your daily panel first thing to review yesterday's misses—it's the fastest path to retention."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -328,12 +329,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-06
-{date:"2026-07-06",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-06
 {date:"2026-07-06",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -392,6 +387,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-07-12",entries:[
 "Fix admin dashboard auth failure when JWT token is expired",
 "Add growth/retention metrics and MRR to admin dashboard",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
