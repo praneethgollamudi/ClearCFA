@@ -296,6 +296,10 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
+// WN_VER:2026-07-12-b
+{version:"2026-07-12-b",slides:[
+{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Better Email Notifications",sub:"UX · 2026-07-12 update",desc:"We've improved how re-engagement emails reach you, making sure important study reminders land in your inbox reliably. This helps you stay on track with your CFA prep schedule without missing critical notifications.",tip:"Check your email settings if you want to adjust how often you receive study reminders."},
+]},
 // WN_VER:2026-07-12-c
 {version:"2026-07-12-c",slides:[
 {emoji:"⚡",color:C.accentLight,bg:C.easy,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved how ClearCFA handles AI request failures—the app now retries up to 4 times before giving up, ensuring you get answers to your CFA questions even when the network hiccups. This means fewer frustrating timeouts when you're in study mode.",tip:"If an AI explanation doesn't load on first try, just wait a moment—it's automatically retrying in the background."},
@@ -315,10 +319,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-f",slides:[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved AI resilience so quiz generation and explanations retry up to 4 times if something goes wrong, making study sessions less likely to be interrupted. This means fewer timeouts and smoother learning, especially during peak hours.",tip:"If a question fails to load, the app now quietly retries before showing an error—you'll notice fewer interruptions."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Topic Labels Everywhere",sub:"Study Tools · 2026-07-12 update",desc:"Topic names across Equity and Alternatives now display consistently throughout the app, fixing confusing mismatches in weight warnings and study progress. You'll see the same familiar topic names no matter where you study.",tip:"Check your study dashboard—Equity and Alternatives topics should now look uniform across all screens."},
-]},
-// WN_VER:2026-07-12
-{version:"2026-07-12",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster 20-Question Sessions",sub:"Speed · 2026-07-12 update",desc:"Fixed a timeout issue that could freeze long 20-question study sessions. The AI now scales its response time based on your session complexity, so exams load reliably without hanging.",tip:"Start a 20Q exam and notice smoother, uninterrupted answer generation—especially on longer question sets."},
 ]},
 // WN_END
 ];
@@ -384,7 +384,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -5426,7 +5425,9 @@ function CFAMock(){
 
   useEffect(()=>{
     if(screen==="quiz"){
-      const total=fullExamMode?135*60:count*TIME_PER_Q;
+      // L1: 135 min/session (90 Qs). L2 & L3: 132 min/session (44 Qs each).
+      const examMins=fullExamMode?(cfaLevel==="1"?135:132):null;
+      const total=examMins!==null?examMins*60:count*TIME_PER_Q;
       setTimeLeft(total);startRef.current=Date.now();clearInterval(timerRef.current);
       timerRef.current=setInterval(()=>{setTimeLeft(t=>{if(t<=1){clearInterval(timerRef.current);endQuiz();return 0;}return t-1;});},1000);
     }
@@ -6506,7 +6507,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
       // Generate proportionally from local templates first, API fallback per topic
       for(let i=0;i<allTopics.length;i++){
         const [t,{weight,modules}]=allTopics[i];
-        const topicCount=Math.max(2,Math.round((weight/totalW)*180));
+        // L1: 180 Qs total (90/session). L2 & L3: 88 Qs total (44/session).
+        const examTotal=cfaLevel==="1"?180:88;
+        const topicCount=Math.max(1,Math.round((weight/totalW)*examTotal));
         const moduleNames=Object.keys(modules);
         const perModule=Math.max(1,Math.floor(topicCount/moduleNames.length));
         for(const mod of moduleNames.slice(0,Math.ceil(topicCount/perModule))){
@@ -6522,11 +6525,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
           }
         }
       }
-      if(allQs.length<30)throw new Error("Too few questions generated — sign in for full exam support.");
+      if(allQs.length<20)throw new Error("Too few questions generated — sign in for full exam support.");
       const shuffled=allQs.sort(()=>Math.random()-0.5);
-      // Split into AM (session 1) and PM (session 2) of 90 questions each
-      const amQs=shuffled.slice(0,Math.min(90,shuffled.length));
-      const pmQs=shuffled.slice(90,Math.min(180,shuffled.length));
+      // L1: 90 Qs/session. L2 & L3: 44 Qs/session (vignette-style MCQ).
+      const perSession=cfaLevel==="1"?90:44;
+      const amQs=shuffled.slice(0,Math.min(perSession,shuffled.length));
+      const pmQs=shuffled.slice(perSession,Math.min(perSession*2,shuffled.length));
       // Store PM questions for after break
       window._cfaExamPMQs=pmQs;
       const sessionQs=sessionNum===1?amQs:pmQs;
