@@ -302,10 +302,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-c
-{version:"2026-07-12-c",slides:[
-{emoji:"🐛",color:C.medium,bg:C.medium,title:"Better Error Messages for Re-Engagement",sub:"Bug Fix · 2026-07-12 update",desc:"We fixed an issue where re-engagement preview errors weren't showing you the real problem. Now you'll see clear, actionable error messages if something goes wrong, including hints about free-plan restrictions.",tip:"If you hit an error when trying to re-engage with ClearCFA, check the message—it now tells you exactly what's happening."},
-]},
 // WN_VER:2026-07-12-d
 {version:"2026-07-12-d",slides:[
 {emoji:"🐛",color:C.medium,bg:C.medium,title:"Re-engagement Emails Now Working",sub:"Bug Fix · 2026-07-12 update",desc:"Fixed an issue where re-engagement preview emails weren't sending due to email service limitations. You'll now receive timely reminders to get back on track with your study schedule.",tip:"Check your inbox for re-engagement emails to jump back into your prep at the right moment."},
@@ -321,6 +317,10 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-12
 {version:"2026-07-12",slides:[
 {emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Reliable Re-engagement Emails",sub:"UX · 2026-07-12 update",desc:"We've upgraded our email delivery system to ensure your study reminders and progress updates reach your inbox consistently. This means you'll never miss important notifications about your CFA prep milestones and recommended study sessions.",tip:"Check your email settings in the app to ensure notifications are enabled for the best study experience."},
+]},
+// WN_VER:2026-07-12-b
+{version:"2026-07-12-b",slides:[
+{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Reliable Re-engagement Emails",sub:"UX · 2026-07-12 update",desc:"We've upgraded our email delivery system to ensure your study reminders arrive consistently, even during high-volume periods. This means you'll never miss a prompt to continue your prep when you need it most.",tip:"Check your inbox and notifications if you've been away from the app—we'll help bring you back on track."},
 ]},
 // WN_END
 ];
@@ -344,12 +344,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
 "fix: admin-stats — authorize by email+userId presence, no sessions table check",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
@@ -404,6 +398,13 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: push_subscriptions migration type mismatch blocking Supabase deploys",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"fix: push_subscriptions migration type mismatch blocking Supabase deploys",
 ]},
 // AC_END
 ];
