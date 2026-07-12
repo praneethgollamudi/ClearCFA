@@ -296,12 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-f
-{version:"2026-07-12-f",slides:[
-{emoji:"📊",color:C.hard,bg:C.hard,title:"Exam-Weight Mock Sessions",sub:"Study Tools · 2026-07-12 update",desc:"New 18-question mock exams now follow official CFA topic weights, giving you realistic practice that mirrors the actual exam distribution. This helps you focus on high-impact areas and build confidence on test day.",tip:"Start a mock session from the Quiz screen to see how your performance aligns with each CFA domain."},
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"AI Study Notes on Demand",sub:"AI · 2026-07-12 update",desc:"Generate personalized study notes instantly from the Revision screen using AI, tailored to the topics you're reviewing. Cuts study prep time and gives you summaries in your own learning style.",tip:"Tap the Notes tab in Revision mode to generate AI summaries for any CFA topic."},
-{emoji:"🎮",color:C.medium,bg:C.medium,title:"Challenge Mode Now Toggleable",sub:"UX · 2026-07-12 update",desc:"Control when you want to test yourself harder—Challenge Mode can now be toggled on or off from the setup screen before each session. Switch between relaxed study and high-difficulty practice without friction.",tip:"Look for the Challenge Mode toggle in the quiz setup screen to customize your difficulty on the fly."},
-]},
 // WN_VER:2026-07-12
 {version:"2026-07-12",slides:[
 {emoji:"📅",color:C.accentLight,bg:C.accentLight,title:"Sync Study Plans to Calendar",sub:"Study Tools · 2026-07-12 update",desc:"Export your personalized study schedule directly to your device calendar as .ics files. Stay on track with exam prep by seeing your CFA milestones alongside your daily commitments.",tip:"Open your Study Plan and tap the export icon to add sessions to Apple Calendar, Google Calendar, or Outlook."},
@@ -326,6 +320,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎖️",color:C.reward,bg:C.reward,title:"Mock Exams Now Track Your Progress",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight mock sessions now correctly credit module readiness and update your pass trend analysis. This means your progress dashboard accurately reflects your readiness for each topic, so you know exactly where to focus next.",tip:"After completing an Exam-Weight mock, check your Module Readiness and Pass Trend to see your real improvement."},
 {emoji:"🔔",color:C.medium,bg:C.medium,title:"Stay Motivated with Streak & Reminders",sub:"UX · 2026-07-12 update",desc:"ClearCFA now sends timely web push notifications and displays your study streak on-app to keep you accountable. Missing days is harder when you see your streak at risk—and reminders help you get back on track when life gets busy.",tip:"Enable push notifications in your app settings so you never miss a study reminder."},
 ]},
+// WN_VER:2026-07-12-e
+{version:"2026-07-12-e",slides:[
+{emoji:"📊",color:C.hard,bg:C.hard,title:"Mock Sessions Now Track Progress Accurately",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight Mock sessions now correctly credit your module readiness and update your pass trend score. Previously, these critical practice tests weren't being counted toward your readiness metrics, making it harder to gauge your true exam readiness.",tip:"Take an Exam-Weight Mock today and watch your module readiness bar move."},
+{emoji:"🔔",color:C.reward,bg:C.reward,title:"Stay Motivated Between Study Sessions",sub:"Study Tools · 2026-07-12 update",desc:"We've added Web Push notifications and streak reminders to help you stay consistent with your prep. When you step away from ClearCFA, we'll gently remind you to return and keep your study momentum alive.",tip:"Enable notifications in your browser settings so you don't miss a study streak milestone."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -336,8 +335,9 @@ const ADMIN_CHANGELOG=[
 // AC_START
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
-"Fix admin dashboard auth failure when JWT token is expired",
-"Add growth/retention metrics and MRR to admin dashboard",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
