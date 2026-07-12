@@ -5922,6 +5922,33 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setLoading(false);setLoadingProgress(0);generatingRef.current=false;
   };
 
+  const generateWeightedMock=async(cnt=18)=>{
+    if(generatingRef.current)return; generatingRef.current=true;
+    setLoading(true);setError("");setLoadingProgress(0);setLoadingMsg("Building exam-weight mock…");
+    try{
+      if(!authUser?.id){setError("Exam-Weight Mock requires a ClearCFA account — please sign in.");setLoading(false);generatingRef.current=false;return;}
+      const weights=TOPIC_WEIGHTS[cfaLevel];
+      if(!weights)throw new Error("No weight data for this level");
+      const topicList=Object.entries(weights).map(([topic,[mn,mx]])=>({topic,mid:(mn+mx)/2}));
+      const totalMid=topicList.reduce((s,t)=>s+t.mid,0);
+      const alloc=topicList.map(({topic,mid})=>({topic,count:Math.max(1,Math.round((mid/totalMid)*cnt))}));
+      const allocTotal=alloc.reduce((s,a)=>s+a.count,0);
+      if(allocTotal!==cnt) alloc[0].count+=cnt-allocTotal;
+      const topicsDesc=alloc.map(a=>`${a.topic}: ${a.count}`).join(", ");
+      const prompt=`You are a CFA Level ${cfaLevel} exam creator. Generate exactly ${cnt} multiple-choice questions distributed across CFA topics matching real exam weights: ${topicsDesc}.\n\nEach question: LOS-anchored, exam-realistic difficulty, plausible distractors targeting real misconceptions. Interleave topic order — do NOT group by topic.\n\nCRITICAL for numerical questions: compute the correct answer first, then ensure that exact value appears verbatim as one option.\n\nReturn ONLY a JSON array:\n[{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic>","_subtopic":"<module>"}]`;
+      const qs=await callClaude(prompt,Math.min(cnt*260+500,4200),{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"weighted_mock"});
+      if(!Array.isArray(qs)||qs.length===0)throw new Error("No questions returned");
+      const tagged=qs.map((q,i)=>({...q,id:`wm_${i}_${q.id||i}`,_weightedMock:true}));
+      setLoadingProgress(100);await new Promise(r=>setTimeout(r,200));
+      setTopic("Mixed");setSubtopic(`Exam-Weight Mock L${cfaLevel}`);setDifficulty("Medium");
+      setMode("guided");setVignetteMode(false);
+      setQuestions(tagged);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);
+      qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+      setScreen("quiz");
+    }catch(e){setError("Weighted mock failed: "+e.message);}
+    setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+  };
+
   const generateFSAVignette=async(subtopic,difficulty)=>{
     if(generatingRef.current)return; generatingRef.current=true;
     setLoading(true);setError("");setLoadingProgress(0);
@@ -8945,6 +8972,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
         })()}
       </div>
     </div>
+
+    {/* Exam-Weight Mock quick launch */}
+    {authUser&&(
+      <div style={{marginBottom:12}}>
+        <button onClick={()=>generateWeightedMock(18)} disabled={loading}
+          style={{width:"100%",padding:"12px 14px",borderRadius:11,background:loading?C.surface:`linear-gradient(135deg,${C.accent}22,${C.accentLight}12)`,border:`1.5px solid ${loading?C.border:C.accent+"44"}`,cursor:loading?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+          <div style={{textAlign:"left"}}>
+            <div style={{fontSize:13,fontWeight:800,color:loading?C.muted:C.accentLight}}>🏆 Exam-Weight Mock</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>18 Qs · distributed by real L{cfaLevel} exam weights · all topics</div>
+          </div>
+          <span style={{fontSize:18,flexShrink:0,opacity:loading?0.4:1}}>→</span>
+        </button>
+      </div>
+    )}
 
     {/* Saved Presets */}
     {presets.length>0&&(
