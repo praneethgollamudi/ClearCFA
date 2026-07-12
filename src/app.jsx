@@ -5789,18 +5789,20 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
     return Uint8Array.from({length:raw.length},(_,i)=>raw.charCodeAt(i));
   }
 
-  const callClaude=async(prompt,maxTokens=8000,{retries=2,retryDelay=8000,model="claude-haiku-4-5-20251001",feature="",signal=null}={})=>{
+  const callClaude=async(prompt,maxTokens=8000,{retries=4,retryDelay=6000,model="claude-haiku-4-5-20251001",feature="",signal=null}={})=>{
     if(!navigator.onLine) throw new Error("No internet — check your connection and retry.");
     let lastError;
     let currentMaxTokens=maxTokens;
+    let skipTopWait=false;
     for(let attempt=0;attempt<retries;attempt++){
       if(signal?.aborted)throw Object.assign(new Error("Cancelled"),{cancelled:true});
-      if(attempt>0){
-        // Exponential backoff: 8s, 16s, 32s
+      if(attempt>0&&!skipTopWait){
+        // Exponential backoff: 6s, 12s, 24s (only when not already waited in 429/529 handler)
         const delay=retryDelay*Math.pow(2,attempt-1);
-        setLoadingMsg(`Rate limit hit — retrying in ${Math.round(delay/1000)}s (attempt ${attempt+1}/${retries})...`);
+        setLoadingMsg(`Retrying question generation (attempt ${attempt+1}/${retries})...`);
         await new Promise(r=>setTimeout(r,delay));
       }
+      skipTopWait=false;
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),45000);
       const onExtAbort=()=>controller.abort();
@@ -5817,20 +5819,22 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
           if(body?.quotaExceeded){
             throw new Error(body.error||"Daily AI question limit reached. Upgrade to Pro for unlimited access.");
           }
-          // Anthropic rate limit — retry with backoff
+          // Anthropic rate limit — retry with backoff (skip double-wait at top of loop)
           const retryAfter=res.headers.get("retry-after");
-          const waitMs=retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt);
-          lastError=new Error(`Rate limit — waiting ${Math.round(waitMs/1000)}s before retry`);
-          setLoadingMsg(`Rate limit hit — waiting ${Math.round(waitMs/1000)}s...`);
+          const waitMs=retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt+1);
+          lastError=new Error(`Rate limit`);
+          if(attempt+1<retries) setLoadingMsg(`Rate limit hit — waiting ${Math.round(waitMs/1000)}s (attempt ${attempt+1}/${retries})...`);
           await new Promise(r=>setTimeout(r,waitMs));
+          skipTopWait=true;
           continue;
         }
         if(res.status===529){
           const retryAfter=res.headers.get("retry-after");
-          const waitMs=retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt);
-          lastError=new Error(`Rate limit — waiting ${Math.round(waitMs/1000)}s before retry`);
-          setLoadingMsg(`Rate limit hit — waiting ${Math.round(waitMs/1000)}s...`);
+          const waitMs=retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt+1);
+          lastError=new Error(`Rate limit`);
+          if(attempt+1<retries) setLoadingMsg(`API busy — waiting ${Math.round(waitMs/1000)}s (attempt ${attempt+1}/${retries})...`);
           await new Promise(r=>setTimeout(r,waitMs));
+          skipTopWait=true;
           continue;
         }
         if(!res.ok){
@@ -5845,7 +5849,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
         if(data.stop_reason==="max_tokens"){
           currentMaxTokens=Math.round(currentMaxTokens*1.75);
           lastError=new Error("Response too long — retrying with more budget...");
-          setLoadingMsg(`Response too long — retrying with larger budget (attempt ${attempt+2}/${retries})...`);
+          setLoadingMsg(`Response too long — retrying with larger budget (attempt ${attempt+2}/${retries+1})...`);
           continue;
         }
         if(data.usage){
