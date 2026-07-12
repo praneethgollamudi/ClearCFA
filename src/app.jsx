@@ -294,11 +294,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-11-d
-{version:"2026-07-11-d",slides:[
-{emoji:"🎉",color:C.reward,bg:C.reward,title:"Topic Mastery Celebrations",sub:"Study Tools · 2026-07-11 update",desc:"When your accuracy on any topic first crosses 70%, you'll now get an instant celebration toast to mark the milestone. This keeps you motivated as you progress through each CFA domain.",tip:"Watch for the toast after your next quiz—it's your signal that a topic is clicking."},
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Six New Study Features",sub:"AI · 2026-07-11 update",desc:"We've added six new effectiveness and social features to deepen your learning and community engagement. These tools help you study smarter and stay connected with other CFA candidates.",tip:"Explore the updated Study & Community sections to discover what's new."},
-]},
 // WN_VER:2026-07-11-e
 {version:"2026-07-11-e",slides:[
 {emoji:"📋",color:C.medium,bg:C.medium,title:"Review Wrong Answers Daily",sub:"Study Tools · 2026-07-11 update",desc:"A new daily wrong-answer review panel surfaces your most recent mistakes in one focused view. Reinforcing errors immediately boosts retention and prevents the same gaps from appearing on exam day.",tip:"Check your wrong-answer panel each morning to target weak spots before they cost you points."},
@@ -323,6 +318,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎓",color:C.medium,bg:C.medium,title:"Master Weak Topics Faster",sub:"Study Tools · 2026-07-12 update",desc:"Review your wrong answers in a dedicated daily panel and see LOS source badges on every question to understand exam weight. Prioritize high-impact learning objectives so you study smarter, not longer.",tip:"Check your daily wrong-answer review panel first thing each session to target your weakest areas."},
 {emoji:"🔍",color:C.hard,bg:C.hard,title:"Understand Probability Concepts",sub:"UX · 2026-07-12 update",desc:"Tap into a new explainability drawer for probability questions to see step-by-step reasoning behind answers. Demystify complex statistics and distribution problems that often trip up candidates.",tip:"When a probability question stumps you, open the explainability drawer to walk through the logic."},
 ]},
+// WN_VER:2026-07-12-d
+{version:"2026-07-12-d",slides:[
+{emoji:"✍️",color:C.accentLight,bg:C.accentLight,title:"AI Study Notes Generator",sub:"AI · 2026-07-12 update",desc:"Automatically generate personalized study notes from any question or topic on the Revision screen. Save hours summarizing key concepts while reinforcing your understanding of testable material.",tip:"Open the Notes tab in Revision mode and tap the AI generator to create instant summaries."},
+{emoji:"🎮",color:C.reward,bg:C.reward,title:"Challenge Mode for Extra Practice",sub:"Study Tools · 2026-07-12 update",desc:"Enable Challenge Mode in setup to unlock a tougher question variant designed to push your reasoning skills beyond standard difficulty. Perfect for fine-tuning weak areas before exam day.",tip:"Toggle Challenge Mode on the setup screen to activate harder questions immediately."},
+{emoji:"🔍",color:C.medium,bg:C.medium,title:"Smarter Question Context",sub:"Study Tools · 2026-07-12 update",desc:"Questions now display LOS source badges and exam topic weight indicators to help you focus on high-impact material. Pass probability explainability shows you exactly why answers are correct or incorrect.",tip:"Look for the LOS badge on each question and review the pass probability drawer to understand concept difficulty."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -331,12 +332,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-07
-{date:"2026-07-07",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-07
 {date:"2026-07-07",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -383,6 +378,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-07-12",entries:[
 "Fix admin dashboard auth failure when JWT token is expired",
 "Add growth/retention metrics and MRR to admin dashboard",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
