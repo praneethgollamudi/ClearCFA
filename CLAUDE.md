@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Push subscriptions migration safety (bdcde94)**: push_subscriptions migration now drops existing FK constraints before converting user_id from uuid to text. When running migrations on existing databases, the script safely detects and removes the old FK to prevent type-mismatch errors during deployment.
+
+
+**Re-engage error display (6fe08b8)**: Re-engage bulk send results now surface error details via `d.errors` array. Display up to 3 errors inline: `Re-engage emails sent: ${d.sent} delivered, ${d.failed} failed of ${d.total} — ${d.errors.slice(0,3).join(" | ")}`. When testing re-engagement flows, check the result message for Resend API errors.
+
+
+**What's New version consolidation (6fe08b8)**: Version 2026-07-12-f has been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, and 2026-07-12-e. Version 2026-07-12-e is now an empty placeholder slide. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (bdcde94)**: Versions 2026-07-12-e and 2026-07-12-f have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, and 2026-07-12-e. Version 2026-07-12-d now announces re-engagement email fixes. Version 2026-07-12-e is now an empty placeholder slide. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1365,7 +1374,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1801900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1802000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
