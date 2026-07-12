@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (c002c83)**: Versions 2026-07-12-d and 2026-07-12-e have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, and 2026-07-12-f. Versions 2026-07-12-c and 2026-07-12-d now announce re-engagement email fixes and error messaging improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**Re-engage preview email recipient update (c002c83)**: Re-engage preview emails are now always sent to the ADMIN_EMAIL constant for Resend free-plan compatibility, regardless of which user initiates the preview. When testing re-engagement flows via admin dashboard, expect preview emails to arrive at the configured ADMIN_EMAIL address, not the test user's inbox.
+
+
 **What's New version consolidation (863f4ce)**: Version 2026-07-12-d has been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-b, 2026-07-12-c, 2026-07-12-e, and 2026-07-12-f. Version 2026-07-12-c now announces better error messages for re-engagement. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1356,7 +1362,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1801700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1801800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
