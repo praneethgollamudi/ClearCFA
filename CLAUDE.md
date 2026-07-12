@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (3129d2d)**: Versions 2026-07-08 and 2026-07-11 have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-11-b, 2026-07-11-c, 2026-07-11-d, 2026-07-11-e, and 2026-07-12. Version 2026-07-11-e consolidates daily wrong-answer review panel, topic mastery celebration milestones, and six new social & effectiveness features. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (adae950)**: Versions 2026-07-07-b and 2026-07-07-c have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-08, 2026-07-11, 2026-07-11-b, 2026-07-11-c, and 2026-07-11-d. Version 2026-07-11-c announces six new effectiveness and social features. Version 2026-07-11-d announces topic mastery celebrations (70% accuracy toast milestone) and reiterates six new study features. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1211,7 +1214,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1798400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1798500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1331,3 +1334,11 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **Topic mastery 70% accuracy milestone (1ee95d3)**: App now detects when a topic's accuracy first crosses 70% and triggers a celebration toast notification. When updating performance metrics or accuracy calculations, ensure milestone detection fires only on the first crossing per topic to avoid duplicate celebrations.
 
 **What's New version consolidation (12c12a3)**: Versions 2026-07-07-b, 2026-07-07-c, 2026-07-08 have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-11, 2026-07-11-b, 2026-07-11-c, 2026-07-11-d, and 2026-07-11-e. Version 2026-07-11-e announces daily wrong-answer review panel. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+**Exam topic weight guardrails (3129d2d)**: TOPIC_WEIGHTS constant now defines acceptable exam weight ranges for each topic by CFA level (L1, L2, L3). When generating questions or validating exam simulation coverage, ensure selected topics remain within these guardrail ranges to maintain exam-realistic distributions.
+
+**Daily wrong-answer review panel (adae950)**: New feature surfaces most recent incorrect answers in a focused daily review view. When modifying question history or answer tracking, ensure wrong answers are timestamped and accessible via dedicated review interface to support immediate error reinforcement.
+
+**Topic mastery celebration at 70% accuracy (1ee95d3)**: App now displays a celebration toast when per-topic accuracy first crosses 70% threshold. When modifying accuracy calculations or topic performance tracking, ensure milestone detection triggers once per topic per session to avoid duplicate celebrations.
+
+**LOS source badge on questions (12c12a3)**: Questions now display source badge indicating their LOS origin. When rendering question cards or modifying question metadata display, ensure LOS source attribution is visible to support learning outcome transparency.
