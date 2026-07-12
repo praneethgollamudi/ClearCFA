@@ -4892,7 +4892,7 @@ function CFAMock(){
   const [reelFeed,setReelFeed]=useState([]);
   const [mockSchedule,setMockSchedule]=useState(()=>{try{return JSON.parse(localStorage.getItem(MOCK_SCHED_KEY)||"[]");}catch{return [];}});
   const [expRatings,setExpRatings]=useState(()=>{try{return JSON.parse(localStorage.getItem(EXP_RATINGS_KEY)||"{}");}catch{return {};}});
-  const [dailyQ,setDailyQ]=useState(()=>{try{const s=JSON.parse(localStorage.getItem(DAILY_Q_KEY)||"null");if(s?.date===localDateKey())return s;}catch{}return null;});
+  const [dailyQ,setDailyQ]=useState(null); // initialized per-user in authUser effect below
   const [dailyQReview,setDailyQReview]=useState(false);
   const [milestoneOverlay,setMilestoneOverlay]=useState(null);
   const [nextActionText,setNextActionText]=useState("");
@@ -5286,25 +5286,29 @@ function CFAMock(){
     }catch{}
   },[]);
 
-  // Daily Q init — pick a date-seeded question from offline seed bank
+  // Daily Q init — scoped to current user so answers don't bleed across accounts
   useEffect(()=>{
-    if(dailyQ) return;
+    const uid=authUser?.id||"__anon__";
+    const today=localDateKey();
+    // Try restoring saved state for this exact user+date
+    try{
+      const s=JSON.parse(localStorage.getItem(DAILY_Q_KEY)||"null");
+      if(s?.date===today&&s?.userId===uid){setDailyQ(s);return;}
+    }catch{}
+    // Generate fresh daily Q for this user+date
     const allQs=[];
     Object.entries(OFFLINE_SEED_QS).forEach(([t,mods])=>{
       Object.entries(mods).forEach(([mod,qs])=>{qs.forEach(q=>allQs.push({...q,_topic:t,_mod:mod}));});
     });
     if(!allQs.length) return;
-    const today=localDateKey();
     const dayNum=Math.floor(new Date(today).getTime()/86400000);
-    // Year offset prevents same question repeating on the same calendar date next year;
-    // level offset means L1/L2/L3 users see different questions on the same day.
     const yearOfs=(new Date(today).getFullYear()-2026)*53;
     const levelOfs=parseInt(cfaLevel||"1")*17;
     const q=allQs[(dayNum+yearOfs+levelOfs)%allQs.length];
-    const newDQ={date:today,q,answered:false,userAnswer:null};
+    const newDQ={date:today,userId:uid,q,answered:false,userAnswer:null};
     setDailyQ(newDQ);
     try{localStorage.setItem(DAILY_Q_KEY,JSON.stringify(newDQ));}catch{}
-  },[]);
+  },[authUser?.id]);
 
   // Load duel challenge from sessionStorage (pre-boot captured ?duel= param)
   useEffect(()=>{
@@ -5762,10 +5766,10 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
       const endpoint=subJson.endpoint;
       const p256dh=subJson.keys?.p256dh||"";
       const auth_key=subJson.keys?.auth||"";
-      const res=await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions`,{
+      const res=await fetch(`${SUPABASE_URL}/functions/v1/save-push-sub`,{
         method:"POST",
-        headers:{apikey:SUPABASE_KEY,"Authorization":`Bearer ${authUser.accessToken||SUPABASE_KEY}`,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},
-        body:JSON.stringify({user_id:authUser.id,endpoint,p256dh,auth_key}),
+        headers:{apikey:SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`,"Content-Type":"application/json"},
+        body:JSON.stringify({userId:authUser.id,endpoint,p256dh,auth_key}),
       });
       if(res.ok||res.status===201||res.status===200){
         setPushSubbed(true);try{localStorage.setItem(PUSH_SUB_KEY,"1");}catch{}
@@ -8849,7 +8853,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {Object.entries(dq.options||{}).map(([k,v])=>(
                 <button key={k} onClick={()=>{
-                  const updated={...dailyQ,answered:true,userAnswer:k};
+                  const updated={...dailyQ,answered:true,userAnswer:k,userId:authUser?.id||"__anon__"};
                   setDailyQ(updated);
                   try{localStorage.setItem(DAILY_Q_KEY,JSON.stringify(updated));}catch{}
                 }} style={{padding:"9px 12px",borderRadius:9,fontSize:12,fontWeight:600,border:`1px solid ${C.border}`,background:C.surfaceHigh,color:C.text,cursor:"pointer",textAlign:"left"}}>
