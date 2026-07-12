@@ -6,7 +6,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const ADMIN_EMAIL = 'gspbuilds@gmail.com';
+const ADMIN_EMAILS = ['gspbuilds@gmail.com', 'sai.praneeth557@gmail.com'];
 
 // Haiku pricing ($/M tokens)
 const HAIKU_IN  = 0.80;
@@ -64,7 +64,7 @@ Deno.serve(async (req: Request) => {
       });
       if (userRes.ok) {
         const userInfo = await userRes.json() as { email?: string };
-        if (userInfo.email === ADMIN_EMAIL) isAuthorized = true;
+        if (userInfo.email && ADMIN_EMAILS.includes(userInfo.email)) isAuthorized = true;
       }
       // If !userRes.ok (expired JWT), fall through to userId check below
     } catch { /* network error — fall through */ }
@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
       if (sessRes.ok) {
         const sessData = await sessRes.json() as Array<{ user_id: string }>;
         const claimedEmail = (body as Record<string, unknown>).email as string | undefined;
-        if (Array.isArray(sessData) && sessData.length > 0 && claimedEmail === ADMIN_EMAIL) {
+        if (Array.isArray(sessData) && sessData.length > 0 && claimedEmail && ADMIN_EMAILS.includes(claimedEmail)) {
           isAuthorized = true;
         }
       }

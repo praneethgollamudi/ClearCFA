@@ -12,6 +12,7 @@ serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "gspbuilds@gmail.com";
+  const ADMIN_EMAILS = [ADMIN_EMAIL, "sai.praneeth557@gmail.com"];
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
   // Resend's shared sender works on the free plan without a verified domain.
   // Once you own a domain, set FROM_EMAIL secret to e.g. "ClearCFA <noreply@yourdomain.com>"
@@ -22,15 +23,32 @@ serve(async (req) => {
   }
 
   const body = await req.json().catch(() => ({}));
-  const { accessToken, userId, email, dryRun } = body;
+  const { accessToken, userId, email, dryRun, testTo } = body;
 
   // Admin auth check
   const sb = createClient(SUPABASE_URL, SERVICE_KEY);
-  const isAdmin = email === ADMIN_EMAIL;
+  const isAdmin = email && ADMIN_EMAILS.includes(email);
   if (!isAdmin) {
     const { data: { user } } = await sb.auth.getUser(accessToken);
-    if (!user || user.email !== ADMIN_EMAIL) {
+    if (!user || !ADMIN_EMAILS.includes(user.email ?? "")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
+    }
+  }
+
+  // Test send: deliver one sample email to a specific address without touching the inactive-user list
+  if (testTo) {
+    const subject = "ClearCFA — re-engagement email preview";
+    const html = buildLapsedEmail(5); // sample: 5 days inactive
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: `ClearCFA <${FROM_EMAIL}>`, reply_to: ADMIN_EMAIL, to: [testTo], subject, html }),
+    });
+    if (res.ok) {
+      return new Response(JSON.stringify({ sent: 1, testTo, note: "Preview sent — check your inbox" }), { headers: { ...CORS, "Content-Type": "application/json" } });
+    } else {
+      const err = await res.text().catch(() => res.statusText);
+      return new Response(JSON.stringify({ error: err }), { status: 500, headers: CORS });
     }
   }
 
@@ -55,7 +73,7 @@ serve(async (req) => {
   const targets: { email: string; type: "never_studied" | "lapsed"; lastActivity: string | null; daysInactive: number }[] = [];
 
   for (const u of allUsers) {
-    if (!u.email || u.email === ADMIN_EMAIL) continue;
+    if (!u.email || ADMIN_EMAILS.includes(u.email)) continue;
     const createdAt = u.created_at;
     const lastActivity = lastActivityByUser[u.id] || null;
 
