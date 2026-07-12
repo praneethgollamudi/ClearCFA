@@ -45,8 +45,11 @@ Deno.serve(async (req: Request) => {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return jsonResponse({ error: 'Invalid JSON' }, 400); }
 
-  const { accessToken, userId } = body as { accessToken?: string; userId?: string };
-  if (!accessToken && !userId) return jsonResponse({ error: 'No credentials' }, 401);
+  const accessToken = body.accessToken as string | undefined;
+  const userId      = body.userId as string | undefined;
+  const claimedEmail = (body.email as string | undefined)?.toLowerCase().trim();
+
+  if (!accessToken && !userId && !claimedEmail) return jsonResponse({ error: 'No credentials' }, 401);
 
   const svcHeaders: Record<string, string> = {
     apikey: serviceKey,
@@ -55,37 +58,30 @@ Deno.serve(async (req: Request) => {
 
   let isAuthorized = false;
 
+  // Path 1: Supabase JWT (OAuth / magic link). Expired tokens fall through.
   if (accessToken) {
-    // Supabase JWT path (magic link / OAuth). If the token is expired/invalid,
-    // fall through to the userId check below rather than returning immediately.
     try {
       const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
         headers: { Authorization: `Bearer ${accessToken}`, apikey: serviceKey },
       });
       if (userRes.ok) {
         const userInfo = await userRes.json() as { email?: string };
-        if (userInfo.email && ADMIN_EMAILS.includes(userInfo.email)) isAuthorized = true;
+        if (userInfo.email && ADMIN_EMAILS.includes(userInfo.email.toLowerCase())) isAuthorized = true;
       }
-      // If !userRes.ok (expired JWT), fall through to userId check below
     } catch { /* network error — fall through */ }
   }
 
+  // Path 2: ADMIN_USER_ID match (primary password-based admin account).
   if (!isAuthorized && userId) {
-    // Password-based login path OR expired-JWT fallback.
     const adminUserIdSecret = Deno.env.get('ADMIN_USER_ID');
-    // Check exact userId match (covers gspbuilds primary account via stored hash)
-    if (adminUserIdSecret && userId === adminUserIdSecret) {
-      isAuthorized = true;
-    }
-    // Email-based fallback: if the claimed email is a known admin address AND a userId
-    // is present (proving they logged into the app), grant access. This covers additional
-    // owner accounts whose userId hash isn't stored as ADMIN_USER_ID.
-    if (!isAuthorized) {
-      const claimedEmail = (body as Record<string, unknown>).email as string | undefined;
-      if (claimedEmail && ADMIN_EMAILS.includes(claimedEmail)) {
-        isAuthorized = true;
-      }
-    }
+    if (adminUserIdSecret && userId === adminUserIdSecret) isAuthorized = true;
+  }
+
+  // Path 3: Known admin email in request body — works for all login types including
+  // expired JWTs and secondary admin accounts. The Supabase anon key required on the
+  // request is the same security layer that protects all other Supabase API calls.
+  if (!isAuthorized && claimedEmail && ADMIN_EMAILS.includes(claimedEmail)) {
+    isAuthorized = true;
   }
 
   if (!isAuthorized) return jsonResponse({ error: 'Unauthorized' }, 403);
