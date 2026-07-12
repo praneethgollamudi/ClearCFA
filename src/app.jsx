@@ -296,11 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-f
-{version:"2026-07-12-f",slides:[
-{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved AI resilience so quiz generation and explanations retry up to 4 times if something goes wrong, making study sessions less likely to be interrupted. This means fewer timeouts and smoother learning, especially during peak hours.",tip:"If a question fails to load, the app now quietly retries before showing an error—you'll notice fewer interruptions."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Topic Labels Everywhere",sub:"Study Tools · 2026-07-12 update",desc:"Topic names across Equity and Alternatives now display consistently throughout the app, fixing confusing mismatches in weight warnings and study progress. You'll see the same familiar topic names no matter where you study.",tip:"Check your study dashboard—Equity and Alternatives topics should now look uniform across all screens."},
-]},
 // WN_VER:2026-07-12
 {version:"2026-07-12",slides:[
 {emoji:"📋",color:C.accentLight,bg:C.accentLight,title:"Complete Mock Exam Experience",sub:"Study Tools · 2026-07-12 update",desc:"Mock exams now hide reference tools and enforce realistic pacing to match actual CBT conditions. After you finish, review your answers with detailed explanations to identify knowledge gaps.",tip:"Take a full mock exam without interruptions to simulate test-day pressure and build confidence."},
@@ -316,6 +311,10 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-12-d
 {version:"2026-07-12-d",slides:[
 {emoji:"🐛",color:C.medium,bg:C.medium,title:"Re-engagement Emails Now Working",sub:"Bug Fix · 2026-07-12 update",desc:"Fixed an issue where re-engagement preview emails weren't sending due to email service limitations. You'll now receive timely reminders to get back on track with your study schedule.",tip:"Check your inbox for re-engagement emails to jump back into your prep at the right moment."},
+]},
+// WN_VER:2026-07-12-e
+{version:"2026-07-12-e",slides:[
+,
 ]},
 // WN_END
 ];
@@ -357,12 +356,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
 "fix: admin-stats — authorize by email+userId presence, no sessions table check",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
@@ -396,6 +389,13 @@ const ADMIN_CHANGELOG=[
 "Fix admin-stats auth — email fallback now unconditional, not gated on userId",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin-stats auth for OAuth users — remove length guard on email fallback",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix admin-stats auth — email fallback now unconditional, not gated on userId",
 ]},
 // AC_END
 ];
