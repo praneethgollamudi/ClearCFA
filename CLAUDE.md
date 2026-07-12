@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (4643366)**: Versions 2026-07-11-d and 2026-07-11-e have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, and 2026-07-12-e. Version 2026-07-12-d announces AI Study Notes generator and Challenge Mode. Version 2026-07-12-e announces Exam-Weight Mock sessions. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**LinkedIn landscape share card (c19362b)**: Results screen now includes a 1200x627px LinkedIn landscape share card for social sharing. When modifying results screen or adding new social features, ensure share card dimensions and branding are maintained for optimal LinkedIn display.
+
+
 **Exam-Weight Mock sessions (3cfea94)**: New 18-question practice sessions are now aligned to official CFA exam topic weight distributions. When generating or modifying mock exam sessions, ensure question selection respects realistic topic weighting to provide authentic exam-condition practice.
 
 
@@ -1238,7 +1244,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1798800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1798900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
