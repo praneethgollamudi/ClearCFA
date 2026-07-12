@@ -296,12 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-e
-{version:"2026-07-12-e",slides:[
-{emoji:"📊",color:C.hard,bg:C.hard,title:"Exam-Weight Mock Sessions",sub:"Study Tools · 2026-07-12 update",desc:"New 18-question mock exams now match the official CFA Institute topic weights, giving you realistic practice that mirrors the actual test distribution. This helps you identify weak areas where the exam actually focuses.",tip:"Start with an Exam-Weight Mock to benchmark your readiness before drilling into individual topics."},
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"AI-Generated Study Notes",sub:"AI · 2026-07-12 update",desc:"The Revision screen now generates personalized study notes powered by AI, automatically summarizing key concepts from your lessons and flagged content. Save hours of manual note-taking and focus on understanding instead.",tip:"Check the Notes tab in Revision to see AI summaries of topics you've studied."},
-{emoji:"🎮",color:C.reward,bg:C.reward,title:"Challenge Mode Now Available",sub:"Study Tools · 2026-07-12 update",desc:"Toggle Challenge Mode on the setup screen to unlock a harder difficulty option that pushes you beyond standard practice questions. Perfect for refining your edge when you're ready to test yourself at exam+ level.",tip:"Enable Challenge Mode after consistently scoring 80%+ on standard quizzes."},
-]},
 // WN_VER:2026-07-12-f
 {version:"2026-07-12-f",slides:[
 {emoji:"📊",color:C.hard,bg:C.hard,title:"Exam-Weight Mock Sessions",sub:"Study Tools · 2026-07-12 update",desc:"New 18-question mock exams now follow official CFA topic weights, giving you realistic practice that mirrors the actual exam distribution. This helps you focus on high-impact areas and build confidence on test day.",tip:"Start a mock session from the Quiz screen to see how your performance aligns with each CFA domain."},
@@ -326,6 +320,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Mock Exams Now Track Progress",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight mock sessions now correctly credit your module readiness and update your pass trend data. You'll see an accurate picture of your prep strength across all topics.",tip:"Check your Dashboard after completing an Exam-Weight mock—your readiness badges and pass probability will now reflect that attempt."},
 {emoji:"🔔",color:C.reward,bg:C.reward,title:"Stay Motivated with Smart Reminders",sub:"UX · 2026-07-12 update",desc:"New web push notifications, re-engagement emails, and a panic streak banner keep you accountable and focused on your CFA prep goals. Get nudged when you're about to lose momentum, so you stay on track.",tip:"Enable push notifications in settings—you'll receive timely reminders if your study streak is at risk or if you haven't logged in recently."},
 ]},
+// WN_VER:2026-07-12-d
+{version:"2026-07-12-d",slides:[
+{emoji:"📅",color:C.accentLight,bg:C.accentLight,title:"Export Study Plan to Calendar",sub:"Study Tools · 2026-07-12 update",desc:"Your ClearCFA study schedule now syncs directly to your phone or desktop calendar as .ics files. This keeps your exam prep integrated with the rest of your life, so you never miss a scheduled study session.",tip:"Open your Study Plan and tap Export to Calendar to add all topics to your favorite calendar app."},
+{emoji:"🎖️",color:C.reward,bg:C.reward,title:"Mock Exams Now Track Your Progress",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight mock sessions now correctly credit module readiness and update your pass trend analysis. This means your progress dashboard accurately reflects your readiness for each topic, so you know exactly where to focus next.",tip:"After completing an Exam-Weight mock, check your Module Readiness and Pass Trend to see your real improvement."},
+{emoji:"🔔",color:C.medium,bg:C.medium,title:"Stay Motivated with Streak & Reminders",sub:"UX · 2026-07-12 update",desc:"ClearCFA now sends timely web push notifications and displays your study streak on-app to keep you accountable. Missing days is harder when you see your streak at risk—and reminders help you get back on track when life gets busy.",tip:"Enable push notifications in your app settings so you never miss a study reminder."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -334,16 +334,16 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-11
-{date:"2026-07-11",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "Fix admin dashboard auth failure when JWT token is expired",
 "Add growth/retention metrics and MRR to admin dashboard",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
