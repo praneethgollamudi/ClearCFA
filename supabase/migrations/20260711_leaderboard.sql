@@ -34,8 +34,8 @@ language sql security definer as $$
   weekly_sessions as (
     select
       s.user_id,
-      sum((s.data->>'total')::int) as total_questions,
-      avg((s.data->>'pct')::numeric) as avg_pct
+      sum((s.data::jsonb->>'total')::int) as total_questions,
+      avg((s.data::jsonb->>'pct')::numeric) as avg_pct
     from sessions s
     join opted_users ou on s.user_id = ou.user_id::text
     where s.updated_at >= (select ws from week_start)
