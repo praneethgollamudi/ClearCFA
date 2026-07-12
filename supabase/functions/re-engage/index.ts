@@ -13,7 +13,9 @@ serve(async (req) => {
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "sai.praneeth557@gmail.com";
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-  const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "noreply@clearcfa.com";
+  // Resend's shared sender works on the free plan without a verified domain.
+  // Once you own a domain, set FROM_EMAIL secret to e.g. "ClearCFA <noreply@yourdomain.com>"
+  const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "onboarding@resend.dev";
 
   if (!RESEND_API_KEY) {
     return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), { status: 500, headers: CORS });
@@ -133,12 +135,12 @@ function buildNeverStudiedEmail(daysInactive: number): string {
       <div style="font-size:13px;font-weight:700;color:#a5b4fc;margin-bottom:8px;">Start with just 5 questions today</div>
       <div style="font-size:12px;color:#94a3b8;line-height:1.6;">AI picks your weakest topic automatically. No setup. No decision fatigue. Just tap "Quick Start" and go.</div>
     </div>
-    <a href="https://praneethgollamudi.github.io/ClearCFA/" style="display:block;background:#6366f1;color:#fff;text-align:center;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:16px;">
+    <a href="https://praneethgollamudi.github.io/ClearCFA" style="display:block;background:#6366f1;color:#fff;text-align:center;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:16px;">
       Start My First Session →
     </a>
     <p style="margin:0;font-size:11px;color:#475569;text-align:center;">
       ClearCFA — AI-powered CFA exam prep<br/>
-      <a href="https://praneethgollamudi.github.io/ClearCFA/" style="color:#6366f1;">Open app</a>
+      <a href="https://praneethgollamudi.github.io/ClearCFA" style="color:#6366f1;">Open app</a>
     </p>
   </div>
 </body>
@@ -174,12 +176,12 @@ function buildLapsedEmail(daysInactive: number): string {
           : "Your AI coach has already identified your weakest area from last session. Tap below to drill it in 5 minutes."}
       </div>
     </div>
-    <a href="https://praneethgollamudi.github.io/ClearCFA/" style="display:block;background:${urgency === "high" ? "#ef4444" : "#6366f1"};color:#fff;text-align:center;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:16px;">
+    <a href="https://praneethgollamudi.github.io/ClearCFA" style="display:block;background:${urgency === "high" ? "#ef4444" : "#6366f1"};color:#fff;text-align:center;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:16px;">
       ${urgency === "high" ? "Get Back on Track →" : "Resume My Prep →"}
     </a>
     <p style="margin:0;font-size:11px;color:#475569;text-align:center;">
       ClearCFA — AI-powered CFA exam prep<br/>
-      <a href="https://praneethgollamudi.github.io/ClearCFA/" style="color:#6366f1;">Open app</a>
+      <a href="https://praneethgollamudi.github.io/ClearCFA" style="color:#6366f1;">Open app</a>
     </p>
   </div>
 </body>
