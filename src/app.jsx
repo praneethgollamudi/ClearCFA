@@ -296,10 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-c
-{version:"2026-07-12-c",slides:[
-{emoji:"⚡",color:C.accentLight,bg:C.easy,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved how ClearCFA handles AI request failures—the app now retries up to 4 times before giving up, ensuring you get answers to your CFA questions even when the network hiccups. This means fewer frustrating timeouts when you're in study mode.",tip:"If an AI explanation doesn't load on first try, just wait a moment—it's automatically retrying in the background."},
-]},
 // WN_VER:2026-07-12-d
 {version:"2026-07-12-d",slides:[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Question Generation",sub:"AI · 2026-07-12 update",desc:"We've strengthened our AI engine to retry failed requests up to 4 times with smarter handling of rate limits. This means fewer timeouts and more consistent quiz generation when you need it most.",tip:"You'll notice smoother quiz loading, especially during peak study hours."},
@@ -319,6 +315,10 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-12
 {version:"2026-07-12",slides:[
 {emoji:"📋",color:C.accentLight,bg:C.accentLight,title:"Complete Mock Exam Experience",sub:"Study Tools · 2026-07-12 update",desc:"Mock exams now hide reference tools and enforce realistic pacing to match actual CBT conditions. After you finish, review your answers with detailed explanations to identify knowledge gaps.",tip:"Take a full mock exam without interruptions to simulate test-day pressure and build confidence."},
+]},
+// WN_VER:2026-07-12-b
+{version:"2026-07-12-b",slides:[
+,
 ]},
 // WN_END
 ];
@@ -378,18 +378,22 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
 "fix: admin-stats — authorize by email+userId presence, no sessions table check",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"Fix admin-stats auth for OAuth users — remove length guard on email fallback",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"fix: admin-stats — authorize by email+userId presence, no sessions table check",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
 ]},
 // AC_END
 ];
