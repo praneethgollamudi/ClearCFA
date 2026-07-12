@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**QS_SLUG_MAP constant (de1e2eb)**: Maps URL-friendly topic slugs to CFA display names: ethics, quant, economics, fsa, corporate, equity, fixed_income, derivatives, alternatives, portfolio. Used for quick-start deep linking via sessionStorage. When adding new topics or exam sections, update QS_SLUG_MAP to support external routing.
+
+
+**Quick-start topic deep linking (de1e2eb)**: CFAMock now reads `cfa_qs_v1` from sessionStorage on mount, maps slug to topic name via QS_SLUG_MAP (e.g., "ethics" → "Ethics"), and calls setQuickStartTopic to auto-navigate. External links can set sessionStorage key before redirecting to app to trigger topic-specific onboarding. Always clear the key after reading to prevent re-triggering on subsequent loads.
+
+
 **Re-engage Brevo error handling (425d490)**: re-engage edge function now wraps Brevo API calls in try-catch blocks with comprehensive error diagnostics. When Brevo requests fail (network error, invalid credentials, rate limit), errors are caught and returned with both `error` and optional `message` fields for frontend display.
 
 
@@ -1392,7 +1398,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1802200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1802300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
