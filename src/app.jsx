@@ -296,6 +296,10 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
+// WN_VER:2026-07-12-b
+{version:"2026-07-12-b",slides:[
+{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Better Email Notifications",sub:"UX · 2026-07-12 update",desc:"We've improved how re-engagement emails reach you, making sure important study reminders land in your inbox reliably. This helps you stay on track with your CFA prep schedule without missing critical notifications.",tip:"Check your email settings if you want to adjust how often you receive study reminders."},
+]},
 // WN_VER:2026-07-12-c
 {version:"2026-07-12-c",slides:[
 {emoji:"⚡",color:C.accentLight,bg:C.easy,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved how ClearCFA handles AI request failures—the app now retries up to 4 times before giving up, ensuring you get answers to your CFA questions even when the network hiccups. This means fewer frustrating timeouts when you're in study mode.",tip:"If an AI explanation doesn't load on first try, just wait a moment—it's automatically retrying in the background."},
@@ -315,11 +319,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-f",slides:[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved AI resilience so quiz generation and explanations retry up to 4 times if something goes wrong, making study sessions less likely to be interrupted. This means fewer timeouts and smoother learning, especially during peak hours.",tip:"If a question fails to load, the app now quietly retries before showing an error—you'll notice fewer interruptions."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Topic Labels Everywhere",sub:"Study Tools · 2026-07-12 update",desc:"Topic names across Equity and Alternatives now display consistently throughout the app, fixing confusing mismatches in weight warnings and study progress. You'll see the same familiar topic names no matter where you study.",tip:"Check your study dashboard—Equity and Alternatives topics should now look uniform across all screens."},
-]},
-// WN_VER:2026-07-12
-{version:"2026-07-12",slides:[
-{emoji:"⏱️",color:C.hard,bg:C.hard,title:"Real Exam Mock Experience",sub:"Study Tools · 2026-07-12 update",desc:"Full timed mock exams now authentically replicate the actual CFA Level 1/2/3 CBT format, with level-aware question counts and durations. This matches the real exam conditions so your practice translates directly to exam day confidence.",tip:"Start a timed mock to experience the exact pacing and structure you'll face in the actual exam room."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster AI Explanations",sub:"Speed · 2026-07-12 update",desc:"AI-generated hints and explanations now load reliably even during long mock exam sessions, with smarter timeout handling. You'll spend less time waiting and more time learning from detailed answer breakdowns.",tip:"Notice how AI explanations appear instantly throughout your 20-question mock—no more session hangs mid-exam."},
 ]},
 // WN_END
 ];
@@ -4708,6 +4707,7 @@ function CFAMock(){
   const [examMarkReview,setExamMarkReview]=useState({}); // {[qId]:true} — CBT "mark for review"
   const [showExamNav,setShowExamNav]=useState(false);   // question navigator grid overlay
   const [examReviewMode,setExamReviewMode]=useState(false); // "Review & Submit" interstitial
+  const [fullExamReview,setFullExamReview]=useState(false); // post-submit full review of all Qs
   const [vignetteMode,setVignetteMode]=useState(false);
   const [aiDebrief,setAiDebrief]=useState(null);const [aiDebriefLoading,setAiDebriefLoading]=useState(false);const [aiDebriefError,setAiDebriefError]=useState(null);
   const [aiCoachScreen,setAiCoachScreen]=useState(false);const [aiCoachMessages,setAiCoachMessages]=useState([]);const [aiCoachInput,setAiCoachInput]=useState("");const [aiCoachLoading,setAiCoachLoading]=useState(false);
@@ -5433,7 +5433,7 @@ function CFAMock(){
       const examMins=fullExamMode?(cfaLevel==="1"?135:132):null;
       const total=examMins!==null?examMins*60:count*TIME_PER_Q;
       setTimeLeft(total);startRef.current=Date.now();clearInterval(timerRef.current);
-      setExamMarkReview({});setShowExamNav(false);setExamReviewMode(false);
+      setExamMarkReview({});setShowExamNav(false);setExamReviewMode(false);setFullExamReview(false);
       timerRef.current=setInterval(()=>{setTimeLeft(t=>{if(t<=1){clearInterval(timerRef.current);endQuiz();return 0;}return t-1;});},1000);
     }
     return()=>clearInterval(timerRef.current);
@@ -10519,18 +10519,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
       )}
-      {/* Floating calculator button */}
-      <button onClick={()=>setCalcOpen(true)} title="Open BA II Plus Calculator"
+      {/* Floating calculator button — hidden in fullExamMode (real exam uses physical BA II Plus) */}
+      {!fullExamMode&&<button onClick={()=>setCalcOpen(true)} title="Open BA II Plus Calculator"
         style={{position:"fixed",bottom:82,right:16,zIndex:270,width:46,height:46,borderRadius:"50%",background:"linear-gradient(135deg,#1e3a5f,#1a4a9f)",border:"1px solid #2563eb55",color:"#93c5fd",fontSize:20,cursor:"pointer",boxShadow:"0 4px 16px #0008",display:"flex",alignItems:"center",justifyContent:"center",touchAction:"manipulation"}}>
         🧮
-      </button>
+      </button>}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <button onClick={()=>setExitConfirm(true)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,padding:0,flexShrink:0}}>← Home</button>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           <div style={{fontSize:fullExamMode?16:14,fontWeight:800,padding:fullExamMode?"7px 18px":"5px 14px",borderRadius:20,background:timeLeft<300?"#180308":fullExamMode?"#1a0a2e":C.surface,color:timeLeft<300?C.hard:fullExamMode?"#a78bfa":C.muted,border:`1px solid ${timeLeft<300?C.hard+"55":fullExamMode?"#7c3aed55":C.border}`,transition:"all 0.3s"}}>
             {fullExamMode?"🏛 ":""}{fmt(timeLeft)}
           </div>
-          {(()=>{const idealLeft=(questions.length-currentQ)*90;const paceRatio=timeLeft/Math.max(1,idealLeft);const paceCol=paceRatio>1.1?C.easy:paceRatio>0.8?C.medium:C.hard;const paceLabel=paceRatio>1.1?"Ahead":paceRatio>0.8?"On track":"Speed up";return timeLeft>0&&questions.length>1?<span style={{fontSize:10,color:paceCol,fontWeight:700,padding:"3px 7px",borderRadius:6,background:paceCol+"18"}}>{paceLabel}</span>:null;})()}
+          {(()=>{const secsPerQ=fullExamMode&&cfaLevel!=="1"?180:90;const idealLeft=(questions.length-currentQ)*secsPerQ;const paceRatio=timeLeft/Math.max(1,idealLeft);const paceCol=paceRatio>1.1?C.easy:paceRatio>0.8?C.medium:C.hard;const paceLabel=paceRatio>1.1?"Ahead":paceRatio>0.8?"On track":"Speed up";return timeLeft>0&&questions.length>1?<span style={{fontSize:10,color:paceCol,fontWeight:700,padding:"3px 7px",borderRadius:6,background:paceCol+"18"}}>{paceLabel}</span>:null;})()}
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           {focusModeEnabled&&<span style={{fontSize:10,fontWeight:700,color:focusSwitches===0?C.easy:C.hard,padding:"3px 7px",borderRadius:6,background:(focusSwitches===0?C.easy:C.hard)+"18",border:`1px solid ${(focusSwitches===0?C.easy:C.hard)}44`}}>{focusSwitches===0?"🎯 Focused":`👁 ${focusSwitches}×`}</span>}
@@ -10629,8 +10629,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <Badge color={C.accentLight}>📋 2026 LOS</Badge>
       </div>
       {q._isEthicsCase&&<div style={{fontSize:10,color:C.muted,marginBottom:8,fontStyle:"italic"}}>© 2019 CFA Institute. Ethics in Practice Casebook. Used with attribution for non-commercial study.</div>}
-      <FormulaSheet topic={topic} level={cfaLevel}/>
-      <PowerNotesSheet topic={topic} level={cfaLevel}/>
+      {!fullExamMode&&<FormulaSheet topic={topic} level={cfaLevel}/>}
+      {!fullExamMode&&<PowerNotesSheet topic={topic} level={cfaLevel}/>}
       {q._isVignette?(()=>{
         const parts=q.question.split(/\n\nQUESTION: /);
         const scenarioText=(parts[0]||"").replace(/^SCENARIO:\n?/,"");
@@ -11216,9 +11216,82 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:11,color:C.muted,marginTop:8}}>
               {breakdown.filter(b=>b.pct<60).length} topic{breakdown.filter(b=>b.pct<60).length!==1?"s":""} below threshold · focus these before your next mock
             </div>
+            <button onClick={()=>setFullExamReview(true)}
+              style={{marginTop:12,width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,
+                background:`${C.accent}18`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+              🔍 Review All Questions →
+            </button>
           </div>
         );
       })()}
+
+      {/* Post-exam full review overlay */}
+      {fullExamReview&&fullExamMode&&(
+        <div style={{position:"fixed",inset:0,background:C.bg,zIndex:9800,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+          <div style={{maxWidth:860,margin:"0 auto",padding:"16px 16px 120px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,position:"sticky",top:0,background:C.bg,paddingTop:12,paddingBottom:12,zIndex:1}}>
+              <button onClick={()=>setFullExamReview(false)}
+                style={{background:"none",border:`1px solid ${C.border}`,color:C.muted,borderRadius:8,padding:"6px 12px",fontSize:13,cursor:"pointer",flexShrink:0}}>
+                ← Back
+              </button>
+              <div>
+                <div style={{fontSize:15,fontWeight:800,color:C.text}}>🔍 Full Exam Review</div>
+                <div style={{fontSize:11,color:C.muted}}>CFA Level {cfaLevel} · {examSession===1?"AM":"PM"} Session · {questions.length} questions</div>
+              </div>
+            </div>
+            {questions.map((qq,i)=>{
+              const userAns=answers[qq.id];
+              const correct=qq.answer;
+              const isRight=userAns===correct;
+              const isMarked=!!examMarkReview[qq.id];
+              const col=!userAns?C.muted:isRight?C.easy:C.hard;
+              return(
+                <div key={qq.id} style={{background:C.surface,border:`1px solid ${col}33`,borderRadius:12,padding:"14px 16px",marginBottom:12,animation:"fadeIn 0.1s ease"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                    <span style={{fontSize:11,fontWeight:800,color:C.muted,minWidth:26}}>Q{i+1}</span>
+                    {isMarked&&<span style={{fontSize:10,color:C.medium,background:C.medium+"22",borderRadius:4,padding:"2px 6px",fontWeight:700}}>⚑ Marked</span>}
+                    <span style={{fontSize:10,padding:"2px 7px",borderRadius:4,fontWeight:700,
+                      background:!userAns?C.muted+"22":isRight?C.easy+"22":C.hard+"22",
+                      color:!userAns?C.muted:isRight?C.easy:C.hard}}>
+                      {!userAns?"Unanswered":isRight?"✓ Correct":"✗ Wrong"}
+                    </span>
+                    {qq._subtopic&&<span style={{fontSize:10,color:C.muted,marginLeft:"auto"}}>{qq._subtopic}</span>}
+                  </div>
+                  <div style={{fontSize:13,lineHeight:1.7,color:C.text,marginBottom:10}}>{qq.question}</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                    {Object.entries(qq.options||{}).map(([k,v])=>{
+                      const isCorrect=k===correct;
+                      const isUser=k===userAns;
+                      let bg="transparent",borderC=C.border+"66",textCol=C.textMid;
+                      if(isCorrect){bg=C.easy+"18";borderC=C.easy+"66";textCol=C.easy;}
+                      else if(isUser&&!isCorrect){bg=C.hard+"18";borderC=C.hard+"66";textCol=C.hard;}
+                      return(
+                        <div key={k} style={{display:"flex",gap:8,padding:"8px 10px",borderRadius:8,
+                          background:bg,border:`1px solid ${borderC}`}}>
+                          <span style={{fontWeight:800,color:textCol,fontSize:12,minWidth:16}}>{k}</span>
+                          <span style={{fontSize:12,color:textCol,lineHeight:1.5}}>{v}</span>
+                          {isCorrect&&<span style={{marginLeft:"auto",fontSize:11,color:C.easy,fontWeight:700,flexShrink:0}}>✓</span>}
+                          {isUser&&!isCorrect&&<span style={{marginLeft:"auto",fontSize:11,color:C.hard,fontWeight:700,flexShrink:0}}>Your answer</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {qq.explanation&&(
+                    <div style={{marginTop:10,padding:"10px 12px",background:`${C.accent}0d`,border:`1px solid ${C.accent}22`,borderRadius:8,fontSize:12,color:C.textMid,lineHeight:1.6}}>
+                      {qq.explanation}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <button onClick={()=>setFullExamReview(false)}
+              style={{width:"100%",padding:"14px",borderRadius:10,fontSize:14,fontWeight:700,
+                background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+              ← Back to Results
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Action buttons — immediately after score ring */}
       {/* Office Mode — Keep going prompt */}
