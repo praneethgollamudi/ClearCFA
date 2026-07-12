@@ -1299,7 +1299,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1799800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1799900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1439,3 +1439,9 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **What's New version consolidation (02e6aca)**: Versions 2026-07-12 and 2026-07-12-b have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-c, 2026-07-12-d, 2026-07-12-e, 2026-07-12-f. Version 2026-07-12-f announces Exam-Weight Mock sessions, AI Study Notes, and Challenge Mode toggleability. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 **AI resilience tuning (9ac45b3)**: callClaude now uses 4 retry attempts (increased from 2) with 6000ms retry delay (decreased from 8000ms) and removes duplicate wait logic on rate limit. When troubleshooting AI feature timeouts or rate limits, verify retry parameters match these defaults.
+
+**Daily Question user isolation (c312adf)**: DAILY_Q_KEY state is now initialized as `null` and populated per-user in the authUser effect to prevent question leakage between users on shared devices. When modifying daily question logic or user switching, ensure dailyQ state is cleared/reset on auth changes to maintain user isolation.
+
+**AI retry resilience increase (9ac45b3)**: AI request handling now retries up to 4 times before failing (increased from previous count). When implementing or debugging AI explanation features, expect automatic retries on rate limits or transient failures; do not double-wait on rate limit responses.
+
+**What's New version consolidation (9ac45b3)**: Versions 2026-07-12-c and 2026-07-12-d have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-b, 2026-07-12-c, and 2026-07-12-e. Version 2026-07-12-c now announces AI retry resilience improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
