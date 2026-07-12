@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Supabase RLS idempotency (1d16652)**: study_groups table RLS migration is now idempotent to unblock deployment pipeline. When modifying Supabase migrations, ensure all DDL operations can be safely re-run without errors (e.g., use `IF NOT EXISTS`, `DROP IF EXISTS`) to prevent deployment failures on retry.
+
+
+**Topic normalization mapping (1d16652)**: TNORM constant now maps canonical topic names to display variants (e.g., `{"Equity":"Equity Investments","Alternatives":"Alternative Investments"}`). When referencing topics in calculations, comparisons, or storage, use canonical names ("Equity", "Alternatives") and apply TNORM only for display purposes to prevent matching failures.
+
+
+**What's New version consolidation (1d16652)**: Versions 2026-07-12 and 2026-07-12-f have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, 2026-07-12-e, and 2026-07-12-f. Version 2026-07-12-e announces AI resilience, topic name clarity, and daily question user isolation. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (57aece5)**: Versions 2026-07-12-e and 2026-07-12-f have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, and 2026-07-12-e. Version 2026-07-12-d announces AI retry improvements and daily question isolation. Version 2026-07-12-e announces AI resilience, topic naming clarity, and user data isolation. Always verify against active list when adding future versions.
 
 
@@ -1311,7 +1320,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1800100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1800200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
