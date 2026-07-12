@@ -1299,7 +1299,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1799900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1800000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1445,3 +1445,11 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **AI retry resilience increase (9ac45b3)**: AI request handling now retries up to 4 times before failing (increased from previous count). When implementing or debugging AI explanation features, expect automatic retries on rate limits or transient failures; do not double-wait on rate limit responses.
 
 **What's New version consolidation (9ac45b3)**: Versions 2026-07-12-c and 2026-07-12-d have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-b, 2026-07-12-c, and 2026-07-12-e. Version 2026-07-12-c now announces AI retry resilience improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+**AI retry resilience enhancement (9ac45b3)**: AI request handling now retries up to 4 times with improved rate-limit handling before failing. When implementing or modifying AI features (explanations, quiz generation), ensure retry logic respects this pattern to maximize reliability during peak usage.
+
+**Daily Question user isolation fix (c312adf)**: Daily Question state is now initialized per-user in authUser effect rather than from localStorage during component mount. When modifying daily question functionality or user switching logic, ensure DAILY_Q_KEY state is cleared/reinitialized on auth changes to prevent cross-user data leakage.
+
+**Push subscription save fix (c312adf)**: Web push subscription storage has been corrected to properly persist subscription state. When implementing push notification features, verify that subscription state persists across sessions without data corruption.
+
+**Topic name normalization for weight warnings (c7eb31d)**: Equity and Alternatives topic names are now normalized in weight distribution validation. When adding or modifying topic weighting logic, ensure topic names match normalized values to prevent weight validation failures.
