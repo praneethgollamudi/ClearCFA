@@ -296,10 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12
-{version:"2026-07-12",slides:[
-{emoji:"📋",color:C.accentLight,bg:C.accentLight,title:"Complete Mock Exam Experience",sub:"Study Tools · 2026-07-12 update",desc:"Mock exams now hide reference tools and enforce realistic pacing to match actual CBT conditions. After you finish, review your answers with detailed explanations to identify knowledge gaps.",tip:"Take a full mock exam without interruptions to simulate test-day pressure and build confidence."},
-]},
 // WN_VER:2026-07-12-b
 {version:"2026-07-12-b",slides:[
 ,
@@ -314,6 +310,10 @@ const WHATS_NEW_SLIDES=[
 ]},
 // WN_VER:2026-07-12-e
 {version:"2026-07-12-e",slides:[
+,
+]},
+// WN_VER:2026-07-12-f
+{version:"2026-07-12-f",slides:[
 ,
 ]},
 // WN_END
@@ -350,12 +350,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
 "fix: admin-stats — authorize by email+userId presence, no sessions table check",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
@@ -396,6 +390,13 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix admin-stats auth — email fallback now unconditional, not gated on userId",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"fix: push_subscriptions migration type mismatch blocking Supabase deploys",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
