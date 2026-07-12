@@ -296,10 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-f
-{version:"2026-07-12-f",slides:[
-{emoji:"🔔",color:C.reward,bg:C.reward,title:"Stay Motivated with Smart Reminders",sub:"Study Tools · 2026-07-12 update",desc:"We've added web push notifications and streak tracking to help you build consistent study habits. Get timely nudges when you're away, plus visual reminders of your progress to keep momentum going.",tip:"Check your notification settings and enable web push to receive personalized study reminders on your device."},
-]},
 // WN_VER:2026-07-12
 {version:"2026-07-12",slides:[
 {emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Improved Email Reliability",sub:"Bug Fix · 2026-07-12 update",desc:"We've fixed critical email delivery issues affecting re-engagement messages and notifications. You'll now reliably receive study reminders and progress updates without interruption.",tip:"Check your inbox (and spam folder) if you haven't seen ClearCFA emails recently—they should arrive consistently now."},
@@ -316,6 +312,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-d",slides:[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Question Generation",sub:"AI · 2026-07-12 update",desc:"We've strengthened our AI engine to retry failed requests up to 4 times with smarter handling of rate limits. This means fewer timeouts and more consistent quiz generation when you need it most.",tip:"You'll notice smoother quiz loading, especially during peak study hours."},
 {emoji:"🔔",color:C.reward,bg:C.reward,title:"Fixed Daily Question Notifications",sub:"Study Tools · 2026-07-12 update",desc:"We resolved an issue where daily question reminders weren't saving properly and were sometimes appearing for other users. Now your notification preferences stay exactly as you set them.",tip:"Check your notification settings to re-enable Daily Questions if you'd like them back."},
+]},
+// WN_VER:2026-07-12-e
+{version:"2026-07-12-e",slides:[
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smarter AI Question Generation",sub:"AI · 2026-07-12 update",desc:"ClearCFA's AI now retries failed question generation up to 4 times with smarter fallback logic, so you spend less time waiting and more time studying. Rate limit hiccups no longer interrupt your prep flow.",tip:"Keep generating practice questions—the AI is now resilient enough to handle temporary slowdowns without dropping your session."},
+{emoji:"🎯",color:C.medium,bg:C.medium,title:"Clearer Topic Progress Alerts",sub:"Study Tools · 2026-07-12 update",desc:"Topic weight warnings now use consistent naming for Equity and Alternatives, so you won't see confusing duplicate alerts about the same subject area. Your study plan guidance is now clearer and more actionable.",tip:"Check your topic warnings—they now accurately reflect which areas need more focus without redundant messages."},
+{emoji:"🔒",color:C.hard,bg:C.hard,title:"Daily Questions Now Isolated per User",sub:"Bug Fix · 2026-07-12 update",desc:"Fixed a data isolation issue where daily question assignments and push notification subscriptions weren't properly separated between users. Each student now sees only their own assigned questions and receives only their own notifications.",tip:"If you share a device with others, each person's daily question streaks and notifications are now completely private."},
 ]},
 // WN_END
 ];
