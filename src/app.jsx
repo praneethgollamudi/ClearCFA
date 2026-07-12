@@ -1931,6 +1931,110 @@ function buildShareImage({sessionPct,sessionScore,total,subtopic,difficulty,time
   return canvas;
 }
 
+function buildLinkedInImage({sessionPct,sessionScore,total,subtopic,difficulty,timeTaken,cfaLevel,levelLabel,levelNum}){
+  const W=1200,H=627;
+  const canvas=document.createElement('canvas');
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  const accent=sessionPct>=70?'#22c55e':sessionPct>=50?'#f59e0b':'#ef4444';
+
+  // Background
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#06061a');bg.addColorStop(1,'#0c0c26');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  // Dot grid
+  ctx.fillStyle='#ffffff06';
+  for(let gx=48;gx<W;gx+=48)for(let gy=48;gy<H;gy+=48){ctx.beginPath();ctx.arc(gx,gy,1.2,0,Math.PI*2);ctx.fill();}
+  // Glow
+  const glow=ctx.createRadialGradient(320,H/2,0,320,H/2,320);
+  glow.addColorStop(0,accent+'1a');glow.addColorStop(1,'transparent');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+
+  // Vertical divider
+  ctx.strokeStyle='#ffffff0d';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(600,60);ctx.lineTo(600,H-60);ctx.stroke();
+
+  // ── LEFT SIDE: score ring ──
+  const cx=300,cy=H/2,R=140,lw=22;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='#ffffff10';ctx.lineWidth=lw;ctx.stroke();
+  const endAng=-Math.PI/2+(sessionPct/100)*Math.PI*2;
+  const arcG=ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R);
+  arcG.addColorStop(0,accent);arcG.addColorStop(1,accent+'bb');
+  ctx.beginPath();ctx.arc(cx,cy,R,-Math.PI/2,endAng);
+  ctx.strokeStyle=arcG;ctx.lineWidth=lw;ctx.lineCap='round';
+  ctx.shadowColor=accent;ctx.shadowBlur=24;ctx.stroke();ctx.shadowBlur=0;
+  ctx.font='bold 110px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(`${sessionPct}%`,cx,cy-4);ctx.textBaseline='alphabetic';
+  ctx.font='bold 26px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle=accent;ctx.textAlign='center';
+  const verdict=sessionPct>=70?'Above Threshold ✓':sessionPct>=50?'Getting there →':'Keep drilling 💪';
+  ctx.fillText(verdict,cx,cy+R+36);
+  // Score detail below ring
+  ctx.font='22px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#6060a0';ctx.textAlign='center';
+  ctx.fillText(`${sessionScore}/${total} correct  ·  ${difficulty}`,cx,cy+R+68);
+  if(timeTaken>0){ctx.fillText(`⏱ ${Math.round(timeTaken/60)} min`,cx,cy+R+96);}
+
+  // ── RIGHT SIDE: info panel ──
+  const rx=660,rw=480;
+  // ClearCFA badge top-right
+  ctx.font='bold 32px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#5050a0';ctx.textAlign='left';
+  ctx.fillText('✦ ClearCFA',rx,74);
+  ctx.font='22px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#333380';ctx.textAlign='right';
+  ctx.fillText(`CFA Level ${cfaLevel}`,rx+rw,74);
+
+  // Topic
+  ctx.font='bold 42px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle='#dcdcf8';ctx.textAlign='left';
+  const tWords=(subtopic||'').split(' ');
+  let tLine='',tLines=[];
+  for(const w of tWords){const test=tLine?tLine+' '+w:w;if(ctx.measureText(test).width>rw-20&&tLine){tLines.push(tLine);tLine=w;}else tLine=test;}
+  tLines.push(tLine);
+  tLines.slice(0,2).forEach((l,i)=>ctx.fillText(l,rx,150+i*52));
+
+  // Pass/fail badge
+  const bY=tLines.length===1?240:298;
+  const badgeW=340,badgeH=42;
+  ctx.strokeStyle=accent;ctx.lineWidth=1.5;
+  _crr(ctx,rx,bY,badgeW,badgeH,10);
+  ctx.fillStyle=sessionPct>=70?'#22c55e18':'#ef444418';ctx.fill();ctx.stroke();
+  ctx.font='bold 20px system-ui,-apple-system,sans-serif';
+  ctx.fillStyle=accent;ctx.textAlign='center';
+  ctx.fillText(sessionPct>=70?'ABOVE 70% THRESHOLD ✓':'BELOW 70% THRESHOLD',rx+badgeW/2,bY+28);
+  ctx.textAlign='left';
+
+  // vs 70% bar
+  const barY=bY+60,barW=rw-20;
+  ctx.fillStyle='#ffffff08';_crr(ctx,rx,barY,barW,8,4);ctx.fill();
+  const fW=Math.max(8,(sessionPct/100)*barW);
+  ctx.fillStyle=accent;ctx.shadowColor=accent;ctx.shadowBlur=8;
+  _crr(ctx,rx,barY,fW,8,4);ctx.fill();ctx.shadowBlur=0;
+  const thX=rx+barW*0.7;
+  ctx.strokeStyle='#ffffff55';ctx.lineWidth=2;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(thX,barY-5);ctx.lineTo(thX,barY+13);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font='16px system-ui,-apple-system,sans-serif';ctx.fillStyle='#22c55e77';ctx.textAlign='center';
+  ctx.fillText('70%',thX,barY+28);ctx.textAlign='left';
+
+  // XP level & footer
+  if(levelLabel||levelNum){
+    ctx.font='22px system-ui,-apple-system,sans-serif';
+    ctx.fillStyle='#f59e0b77';
+    ctx.fillText(`⭐ ${levelLabel||''} · Level ${levelNum||''}`,rx,barY+64);
+  }
+  // Footer line
+  const footY=H-42;
+  ctx.strokeStyle='#ffffff08';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(60,footY-18);ctx.lineTo(W-60,footY-18);ctx.stroke();
+  ctx.font='22px system-ui,-apple-system,sans-serif';ctx.fillStyle='#2a2a6a';ctx.textAlign='center';
+  ctx.fillText('Prepping for the CFA exam with ClearCFA  ·  clearcfa.com',W/2,footY);
+
+  return canvas;
+}
+
 function parseDebrief(text){
   const get=(label)=>{const m=text.match(new RegExp(label+":\\s*([^\\n]+)"));return m?m[1].trim():"";};
   return{pattern:get("PATTERN"),fix:get("FIX"),priority:get("PRIORITY"),time:get("TIME"),coach:get("COACH")};
@@ -10750,6 +10854,26 @@ Return ONLY a JSON array — no prose, no markdown fences:
           }
         }} style={{marginTop:14,padding:"8px 20px",borderRadius:20,fontSize:12,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
           📤 Share Result
+        </button>
+        <button onClick={()=>{
+          const liText=`Just scored ${sessionPct}% on CFA L${cfaLevel} ${subtopic} (${sessionScore}/${questions.length} correct) using ClearCFA.\n\n${sessionPct>=70?"✅ Above the 70% pass threshold":"Working toward the 70% pass threshold — progress every session."}\n\n#CFA #CFAExam #Finance #ClearCFA clearcfa.com`;
+          try{
+            const imgCanvas=buildLinkedInImage({sessionPct,sessionScore,total:questions.length,subtopic,difficulty,timeTaken,cfaLevel,levelLabel:levelInfo?.label,levelNum:levelInfo?.level});
+            imgCanvas.toBlob(async(blob)=>{
+              if(!blob){if(navigator.share)navigator.share({title:"ClearCFA Score",text:liText}).catch(()=>{});return;}
+              const file=new File([blob],'clearcfa-linkedin.png',{type:'image/png'});
+              if(navigator.canShare&&navigator.canShare({files:[file]})){
+                navigator.share({files:[file],text:liText}).catch(e=>{if(e.name!=='AbortError')showToast("🔗","Image saved","Download and attach to your LinkedIn post.");});
+              } else {
+                const url=URL.createObjectURL(blob);
+                const a=document.createElement('a');a.href=url;a.download='clearcfa-linkedin.png';a.click();
+                setTimeout(()=>URL.revokeObjectURL(url),1000);
+                showToast("🔗","LinkedIn card saved","Attach to your LinkedIn post (1200×627).");
+              }
+            },'image/png');
+          }catch(e){if(navigator.share)navigator.share({title:"ClearCFA Score",text:liText}).catch(()=>{});}
+        }} style={{marginTop:6,padding:"8px 20px",borderRadius:20,fontSize:12,fontWeight:700,background:"#0a66c218",border:"1px solid #0a66c244",color:"#0a9",cursor:"pointer"}}>
+          🔗 LinkedIn Card
         </button>
       </div>
 
