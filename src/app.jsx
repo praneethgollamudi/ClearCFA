@@ -294,12 +294,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-c
-{version:"2026-07-12-c",slides:[
-{emoji:"✍️",color:C.accentLight,bg:C.accentLight,title:"AI-Powered Study Notes",sub:"AI · 2026-07-12 update",desc:"Generate personalized study notes instantly on the Revision screen to consolidate your understanding of any topic. Save hours manually synthesizing key concepts while preparing for exam day.",tip:"Open any topic in Revision, tap the Notes tab, and let AI create focused summaries tailored to your level."},
-{emoji:"🎓",color:C.medium,bg:C.medium,title:"Master Weak Topics Faster",sub:"Study Tools · 2026-07-12 update",desc:"Review your wrong answers in a dedicated daily panel and see LOS source badges on every question to understand exam weight. Prioritize high-impact learning objectives so you study smarter, not longer.",tip:"Check your daily wrong-answer review panel first thing each session to target your weakest areas."},
-{emoji:"🔍",color:C.hard,bg:C.hard,title:"Understand Probability Concepts",sub:"UX · 2026-07-12 update",desc:"Tap into a new explainability drawer for probability questions to see step-by-step reasoning behind answers. Demystify complex statistics and distribution problems that often trip up candidates.",tip:"When a probability question stumps you, open the explainability drawer to walk through the logic."},
-]},
 // WN_VER:2026-07-12-d
 {version:"2026-07-12-d",slides:[
 {emoji:"✍️",color:C.accentLight,bg:C.accentLight,title:"AI Study Notes Generator",sub:"AI · 2026-07-12 update",desc:"Automatically generate personalized study notes from any question or topic on the Revision screen. Save hours summarizing key concepts while reinforcing your understanding of testable material.",tip:"Open the Notes tab in Revision mode and tap the AI generator to create instant summaries."},
@@ -324,6 +318,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Official-Weight Mock Exams",sub:"Study Tools · 2026-07-12 update",desc:"New 18-question Exam-Weight Mock sessions now mirror the exact topic distribution of real CFA exams. Practice with confidence knowing your session matches official weighting.",tip:"Start a mock exam and select \"Exam-Weight\" mode to drill topics in realistic proportions."},
 {emoji:"⚡",color:C.medium,bg:C.medium,title:"Challenge Mode Now Toggleable",sub:"UX · 2026-07-12 update",desc:"Quickly enable or disable Challenge Mode difficulty from the setup screen without restarting your session. Adapt your practice intensity on the fly as you progress.",tip:"Look for the Challenge Mode toggle on the Setup screen before starting your next quiz or mock."},
 ]},
+// WN_VER:2026-07-12-b
+{version:"2026-07-12-b",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Official Exam-Weight Mock Sessions",sub:"Study Tools · 2026-07-12 update",desc:"New 18-question mock exams now reflect the exact topic weights from the official CFA curriculum. Your practice sessions instantly update your module readiness and pass trend metrics to match real exam difficulty.",tip:"Start an Exam-Weight Mock to see how your weak topics align with what the CFA actually tests most."},
+{emoji:"📅",color:C.accentLight,bg:C.accentLight,title:"Export Your Study Plan to Calendar",sub:"UX · 2026-07-12 update",desc:"Study Plan now supports .ics calendar export so you can sync your CFA prep schedule directly into Apple Calendar, Google Calendar, or Outlook. Never miss a study milestone or exam deadline again.",tip:"Tap the export button on your Study Plan to add all your sessions to your preferred calendar app."},
+{emoji:"🔗",color:C.reward,bg:C.reward,title:"Share Results to LinkedIn",sub:"UX · 2026-07-12 update",desc:"After completing a session, share your progress with a professionally designed landscape card optimized for LinkedIn. Celebrate milestones and network with other CFA candidates in your feed.",tip:"Look for the share icon on your results screen to generate and post your achievement card."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -332,14 +332,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-11
-{date:"2026-07-11",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix admin dashboard auth failure when JWT token is expired",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Add growth/retention metrics and MRR to admin dashboard",
-]},
 // AC_VER:2026-07-11
 {date:"2026-07-11",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -357,6 +349,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-07-12",entries:[
 "Fix admin dashboard auth failure when JWT token is expired",
 "Add growth/retention metrics and MRR to admin dashboard",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
