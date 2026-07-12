@@ -294,12 +294,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-11
-{version:"2026-07-11",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-11 update",desc:"The app now prioritizes learning outcomes you haven't practiced yet, ensuring each study session builds on gaps rather than repeating familiar material. You'll also see coverage tracked per session so you know exactly which topics you've drilled.",tip:"Watch your session summary highlight which LOS areas are newly covered."},
-{emoji:"🔄",color:C.medium,bg:C.medium,title:"No More Duplicate Questions Today",sub:"UX · 2026-07-11 update",desc:"Fixed an issue where the same question could appear twice in a single study session, wasting your prep time. Now each question is unique within the same day, so every question you answer teaches you something new.",tip:"Start a fresh session anytime and you're guaranteed no repeats from earlier today."},
-{emoji:"💵",color:C.reward,bg:C.reward,title:"Correct Pricing Display",sub:"Bug Fix · 2026-07-11 update",desc:"Free tier pricing now displays the correct currency symbol based on your region. If you're in India or another rupee market, you'll see ₹ instead of $ so pricing is clear and accurate.",tip:"Check your subscription screen to confirm your local currency now shows correctly."},
-]},
 // WN_VER:2026-07-11-b
 {version:"2026-07-11-b",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Question Selection",sub:"Study Tools · 2026-07-11 update",desc:"The app now prioritizes Learning Outcomes you haven't tested yet when generating quizzes, and tracks your coverage per study session. This ensures you're drilling gaps rather than repeating what you already know.",tip:"Check your session coverage stats after each quiz to see which LOS you've strengthened."},
@@ -319,6 +313,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📋",color:C.medium,bg:C.medium,title:"Review Wrong Answers Daily",sub:"Study Tools · 2026-07-11 update",desc:"A new daily wrong-answer review panel surfaces your most recent mistakes in one focused view. Reinforcing errors immediately boosts retention and prevents the same gaps from appearing on exam day.",tip:"Check your wrong-answer panel each morning to target weak spots before they cost you points."},
 {emoji:"🏆",color:C.reward,bg:C.reward,title:"Celebrate Mastery Milestones",sub:"UX · 2026-07-11 update",desc:"You now receive an instant celebration notification when your accuracy on any topic first reaches 70%. This positive reinforcement keeps you motivated and signals which topics are ready for exam-level practice.",tip:"Watch for the mastery toast after your next quiz—it marks the moment a topic clicks."},
 {emoji:"👥",color:C.accentLight,bg:C.accentLight,title:"New Social & Effectiveness Features",sub:"Community · 2026-07-11 update",desc:"Six new social and effectiveness tools have been added to help you connect with other candidates and track your prep impact more deeply. Building accountability and seeing real progress keeps study momentum high.",tip:"Explore the new features in Settings to find which ones best fit your study style."},
+]},
+// WN_VER:2026-07-12
+{version:"2026-07-12",slides:[
+{emoji:"🎓",color:C.accentLight,bg:C.accentLight,title:"Know Your Question Sources",sub:"Study Tools · 2026-07-12 update",desc:"Every question now displays its Learning Outcome Statement (LOS) source and exam topic weight, so you understand exactly what concept is being tested and how heavily it's weighted on exam day. This helps you prioritize high-impact topics and study with confidence.",tip:"Look for the LOS badge on each question to align your prep with official exam weightings."},
+{emoji:"📋",color:C.medium,bg:C.medium,title:"Review Wrong Answers Daily",sub:"Study Tools · 2026-07-12 update",desc:"A new daily wrong-answer review panel surfaces your recent mistakes first thing, making it faster to identify patterns in what you're struggling with. Spaced repetition of your errors dramatically improves retention before test day.",tip:"Check your wrong-answer panel each morning to start your study session with high-impact review."},
+{emoji:"🏆",color:C.reward,bg:C.reward,title:"Celebrate Topic Mastery Milestones",sub:"UX · 2026-07-12 update",desc:"You'll now receive a celebration toast the moment your accuracy in any topic crosses 70%, giving you instant feedback and motivation as you level up. This small win keeps momentum going during long study sessions.",tip:"Watch for the mastery milestone toast—it's your signal that a topic is ready to move to light review."},
 ]},
 // WN_END
 ];
@@ -340,12 +340,6 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-06
-{date:"2026-07-06",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-07
 {date:"2026-07-07",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -393,6 +387,11 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"Fix admin dashboard auth failure when JWT token is expired",
+"Add growth/retention metrics and MRR to admin dashboard",
 ]},
 // AC_END
 ];
