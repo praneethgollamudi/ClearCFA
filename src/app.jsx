@@ -4759,6 +4759,7 @@ function CFAMock(){
   const [sgLoading,setSgLoading]=useState(false);
   const [sgError,setSgError]=useState("");
   const [notifEnabled,setNotifEnabled]=useState(()=>{try{return localStorage.getItem("cfa_notif_v1")==="1";}catch{return false;}});
+  const [showPassBreakdown,setShowPassBreakdown]=useState(false);
   const [leaderboard,setLeaderboard]=useState([]);
   const [leaderboardOpt,setLeaderboardOpt]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_lb_opt_v1")||"null");}catch{return null;}});
   const [leaderboardName,setLeaderboardName]=useState("");
@@ -8664,7 +8665,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
     {passProbability&&(
       <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{fontSize:12,fontWeight:700,color:C.text}}>📊 Readiness vs threshold</span>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{fontSize:12,fontWeight:700,color:C.text}}>📊 Readiness vs threshold</span>
+            <button onClick={()=>setShowPassBreakdown(v=>!v)} style={{padding:"2px 7px",borderRadius:6,fontSize:10,fontWeight:700,background:showPassBreakdown?C.accent+"22":C.surface,border:`1px solid ${showPassBreakdown?C.accent:C.border}`,color:showPassBreakdown?C.accentLight:C.muted,cursor:"pointer"}}>
+              {showPassBreakdown?"▴ Hide":"? How"}
+            </button>
+          </div>
           <button onClick={async()=>{
             if(!notifEnabled){
               try{
@@ -8679,6 +8685,32 @@ Return ONLY a JSON array — no prose, no markdown fences:
             {notifEnabled?"🔔 On":"🔕 Remind me"}
           </button>
         </div>
+        {showPassBreakdown&&(
+          <div style={{background:C.surfaceHigh,borderRadius:9,padding:"10px 12px",marginBottom:10,animation:"fadeIn 0.2s ease"}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>How this is calculated</div>
+            {[
+              {label:"Accuracy",desc:"Weighted score (recent sessions count 3×)",val:`${passProbability.currentAccuracy}%`,pct:Math.round(passProbability.currentAccuracy),color:passProbability.currentAccuracy>=70?C.easy:passProbability.currentAccuracy>=55?C.medium:C.hard,weight:40},
+              {label:"Topic Coverage",desc:"% of exam weight you've practised",val:`${passProbability.coveragePct}%`,pct:passProbability.coveragePct,color:passProbability.coveragePct>=80?C.easy:passProbability.coveragePct>=50?C.medium:C.hard,weight:25},
+              {label:"Trajectory",desc:"Are you improving or declining?",val:passProbability.trajectory>0?`+${passProbability.trajectory}%`:passProbability.trajectory<0?`${passProbability.trajectory}%`:"Flat",pct:Math.min(100,50+passProbability.trajectory*3),color:passProbability.trajectory>2?C.easy:passProbability.trajectory<-2?C.hard:C.medium,weight:20},
+              {label:"Time Factor",desc:"Days left vs sessions still needed",val:passProbability.sessionsNeeded<=0?"Sufficient":`${passProbability.daysLeft}d / ~${passProbability.sessionsNeeded} sessions`,pct:Math.min(100,Math.round((passProbability.daysLeft/Math.max(1,passProbability.sessionsNeeded))*50)),color:passProbability.daysLeft>=passProbability.sessionsNeeded*2?C.easy:passProbability.daysLeft>=passProbability.sessionsNeeded?C.medium:C.hard,weight:15},
+            ].map(({label,desc,val,pct,color,weight})=>(
+              <div key={label} style={{marginBottom:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
+                  <div>
+                    <span style={{fontSize:11,fontWeight:700,color:C.text}}>{label}</span>
+                    <span style={{fontSize:10,color:C.muted,marginLeft:5}}>{weight}% weight</span>
+                  </div>
+                  <span style={{fontSize:11,fontWeight:700,color}}>{val}</span>
+                </div>
+                <div style={{position:"relative",height:4,background:C.border,borderRadius:2,overflow:"hidden"}}>
+                  <div style={{position:"absolute",inset:0,width:`${Math.max(2,Math.min(100,pct))}%`,background:color,borderRadius:2,transition:"width 0.4s ease"}}/>
+                </div>
+                <div style={{fontSize:10,color:C.muted,marginTop:2}}>{desc}</div>
+              </div>
+            ))}
+            <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${C.border}`,fontSize:11,color:C.muted,fontStyle:"italic"}}>{passProbability.advice||"Keep practising across all topics."}</div>
+          </div>
+        )}
         <div style={{position:"relative",height:8,background:C.border,borderRadius:4,overflow:"hidden"}}>
           <div style={{position:"absolute",inset:0,width:`${Math.min(100,passProbability.probability)}%`,background:passProbability.probability>=70?C.easy:passProbability.probability>=55?C.medium:C.hard,borderRadius:4,transition:"width 0.6s ease"}}/>
           <div style={{position:"absolute",top:0,bottom:0,left:"70%",width:2,background:"#ffffff44"}}/>
