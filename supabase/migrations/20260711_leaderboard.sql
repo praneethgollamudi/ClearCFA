@@ -12,10 +12,12 @@ drop policy if exists "read own leaderboard opt" on leaderboard_opts;
 drop policy if exists "upsert own leaderboard opt" on leaderboard_opts;
 
 -- Anyone can read opted-in entries (public leaderboard)
+drop policy if exists "read opted-in" on leaderboard_opts;
 create policy "read opted-in" on leaderboard_opts
   for select using (opted_in = true);
 
 -- Users can manage their own opt-in row
+drop policy if exists "upsert own leaderboard opt" on leaderboard_opts;
 create policy "upsert own leaderboard opt" on leaderboard_opts
   for all using (user_id = auth.uid())
   with check (user_id = auth.uid());
