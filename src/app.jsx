@@ -5149,6 +5149,7 @@ function CFAMock(){
             wrongCount:s.wrongCount||(s.wrongs?.length||0),wrongs:[],
             level:s.level,
             ...(s.subtopics&&{subtopics:s.subtopics}),
+            ...(s._mockTopicBreakdown&&{_mockTopicBreakdown:s._mockTopicBreakdown}),
           }));
           allAttempts=[{key:STORAGE_KEY,found:true,count:bestHistory.length}];
         } else {
@@ -5185,7 +5186,7 @@ function CFAMock(){
         if(usage&&typeof usage==="object"&&!Array.isArray(usage)) setUsageStats(usage);
       }catch{}
       try{const al=await storageGet(API_LOG_KEY);if(Array.isArray(al))apiLogRef.current=al;}catch{}
-      try{const pt=await storageGet(PASS_TREND_KEY);if(Array.isArray(pt)){setPassTrend(pt);passTrendRef.current=pt;}}catch{}
+      try{const pt=await storageGet(PASS_TREND_KEY);if(Array.isArray(pt)){const floored=pt.map(p=>({...p,prob:Math.max(5,p.prob||0)}));setPassTrend(floored);passTrendRef.current=floored;}}catch{}
 
       // STEP 2c: Bidirectional Supabase merge
       // Pull if Supabase is ahead; push if local is ahead (ensures progress is never lost)
@@ -5570,6 +5571,21 @@ function CFAMock(){
     setQdb(prev=>addToQDB(qs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
 
     // Build session object
+    // For Exam-Weight Mock (topic="Mixed"), compute per-topic breakdown so getModuleReadiness
+    // can credit each topic individually rather than treating the whole session as uncategorised.
+    let mockTopicBreakdown=null;
+    if(t==="Mixed"&&qs.length>0){
+      const byTopic={};
+      qs.forEach(q=>{
+        const qt=q._topic,qst=q._subtopic;
+        if(!qt)return;
+        if(!byTopic[qt])byTopic[qt]={topic:qt,module:qst||"",correct:0,total:0};
+        byTopic[qt].total++;
+        if(ans[q.id]===q.answer)byTopic[qt].correct++;
+      });
+      const vals=Object.values(byTopic).filter(tb=>tb.total>0);
+      if(vals.length)mockTopicBreakdown=vals;
+    }
     const session={
       id:Date.now(),topic:t,subtopic:st,difficulty:diff,mode:m,
       ...(multiModulesRef.current?.length>1&&{subtopics:multiModulesRef.current.map(mm=>mm.st)}),
@@ -5585,6 +5601,7 @@ function CFAMock(){
       confidenceData:computeCalibration(qs,ans,confidenceLogRef.current),
       ...(omMode&&{isOfficeMode:true}),
       ...(focusModeEnabled&&{focusSwitches:focusSwitchesRef.current,focusAwayMs:focusTotalAwayMsRef.current}),
+      ...(mockTopicBreakdown&&{_mockTopicBreakdown:mockTopicBreakdown}),
     };
 
     setLastSession(session);

@@ -688,7 +688,15 @@ function getModuleReadiness(history,losData=null){
   const activeLos=losData||LOS;
   return Object.entries(activeLos).map(([topic,{weight,modules}])=>{
     const moduleNames=Object.keys(modules);
-    const sessions=history.filter(h=>h.topic===topic);
+    // Direct topic sessions + credit sessions derived from Exam-Weight Mock breakdowns
+    const directSessions=history.filter(h=>h.topic===topic);
+    const creditSessions=history.flatMap(h=>{
+      if(!h._mockTopicBreakdown)return[];
+      return h._mockTopicBreakdown
+        .filter(tb=>tb.topic===topic&&tb.total>0)
+        .map(tb=>({id:h.id,topic:tb.topic,subtopic:tb.module,score:tb.correct,total:tb.total,pct:Math.round((tb.correct/tb.total)*100),dateKey:h.dateKey,difficulty:h.difficulty}));
+    });
+    const sessions=[...directSessions,...creditSessions];
     const modulesCovered=[...new Set(sessions.flatMap(h=>h.subtopics||[h.subtopic]))];
     const coverage=modulesCovered.length/moduleNames.length;
     let wCorrect=0,wTotal=0;
