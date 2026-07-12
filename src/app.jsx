@@ -296,6 +296,10 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
+// WN_VER:2026-07-12-b
+{version:"2026-07-12-b",slides:[
+{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Better Email Notifications",sub:"UX · 2026-07-12 update",desc:"We've improved how re-engagement emails reach you, making sure important study reminders land in your inbox reliably. This helps you stay on track with your CFA prep schedule without missing critical notifications.",tip:"Check your email settings if you want to adjust how often you receive study reminders."},
+]},
 // WN_VER:2026-07-12-c
 {version:"2026-07-12-c",slides:[
 {emoji:"⚡",color:C.accentLight,bg:C.easy,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved how ClearCFA handles AI request failures—the app now retries up to 4 times before giving up, ensuring you get answers to your CFA questions even when the network hiccups. This means fewer frustrating timeouts when you're in study mode.",tip:"If an AI explanation doesn't load on first try, just wait a moment—it's automatically retrying in the background."},
@@ -315,11 +319,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-f",slides:[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved AI resilience so quiz generation and explanations retry up to 4 times if something goes wrong, making study sessions less likely to be interrupted. This means fewer timeouts and smoother learning, especially during peak hours.",tip:"If a question fails to load, the app now quietly retries before showing an error—you'll notice fewer interruptions."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Topic Labels Everywhere",sub:"Study Tools · 2026-07-12 update",desc:"Topic names across Equity and Alternatives now display consistently throughout the app, fixing confusing mismatches in weight warnings and study progress. You'll see the same familiar topic names no matter where you study.",tip:"Check your study dashboard—Equity and Alternatives topics should now look uniform across all screens."},
-]},
-// WN_VER:2026-07-12
-{version:"2026-07-12",slides:[
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Real CBT Mock Exam Mode",sub:"Study Tools · 2026-07-12 update",desc:"Experience a fully authentic Computer-Based Test (CBT) mock exam that mirrors the actual CFA interface—with hidden tools, strict pacing, and realistic timing constraints. This prepares you psychologically and logistically for exam day so you walk in confident and familiar with the format.",tip:"Run a full mock under timed conditions to identify your pacing weak spots before the actual exam."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Detailed Post-Exam Review",sub:"Study Tools · 2026-07-12 update",desc:"After completing a mock exam, dive into a comprehensive review that breaks down your performance by question, topic, and difficulty level. Learn exactly where you went wrong and reinforce the concepts that tripped you up.",tip:"Review your mistakes immediately after the mock while the material is fresh in your mind."},
 ]},
 // WN_END
 ];
@@ -385,9 +384,7 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
-"fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},

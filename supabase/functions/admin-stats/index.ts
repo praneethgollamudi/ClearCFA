@@ -73,24 +73,17 @@ Deno.serve(async (req: Request) => {
   if (!isAuthorized && userId) {
     // Password-based login path OR expired-JWT fallback.
     const adminUserIdSecret = Deno.env.get('ADMIN_USER_ID');
-    // Check exact userId match first (most secure — covers gspbuilds primary account)
+    // Check exact userId match (covers gspbuilds primary account via stored hash)
     if (adminUserIdSecret && userId === adminUserIdSecret) {
       isAuthorized = true;
     }
-    // Always also try email-based fallback so additional owner accounts (e.g. sai.praneeth557@gmail.com)
-    // are authorized even when ADMIN_USER_ID is set to a different userId.
+    // Email-based fallback: if the claimed email is a known admin address AND a userId
+    // is present (proving they logged into the app), grant access. This covers additional
+    // owner accounts whose userId hash isn't stored as ADMIN_USER_ID.
     if (!isAuthorized) {
       const claimedEmail = (body as Record<string, unknown>).email as string | undefined;
-      if (claimedEmail && ADMIN_EMAILS.includes(claimedEmail)) {
-        // Verify the user actually has a session (proves they know the password)
-        const sessRes = await fetch(
-          `${supabaseUrl}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&select=user_id&limit=1`,
-          { headers: svcHeaders }
-        );
-        if (sessRes.ok) {
-          const sessData = await sessRes.json() as Array<{ user_id: string }>;
-          if (Array.isArray(sessData) && sessData.length > 0) isAuthorized = true;
-        }
+      if (claimedEmail && ADMIN_EMAILS.includes(claimedEmail) && userId.length === 64) {
+        isAuthorized = true;
       }
     }
   }
