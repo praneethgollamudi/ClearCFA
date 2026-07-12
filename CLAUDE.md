@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Calendar export to Study Plan screen (298773d)**: Study Plan screen now includes calendar export functionality (.ics format) for scheduling study sessions. When modifying Study Plan UI or adding new export features, ensure calendar integration maintains compatibility with common calendar applications (Google Calendar, Outlook, Apple Calendar).
+
+
+**What's New version consolidation (298773d)**: Versions 2026-07-11-e and 2026-07-12 have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, 2026-07-12-e, and 2026-07-12-f. Version 2026-07-12-e announces Exam-Weight Mock sessions, AI-Generated Study Notes, and Challenge Mode availability. Version 2026-07-12-f appears to be a variant consolidating Exam-Weight Mock sessions. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (4643366)**: Versions 2026-07-11-d and 2026-07-11-e have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, and 2026-07-12-e. Version 2026-07-12-d announces AI Study Notes generator and Challenge Mode. Version 2026-07-12-e announces Exam-Weight Mock sessions. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1244,7 +1250,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1798900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1799000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
