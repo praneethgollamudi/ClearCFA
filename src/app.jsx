@@ -11855,7 +11855,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <button onClick={async()=>{
               setReengageSending(true);setAdminEngageResult(null);
               try{
-                const res=await fetch(`${SUPABASE_URL}/functions/v1/re-engage`,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser?.accessToken,userId:authUser?.id,email:authUser?.email,testTo:authUser?.email})});
+                const res=await fetch(`${SUPABASE_URL}/functions/v1/re-engage`,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser?.accessToken,userId:authUser?.id,email:authUser?.email,testTo:"gspbuilds@gmail.com"})});
                 const data=await res.json();
                 setAdminEngageResult({type:"reengage_test",data});
               }catch(e){setAdminEngageResult({type:"reengage_test",error:e.message});}
