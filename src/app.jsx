@@ -294,10 +294,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-11-c
-{version:"2026-07-11-c",slides:[
-{emoji:"🚀",color:C.reward,bg:C.reward,title:"New Study Features Unlock",sub:"Study Tools · 2026-07-11 update",desc:"Six new effectiveness and social features are now live to supercharge your exam prep. Compete with peers, track progress in real-time, and stay motivated through your CFA journey.",tip:"Check the Study Tools section to enable social leaderboards and effectiveness tracking for your study sessions."},
-]},
 // WN_VER:2026-07-11-d
 {version:"2026-07-11-d",slides:[
 {emoji:"🎉",color:C.reward,bg:C.reward,title:"Topic Mastery Celebrations",sub:"Study Tools · 2026-07-11 update",desc:"When your accuracy on any topic first crosses 70%, you'll now get an instant celebration toast to mark the milestone. This keeps you motivated as you progress through each CFA domain.",tip:"Watch for the toast after your next quiz—it's your signal that a topic is clicking."},
@@ -321,6 +317,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎓",color:C.medium,bg:C.medium,title:"Smarter Question Selection Aligned to Exams",sub:"Study Tools · 2026-07-12 update",desc:"Questions now display their LOS (Learning Outcome Statement) source and exam topic weightings, ensuring you focus on high-impact material that matches actual CFA test blueprints. Study sessions now respect realistic topic distributions so you're not over-practicing low-weight areas.",tip:"Look for the LOS badge on each question to confirm you're drilling the topics that count most."},
 {emoji:"🏆",color:C.reward,bg:C.reward,title:"Daily Review & Mastery Milestones",sub:"UX · 2026-07-12 update",desc:"Your daily wrong-answer review panel surfaces recent mistakes to reinforce weak spots, and you'll now get celebratory feedback when topic accuracy first hits 70%. These moments keep you motivated and focused on steady improvement.",tip:"Check your daily panel first thing to review yesterday's misses—it's the fastest path to retention."},
 ]},
+// WN_VER:2026-07-12-c
+{version:"2026-07-12-c",slides:[
+{emoji:"✍️",color:C.accentLight,bg:C.accentLight,title:"AI-Powered Study Notes",sub:"AI · 2026-07-12 update",desc:"Generate personalized study notes instantly on the Revision screen to consolidate your understanding of any topic. Save hours manually synthesizing key concepts while preparing for exam day.",tip:"Open any topic in Revision, tap the Notes tab, and let AI create focused summaries tailored to your level."},
+{emoji:"🎓",color:C.medium,bg:C.medium,title:"Master Weak Topics Faster",sub:"Study Tools · 2026-07-12 update",desc:"Review your wrong answers in a dedicated daily panel and see LOS source badges on every question to understand exam weight. Prioritize high-impact learning objectives so you study smarter, not longer.",tip:"Check your daily wrong-answer review panel first thing each session to target your weakest areas."},
+{emoji:"🔍",color:C.hard,bg:C.hard,title:"Understand Probability Concepts",sub:"UX · 2026-07-12 update",desc:"Tap into a new explainability drawer for probability questions to see step-by-step reasoning behind answers. Demystify complex statistics and distribution problems that often trip up candidates.",tip:"When a probability question stumps you, open the explainability drawer to walk through the logic."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -329,12 +331,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-06
-{date:"2026-07-06",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-07
 {date:"2026-07-07",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -387,6 +383,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-07-12",entries:[
 "Fix admin dashboard auth failure when JWT token is expired",
 "Add growth/retention metrics and MRR to admin dashboard",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
