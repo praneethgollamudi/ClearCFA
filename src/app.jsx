@@ -6604,7 +6604,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const weights=TOPIC_WEIGHTS[cfaLevel];
     if(!weights||levelHistory.length<5)return null;
     const totals={};let totalQs=0;
-    levelHistory.forEach(h=>{if(!h.topic)return;totals[h.topic]=(totals[h.topic]||0)+(h.total||0);totalQs+=(h.total||0);});
+    const TNORM={"Equity":"Equity Investments","Alternatives":"Alternative Investments"};
+    levelHistory.forEach(h=>{if(!h.topic)return;const tp=TNORM[h.topic]||h.topic;totals[tp]=(totals[tp]||0)+(h.total||0);totalQs+=(h.total||0);});
     if(totalQs<20)return null;
     const under=Object.entries(weights).map(([tp,[mn]])=>{const qs=totals[tp]||0;const pct=totalQs?(qs/totalQs)*100:0;return{topic:tp,pct:Math.round(pct),min:mn,diff:mn-pct};}).filter(w=>w.diff>5).sort((a,b)=>b.diff-a.diff).slice(0,2);
     return under.length?under:null;
