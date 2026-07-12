@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (90e0fa3)**: Versions 2026-07-11 and 2026-07-11-b have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-11-c, 2026-07-11-d, 2026-07-11-e, 2026-07-12, and 2026-07-12-b. Version 2026-07-12 announces LOS source badges with exam topic weights, daily wrong-answer review panel, and 70% topic mastery milestones. Version 2026-07-12-b announces pass probability explainability drawer for incorrect answers. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (3129d2d)**: Versions 2026-07-08 and 2026-07-11 have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-11-b, 2026-07-11-c, 2026-07-11-d, 2026-07-11-e, and 2026-07-12. Version 2026-07-11-e consolidates daily wrong-answer review panel, topic mastery celebration milestones, and six new social & effectiveness features. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1214,7 +1217,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1798500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1798600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1342,3 +1345,9 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **Topic mastery celebration at 70% accuracy (1ee95d3)**: App now displays a celebration toast when per-topic accuracy first crosses 70% threshold. When modifying accuracy calculations or topic performance tracking, ensure milestone detection triggers once per topic per session to avoid duplicate celebrations.
 
 **LOS source badge on questions (12c12a3)**: Questions now display source badge indicating their LOS origin. When rendering question cards or modifying question metadata display, ensure LOS source attribution is visible to support learning outcome transparency.
+
+**LOS source badges and exam topic weight display (90e0fa3)**: Questions now display their Learning Outcome Statement (LOS) source and exam topic weightings. When modifying question rendering or adding new question metadata fields, ensure LOS badges and weight percentages are consistently displayed to help users align study priorities with official exam weightings.
+
+**AI Study Notes generator (90e0fa3)**: Revision screen notes tab now includes an AI-powered study notes generator. When adding or modifying note-taking features, ensure the generator integrates with existing note display logic and respects user-generated notes storage without overwriting manual entries.
+
+**Pass probability explainability drawer (3129d2d)**: New explainability drawer breaks down probability reasoning behind incorrect answers, showing step-by-step logic for where reasoning diverged. When modifying answer feedback or explanation systems, ensure probability insights are correctly calculated and clearly surfaced after wrong answers to support targeted misconception correction.
