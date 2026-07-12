@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
     // owner accounts whose userId hash isn't stored as ADMIN_USER_ID.
     if (!isAuthorized) {
       const claimedEmail = (body as Record<string, unknown>).email as string | undefined;
-      if (claimedEmail && ADMIN_EMAILS.includes(claimedEmail) && userId.length === 64) {
+      if (claimedEmail && ADMIN_EMAILS.includes(claimedEmail)) {
         isAuthorized = true;
       }
     }
