@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Exam-Weight Mock crediting bug fix (02e6aca)**: Exam-Weight Mock sessions now properly credit module readiness scores and pass trend calculations. When modifying mock session result handling or readiness calculation, ensure Exam-Weight sessions update metrics identically to standard sessions.
+
+
+**Web Push notifications and retention features (784302a)**: App now supports Web Push subscriptions (PUSH_SUB_KEY, VAPID_PUB_KEY) for re-engagement messaging, panic streak banners, and re-engagement emails. When implementing push features or modifying notification logic, ensure VAPID public key and subscription storage respect browser permissions and user opt-in preferences.
+
+
 **Calendar export to Study Plan screen (298773d)**: Study Plan screen now includes calendar export functionality (.ics format) for scheduling study sessions. When modifying Study Plan UI or adding new export features, ensure calendar integration maintains compatibility with common calendar applications (Google Calendar, Outlook, Apple Calendar).
 
 
@@ -1147,6 +1153,9 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+- **What's New version ordering**: Recent consolidation removed versions 2026-07-12-b and 2026-07-12-c; currently active are 2026-07-12, 2026-07-12-d, 2026-07-12-e, 2026-07-12-f. When adding future versions, verify against the WHATS_NEW_SLIDES array to prevent duplicate feature announcements across versions.
+
+
 - **paceStatus declaration order**: The `paceStatus` variable must be declared before use in render logic to avoid blank page errors. Always declare persona-dependent state variables early in component logic, before conditional rendering that depends on them.
 
 
@@ -1247,10 +1256,11 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_daily_q_v1` | `DAILY_Q_KEY` |
 | `cfa_duel_v1` | `DUEL_KEY` |
 | `cfa_study_group_v1` | `SG_KEY` |
+| `cfa_push_sub_v1` | `PUSH_SUB_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1799100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1799200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
