@@ -4635,6 +4635,7 @@ function CFAMock(){
   const [savePresetName,setSavePresetName]=useState("");
   const [showSavePreset,setShowSavePreset]=useState(false);
   const [warmupEnabled,setWarmupEnabled]=useState(false);
+  const [challengeMode,setChallengeMode]=useState(false);
   const [focusLastGenerated,setFocusLastGenerated]=useState(null); // timestamp of last generation
   const [reportedQIds,setReportedQIds]=useState([]);
   const [lastSession,setLastSession]=useState(null);
@@ -10045,7 +10046,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           })();
           return(<>
             <div style={{display:"flex",flexDirection:"column",gap:7}}>
-              {DIFFICULTIES.map(d=>{const verbHint={Easy:"describe/define/identify",Medium:"calculate/apply/contrast",Hard:"evaluate/analyze/formulate"}[d];return(<button key={d} onClick={()=>setDifficulty(d)} style={{padding:"10px 12px",borderRadius:8,fontSize:13,fontWeight:600,textAlign:"left",cursor:"pointer",border:difficulty===d?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:difficulty===d?C.accent+"18":C.surface,color:difficulty===d?C.accentLight:C.muted,display:"flex",alignItems:"center",gap:8}}><span style={{width:8,height:8,borderRadius:"50%",background:diffC[d],flexShrink:0,marginTop:1}}/><span><div>{d}</div><div style={{fontSize:9,opacity:0.6,marginTop:1}}>{verbHint}</div>{adaptiveDiff?.diff===d&&<div style={{fontSize:9,color:C.easy,marginTop:1}}>✓ Recommended</div>}</span></button>);})}
+              {DIFFICULTIES.map(d=>{const verbHint={Easy:"describe/define/identify",Medium:"calculate/apply/contrast",Hard:"evaluate/analyze/formulate"}[d];const effD=challengeMode?"Hard":difficulty;const isActive=effD===d;return(<button key={d} onClick={()=>{if(!challengeMode)setDifficulty(d);}} disabled={challengeMode&&d!=="Hard"} style={{padding:"10px 12px",borderRadius:8,fontSize:13,fontWeight:600,textAlign:"left",cursor:challengeMode&&d!=="Hard"?"not-allowed":"pointer",opacity:challengeMode&&d!=="Hard"?0.35:1,border:isActive?`1.5px solid ${challengeMode?C.hard:C.accent}`:`1.5px solid ${C.border}`,background:isActive?(challengeMode?C.hard+"20":C.accent+"18"):C.surface,color:isActive?(challengeMode?C.hard:C.accentLight):C.muted,display:"flex",alignItems:"center",gap:8}}><span style={{width:8,height:8,borderRadius:"50%",background:diffC[d],flexShrink:0,marginTop:1}}/><span><div>{d}</div><div style={{fontSize:9,opacity:0.6,marginTop:1}}>{verbHint}</div>{challengeMode&&d==="Hard"&&<div style={{fontSize:9,color:C.hard,marginTop:1}}>🔥 Challenge Mode</div>}{!challengeMode&&adaptiveDiff?.diff===d&&<div style={{fontSize:9,color:C.easy,marginTop:1}}>✓ Recommended</div>}</span></button>);})}
             </div>
             {adaptiveDiff&&<div style={{marginTop:8,fontSize:11,color:adaptiveDiff.diff==="Hard"?C.easy:C.medium,background:C.surface,border:`1px solid ${adaptiveDiff.diff==="Hard"?C.easy+"33":C.medium+"33"}`,borderRadius:7,padding:"6px 10px"}}>{adaptiveDiff.diff==="Hard"?"🔥":"📉"} {adaptiveDiff.reason}</div>}
           </>);
@@ -10060,13 +10061,24 @@ Return ONLY a JSON array — no prose, no markdown fences:
     </div>
 
     {/* Focus Mode toggle */}
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:focusModeEnabled?`${C.accent}12`:C.surface,border:`1px solid ${focusModeEnabled?C.accent+"44":C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:14,cursor:"pointer"}} onClick={()=>{const next=!focusModeEnabled;setFocusModeEnabled(next);try{localStorage.setItem("cfa_focus_mode_v1",next?"1":"0");}catch{};}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:focusModeEnabled?`${C.accent}12`:C.surface,border:`1px solid ${focusModeEnabled?C.accent+"44":C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:8,cursor:"pointer"}} onClick={()=>{const next=!focusModeEnabled;setFocusModeEnabled(next);try{localStorage.setItem("cfa_focus_mode_v1",next?"1":"0");}catch{};}}>
       <div>
         <div style={{fontSize:13,fontWeight:700,color:focusModeEnabled?C.accentLight:C.text}}>🎯 Super Focus Mode</div>
         <div style={{fontSize:11,color:C.muted,marginTop:2}}>Tracks tab switches · keeps screen on · shows focus score</div>
       </div>
       <div style={{width:38,height:22,borderRadius:11,background:focusModeEnabled?C.accent:"#444",position:"relative",transition:"background 0.2s",flexShrink:0}}>
         <div style={{position:"absolute",top:3,left:focusModeEnabled?18:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s",boxShadow:"0 1px 4px #0006"}}/>
+      </div>
+    </div>
+
+    {/* Challenge Mode toggle */}
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:challengeMode?`${C.hard}10`:C.surface,border:`1px solid ${challengeMode?C.hard+"55":C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:14,cursor:"pointer"}} onClick={()=>setChallengeMode(m=>!m)}>
+      <div>
+        <div style={{fontSize:13,fontWeight:700,color:challengeMode?C.hard:C.text}}>🔥 Challenge Mode</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:2}}>Locks difficulty to Hard — evaluate, analyze, and formulate</div>
+      </div>
+      <div style={{width:38,height:22,borderRadius:11,background:challengeMode?C.hard:"#444",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+        <div style={{position:"absolute",top:3,left:challengeMode?18:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s",boxShadow:"0 1px 4px #0006"}}/>
       </div>
     </div>
     {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:14}}>{error}</div>}
@@ -10088,10 +10100,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
         :vignetteMode?`Generate ${Math.ceil(count/3)} Vignettes (${count} questions) →`
         :selSubtopics.length>1?`Generate ${warmupEnabled?count+3:count} Questions across ${selSubtopics.length} modules →`
         :`Generate ${warmupEnabled?count+3:count} Questions${warmupEnabled?" (incl. 3 warm-up)":""} →`;
+      const effDiff=challengeMode?"Hard":difficulty;
       return(<>
     <button onClick={()=>{
-      if(mode==="interleaved"){generateInterleavedSession(difficulty,count);return;}
-      generateQuestions(primaryT,primarySt,difficulty,warmupEnabled?count+3:count,mode,vignetteMode,null,multiMods);
+      if(mode==="interleaved"){generateInterleavedSession(effDiff,count);return;}
+      generateQuestions(primaryT,primarySt,effDiff,warmupEnabled?count+3:count,mode,vignetteMode,null,multiMods);
     }} disabled={!ready||loading} style={{width:"100%",padding:"15px",borderRadius:12,fontSize:15,fontWeight:700,background:ready&&!loading?`linear-gradient(135deg,${C.accent},${C.accentLight})`:C.dim,color:ready&&!loading?"#fff":C.muted,border:"none",cursor:ready&&!loading?"pointer":"not-allowed",boxShadow:ready&&!loading?`0 4px 20px ${C.accent}44`:"none"}}>
       {btnLabel}
     </button>
