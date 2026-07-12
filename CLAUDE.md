@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Pro access for founder/tester (175720b)**: sai.praneeth557@gmail.com has been added to OWNER_EMAILS alongside gspbuilds@gmail.com to restore Pro tier access for the founder. Maintain both emails in OWNER_EMAILS—do not consolidate or remove sai.praneeth557@gmail.com unless explicitly instructed.
+
+
+**What's New version consolidation (9ac45b3)**: Versions 2026-07-12-b and 2026-07-12-c have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12, 2026-07-12-d, 2026-07-12-e, and 2026-07-12-f. Versions 2026-07-12 and 2026-07-12-b now announce email reliability improvements. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **What's New version consolidation (31cd1d7 & recent)**: Versions 2026-07-12 and 2026-07-12-b have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-c, 2026-07-12-d, 2026-07-12-e, and 2026-07-12-f. Version 2026-07-12-f consolidates web push notifications and streak tracking. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 
@@ -1293,7 +1299,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1799700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1799800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1431,3 +1437,5 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **Exam-Weight Mock sessions pass trend and module readiness (02e6aca)**: Exam-Weight Mock sessions now properly credit module readiness progression and pass trend analytics when users complete 18-question sessions. When modifying mock session completion logic or analytics tracking, ensure Exam-Weight sessions update both topic mastery and pass probability trends identically to standard sessions.
 
 **What's New version consolidation (02e6aca)**: Versions 2026-07-12 and 2026-07-12-b have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-c, 2026-07-12-d, 2026-07-12-e, 2026-07-12-f. Version 2026-07-12-f announces Exam-Weight Mock sessions, AI Study Notes, and Challenge Mode toggleability. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+**AI resilience tuning (9ac45b3)**: callClaude now uses 4 retry attempts (increased from 2) with 6000ms retry delay (decreased from 8000ms) and removes duplicate wait logic on rate limit. When troubleshooting AI feature timeouts or rate limits, verify retry parameters match these defaults.
