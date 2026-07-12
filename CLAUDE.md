@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Exam-Weight Mock sessions (3cfea94)**: New 18-question practice sessions are now aligned to official CFA exam topic weight distributions. When generating or modifying mock exam sessions, ensure question selection respects realistic topic weighting to provide authentic exam-condition practice.
+
+
+**What's New version consolidation (4643366)**: Versions 2026-07-11-c and 2026-07-11-d have been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-11-e, 2026-07-12, 2026-07-12-b, 2026-07-12-c, and 2026-07-12-d. Version 2026-07-12-c announces AI-powered study notes generator and pass probability explainability drawer. Version 2026-07-12-d consolidates AI study notes, Challenge Mode, and smarter question context with LOS badges. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **LOS source badges and exam topic weights (12c12a3)**: Questions now display Learning Outcome Statement source badges with associated exam topic weightings. Question generation respects realistic topic distributions based on CFA exam blueprints. When modifying question selection or difficulty scaling, ensure topic weight constraints are enforced to prevent over-practicing low-weight areas.
 
 
@@ -1232,7 +1238,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1798700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1798800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
