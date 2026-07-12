@@ -1320,7 +1320,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1800300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1800400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1478,3 +1478,5 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **What's New version consolidation (c60895f)**: Version 2026-07-12 has been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, 2026-07-12-e, and 2026-07-12-f. Version 2026-07-12-f announces AI retry resilience and consistent topic label normalization. Always verify against active list when adding future versions to prevent duplicate messaging.
 
 **Leaderboard SQL UUID casting (c60895f)**: Leaderboard queries now cast UUID columns to text explicitly in JOIN conditions (e.g., `s.user_id::text`, `ou.user_id::text`) to fix type mismatches between uuid and text columns. When querying user_id across sessions and leaderboard tables, ensure consistent casting to prevent PostgreSQL join failures.
+
+**Leaderboard SQL type casting (78e568c & c60895f)**: Leaderboard queries now explicitly cast `sessions.data` to `jsonb` and `user_id` to `text` in joins to fix type mismatches. When querying sessions or joining user IDs in SQL functions, ensure explicit type casting is applied to prevent deployment failures on strict type checking.
