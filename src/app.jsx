@@ -296,12 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-d
-{version:"2026-07-12-d",slides:[
-{emoji:"✍️",color:C.accentLight,bg:C.accentLight,title:"AI Study Notes Generator",sub:"AI · 2026-07-12 update",desc:"Automatically generate personalized study notes from any question or topic on the Revision screen. Save hours summarizing key concepts while reinforcing your understanding of testable material.",tip:"Open the Notes tab in Revision mode and tap the AI generator to create instant summaries."},
-{emoji:"🎮",color:C.reward,bg:C.reward,title:"Challenge Mode for Extra Practice",sub:"Study Tools · 2026-07-12 update",desc:"Enable Challenge Mode in setup to unlock a tougher question variant designed to push your reasoning skills beyond standard difficulty. Perfect for fine-tuning weak areas before exam day.",tip:"Toggle Challenge Mode on the setup screen to activate harder questions immediately."},
-{emoji:"🔍",color:C.medium,bg:C.medium,title:"Smarter Question Context",sub:"Study Tools · 2026-07-12 update",desc:"Questions now display LOS source badges and exam topic weight indicators to help you focus on high-impact material. Pass probability explainability shows you exactly why answers are correct or incorrect.",tip:"Look for the LOS badge on each question and review the pass probability drawer to understand concept difficulty."},
-]},
 // WN_VER:2026-07-12-e
 {version:"2026-07-12-e",slides:[
 {emoji:"📊",color:C.hard,bg:C.hard,title:"Exam-Weight Mock Sessions",sub:"Study Tools · 2026-07-12 update",desc:"New 18-question mock exams now match the official CFA Institute topic weights, giving you realistic practice that mirrors the actual test distribution. This helps you identify weak areas where the exam actually focuses.",tip:"Start with an Exam-Weight Mock to benchmark your readiness before drilling into individual topics."},
@@ -326,6 +320,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📅",color:C.accentLight,bg:C.accentLight,title:"Export Your Study Plan to Calendar",sub:"UX · 2026-07-12 update",desc:"Study Plan now supports .ics calendar export so you can sync your CFA prep schedule directly into Apple Calendar, Google Calendar, or Outlook. Never miss a study milestone or exam deadline again.",tip:"Tap the export button on your Study Plan to add all your sessions to your preferred calendar app."},
 {emoji:"🔗",color:C.reward,bg:C.reward,title:"Share Results to LinkedIn",sub:"UX · 2026-07-12 update",desc:"After completing a session, share your progress with a professionally designed landscape card optimized for LinkedIn. Celebrate milestones and network with other CFA candidates in your feed.",tip:"Look for the share icon on your results screen to generate and post your achievement card."},
 ]},
+// WN_VER:2026-07-12-c
+{version:"2026-07-12-c",slides:[
+{emoji:"📚",color:C.easy,bg:C.easy,title:"Sync Study Plan to Calendar",sub:"Study Tools · 2026-07-12 update",desc:"Export your ClearCFA study schedule directly to your device calendar in .ics format. Your exam prep milestones now integrate seamlessly with your personal schedule, so you never miss a planned study session.",tip:"Visit the Study Plan screen and tap the export button to add all your sessions to Apple Calendar or Google Calendar in one tap."},
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Mock Exams Now Track Progress",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight mock sessions now correctly credit your module readiness and update your pass trend data. You'll see an accurate picture of your prep strength across all topics.",tip:"Check your Dashboard after completing an Exam-Weight mock—your readiness badges and pass probability will now reflect that attempt."},
+{emoji:"🔔",color:C.reward,bg:C.reward,title:"Stay Motivated with Smart Reminders",sub:"UX · 2026-07-12 update",desc:"New web push notifications, re-engagement emails, and a panic streak banner keep you accountable and focused on your CFA prep goals. Get nudged when you're about to lose momentum, so you stay on track.",tip:"Enable push notifications in settings—you'll receive timely reminders if your study streak is at risk or if you haven't logged in recently."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -339,18 +339,17 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix admin dashboard auth failure when JWT token is expired",
-]},
-// AC_VER:2026-07-11
-{date:"2026-07-11",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "Fix admin dashboard auth failure when JWT token is expired",
 "Add growth/retention metrics and MRR to admin dashboard",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
