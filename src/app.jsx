@@ -240,6 +240,12 @@ const REEL_TOPIC_COLORS={
   "Risk Management":"#ef4444",
   "Trading & Performance":"#0ea5e9",
 };
+const QS_SLUG_MAP={
+  ethics:"Ethics",quant:"Quantitative Methods",economics:"Economics",
+  fsa:"Financial Statement Analysis",corporate:"Corporate Issuers",
+  equity:"Equity",fixed_income:"Fixed Income",derivatives:"Derivatives",
+  alternatives:"Alternatives",portfolio:"Portfolio Management",
+};
 const CFA_ACRONYMS={
   "EAR":"Effective Annual Rate","APR":"Annual Percentage Rate","HPY":"Holding Period Yield",
   "HPR":"Holding Period Return","TWR":"Time-Weighted Return","MWR":"Money-Weighted Return",
@@ -4930,6 +4936,7 @@ function CFAMock(){
   const [pushSending,setPushSending]=useState(false);
   const [reengageSending,setReengageSending]=useState(false);
   const [adminEngageResult,setAdminEngageResult]=useState(null);
+  const [quickStartTopic,setQuickStartTopic]=useState(null);
   const [showPassBreakdown,setShowPassBreakdown]=useState(false);
   const [leaderboard,setLeaderboard]=useState([]);
   const [leaderboardOpt,setLeaderboardOpt]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_lb_opt_v1")||"null");}catch{return null;}});
@@ -5082,6 +5089,7 @@ function CFAMock(){
         authUserRef.current=auth;
         try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:true}));}catch{}
         if(!exists)setShowOnboarding(true);
+        try{const qs=sessionStorage.getItem('cfa_qs_v1');if(qs){sessionStorage.removeItem('cfa_qs_v1');const t=QS_SLUG_MAP[qs];if(t)setQuickStartTopic(t);}}catch{}
       }catch{}
     })();
   },[]);
@@ -7294,6 +7302,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         setAuthUser(auth);
         authUserRef.current=auth;
         try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:true}));}catch{}
+        try{const qs=sessionStorage.getItem('cfa_qs_v1');if(qs){sessionStorage.removeItem('cfa_qs_v1');const t=QS_SLUG_MAP[qs];if(t)setQuickStartTopic(t);}}catch{}
         if(isSignup){
           setShowOnboarding(true);
           try{const ref=sessionStorage.getItem('cfa_ref');if(ref&&ref!==auth.id){recordReferral(SB_CFG,ref,auth.id);sessionStorage.removeItem('cfa_ref');}}catch{}
@@ -9157,6 +9166,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
         );
       })()}
     </div>
+
+    {/* Email quickstart — shown when user arrives via re-engagement email deep link */}
+    {quickStartTopic&&(
+      <div style={{background:`linear-gradient(135deg,${C.accent}22,${C.accent}0a)`,border:`2px solid ${C.accent}66`,borderRadius:16,padding:"18px 20px",marginBottom:14,animation:"fadeIn 0.3s ease"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+          <span style={{fontSize:28}}>🎯</span>
+          <div>
+            <div style={{fontSize:16,fontWeight:900,color:C.text,lineHeight:1.2}}>Start with {quickStartTopic}</div>
+            <div style={{fontSize:12,color:C.muted,marginTop:2}}>5 questions · ~8 minutes · AI-picked difficulty</div>
+          </div>
+        </div>
+        <button onClick={()=>{setQuickStartTopic(null);generateQuestions(quickStartTopic,null,null,5,"guided");}} style={{width:"100%",padding:"13px",borderRadius:12,fontSize:15,fontWeight:800,background:C.accent,color:"#fff",border:"none",cursor:"pointer",marginBottom:8}}>
+          Start {quickStartTopic} Session →
+        </button>
+        <button onClick={()=>setQuickStartTopic(null)} style={{width:"100%",padding:"7px",borderRadius:10,fontSize:12,fontWeight:600,background:"none",color:C.muted,border:`1px solid ${C.border}`,cursor:"pointer"}}>
+          Dismiss
+        </button>
+      </div>
+    )}
 
     {/* Quick Start — 1-tap topic launch */}
     <div style={{marginBottom:12}}>
@@ -13266,6 +13294,7 @@ function ToastManager(){
 try{const ref=new URLSearchParams(window.location.search).get('ref');if(ref){sessionStorage.setItem('cfa_ref',ref);}}catch{}
 try{const duel=new URLSearchParams(window.location.search).get('duel');if(duel){sessionStorage.setItem(DUEL_KEY,duel);}}catch{}
 try{const sgc=new URLSearchParams(window.location.search).get('sg');if(sgc){sessionStorage.setItem('cfa_sg_invite',sgc.toUpperCase().slice(0,6));}}catch{}
+try{const qs=new URLSearchParams(window.location.search).get('qs');if(qs){sessionStorage.setItem('cfa_qs_v1',qs);}}catch{}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(CFAMock));
