@@ -137,7 +137,7 @@ serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "sai.praneeth557@gmail.com";
+  const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "gspbuilds@gmail.com";
   const VAPID_PUB = Deno.env.get("VAPID_PUBLIC_KEY")!;
   const VAPID_PRIV = Deno.env.get("VAPID_PRIVATE_KEY")!;
 

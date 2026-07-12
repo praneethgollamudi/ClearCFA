@@ -11,7 +11,7 @@ serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "sai.praneeth557@gmail.com";
+  const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "gspbuilds@gmail.com";
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
   // Resend's shared sender works on the free plan without a verified domain.
   // Once you own a domain, set FROM_EMAIL secret to e.g. "ClearCFA <noreply@yourdomain.com>"

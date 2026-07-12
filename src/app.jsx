@@ -407,7 +407,7 @@ function _applyTheme(t){
 
 // ── Freemium tier ─────────────────────────────────────────────────────────────
 const FREE_DAILY_AI_LIMIT=20;
-const OWNER_EMAILS=['sai.praneeth557@gmail.com'];
+const OWNER_EMAILS=['gspbuilds@gmail.com'];
 // ── Payment config (update these to change payment details) ───────────────────
 const PAYMENT_UPI_ID='9493413121@upi';
 const PAYMENT_CONTACT_EMAIL='gspbuilds@gmail.com';
@@ -5740,7 +5740,7 @@ COACH: [1 honest, direct sentence — no generic cheerleading]`;
     }
   },[screen]);
 
-  const ADMIN_EMAIL="sai.praneeth557@gmail.com";
+  const ADMIN_EMAIL="gspbuilds@gmail.com";
   const isAdmin=authUser?.email===ADMIN_EMAIL;
   const ADMIN_STATS_URL=`${SUPABASE_URL}/functions/v1/admin-stats`;
   const fetchAdminStats=async()=>{

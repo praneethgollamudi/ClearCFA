@@ -6,7 +6,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const ADMIN_EMAIL = 'sai.praneeth557@gmail.com';
+const ADMIN_EMAIL = 'gspbuilds@gmail.com';
 
 // Haiku pricing ($/M tokens)
 const HAIKU_IN  = 0.80;
