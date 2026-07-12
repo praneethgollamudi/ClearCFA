@@ -296,10 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-b
-{version:"2026-07-12-b",slides:[
-,
-]},
 // WN_VER:2026-07-12-c
 {version:"2026-07-12-c",slides:[
 {emoji:"🐛",color:C.medium,bg:C.medium,title:"Better Error Messages for Re-Engagement",sub:"Bug Fix · 2026-07-12 update",desc:"We fixed an issue where re-engagement preview errors weren't showing you the real problem. Now you'll see clear, actionable error messages if something goes wrong, including hints about free-plan restrictions.",tip:"If you hit an error when trying to re-engage with ClearCFA, check the message—it now tells you exactly what's happening."},
@@ -316,6 +312,10 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-f",slides:[
 ,
 ]},
+// WN_VER:2026-07-12
+{version:"2026-07-12",slides:[
+{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Reliable Re-engagement Emails",sub:"UX · 2026-07-12 update",desc:"We've upgraded our email delivery system to ensure your study reminders and progress updates reach your inbox consistently. This means you'll never miss important notifications about your CFA prep milestones and recommended study sessions.",tip:"Check your email settings in the app to ensure notifications are enabled for the best study experience."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -324,12 +324,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -396,6 +390,13 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: push_subscriptions migration type mismatch blocking Supabase deploys",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"fix: push_subscriptions migration type mismatch blocking Supabase deploys",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
