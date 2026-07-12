@@ -296,12 +296,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-d
-{version:"2026-07-12-d",slides:[
-{emoji:"📅",color:C.accentLight,bg:C.accentLight,title:"Export Study Plan to Calendar",sub:"Study Tools · 2026-07-12 update",desc:"Your ClearCFA study schedule now syncs directly to your phone or desktop calendar as .ics files. This keeps your exam prep integrated with the rest of your life, so you never miss a scheduled study session.",tip:"Open your Study Plan and tap Export to Calendar to add all topics to your favorite calendar app."},
-{emoji:"🎖️",color:C.reward,bg:C.reward,title:"Mock Exams Now Track Your Progress",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight mock sessions now correctly credit module readiness and update your pass trend analysis. This means your progress dashboard accurately reflects your readiness for each topic, so you know exactly where to focus next.",tip:"After completing an Exam-Weight mock, check your Module Readiness and Pass Trend to see your real improvement."},
-{emoji:"🔔",color:C.medium,bg:C.medium,title:"Stay Motivated with Streak & Reminders",sub:"UX · 2026-07-12 update",desc:"ClearCFA now sends timely web push notifications and displays your study streak on-app to keep you accountable. Missing days is harder when you see your streak at risk—and reminders help you get back on track when life gets busy.",tip:"Enable push notifications in your app settings so you never miss a study reminder."},
-]},
 // WN_VER:2026-07-12-e
 {version:"2026-07-12-e",slides:[
 {emoji:"📊",color:C.hard,bg:C.hard,title:"Mock Sessions Now Track Progress Accurately",sub:"Bug Fix · 2026-07-12 update",desc:"Exam-Weight Mock sessions now correctly credit your module readiness and update your pass trend score. Previously, these critical practice tests weren't being counted toward your readiness metrics, making it harder to gauge your true exam readiness.",tip:"Take an Exam-Weight Mock today and watch your module readiness bar move."},
@@ -318,6 +312,10 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-12-b
 {version:"2026-07-12-b",slides:[
 {emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Better Email Notifications",sub:"UX · 2026-07-12 update",desc:"We've improved how re-engagement emails reach you, making sure important study reminders land in your inbox reliably. This helps you stay on track with your CFA prep schedule without missing critical notifications.",tip:"Check your email settings if you want to adjust how often you receive study reminders."},
+]},
+// WN_VER:2026-07-12-c
+{version:"2026-07-12-c",slides:[
+{emoji:"⚡",color:C.accentLight,bg:C.easy,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved how ClearCFA handles AI request failures—the app now retries up to 4 times before giving up, ensuring you get answers to your CFA questions even when the network hiccups. This means fewer frustrating timeouts when you're in study mode.",tip:"If an AI explanation doesn't load on first try, just wait a moment—it's automatically retrying in the background."},
 ]},
 // WN_END
 ];
