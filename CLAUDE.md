@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (863f4ce)**: Version 2026-07-12-d has been removed from WHATS_NEW_SLIDES; currently active versions are 2026-07-12-b, 2026-07-12-c, 2026-07-12-e, and 2026-07-12-f. Version 2026-07-12-c now announces better error messages for re-engagement. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
+**Re-engage preview email recipient (863f4ce)**: Re-engage test emails are now sent to `gspbuilds@gmail.com` (Resend account owner) instead of the current user's email. When testing re-engagement flows via admin dashboard, verify the preview arrives at gspbuilds@gmail.com, not the admin user's own inbox.
+
+
 **Re-engage email error messaging (89ad21a)**: admin-stats reengage_test endpoint now surfaces Resend API errors and includes optional `hint` field in response (e.g., free-plan restriction warnings). When displaying re-engage test results, append the hint if present: `Failed: ${error} — ${hint}`.
 
 
@@ -1350,7 +1356,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1801600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1801700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
