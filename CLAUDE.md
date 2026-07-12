@@ -4,15 +4,6 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
-**AI fetch timeout scaling (e0426a0)**: `callClaude()` now scales fetch timeout with token budget to prevent timeout failures on large requests. When implementing AI-dependent features with variable question counts or token budgets, ensure timeout is computed proportionally rather than using fixed delays.
-
-
-**AI token budget scaling for exam-weight mocks (9ab0110)**: Weighted mock generation now uses `cnt*400+500` tokens (previously capped at 4200) to support larger question sets across all levels without truncation. When calling `callClaude()` for weighted mocks, rely on this increased budget and scale AI fetch timeout proportionally with token budget to prevent session hangs.
-
-
-**Level-aware timed mock duration and question count (34a48fe)**: Full exam mode now scales session duration and question counts by CFA level—L1: 135 min/session, 90 Qs/session, 180 Qs total; L2 & L3: 132 min/session, 44 Qs/session, 88 Qs total. When implementing or modifying mock exam logic, use `cfaLevel` to determine exam parameters rather than hardcoding L1-only values (90 Qs, 135 min, 180 total).
-
-
 **Leaderboard SQL jsonb casting (78e568c)**: leaderboard SQL function now explicitly casts sessions.data to jsonb to prevent type mismatches. When querying or aggregating session data in SQL functions, ensure jsonb casts are applied to JSON columns for safe operator usage.
 
 
@@ -1338,7 +1329,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1801000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1800700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.

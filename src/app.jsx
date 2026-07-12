@@ -296,6 +296,10 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
+// WN_VER:2026-07-12-b
+{version:"2026-07-12-b",slides:[
+{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Better Email Notifications",sub:"UX · 2026-07-12 update",desc:"We've improved how re-engagement emails reach you, making sure important study reminders land in your inbox reliably. This helps you stay on track with your CFA prep schedule without missing critical notifications.",tip:"Check your email settings if you want to adjust how often you receive study reminders."},
+]},
 // WN_VER:2026-07-12-c
 {version:"2026-07-12-c",slides:[
 {emoji:"⚡",color:C.accentLight,bg:C.easy,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved how ClearCFA handles AI request failures—the app now retries up to 4 times before giving up, ensuring you get answers to your CFA questions even when the network hiccups. This means fewer frustrating timeouts when you're in study mode.",tip:"If an AI explanation doesn't load on first try, just wait a moment—it's automatically retrying in the background."},
@@ -315,11 +319,6 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-f",slides:[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"More Reliable AI Responses",sub:"AI · 2026-07-12 update",desc:"We've improved AI resilience so quiz generation and explanations retry up to 4 times if something goes wrong, making study sessions less likely to be interrupted. This means fewer timeouts and smoother learning, especially during peak hours.",tip:"If a question fails to load, the app now quietly retries before showing an error—you'll notice fewer interruptions."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Topic Labels Everywhere",sub:"Study Tools · 2026-07-12 update",desc:"Topic names across Equity and Alternatives now display consistently throughout the app, fixing confusing mismatches in weight warnings and study progress. You'll see the same familiar topic names no matter where you study.",tip:"Check your study dashboard—Equity and Alternatives topics should now look uniform across all screens."},
-]},
-// WN_VER:2026-07-12
-{version:"2026-07-12",slides:[
-{emoji:"⚡",color:C.accentLight,bg:C.easy,title:"Smarter Mock Exams by Level",sub:"Study Tools · 2026-07-12 update",desc:"Mock exams now adjust question count and duration based on your CFA level, matching the actual exam format you're preparing for. This ensures your practice feels authentic and builds confidence for test day.",tip:"Start a timed mock and notice how Level 1, 2, and 3 exams now have different time allocations and question sets."},
-{emoji:"🤖",color:C.medium,bg:C.medium,title:"Faster AI Study Sessions",sub:"AI · 2026-07-12 update",desc:"AI tutor response times are now optimized to handle longer study sessions without timeouts, letting you focus on learning instead of waiting. Exam-weight mock sessions are especially faster, so you can drill more questions in less time.",tip:"Try a 20-question AI-assisted session and watch responses arrive more smoothly than before."},
 ]},
 // WN_END
 ];
@@ -385,7 +384,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -4706,6 +4704,9 @@ function CFAMock(){
   const [fullExamMode,setFullExamMode]=useState(false);
   const [examSession,setExamSession]=useState(1); // 1=AM, 2=PM for split exam
   const [examBreak,setExamBreak]=useState(false); // showing break screen between sessions
+  const [examMarkReview,setExamMarkReview]=useState({}); // {[qId]:true} — CBT "mark for review"
+  const [showExamNav,setShowExamNav]=useState(false);   // question navigator grid overlay
+  const [examReviewMode,setExamReviewMode]=useState(false); // "Review & Submit" interstitial
   const [vignetteMode,setVignetteMode]=useState(false);
   const [aiDebrief,setAiDebrief]=useState(null);const [aiDebriefLoading,setAiDebriefLoading]=useState(false);const [aiDebriefError,setAiDebriefError]=useState(null);
   const [aiCoachScreen,setAiCoachScreen]=useState(false);const [aiCoachMessages,setAiCoachMessages]=useState([]);const [aiCoachInput,setAiCoachInput]=useState("");const [aiCoachLoading,setAiCoachLoading]=useState(false);
@@ -5431,6 +5432,7 @@ function CFAMock(){
       const examMins=fullExamMode?(cfaLevel==="1"?135:132):null;
       const total=examMins!==null?examMins*60:count*TIME_PER_Q;
       setTimeLeft(total);startRef.current=Date.now();clearInterval(timerRef.current);
+      setExamMarkReview({});setShowExamNav(false);setExamReviewMode(false);
       timerRef.current=setInterval(()=>{setTimeLeft(t=>{if(t<=1){clearInterval(timerRef.current);endQuiz();return 0;}return t-1;});},1000);
     }
     return()=>clearInterval(timerRef.current);
@@ -6553,9 +6555,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
     showToast("💾","Preset saved!",`"${preset.name}" ready on home screen.`);
   };
   const handleAnswer=(qId,opt)=>{
-    if(answers[qId])return;
+    if(answers[qId]&&!fullExamMode)return;
+    const alreadyAnswered=!!answers[qId];
     const newAnswers={...answers,[qId]:opt};
     setAnswers(newAnswers);
+    if(alreadyAnswered)return; // exam mode re-selection: just update answer, skip side effects
     if(qShownAtRef.current[qId]){
       qTimesRef.current[qId]=Math.round((Date.now()-qShownAtRef.current[qId])/1000);
     }
@@ -6590,7 +6594,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const qId=questions[currentQ]?.id;
     if(qId&&quizConfidence){const correct=answers[qId]===questions[currentQ]?.answer;setConfidenceLog(c=>{const u={...c,[qId]:{c:quizConfidence,ok:correct}};try{localStorage.setItem(CONFIDENCE_KEY,JSON.stringify(u));}catch{}return u;});}
     setQuizConfidence(null);
-    if(currentQ<questions.length-1){setCurrentQ(q=>q+1);setShowExp(false);}else endQuiz();
+    if(currentQ<questions.length-1){setCurrentQ(q=>q+1);setShowExp(false);}
+    else if(fullExamMode){setExamReviewMode(true);}  // CBT: review screen before submitting
+    else{endQuiz();}
   };
 
   // ── DERIVED DATA ──
@@ -10390,6 +10396,72 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     );
     const q=questions[currentQ];const answered=answers[q.id];const isLast=currentQ===questions.length-1;
+    // CBT: Review & Submit interstitial
+    if(examReviewMode){
+      const answeredCount=questions.filter(qq=>!!answers[qq.id]).length;
+      const markedCount=Object.values(examMarkReview).filter(Boolean).length;
+      const unansweredCount=questions.length-answeredCount;
+      return wrap(<>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <span style={{fontSize:16,fontWeight:800,color:C.text}}>📋 Review & Submit</span>
+          <button onClick={()=>setExamReviewMode(false)} style={{background:"none",border:`1px solid ${C.border}`,color:C.accentLight,cursor:"pointer",fontSize:12,fontWeight:700,padding:"5px 12px",borderRadius:8}}>← Back to Exam</button>
+        </div>
+        <div style={{background:"#1a0a2e",border:"1px solid #7c3aed44",borderRadius:12,padding:"16px",marginBottom:16}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#a78bfa",marginBottom:12}}>🏛 CFA Level {cfaLevel} · {examSession===1?"AM Session":"PM Session"}</div>
+          <div style={{display:"flex",gap:8}}>
+            <div style={{flex:1,textAlign:"center",background:"#22c55e18",borderRadius:10,padding:"12px 8px"}}>
+              <div style={{fontSize:24,fontWeight:800,color:C.easy}}>{answeredCount}</div>
+              <div style={{fontSize:10,color:C.muted,marginTop:2}}>Answered</div>
+            </div>
+            <div style={{flex:1,textAlign:"center",background:`${C.medium}18`,borderRadius:10,padding:"12px 8px"}}>
+              <div style={{fontSize:24,fontWeight:800,color:C.medium}}>{markedCount}</div>
+              <div style={{fontSize:10,color:C.muted,marginTop:2}}>For Review</div>
+            </div>
+            <div style={{flex:1,textAlign:"center",background:`${C.hard}18`,borderRadius:10,padding:"12px 8px"}}>
+              <div style={{fontSize:24,fontWeight:800,color:C.hard}}>{unansweredCount}</div>
+              <div style={{fontSize:10,color:C.muted,marginTop:2}}>Unanswered</div>
+            </div>
+          </div>
+        </div>
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>Question Status</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(10,1fr)",gap:5}}>
+            {questions.map((qq,i)=>{
+              const isAns=!!answers[qq.id];const isMark=!!examMarkReview[qq.id];
+              return(
+                <button key={i} onClick={()=>{setCurrentQ(i);setShowExp(false);setExamReviewMode(false);}}
+                  style={{aspectRatio:"1",borderRadius:6,fontSize:10,fontWeight:800,
+                    border:`2px solid ${isMark?C.medium:isAns?C.easy:C.border}`,
+                    background:isMark?C.medium+"22":isAns?C.easy+"22":"transparent",
+                    color:isMark?C.medium:isAns?C.easy:C.textMid,cursor:"pointer",padding:0}}>
+                  {i+1}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{display:"flex",gap:14,marginTop:10}}>
+            {[{c:C.easy,l:"Answered"},{c:C.medium,l:"For Review"},{c:C.textMid,l:"Unanswered"}].map(({c,l})=>(
+              <span key={l} style={{fontSize:10,color:c,display:"flex",alignItems:"center",gap:4}}>
+                <span style={{width:8,height:8,borderRadius:2,background:c,display:"inline-block",flexShrink:0}}/>
+                {l}
+              </span>
+            ))}
+          </div>
+        </div>
+        {unansweredCount>0&&(
+          <div style={{background:`${C.hard}12`,border:`1px solid ${C.hard}33`,borderRadius:10,padding:"12px 14px",marginBottom:14}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.hard,marginBottom:2}}>⚠️ {unansweredCount} unanswered question{unansweredCount!==1?"s":""}</div>
+            <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>Unanswered questions will be marked incorrect. Return to answer them before submitting.</div>
+          </div>
+        )}
+        <button onClick={()=>{setExamReviewMode(false);endQuiz();}} style={{width:"100%",padding:"15px",borderRadius:12,fontSize:15,fontWeight:800,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",marginBottom:10}}>
+          Submit Exam →
+        </button>
+        <button onClick={()=>setExamReviewMode(false)} style={{width:"100%",padding:"12px",borderRadius:12,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+          ← Return to Questions
+        </button>
+      </>);
+    }
     return wrap(<>
       {/* Super Focus Mode: return overlay */}
       {focusModeEnabled&&focusReturnOverlay&&(
@@ -10406,6 +10478,42 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div style={{fontSize:12,color:C.muted,marginBottom:18,fontStyle:"italic"}}>Every question you answer now puts distance between you and the candidates who didn't come back.</div>
             <button onClick={()=>setFocusReturnOverlay(null)} style={{width:"100%",padding:"12px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
               Back to studying →
+            </button>
+          </div>
+        </div>
+      )}
+      {/* CBT: Question navigator grid overlay */}
+      {showExamNav&&(
+        <div onClick={()=>setShowExamNav(false)} style={{position:"fixed",inset:0,zIndex:410,background:"#000000bb",display:"flex",alignItems:"flex-end"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",background:C.surface,borderRadius:"20px 20px 0 0",padding:"20px 16px 32px",maxHeight:"72vh",overflowY:"auto",boxShadow:"0 -8px 40px #0008"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <span style={{fontSize:14,fontWeight:800,color:C.text}}>📋 Question Navigator</span>
+              <button onClick={()=>setShowExamNav(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:20,lineHeight:1,padding:0}}>✕</button>
+            </div>
+            <div style={{display:"flex",gap:14,marginBottom:12}}>
+              {[{c:C.easy,l:"Answered"},{c:C.medium,l:"For Review"},{c:C.textMid,l:"Unanswered"}].map(({c,l})=>(
+                <span key={l} style={{fontSize:10,color:c,display:"flex",alignItems:"center",gap:4}}>
+                  <span style={{width:9,height:9,borderRadius:2,background:c,display:"inline-block",flexShrink:0}}/>
+                  {l}
+                </span>
+              ))}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(10,1fr)",gap:6,marginBottom:16}}>
+              {questions.map((qq,i)=>{
+                const isAns=!!answers[qq.id];const isMark=!!examMarkReview[qq.id];const isCur=i===currentQ;
+                return(
+                  <button key={i} onClick={()=>{setCurrentQ(i);setShowExp(false);setShowExamNav(false);}}
+                    style={{aspectRatio:"1",borderRadius:6,fontSize:10,fontWeight:800,
+                      border:`2px solid ${isCur?C.accent:isMark?C.medium:isAns?C.easy:C.border}`,
+                      background:isCur?C.accent+"22":isMark?C.medium+"22":isAns?C.easy+"22":"transparent",
+                      color:isCur?C.accentLight:isMark?C.medium:isAns?C.easy:C.textMid,cursor:"pointer",padding:0}}>
+                    {i+1}
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={()=>{setExamReviewMode(true);setShowExamNav(false);}} style={{width:"100%",padding:"12px",borderRadius:10,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+              Review & Submit →
             </button>
           </div>
         </div>
@@ -10439,6 +10547,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       )}
       <div style={{height:3,background:C.border,borderRadius:2,marginBottom:18}}><div style={{height:"100%",width:`${(currentQ/questions.length)*100}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:2,transition:"width 0.35s"}}/></div>
+      {fullExamMode&&(
+        <div style={{background:"#1a0a2e",border:"1px solid #7c3aed33",borderRadius:8,padding:"7px 14px",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span style={{fontSize:12,fontWeight:700,color:"#a78bfa"}}>🏛 CFA Level {cfaLevel} · {examSession===1?"AM Session":"PM Session"}</span>
+          <button onClick={()=>setShowExamNav(true)} style={{fontSize:11,color:"#a78bfa",background:"#7c3aed22",border:"1px solid #7c3aed44",borderRadius:6,padding:"3px 9px",cursor:"pointer",fontWeight:700}}>📋 Navigator</button>
+        </div>
+      )}
 
       {/* Worked example — shown on first question of untested module (guided mode only) */}
       {currentQ===0&&mode==="guided"&&!history.some(h=>h.topic===topic&&h.subtopic===subtopic)&&workedExDismissedKey!==`${topic}__${subtopic}`&&(
@@ -10623,7 +10737,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
           let bg=C.surface,border=C.border,col=C.text;
           if(reveal&&correct){bg=C.easy+"22";border=C.easy;col=C.easy;}
           else if(reveal&&sel&&!correct){bg=C.hard+"18";border=C.hard;col=C.hard;}
-          return(<button key={key} onClick={()=>handleAnswer(q.id,key)} disabled={!!answered} style={{display:"flex",alignItems:"flex-start",gap:13,padding:"13px 15px",borderRadius:10,textAlign:"left",background:bg,border:`1.5px solid ${border}`,color:col,cursor:answered?"default":"pointer",fontSize:13,lineHeight:1.65,transition:"all 0.15s"}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:reveal&&correct?C.easy:reveal&&sel?C.hard:sel?C.accent:C.dim,color:(reveal||sel)?"#fff":C.muted,transition:"all 0.15s"}}>{key}</span><span>{val}</span></button>);
+          else if(sel&&!reveal){bg=`${C.accent}18`;border=C.accent;col=C.accentLight;}
+          const isDisabled=!!answered&&!fullExamMode;
+          return(<button key={key} onClick={()=>handleAnswer(q.id,key)} disabled={isDisabled} style={{display:"flex",alignItems:"flex-start",gap:13,padding:"13px 15px",borderRadius:10,textAlign:"left",background:bg,border:`1.5px solid ${border}`,color:col,cursor:isDisabled?"default":"pointer",fontSize:13,lineHeight:1.65,transition:"all 0.15s"}}><span style={{minWidth:24,height:24,borderRadius:6,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,background:reveal&&correct?C.easy:reveal&&sel?C.hard:sel?C.accent:C.dim,color:(reveal||sel)?"#fff":C.muted,transition:"all 0.15s"}}>{key}</span><span>{val}</span></button>);
         })}
       </div>
       {consecutiveWrong>=3&&mode==="guided"&&!answered&&(
@@ -10815,7 +10931,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           )}
         </div>
       )}
-      {!answered&&mode!=="speed_drill"&&(
+      {!answered&&mode!=="speed_drill"&&!fullExamMode&&(
         <div style={{marginBottom:16}}>
           <div style={{fontSize:11,color:C.muted,textAlign:"center",marginBottom:8,letterSpacing:"0.03em"}}>How confident are you?</div>
           <div style={{display:"flex",gap:7}}>
@@ -10834,8 +10950,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           {answered!==questions[currentQ]?.answer&&quizConfidence==="sure"&&<span style={{color:C.hard}}> — this is a key blind spot to review.</span>}
         </div>
       )}
-      {mode==="exam"&&!answered&&<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"4px",animation:"pulse 2s infinite"}}>Select an answer to continue</div>}
-      {!answered&&mode!=="speed_drill"&&(
+      {mode==="exam"&&!answered&&!fullExamMode&&<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"4px",animation:"pulse 2s infinite"}}>Select an answer to continue</div>}
+      {!answered&&mode!=="speed_drill"&&!fullExamMode&&(
         <div style={{marginTop:16,padding:"12px 14px",background:C.surface,borderRadius:10,border:`1px solid ${C.border}`}}>
           <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:5}}>Study tip</div>
           <div style={{fontSize:12,color:C.textMid,lineHeight:1.6}}>{[
@@ -10849,19 +10965,45 @@ Return ONLY a JSON array — no prose, no markdown fences:
           ][currentQ%7]}</div>
         </div>
       )}
-      {answered&&(
-        <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",paddingLeft:58,paddingRight:58}}>
-          <button type="button" onClick={nextQ} onTouchEnd={(e)=>{e.preventDefault();nextQ();}} style={{flex:1,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",touchAction:"manipulation"}}>{isLast?"See Results →":"Next →"}</button>
-          {answers[q.id]===q.answer&&(
-            <button onClick={()=>setFlaggedQ(f=>({...f,[q.id]:!f[q.id]}))}
-              title="Flag for SR even though correct"
-              style={{padding:"13px 14px",borderRadius:10,fontSize:13,fontWeight:700,background:flaggedQ[q.id]?C.medium+"33":C.surface,border:`1.5px solid ${flaggedQ[q.id]?C.medium:C.border}`,color:flaggedQ[q.id]?C.medium:C.muted,cursor:"pointer",flexShrink:0}}>
-              {flaggedQ[q.id]?"⚑ Flagged":"⚐ Not sure"}
+      {fullExamMode?(
+        <div style={{marginBottom:8}}>
+          <div style={{display:"flex",gap:8,marginBottom:8}}>
+            <button onClick={()=>{if(currentQ>0){setCurrentQ(q=>q-1);setShowExp(false);}}}
+              disabled={currentQ===0}
+              style={{padding:"12px 14px",borderRadius:10,fontSize:13,fontWeight:700,background:currentQ===0?"none":C.surfaceHigh,border:`1px solid ${currentQ===0?C.border+"44":C.border}`,color:currentQ===0?C.border:C.muted,cursor:currentQ===0?"default":"pointer",opacity:currentQ===0?0.35:1,transition:"opacity 0.15s"}}>
+              ← Prev
             </button>
-          )}
+            <button onClick={()=>setExamMarkReview(m=>({...m,[q.id]:!m[q.id]}))}
+              style={{flex:1,padding:"12px",borderRadius:10,fontSize:13,fontWeight:700,
+                background:examMarkReview[q.id]?C.medium+"22":C.surface,
+                border:`1.5px solid ${examMarkReview[q.id]?C.medium:C.border}`,
+                color:examMarkReview[q.id]?C.medium:C.muted,cursor:"pointer",transition:"all 0.15s"}}>
+              {examMarkReview[q.id]?"⚑ Marked for Review":"⚐ Mark for Review"}
+            </button>
+          </div>
+          <button onClick={nextQ}
+            style={{width:"100%",padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,
+              background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+            {isLast?"Review & Submit →":"Next Question →"}
+          </button>
         </div>
+      ):(
+        <>
+          {answered&&(
+            <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",paddingLeft:58,paddingRight:58}}>
+              <button type="button" onClick={nextQ} onTouchEnd={(e)=>{e.preventDefault();nextQ();}} style={{flex:1,padding:"13px",borderRadius:10,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",touchAction:"manipulation"}}>{isLast?"See Results →":"Next →"}</button>
+              {answers[q.id]===q.answer&&(
+                <button onClick={()=>setFlaggedQ(f=>({...f,[q.id]:!f[q.id]}))}
+                  title="Flag for SR even though correct"
+                  style={{padding:"13px 14px",borderRadius:10,fontSize:13,fontWeight:700,background:flaggedQ[q.id]?C.medium+"33":C.surface,border:`1.5px solid ${flaggedQ[q.id]?C.medium:C.border}`,color:flaggedQ[q.id]?C.medium:C.muted,cursor:"pointer",flexShrink:0}}>
+                  {flaggedQ[q.id]?"⚑ Flagged":"⚐ Not sure"}
+                </button>
+              )}
+            </div>
+          )}
+          {currentQ>2&&mode!=="exam"&&<button onClick={endQuiz} style={{marginTop:9,width:"100%",padding:"9px",borderRadius:10,fontSize:12,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>End & See Results</button>}
+        </>
       )}
-      {currentQ>2&&mode!=="exam"&&<button onClick={endQuiz} style={{marginTop:9,width:"100%",padding:"9px",borderRadius:10,fontSize:12,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>End & See Results</button>}
     </>);
   }
 
