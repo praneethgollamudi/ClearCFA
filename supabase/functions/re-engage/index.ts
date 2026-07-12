@@ -39,16 +39,23 @@ serve(async (req) => {
   if (testTo) {
     const subject = "ClearCFA — re-engagement email preview";
     const html = buildLapsedEmail(5); // sample: 5 days inactive
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `ClearCFA <${FROM_EMAIL}>`, reply_to: ADMIN_EMAIL, to: [testTo], subject, html }),
-    });
-    if (res.ok) {
-      return new Response(JSON.stringify({ sent: 1, testTo, note: "Preview sent — check your inbox" }), { headers: { ...CORS, "Content-Type": "application/json" } });
-    } else {
-      const err = await res.text().catch(() => res.statusText);
-      return new Response(JSON.stringify({ error: err }), { status: 500, headers: CORS });
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: `ClearCFA <${FROM_EMAIL}>`, reply_to: ADMIN_EMAIL, to: [testTo], subject, html }),
+      });
+      if (res.ok) {
+        return new Response(JSON.stringify({ sent: 1, testTo, note: "Preview sent — check your inbox" }), { headers: { ...CORS, "Content-Type": "application/json" } });
+      } else {
+        const errText = await res.text().catch(() => "");
+        // Resend free-plan shared domain only allows sending to the account owner's email.
+        // If testTo is not the account owner, Resend returns 403 with a restriction message.
+        const errMsg = errText || res.statusText || `Resend HTTP ${res.status}`;
+        return new Response(JSON.stringify({ error: errMsg, status: res.status, hint: res.status === 403 ? "Resend free plan: can only send to the account owner email (gspbuilds@gmail.com). Try sending preview to that address instead." : undefined }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
+      }
+    } catch (err: unknown) {
+      return new Response(JSON.stringify({ error: `Network error: ${String(err)}` }), { status: 500, headers: { ...CORS, "Content-Type": "application/json" } });
     }
   }
 
