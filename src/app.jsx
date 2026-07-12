@@ -294,12 +294,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-11-e
-{version:"2026-07-11-e",slides:[
-{emoji:"📋",color:C.medium,bg:C.medium,title:"Review Wrong Answers Daily",sub:"Study Tools · 2026-07-11 update",desc:"A new daily wrong-answer review panel surfaces your most recent mistakes in one focused view. Reinforcing errors immediately boosts retention and prevents the same gaps from appearing on exam day.",tip:"Check your wrong-answer panel each morning to target weak spots before they cost you points."},
-{emoji:"🏆",color:C.reward,bg:C.reward,title:"Celebrate Mastery Milestones",sub:"UX · 2026-07-11 update",desc:"You now receive an instant celebration notification when your accuracy on any topic first reaches 70%. This positive reinforcement keeps you motivated and signals which topics are ready for exam-level practice.",tip:"Watch for the mastery toast after your next quiz—it marks the moment a topic clicks."},
-{emoji:"👥",color:C.accentLight,bg:C.accentLight,title:"New Social & Effectiveness Features",sub:"Community · 2026-07-11 update",desc:"Six new social and effectiveness tools have been added to help you connect with other candidates and track your prep impact more deeply. Building accountability and seeing real progress keeps study momentum high.",tip:"Explore the new features in Settings to find which ones best fit your study style."},
-]},
 // WN_VER:2026-07-12
 {version:"2026-07-12",slides:[
 {emoji:"🎓",color:C.accentLight,bg:C.accentLight,title:"Know Your Question Sources",sub:"Study Tools · 2026-07-12 update",desc:"Every question now displays its Learning Outcome Statement (LOS) source and exam topic weight, so you understand exactly what concept is being tested and how heavily it's weighted on exam day. This helps you prioritize high-impact topics and study with confidence.",tip:"Look for the LOS badge on each question to align your prep with official exam weightings."},
@@ -324,6 +318,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎮",color:C.reward,bg:C.reward,title:"Challenge Mode for Extra Practice",sub:"Study Tools · 2026-07-12 update",desc:"Enable Challenge Mode in setup to unlock a tougher question variant designed to push your reasoning skills beyond standard difficulty. Perfect for fine-tuning weak areas before exam day.",tip:"Toggle Challenge Mode on the setup screen to activate harder questions immediately."},
 {emoji:"🔍",color:C.medium,bg:C.medium,title:"Smarter Question Context",sub:"Study Tools · 2026-07-12 update",desc:"Questions now display LOS source badges and exam topic weight indicators to help you focus on high-impact material. Pass probability explainability shows you exactly why answers are correct or incorrect.",tip:"Look for the LOS badge on each question and review the pass probability drawer to understand concept difficulty."},
 ]},
+// WN_VER:2026-07-12-e
+{version:"2026-07-12-e",slides:[
+{emoji:"📊",color:C.hard,bg:C.hard,title:"Exam-Weight Mock Sessions",sub:"Study Tools · 2026-07-12 update",desc:"New 18-question mock exams now match the official CFA Institute topic weights, giving you realistic practice that mirrors the actual test distribution. This helps you identify weak areas where the exam actually focuses.",tip:"Start with an Exam-Weight Mock to benchmark your readiness before drilling into individual topics."},
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"AI-Generated Study Notes",sub:"AI · 2026-07-12 update",desc:"The Revision screen now generates personalized study notes powered by AI, automatically summarizing key concepts from your lessons and flagged content. Save hours of manual note-taking and focus on understanding instead.",tip:"Check the Notes tab in Revision to see AI summaries of topics you've studied."},
+{emoji:"🎮",color:C.reward,bg:C.reward,title:"Challenge Mode Now Available",sub:"Study Tools · 2026-07-12 update",desc:"Toggle Challenge Mode on the setup screen to unlock a harder difficulty option that pushes you beyond standard practice questions. Perfect for refining your edge when you're ready to test yourself at exam+ level.",tip:"Enable Challenge Mode after consistently scoring 80%+ on standard quizzes."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -332,12 +332,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-07
-{date:"2026-07-07",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-11
 {date:"2026-07-11",entries:[
 "Add growth/retention metrics and MRR to admin dashboard",
@@ -378,6 +372,12 @@ const ADMIN_CHANGELOG=[
 {date:"2026-07-12",entries:[
 "Fix admin dashboard auth failure when JWT token is expired",
 "Add growth/retention metrics and MRR to admin dashboard",
+]},
+// AC_VER:2026-07-12
+{date:"2026-07-12",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
