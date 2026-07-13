@@ -302,10 +302,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12
-{version:"2026-07-12",slides:[
-{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Reliable Re-engagement Emails",sub:"UX · 2026-07-12 update",desc:"We've upgraded our email delivery system to ensure your study reminders and progress updates reach your inbox consistently. This means you'll never miss important notifications about your CFA prep milestones and recommended study sessions.",tip:"Check your email settings in the app to ensure notifications are enabled for the best study experience."},
-]},
 // WN_VER:2026-07-12-b
 {version:"2026-07-12-b",slides:[
 {emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Reliable Re-engagement Emails",sub:"UX · 2026-07-12 update",desc:"We've upgraded our email delivery system to ensure your study reminders arrive consistently, even during high-volume periods. This means you'll never miss a prompt to continue your prep when you need it most.",tip:"Check your inbox and notifications if you've been away from the app—we'll help bring you back on track."},
@@ -326,6 +322,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Exam Progress Tracking Fixed",sub:"Bug Fix · 2026-07-13 update",desc:"The exam-weighted mock progress bar was stuck at 0% and now accurately reflects your preparation. You'll see real-time feedback on how much of the weighted exam content you've covered.",tip:"Check your Mock Exams tab to see your true progress towards readiness."},
 {emoji:"🔄",color:C.reward,bg:C.reward,title:"Smarter Study Reminders & Streaks",sub:"Study Tools · 2026-07-13 update",desc:"We've added Day 1 activation tracking and stickiness features, plus tiered re-engagement messaging personalized by your study behavior. The app now intelligently encourages you to return based on your habits.",tip:"Open notifications to see personalized messages that match your study style and keep your momentum going."},
 ]},
+// WN_VER:2026-07-13-c
+{version:"2026-07-13-c",slides:[
+{emoji:"✅",color:C.hard,bg:C.hard,title:"Accurate Question Validation",sub:"Bug Fix · 2026-07-13 update",desc:"Fixed a bypass in question validation that was allowing approximate answers (≈) to incorrectly pass or fail. Your quiz results now reflect truly accurate scoring.",tip:"Retake any quizzes from before this update to see your corrected performance."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Mock Exam Progress Now Tracks Correctly",sub:"Bug Fix · 2026-07-13 update",desc:"Resolved an issue where the exam-weight mock progress bar was stuck at 0% and not updating. You'll now see accurate real-time progress as you work through weighted mock exams.",tip:"Start or resume a weighted mock exam to see the progress bar animate properly."},
+{emoji:"🎮",color:C.reward,bg:C.reward,title:"Personalized Study Engagement Features",sub:"Study Tools · 2026-07-13 update",desc:"Introduced activation and stickiness features that adapt to your study habits and learning patterns. The app now encourages consistency and helps you build sustainable exam prep momentum.",tip:"Notice how your daily study recommendations and reminders become more personalized over time."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -334,16 +336,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"Fix admin-stats auth for OAuth users — remove length guard on email fallback",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"fix: admin-stats — authorize by email+userId presence, no sessions table check",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -404,6 +396,11 @@ const ADMIN_CHANGELOG=[
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
 "fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
 "fix: cast uuid to text in leaderboard SQL join to fix Deploy Supabase workflow",
+]},
+// AC_VER:2026-07-13
+{date:"2026-07-13",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-13
 {date:"2026-07-13",entries:[
