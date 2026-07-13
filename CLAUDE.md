@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Approximation bypass validation fix (665cbe9)**: Fixed question validation to prevent ≈ symbol from bypassing answer verification. When implementing answer matching or validation logic, ensure special characters like ≈ don't create unintended loopholes in correctness checking.
+
+
+**What's New version 2026-07-13-b (2026-07-13)**: Bug fix and feature update slide set covering exam progress tracking fix and smarter study reminders with Day 1 activation tracking. Versions 2026-07-12-e and 2026-07-12-f have been removed from rotation.
+
+
+**What's New version 2026-07-13 (2026-07-13)**: New consolidated slide set announcing Authentic CBT Mock Exams, Re-engagement Nudges, AI Study Notes Generator, and Web Push Notifications. Currently active versions are 2026-07-13 and 2026-07-13-b. Always verify against active list when adding future versions to prevent duplicate messaging.
+
+
 **Exam-weight mock progress bar fix (e48dec8)**: Fixed issue where mock progress bar remained stuck at 0% on exam-weight mocks. When implementing mock exam progress tracking, ensure progress state properly initializes and updates during weighted question generation and exam progression.
 
 
@@ -1410,7 +1419,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1802500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1802600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
