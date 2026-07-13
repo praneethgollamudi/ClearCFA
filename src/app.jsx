@@ -6139,11 +6139,33 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const allocTotal=alloc.reduce((s,a)=>s+a.count,0);
       if(allocTotal!==cnt) alloc[0].count+=cnt-allocTotal;
       const topicsDesc=alloc.map(a=>`${a.topic}: ${a.count}`).join(", ");
-      const prompt=`You are a CFA Level ${cfaLevel} exam creator. Generate exactly ${cnt} multiple-choice questions distributed across CFA topics matching real exam weights: ${topicsDesc}.\n\nEach question: LOS-anchored, exam-realistic difficulty, plausible distractors targeting real misconceptions. Interleave topic order — do NOT group by topic.\n\nCRITICAL for numerical questions: compute the correct answer first, then ensure that exact value appears verbatim as one option.\n\nReturn ONLY a JSON array:\n[{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic>","_subtopic":"<module>"}]`;
+      const prompt=`You are a CFA Level ${cfaLevel} exam creator. Generate exactly ${cnt} multiple-choice questions distributed across CFA topics matching real exam weights: ${topicsDesc}.\n\nEach question: LOS-anchored, exam-realistic difficulty, plausible distractors targeting real misconceptions. Interleave topic order — do NOT group by topic.\n\nCRITICAL for numerical questions:\n1. FIRST compute the exact answer to full precision.\n2. THEN make that exact value appear verbatim as one of the options.\n3. NEVER use ≈, "approximately", "closest", "rounds to", or any approximation language. If the formula produces an unclean decimal, CHANGE THE INPUT VALUES so the answer is clean, then restate the question.\n4. Wrong options must use recognisable formula errors (wrong rate, missing step, wrong period).\n5. The "answer" field must be the letter whose text exactly equals the correct result.\n\nReturn ONLY a JSON array:\n[{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic>","_subtopic":"<module>"}]`;
       const qs=await callClaude(prompt,cnt*400+500,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"weighted_mock"});
       clearInterval(progressInterval);
       if(!Array.isArray(qs)||qs.length===0)throw new Error("No questions returned");
-      const tagged=qs.map((q,i)=>({...q,id:`wm_${i}_${q.id||i}`,_weightedMock:true}));
+      // Apply approximation + structural validation (same rules as generateQuestions)
+      const wm_clean=qs.filter(q=>{
+        if(!q||!q.question||!q.answer||!q.options)return false;
+        if(!q.options[q.answer])return false;
+        const exp=(q.explanation||"").toLowerCase();
+        if(/nearest available|closest answer|approximate(ly)?|not exactly|\bis closest\b|\bthe closest\b|closest option|closest to the|best approximat|due to rounding|≈|approximately equal|\bapprox\b|rounds to|rounded to the nearest/i.test(exp))return false;
+        // Numeric cross-check: explanation value must not match a wrong option more than the right one
+        const optVals=Object.entries(q.options).map(([k,v])=>({k,v:parseFloat(String(v).replace(/[^0-9.-]/g,""))})).filter(o=>!isNaN(o.v));
+        if(optVals.length>=2){
+          const qAns=(q.answer||"").toUpperCase();
+          const ansVal=parseFloat(String(q.options[q.answer]||"").replace(/[^0-9.-]/g,""));
+          const eqNums=[...[...(q.explanation||"").toUpperCase().matchAll(/=\s*([\d]+(?:\.[\d]+)?)/g)].map(m=>parseFloat(m[1]))];
+          for(const n of eqNums){
+            if(!isNaN(n)&&Math.abs(n-ansVal)>0.1){
+              const matchesOther=optVals.find(o=>o.k!==qAns&&Math.abs(o.v-n)<0.1);
+              if(matchesOther)return false;
+            }
+          }
+        }
+        return true;
+      });
+      if(!wm_clean.length)throw new Error("All generated questions had numeric mismatches — please retry.");
+      const tagged=wm_clean.map((q,i)=>({...q,id:`wm_${i}_${q.id||i}`,_weightedMock:true}));
       setLoadingProgress(100);await new Promise(r=>setTimeout(r,200));
       setTopic("Mixed");setSubtopic(`Exam-Weight Mock L${cfaLevel}`);setDifficulty("Medium");
       setMode("guided");setVignetteMode(false);
@@ -6378,7 +6400,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         if(!q||!q.question||!q.answer||!q.options)return false;
         if(!q.options[q.answer])return false; // answer key points to nonexistent option
         const exp=(q.explanation||"").toLowerCase();
-        if(/nearest available|closest answer|so [a-c] is nearest|approximate(ly)?|not exactly|so [a-c] is the best|\bis closest\b|\bthe closest\b|closest when|closest option|closest to the|best approximat|due to rounding.*clos|clos.*due to rounding/i.test(exp))return false;
+        if(/nearest available|closest answer|so [a-c] is nearest|approximate(ly)?|not exactly|so [a-c] is the best|\bis closest\b|\bthe closest\b|closest when|closest option|closest to the|best approximat|due to rounding.*clos|clos.*due to rounding|≈|approximately equal|\bapprox\b|rounds to|rounded to the nearest/i.test(exp))return false;
         // Reject scratchpad/chain-of-thought leaking into explanation
         if(/recalc needed|indicates recalc|reinspecting:|revising for clean|setting [a-c]\s*=.*as correct|recalculating:/i.test(exp))return false;
         const qAns=(q.answer||"").toUpperCase();

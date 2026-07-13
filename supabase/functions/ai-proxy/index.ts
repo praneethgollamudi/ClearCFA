@@ -19,6 +19,7 @@ const SYSTEM_ENFORCE = [
   "Distractors must be plausible based on real CFA misconceptions — not obviously wrong.",
   "Never reveal exam answers in question stems. Never include meta-commentary outside the JSON.",
   "If you cannot generate a compliant question, return an empty questions array rather than a bad question.",
+  "NUMERICAL ACCURACY RULE: For any question with a computed numeric answer, the exact computed value MUST appear verbatim as one of the answer options. NEVER use ≈, 'approximately', 'closest to', 'rounds to', or any approximation language. If a formula produces an unclean decimal, redesign the input numbers so the result is clean. A question whose explanation uses ≈ or approximate language will be discarded.",
 ].join(" ");
 
 function buildChatSystem(level: string): string {
