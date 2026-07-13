@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**D1 activation & stickiness features (05f7e14)**: New re-engagement system tracks user activation milestones and engagement tiers. Tiered messaging in re-engagement emails now personalizes content based on study progress and completion levels. Deep links embedded in emails route directly to specific lessons via sessionStorage `cfa_qs_v1` key, enabling granular topic-level re-engagement campaigns. When designing re-engagement flows, leverage QS_SLUG_MAP to construct topic-specific deep links that match user progress.
+
+
+**Quick-start topic state management (9bb1b3b)**: CFAMock now maintains `quickStartTopic` state to store the auto-navigated topic from sessionStorage deep link. This state is set during mount when `cfa_qs_v1` slug is found and persists for the session, enabling seamless topic-specific onboarding. Always initialize `quickStartTopic` to null on component mount to avoid stale routing on subsequent app loads.
+
+
 **QS_SLUG_MAP constant (de1e2eb)**: Maps URL-friendly topic slugs to CFA display names: ethics, quant, economics, fsa, corporate, equity, fixed_income, derivatives, alternatives, portfolio. Used for quick-start deep linking via sessionStorage. When adding new topics or exam sections, update QS_SLUG_MAP to support external routing.
 
 
@@ -1398,7 +1404,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1802300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1802400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
