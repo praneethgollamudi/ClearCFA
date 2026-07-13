@@ -303,13 +303,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-13
-{version:"2026-07-13",slides:[
-{emoji:"📋",color:C.reward,bg:C.reward,title:"Authentic CBT Mock Exams",sub:"Study Tools · 2026-07-13 update",desc:"Experience full timed mock exams that mirror the actual CFA Computer-Based Test—complete with exam-weighted question distribution, hidden tools during the exam, and detailed post-exam review. This authentic simulation builds the stamina and rhythm you need on test day.",tip:"Try an Exam-Weight Mock from the Practice menu to see your pass probability and module-by-module performance breakdown."},
-{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Re-engagement Nudges Keep You On Track",sub:"UX · 2026-07-13 update",desc:"Smart tiered messages now reach you when motivation dips, with personalized deep links that jump you straight back to your study plan. ClearCFA learns your study habits and sends the right reminder at the right time to restart your streak.",tip:"Check your notifications and emails if you've taken a study break—we'll help you pick up exactly where you left off."},
-{emoji:"🚀",color:C.hard,bg:C.hard,title:"AI Study Notes Generator",sub:"AI · 2026-07-13 update",desc:"Generate personalized study notes on any topic in seconds using AI-powered summarization. Notes are tailored to your level and exam focus, saving you hours of manual note-taking so you can spend more time actually learning.",tip:"Open any topic in the Revision screen, go to the Notes tab, and tap Generate Notes to create a custom summary."},
-{emoji:"📱",color:C.medium,bg:C.medium,title:"Web Push Notifications & Streak Alerts",sub:"Retention · 2026-07-13 update",desc:"Stay connected with timely web push alerts that celebrate your streaks and prompt you back to studying. A panic streak banner highlights when you're at risk of breaking your chain, adding accountability without stress.",tip:"Enable push notifications in your browser settings to get real-time study reminders and achievement celebrations."},
-]},
 // WN_VER:2026-07-13-b
 {version:"2026-07-13-b",slides:[
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Exam Progress Tracking Fixed",sub:"Bug Fix · 2026-07-13 update",desc:"The exam-weighted mock progress bar was stuck at 0% and now accurately reflects your preparation. You'll see real-time feedback on how much of the weighted exam content you've covered.",tip:"Check your Mock Exams tab to see your true progress towards readiness."},
@@ -332,6 +325,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"✉️",color:C.reward,bg:C.reward,title:"Stay Connected After Signup",sub:"UX · 2026-07-13 update",desc:"We've added email validation and push notifications during onboarding, so you'll receive personalized study reminders and exam tips right when you need them. This keeps you engaged and on track toward your CFA goals.",tip:"Check your email and notification settings after signing up to customize how often you hear from us."},
 {emoji:"🎯",color:C.medium,bg:C.medium,title:"More Accurate Question Grading",sub:"Bug Fix · 2026-07-13 update",desc:"We fixed a validation issue that was incorrectly accepting approximate answers in certain question types. Now your quiz results accurately reflect your mastery of the material.",tip:"Retake any quizzes you've completed to see corrected scoring on questions with approximation symbols (≈)."},
 ]},
+// WN_VER:2026-07-13-f
+{version:"2026-07-13-f",slides:[
+{emoji:"📋",color:C.easy,bg:C.easy,title:"Study Checklist & Smart Tools",sub:"Study Tools · 2026-07-13 update",desc:"We've added a progress checklist to help you track what you've covered and a contextual calculator that appears when you need it most. Stay organized and calculate faster without switching apps.",tip:"Check your progress on the Study dashboard and look for the calculator icon during practice questions."},
+{emoji:"💌",color:C.accentLight,bg:C.accentLight,title:"Personalized Study Emails",sub:"UX · 2026-07-13 update",desc:"You'll now receive targeted emails with tips, spotlights on tough topics, and study nudges designed for your prep journey. We've also made it easy to confirm your email and opt into push notifications when you sign up.",tip:"Check your inbox after signing up or updating your preferences—your first study tip is on the way."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -340,13 +338,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix admin-stats auth — email fallback now unconditional, not gated on userId",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -383,6 +374,11 @@ const ADMIN_CHANGELOG=[
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
 "fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
 "fix: cast uuid to text in leaderboard SQL join to fix Deploy Supabase workflow",
+]},
+// AC_VER:2026-07-13
+{date:"2026-07-13",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-13
 {date:"2026-07-13",entries:[
