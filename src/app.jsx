@@ -2215,20 +2215,62 @@ function FeedbackModal({onClose, userId="", onSubmit}){
 }
 
 function OnboardingGate({onComplete}){
-  const [step,setStep]=React.useState(0); // 0=level, 1=date, 2=retaker topics
+  const [step,setStep]=React.useState(-1); // -1=sample Q, 0=level, 1=date, 2=retaker topics
   const [level,setLevel]=React.useState("1");
   const [isRetaking,setIsRetaking]=React.useState(false);
   const [retakerTopics,setRetakerTopics]=React.useState([]);
   const [pendingExamDate,setPendingExamDate]=React.useState(null);
+  const [sampleAnswer,setSampleAnswer]=React.useState(null);
   const EXAM_DATES=[
     {label:"Aug 2026",value:"2026-08-19"},
     {label:"Nov 2026",value:"2026-11-19"},
     {label:"May 2027",value:"2027-05-19"},
     {label:"Set later",value:null},
   ];
+  const OQ=OFFLINE_SEED_QS["Ethics"]["Code of Ethics & Standards"][0];
   return(
     <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,0.92)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 20px"}}>
-      <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:20,padding:"28px 24px",width:"100%",maxWidth:360,animation:"fadeIn 0.25s ease"}}>
+      <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:20,padding:"28px 24px",width:"100%",maxWidth:360,animation:"fadeIn 0.25s ease",maxHeight:"90vh",overflowY:"auto"}}>
+        {step===-1&&(
+          <>
+            {sampleAnswer===null?(
+              <>
+                <div style={{fontSize:10,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14}}>🎯 Try a real CFA question</div>
+                <div style={{fontSize:14,fontWeight:600,color:C.text,lineHeight:1.65,marginBottom:20}}>{OQ.question}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:8}}>
+                  {Object.entries(OQ.options).map(([k,v])=>(
+                    <button key={k} onClick={()=>setSampleAnswer(k)}
+                      style={{display:"flex",alignItems:"flex-start",gap:10,padding:"11px 14px",borderRadius:11,
+                        border:`1.5px solid ${C.border}`,background:C.surface,color:C.text,fontSize:13,
+                        cursor:"pointer",textAlign:"left",transition:"all 0.12s"}}>
+                      <span style={{fontWeight:800,color:C.accent,flexShrink:0,minWidth:14}}>{k}.</span>
+                      <span>{v}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ):(
+              <>
+                <div style={{textAlign:"center",marginBottom:12}}>
+                  <div style={{fontSize:36,marginBottom:6}}>{sampleAnswer===OQ.answer?"✅":"❌"}</div>
+                  <div style={{fontSize:15,fontWeight:800,color:sampleAnswer===OQ.answer?C.easy:C.hard}}>
+                    {sampleAnswer===OQ.answer?"Correct!":"Not quite — but that's what practice is for."}
+                  </div>
+                </div>
+                <div style={{background:C.surfaceHigh,borderRadius:11,padding:"13px 14px",marginBottom:16,border:`1px solid ${C.border}`}}>
+                  <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Explanation</div>
+                  <div style={{fontSize:12,color:C.textMid,lineHeight:1.65}}>{OQ.explanation.replace(/^Correct:\s*[A-Z]\.\s*/,"")}</div>
+                </div>
+                <div style={{fontSize:12,color:C.muted,textAlign:"center",marginBottom:18,lineHeight:1.5}}>
+                  ClearCFA generates fresh questions every session, calibrated to your weak spots.
+                </div>
+                <button onClick={()=>setStep(0)} style={{width:"100%",padding:"13px",borderRadius:11,fontSize:14,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                  Set up my study plan →
+                </button>
+              </>
+            )}
+          </>
+        )}
         {step===0&&(
           <>
             <div style={{fontSize:26,marginBottom:10,textAlign:"center"}}>👋</div>
@@ -2302,7 +2344,7 @@ function UpgradeModal({reason, onClose, userEmail="", onCheckAccess, passProb=nu
   const [step,setStep]=useState("info"); // "info" | "pay" | "checking" | "granted" | "notyet"
   const [copied,setCopied]=useState(false);
   const headers={
-    limit:{icon:"⚡",title:"Daily limit reached",sub:`You've used your ${FREE_DAILY_AI_LIMIT} free questions today. Resets at midnight.`},
+    limit:{icon:"⚡",title:"Daily limit reached",sub:`You've used your ${FREE_DAILY_AI_LIMIT} free AI questions today. Your quota resets at midnight — or go Pro for unlimited access.`},
     chat_limit:{icon:"💬",title:"Chat limit reached",sub:"You've used your 15 free AI chat messages today. Upgrade to Pro for unlimited AI tutoring. Resets at midnight."},
     coach:{icon:"🤖",title:"Pro feature",sub:"AI Coach is available on the Pro plan."},
     plan:{icon:"🗓",title:"Pro feature",sub:"Weekly AI study plans are available on Pro."},
@@ -6497,7 +6539,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
       // Mark as seen immediately — abandoning mid-session won't cause repeats
       setQdb(prev=>addToQDB(finalQs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
       // Track AI usage for free tier
-      if(!proStatus){const newUsage=bumpDailyAI(finalQs.length);setDailyAIUsage({...newUsage});}
+      if(!proStatus){
+        const newUsage=bumpDailyAI(finalQs.length);
+        setDailyAIUsage({...newUsage});
+        const remaining=Math.max(0,FREE_DAILY_AI_LIMIT-newUsage.count);
+        if(remaining>0&&remaining<=3){
+          showToast("⚡",`${remaining} free question${remaining===1?"":"s"} left today`,"Upgrade to Pro for unlimited questions — or come back at midnight for 20 more.",5000);
+        }
+      }
     }catch(e){
       // Try offline cache as fallback before showing error
       if(!isVignette){
@@ -6942,8 +6991,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {key:"interleaved",label:"Mixed Topics",icon:"🔀",action:()=>{trackUsage("interleaved");setMode("interleaved");setScreen("setup");}},
       {key:"study_path",label:"Study Path",icon:"🎓",action:()=>{trackUsage("study_path");setScreen("studyPath");}},
       {key:"dashboard",label:"Dashboard",icon:"📊",action:()=>{trackUsage("dashboard");setScreen("dashboard");}},
-      {key:"duel",label:"Duel Mode",icon:"⚔️",action:()=>{trackUsage("duel");setDuelTopicPicking(true);}},
-      {key:"study_group",label:"Study Group",icon:"👥",action:()=>{trackUsage("study_group");setSgScreen(true);}},
     ].sort((a,b)=>(usageStats[b.key]?.count||0)-(usageStats[a.key]?.count||0));
     const Ic=({d,size=22})=>(
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
@@ -11191,6 +11238,46 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const passed=sessionPct>=70;
     const qScore=lastSessionQuality;
     return wrap(<>
+      {prequizPassProbRef.current!==null&&passProbability&&(()=>{
+        const before=prequizPassProbRef.current;
+        const after=passProbability.probability;
+        const delta=after-before;
+        const col=after>=70?C.easy:after>=55?C.medium:C.hard;
+        const deltaCol=delta>0?C.easy:delta<0?C.hard:C.muted;
+        return(
+          <div style={{background:`linear-gradient(135deg,${col}14,${col}06)`,border:`2px solid ${col}33`,borderRadius:16,padding:"20px 20px 16px",textAlign:"center",marginBottom:14}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Pass Probability</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:14,marginBottom:12}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:11,color:C.muted,marginBottom:2}}>Before</div>
+                <div style={{fontSize:26,fontWeight:700,color:C.muted}}>{before}%</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                <div style={{fontSize:18,color:C.muted}}>→</div>
+                <div style={{background:deltaCol+"22",border:`1px solid ${deltaCol}44`,borderRadius:6,padding:"2px 7px"}}>
+                  <span style={{fontSize:13,fontWeight:800,color:deltaCol}}>{delta>0?"+":""}{delta}%</span>
+                </div>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:11,color:C.muted,marginBottom:2}}>After</div>
+                <div style={{fontSize:46,fontWeight:900,color:col,lineHeight:1}}>{after}%</div>
+              </div>
+            </div>
+            <div style={{height:6,borderRadius:3,background:C.border,overflow:"hidden",position:"relative",marginBottom:4}}>
+              <div style={{height:"100%",width:`${Math.min(100,after)}%`,borderRadius:3,background:col,transition:"width 0.8s ease"}}/>
+              <div style={{position:"absolute",top:0,left:"70%",width:2,height:"100%",background:C.text+"55"}}/>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+              <span style={{fontSize:9,color:C.muted}}>0%</span>
+              <span style={{fontSize:9,color:C.text,fontWeight:700}}>↑ pass threshold: 70%</span>
+              <span style={{fontSize:9,color:C.muted}}>100%</span>
+            </div>
+            <div style={{fontSize:12,color:col,fontWeight:700}}>
+              {after>=70?"✓ Above pass threshold":`${70-after}% more to reach the pass threshold`}
+            </div>
+          </div>
+        );
+      })()}
       <div style={{background:C.surface,border:`1px solid ${passed?"#22a05a44":C.hard+"44"}`,borderRadius:16,padding:"24px 22px",textAlign:"center",marginBottom:16}}>
         <ScoreRing pct={sessionPct} size={96}/>
         <div style={{fontSize:16,fontWeight:700,marginTop:12,color:passed?C.easy:C.hard}}>{passed?"Above Threshold ✓":"Not there yet — every wrong answer is data"}</div>
@@ -11224,23 +11311,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <span style={{fontSize:12,fontWeight:700,color:col}}>
                 {perfect?"Perfect focus — zero distractions":sw===1?`1 distraction · ${awayStr}`:`${sw} distractions · ${awayStr}`}
               </span>
-            </div>
-          );
-        })()}
-        {prequizPassProbRef.current!==null&&passProbability&&(()=>{
-          const before=prequizPassProbRef.current;
-          const after=passProbability.probability;
-          const delta=after-before;
-          const col=delta>0?C.easy:delta<0?C.hard:C.muted;
-          return(
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,
-              background:col+"12",border:`1px solid ${col}33`,borderRadius:10,
-              padding:"10px 16px",marginTop:10,marginBottom:4}}>
-              <span style={{fontSize:13}}>📈</span>
-              <div style={{fontSize:13,fontWeight:700,color:col}}>
-                Pass probability: {before}% → {after}%
-                <span style={{marginLeft:6,fontWeight:800}}>{delta>0?"+":""}{delta}%</span>
-              </div>
             </div>
           );
         })()}
