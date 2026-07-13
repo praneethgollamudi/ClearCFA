@@ -7295,7 +7295,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
     }
 
     const isSignup=authMode==="signup";
-    const canSubmit=authEmail.includes("@")&&authPassword.length>=6&&(!isSignup||authPassword===authConfirm);
+    const isValidEmail=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(authEmail);
+    const canSubmit=isValidEmail&&authPassword.length>=6&&(!isSignup||authPassword===authConfirm);
     const handleAuth=async()=>{
       setAuthError("");
       setAuthLoading(true);
@@ -7395,7 +7396,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </div>
             {isSignup&&<div style={{fontSize:12,color:C.accentLight,textAlign:"center",marginBottom:14,fontWeight:600}}>🎉 Free to start — no credit card needed</div>}
             <input value={authEmail} onChange={e=>setAuthEmail(e.target.value.trim())}
-              placeholder="your@email.com" type="email" autoComplete="email" style={inputStyle(authEmail.includes("@"))}/>
+              placeholder="your@email.com" type="email" autoComplete="email" style={inputStyle(isValidEmail)}/>
+            {isSignup&&authEmail.length>4&&!isValidEmail&&<div style={{fontSize:11,color:C.hard,marginTop:-7,marginBottom:8}}>Please enter a valid email address.</div>}
             <input value={authPassword} onChange={e=>setAuthPassword(e.target.value)}
               onKeyDown={e=>{if(e.key==="Enter"&&!isSignup&&canSubmit)handleAuth();}}
               placeholder="Password (min 6 characters)" type="password" autoComplete={isSignup?"new-password":"current-password"} style={inputStyle(authPassword.length>=6)}/>
@@ -7630,6 +7632,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
         {studyGoal?.time&&<div style={{fontSize:11,color:C.easy,marginTop:8,textAlign:"center"}}>✓ We'll nudge you at your study time</div>}
       </div>
+
+      {/* Push notification opt-in */}
+      {!pushSubbed&&"Notification" in window&&Notification.permission!=="denied"&&(
+        <div style={{width:"100%",maxWidth:340,marginBottom:24}}>
+          <div style={{background:`linear-gradient(135deg,${C.medium}18,${C.medium}06)`,border:`1px solid ${C.medium}33`,borderRadius:12,padding:"14px 16px",display:"flex",alignItems:"flex-start",gap:12}}>
+            <div style={{fontSize:22,flexShrink:0}}>🔔</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:800,color:C.text,marginBottom:3}}>Daily study reminders</div>
+              <div style={{fontSize:11,color:C.muted,lineHeight:1.55,marginBottom:10}}>We'll ping you when your spaced repetition cards are due and your streak is at risk — at your study time.</div>
+              <button onClick={async()=>{await subscribePush();}} style={{padding:"8px 16px",borderRadius:9,fontSize:12,fontWeight:700,background:C.medium,color:"#000",border:"none",cursor:"pointer"}}>
+                Enable reminders →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* What happens next — reassurance, below the CTA */}
       <div style={{width:"100%",maxWidth:340}}>
@@ -11285,11 +11303,21 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 <button onClick={()=>setScreen("srReview")} style={{padding:"8px 16px",borderRadius:10,fontSize:12,fontWeight:700,background:C.accent,color:"#fff",border:"none",cursor:"pointer"}}>Preview Review Deck →</button>
               </div>
             )}
-            {!pushSubbed&&(
+            {!pushSubbed&&"Notification" in window&&Notification.permission!=="denied"&&(
               <div style={{background:`linear-gradient(135deg,${C.medium}18,${C.medium}08)`,border:`1px solid ${C.medium}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
                 <div style={{fontSize:13,fontWeight:800,color:C.medium,marginBottom:4}}>🔔 Never miss a study day</div>
-                <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.5}}>Enable daily reminders and we'll nudge you when your SR cards are due and your streak is at risk.</div>
-                <button onClick={subscribePush} style={{padding:"8px 16px",borderRadius:10,fontSize:12,fontWeight:700,background:C.medium,color:"#000",border:"none",cursor:"pointer"}}>Enable Reminders →</button>
+                <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.5}}>Get a daily nudge when your SR cards are due. Pick your best time:</div>
+                <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+                  {[["07:00","7am"],["09:00","9am"],["12:00","Noon"],["18:00","6pm"],["20:00","8pm"],["21:00","9pm"]].map(([v,l])=>(
+                    <button key={v} onClick={()=>{setReminderTime(v);try{localStorage.setItem(REMINDER_TIME_KEY,v);}catch{}}}
+                      style={{padding:"6px 12px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",border:`1.5px solid ${reminderTime===v?C.medium:C.border}`,background:reminderTime===v?C.medium+"22":"transparent",color:reminderTime===v?C.medium:C.muted}}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={subscribePush} style={{padding:"9px 18px",borderRadius:10,fontSize:12,fontWeight:700,background:C.medium,color:"#000",border:"none",cursor:"pointer"}}>
+                  {reminderTime?`Remind me at ${[["07:00","7am"],["09:00","9am"],["12:00","Noon"],["18:00","6pm"],["20:00","8pm"],["21:00","9pm"]].find(([v])=>v===reminderTime)?.[1]||reminderTime}`:"Enable Reminders"} →
+                </button>
               </div>
             )}
             {authUser&&(
