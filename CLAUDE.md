@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Feature education system (2e73b10)**: New onboarding includes checklist-based feature education, contextual calculator trigger UI, and spotlight emails. When designing post-signup flows, incorporate feature checklists and contextual triggers to guide users through new capabilities during their first session.
+
+
+**What's New version 2026-07-13-e (2026-07-13)**: New slide set announcing Stay Connected After Signup (email validation, push notifications) and More Accurate Question Grading (approximation symbol fix). Currently active versions include 2026-07-13, 2026-07-13-b, 2026-07-13-c, 2026-07-13-d, and 2026-07-13-e. Versions 2026-07-12-b and 2026-07-12-c have been removed from rotation.
+
+
 **PostHog project token configuration (b71131a)**: PostHog analytics now wired with project token for production tracking. When initializing analytics, ensure PostHog token is configured in environment to enable event capture and user identification. Graceful degradation already in place via try-catch blocks in `ph` helper.
 
 
@@ -1437,7 +1443,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1802900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1803000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
