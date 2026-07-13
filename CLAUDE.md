@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version consolidation (3ae77ad)**: Removed 2026-07-12 and 2026-07-12-f from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-12-b, 2026-07-12-c, 2026-07-12-d, 2026-07-12-e, 2026-07-13, 2026-07-13-b, and 2026-07-13-c. Always verify active list when adding new versions to prevent duplicate messaging.
+
+
+**What's New version 2026-07-13-c (2026-07-13)**: New slide set announcing Accurate Question Validation, Mock Exam Progress Tracking, and Personalized Study Engagement Features. Currently active versions are 2026-07-13, 2026-07-13-b, and 2026-07-13-c. Versions 2026-07-12 and 2026-07-12-f have been removed from rotation.
+
+
+**PostHog analytics instrumentation (3ae77ad)**: Added `ph` helper object for PostHog analytics capture. Wraps `window.posthog?.capture(event, properties)`, `identify(id, traits)`, and `reset()` in try-catch blocks to safely handle missing PostHog library. When instrumenting user actions, use `ph.capture()` for event tracking and `ph.identify()` for user property updates to ensure graceful degradation if PostHog is unavailable.
+
+
 **Approximation bypass validation fix (665cbe9)**: Fixed question validation to prevent ≈ symbol from bypassing answer verification. When implementing answer matching or validation logic, ensure special characters like ≈ don't create unintended loopholes in correctness checking.
 
 
@@ -1419,7 +1428,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1802600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1802700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
