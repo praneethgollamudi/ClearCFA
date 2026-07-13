@@ -207,6 +207,7 @@ const LIGHT_PALETTE = {
 };
 const _initTheme=(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}})();
 const C=Object.assign({},_initTheme==='light'?LIGHT_PALETTE:DARK_PALETTE);
+const ph={capture:(e,p)=>{try{window.posthog?.capture(e,p||{});}catch{}},identify:(id,t)=>{try{window.posthog?.identify(id,t||{});}catch{}},reset:()=>{try{window.posthog?.reset();}catch{}}};
 class CalcLearnBoundary extends React.Component{
   constructor(p){super(p);this.state={err:null};}
   static getDerivedStateFromError(e){return{err:e};}
@@ -5092,6 +5093,7 @@ function CFAMock(){
         saveAuth(auth);
         setAuthUser(auth);
         authUserRef.current=auth;
+        ph.identify(auth.id,{email:auth.email});
         try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:true}));}catch{}
         if(!exists)setShowOnboarding(true);
         try{const qs=sessionStorage.getItem('cfa_qs_v1');if(qs){sessionStorage.removeItem('cfa_qs_v1');const t=QS_SLUG_MAP[qs];if(t)setQuickStartTopic(t);}}catch{}
@@ -5101,6 +5103,7 @@ function CFAMock(){
 
   // L2/L3 use item-set/vignette format — auto-enable vignette mode
   useEffect(()=>{if(cfaLevel!=="1")setVignetteMode(true);else setVignetteMode(false);},[cfaLevel]);
+  useEffect(()=>{ph.capture('screen_viewed',{screen});},[screen]);
 
   useEffect(()=>{
     const s=document.createElement("style");
@@ -5147,6 +5150,7 @@ function CFAMock(){
             BESTS_KEY,RESOLVED_GAPS_KEY,REMINDER_TIME_KEY,LAST_SCREEN_KEY,
           ];
           SESSION_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch{}});
+          ph.reset();
           setHistory([]);historyRef.current=[];
           setSrDeck({});srDeckRef.current={};
           setWeeklyPlan(null);setDiagWeak([]);
@@ -5643,6 +5647,7 @@ function CFAMock(){
     const newHistory=[session,...historyRef.current];
     setHistory(newHistory);
     historyRef.current=newHistory;
+    ph.capture('session_completed',{topic:t,subtopic:st,pct,difficulty:diff,mode:m,cfaLevel,questions_count:cnt,is_first:newHistory.length===1});
 
     // ── Milestone checks ──────────────────────────────────────────────────
     const oldXP=getTotalXP(newHistory.slice(1));
@@ -6316,6 +6321,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const usage=getDailyAIUsage();
       if(usage.count>=FREE_DAILY_AI_LIMIT){
         setUpgradeModal({reason:"limit",passProb:passProbability?.probability??null,weakCount:moduleReadiness.filter(m=>m.accuracy!==null&&m.accuracy<60).length,streakDays:streak});
+        ph.capture('upgrade_shown',{reason:'limit',pass_prob:passProbability?.probability??null});
         setLoading(false);setLoadingProgress(0);generatingRef.current=false;
         return;
       }
@@ -6491,6 +6497,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
       setVignetteMode(isVignette);
       setQuestions(isVignette?finalQs:fingerprintQuestions(finalQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
+      ph.capture('session_started',{topic:t,subtopic:st,difficulty:diff,count:cnt,mode:m,cfaLevel,is_vignette:isVignette});
       setScreen("quiz");
       // Mark as seen immediately — abandoning mid-session won't cause repeats
       setQdb(prev=>addToQDB(finalQs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
@@ -6929,7 +6936,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     };
     const moreItems=[
       {key:"mix",label:"Weak Spots",icon:"⚡",action:()=>{trackUsage("mix");const weakModules=moduleReadiness.filter(m=>m.sessions>0).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);const target=weakModules[0]||moduleReadiness.find(m=>m.sessions===0)||moduleReadiness[0];if(target)generateQuestions(target.topic,target.modulesCovered?.[0]||target.modules[0],"Medium",10,"guided");}},
-      {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}startFullExam();}},
+      {key:"full_exam",label:"Timed Mock",icon:"⏱",proTag:true,action:()=>{trackUsage("full_exam");if(!proStatus){setUpgradeModal({reason:"timed_mock"});ph.capture('upgrade_shown',{reason:'timed_mock'});return;}startFullExam();}},
       {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
       {key:"revise",label:"Notes",icon:"📝",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
       {key:"formulas",label:"Formulas",icon:"🔢",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
@@ -7332,9 +7339,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
         saveAuth(auth);
         setAuthUser(auth);
         authUserRef.current=auth;
+        ph.identify(auth.id,{email:auth.email});
         try{window.dispatchEvent(new CustomEvent('cfa_auth',{detail:true}));}catch{}
         try{const qs=sessionStorage.getItem('cfa_qs_v1');if(qs){sessionStorage.removeItem('cfa_qs_v1');const t=QS_SLUG_MAP[qs];if(t)setQuickStartTopic(t);}}catch{}
         if(isSignup){
+          ph.capture('signed_up',{method:'password'});
           setShowOnboarding(true);
           try{const ref=sessionStorage.getItem('cfa_ref');if(ref&&ref!==auth.id){recordReferral(SB_CFG,ref,auth.id);sessionStorage.removeItem('cfa_ref');}}catch{}
         }
@@ -8808,7 +8817,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:13,fontWeight:700,color:C.hard}}>⚠ {leeches.length} leech card{leeches.length!==1?"s":""}</div>
           <div style={{fontSize:11,color:C.muted,marginTop:2}}>Missed 4+ times — your real blind spots</div>
         </div>
-        <button onClick={()=>{trackUsage("leech_review");setSrQueue([...leeches].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);srSessionResults.current={correct:0,total:0};srSessionStart.current=Date.now();setScreen("srReview");}} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:C.hard+"25",border:`1px solid ${C.hard}55`,color:C.hard,cursor:"pointer",flexShrink:0}}>Review Now</button>
+        <button onClick={()=>{trackUsage("leech_review");setSrQueue([...leeches].sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,20));setSrIdx(0);setSrAnswer(null);srSessionResults.current={correct:0,total:0};srSessionStart.current=Date.now();ph.capture('sr_started',{type:'leech',count:leeches.length});setScreen("srReview");}} style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,background:C.hard+"25",border:`1px solid ${C.hard}55`,color:C.hard,cursor:"pointer",flexShrink:0}}>Review Now</button>
       </div>
     )}
 
@@ -11222,6 +11231,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         })()}
         <button onClick={()=>{
           const fallbackText=`📊 ClearCFA Score Card\n━━━━━━━━━━━━━━━━━\n🎓 CFA Level ${cfaLevel} · ${subtopic}\n\n${sessionPct}%  ${sessionScore}/${questions.length} correct · ${difficulty}\n${sessionPct>=70?"✅ Above pass threshold":sessionPct>=50?"📈 Getting there (pass = 70%)":"💪 Keep drilling"}${todayStudySecs>0?`\n📚 ${fmtStudyTime(todayStudySecs)} studied today`:""}\n\nPrepping smarter with ClearCFA ✨\nclearcfa.com`;
+          ph.capture('share_clicked',{pct:sessionPct,topic:subtopic,difficulty,cfaLevel});
           try{
             const imgCanvas=buildShareImage({sessionPct,sessionScore,total:questions.length,subtopic,difficulty,timeTaken,todayStudySecs,cfaLevel,fmtStudyTime,levelLabel:levelInfo?.label,levelNum:levelInfo?.level});
             imgCanvas.toBlob(async(blob)=>{
