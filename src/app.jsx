@@ -303,10 +303,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-c
-{version:"2026-07-12-c",slides:[
-{emoji:"📧",color:C.reward,bg:C.reward,title:"Smarter Re-engagement Messages",sub:"UX · 2026-07-12 update",desc:"ClearCFA now sends you personalized, tiered messages tailored to your study progress and engagement level. Deep links in emails take you directly to the exact lessons or quizzes you need to focus on.",tip:"Check your email for a customized study prompt that matches exactly where you left off."},
-]},
 // WN_VER:2026-07-13
 {version:"2026-07-13",slides:[
 {emoji:"📋",color:C.reward,bg:C.reward,title:"Authentic CBT Mock Exams",sub:"Study Tools · 2026-07-13 update",desc:"Experience full timed mock exams that mirror the actual CFA Computer-Based Test—complete with exam-weighted question distribution, hidden tools during the exam, and detailed post-exam review. This authentic simulation builds the stamina and rhythm you need on test day.",tip:"Try an Exam-Weight Mock from the Practice menu to see your pass probability and module-by-module performance breakdown."},
@@ -331,6 +327,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Progress Tracking Now Works",sub:"Bug Fix · 2026-07-13 update",desc:"Resolved a display bug where exam-weight mock progress bars were stuck at 0%. Your progress through weighted practice exams now displays accurately, giving you real-time insight into how you're advancing through each topic.",tip:"Check your mock exam progress bar next time you run a weighted practice session—it should now move smoothly as you complete questions."},
 {emoji:"📈",color:C.easy,bg:C.easy,title:"Better Learning Insights",sub:"Study Tools · 2026-07-13 update",desc:"We've added deeper analytics to understand how you're using ClearCFA and where you need the most support. This helps us refine practice recommendations and spot where you're struggling, so future updates target your real study needs.",tip:"Your study patterns are now being tracked to personalize future feature releases—keep preparing as usual."},
 ]},
+// WN_VER:2026-07-13-e
+{version:"2026-07-13-e",slides:[
+{emoji:"✉️",color:C.reward,bg:C.reward,title:"Stay Connected After Signup",sub:"UX · 2026-07-13 update",desc:"We've added email validation and push notifications during onboarding, so you'll receive personalized study reminders and exam tips right when you need them. This keeps you engaged and on track toward your CFA goals.",tip:"Check your email and notification settings after signing up to customize how often you hear from us."},
+{emoji:"🎯",color:C.medium,bg:C.medium,title:"More Accurate Question Grading",sub:"Bug Fix · 2026-07-13 update",desc:"We fixed a validation issue that was incorrectly accepting approximate answers in certain question types. Now your quiz results accurately reflect your mastery of the material.",tip:"Retake any quizzes you've completed to see corrected scoring on questions with approximation symbols (≈)."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -339,14 +340,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix admin-stats auth — email fallback now unconditional, not gated on userId",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix admin-stats auth for OAuth users — remove length guard on email fallback",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -390,6 +383,11 @@ const ADMIN_CHANGELOG=[
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
 "fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
 "fix: cast uuid to text in leaderboard SQL join to fix Deploy Supabase workflow",
+]},
+// AC_VER:2026-07-13
+{date:"2026-07-13",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-13
 {date:"2026-07-13",entries:[
