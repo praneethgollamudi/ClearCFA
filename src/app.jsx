@@ -302,10 +302,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-12-e
-{version:"2026-07-12-e",slides:[
-,
-]},
 // WN_VER:2026-07-12-f
 {version:"2026-07-12-f",slides:[
 ,
@@ -322,6 +318,13 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-12-c",slides:[
 {emoji:"📧",color:C.reward,bg:C.reward,title:"Smarter Re-engagement Messages",sub:"UX · 2026-07-12 update",desc:"ClearCFA now sends you personalized, tiered messages tailored to your study progress and engagement level. Deep links in emails take you directly to the exact lessons or quizzes you need to focus on.",tip:"Check your email for a customized study prompt that matches exactly where you left off."},
 ]},
+// WN_VER:2026-07-13
+{version:"2026-07-13",slides:[
+{emoji:"📋",color:C.reward,bg:C.reward,title:"Authentic CBT Mock Exams",sub:"Study Tools · 2026-07-13 update",desc:"Experience full timed mock exams that mirror the actual CFA Computer-Based Test—complete with exam-weighted question distribution, hidden tools during the exam, and detailed post-exam review. This authentic simulation builds the stamina and rhythm you need on test day.",tip:"Try an Exam-Weight Mock from the Practice menu to see your pass probability and module-by-module performance breakdown."},
+{emoji:"📧",color:C.accentLight,bg:C.accentLight,title:"Re-engagement Nudges Keep You On Track",sub:"UX · 2026-07-13 update",desc:"Smart tiered messages now reach you when motivation dips, with personalized deep links that jump you straight back to your study plan. ClearCFA learns your study habits and sends the right reminder at the right time to restart your streak.",tip:"Check your notifications and emails if you've taken a study break—we'll help you pick up exactly where you left off."},
+{emoji:"🚀",color:C.hard,bg:C.hard,title:"AI Study Notes Generator",sub:"AI · 2026-07-13 update",desc:"Generate personalized study notes on any topic in seconds using AI-powered summarization. Notes are tailored to your level and exam focus, saving you hours of manual note-taking so you can spend more time actually learning.",tip:"Open any topic in the Revision screen, go to the Notes tab, and tap Generate Notes to create a custom summary."},
+{emoji:"📱",color:C.medium,bg:C.medium,title:"Web Push Notifications & Streak Alerts",sub:"Retention · 2026-07-13 update",desc:"Stay connected with timely web push alerts that celebrate your streaks and prompt you back to studying. A panic streak banner highlights when you're at risk of breaking your chain, adding accountability without stress.",tip:"Enable push notifications in your browser settings to get real-time study reminders and achievement celebrations."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -332,12 +335,6 @@ const ADMIN_CHANGELOG=[
 // AC_START
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
 "fix: admin-stats — authorize by email+userId presence, no sessions table check",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
@@ -405,6 +402,16 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-13
+{date:"2026-07-13",entries:[
+"fix: push_subscriptions migration type mismatch blocking Supabase deploys",
+"Fix admin-stats auth — email fallback now unconditional, not gated on userId",
+"Fix admin-stats auth for OAuth users — remove length guard on email fallback",
+"fix: admin-stats — authorize by email+userId presence, no sessions table check",
+"fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
+"fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
+"fix: cast uuid to text in leaderboard SQL join to fix Deploy Supabase workflow",
 ]},
 // AC_END
 ];
