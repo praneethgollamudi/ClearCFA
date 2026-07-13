@@ -4850,6 +4850,7 @@ function CFAMock(){
   const [checklistDismissed,setChecklistDismissed]=useState(()=>{try{return!!localStorage.getItem(CHECKLIST_KEY);}catch{return false;}});
   const [clVisitedReadiness,setClVisitedReadiness]=useState(()=>{try{return!!localStorage.getItem("cfa_cl_readiness");}catch{return false;}});
   const [clVisitedRevision,setClVisitedRevision]=useState(()=>{try{return!!localStorage.getItem("cfa_cl_revision");}catch{return false;}});
+  const [clVisitedCalcTrainer,setClVisitedCalcTrainer]=useState(()=>{try{return!!localStorage.getItem("cfa_cl_calc");}catch{return false;}});
   const [clChecklistRewarded,setClChecklistRewarded]=useState(()=>{try{return!!localStorage.getItem("cfa_cl_rewarded");}catch{return false;}});
   const [demoMode,setDemoMode]=useState(false);
   const [demoQ,setDemoQ]=useState(0);
@@ -5441,6 +5442,7 @@ function CFAMock(){
   useEffect(()=>{
     if(screen==="readiness"&&!clVisitedReadiness){setClVisitedReadiness(true);try{localStorage.setItem("cfa_cl_readiness","1");}catch{}}
     if(screen==="revision"&&!clVisitedRevision){setClVisitedRevision(true);try{localStorage.setItem("cfa_cl_revision","1");}catch{}}
+    if(screen==="calcTrainer"&&!clVisitedCalcTrainer){setClVisitedCalcTrainer(true);try{localStorage.setItem("cfa_cl_calc","1");}catch{}}
   },[screen]);
   // Warn before accidental page refresh/close during an active quiz
   useEffect(()=>{
@@ -8650,12 +8652,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const hasDoneOM=history.some(h=>h.isOfficeMode);
       const hasVisitedReadiness=clVisitedReadiness;
       const hasVisitedRevision=clVisitedRevision;
+      const hasVisitedCalc=clVisitedCalcTrainer;
       const items=[
         {label:"Set your exam date",done:hasExamDate,action:()=>setSettingsOpen(true)},
         {label:"Complete your first session",done:hasDoneSession,action:()=>{const t=diagWeak[0]||Object.keys(activeLOS)[0];const mods=Object.keys(activeLOS[t]?.modules||{});generateQuestions(t,mods[0]||t,"Easy",10,"guided");}},
         {label:"Try Office Mode",done:hasDoneOM,action:null},
         {label:"Check Pass Probability",done:hasVisitedReadiness,action:()=>setScreen("readiness")},
         {label:"Open Quick Revision",done:hasVisitedRevision,action:()=>setScreen("revision")},
+        {label:"Try the BA II Plus Calculator",done:hasVisitedCalc,action:()=>{trackUsage("calc_trainer");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}setCalcTab("practice");setScreen("calcTrainer");}},
       ];
       const doneCount=items.filter(i=>i.done).length;
       const allDone=doneCount===items.length;
@@ -11742,6 +11746,26 @@ Return ONLY a JSON array — no prose, no markdown fences:
               </div>
             ))}
           </div>
+          {/* Calc Trainer contextual nudge — show if any wrong answers are from calculator-heavy topics */}
+          {(()=>{
+            const CALC_TOPICS=["Quantitative Methods","Fixed Income","Corporate Issuers","Portfolio Management","Economics"];
+            const CALC_RE=/\b(calculat|comput|NPV|IRR|PV\b|FV\b|yield|TVM|discount|annuity|coupon|duration|amortiz|bond price|cash flow)/i;
+            const hasCalcWrong=wrongs.some(q=>CALC_TOPICS.includes(q._topic||topic)&&CALC_RE.test(q.question));
+            if(!hasCalcWrong||clVisitedCalcTrainer)return null;
+            return(
+              <div style={{background:`linear-gradient(135deg,${C.accent}14,${C.accent}06)`,border:`1px solid ${C.accent}33`,borderRadius:11,padding:"13px 15px",marginTop:4,display:"flex",alignItems:"flex-start",gap:12}}>
+                <div style={{fontSize:20,flexShrink:0}}>🧮</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12,fontWeight:800,color:C.accentLight,marginBottom:3}}>Calculator errors cost marks on exam day</div>
+                  <div style={{fontSize:11,color:C.muted,lineHeight:1.55,marginBottom:9}}>The BA II Plus Trainer walks you through exact keystroke sequences for TVM, NPV, IRR and bond pricing — the questions you just missed.</div>
+                  <button onClick={()=>{trackUsage("calc_trainer");if(!proStatus){setUpgradeModal({reason:"timed_mock"});return;}setCalcTab("practice");setScreen("calcTrainer");}}
+                    style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                    Open Calc Trainer →
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
       {history.length>=3&&authUser?.id&&(
