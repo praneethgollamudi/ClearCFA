@@ -5652,6 +5652,8 @@ function CFAMock(){
       showToast("🎯","Perfect Session!",`100% on ${t} — flawless.`,true);
     } else if(newHistory.length===1){
       showToast("🚀","First Session Done!","Your CFA journey starts now.",false);
+      // Trigger welcome email (fire-and-forget, one per user)
+      try{const wk=`cfa_welcome_v1_${authUserRef.current?.id||""}`;if(authUserRef.current?.email&&!localStorage.getItem(wk)){localStorage.setItem(wk,"1");fetch(AI_PROXY_URL.replace("ai-proxy","welcome-email"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:authUserRef.current.email,topic:t,pct,level:cfaLevel,userId:authUserRef.current.id,accessToken:authUserRef.current.accessToken||""})}).catch(()=>{});}}catch{}
     }
     // Personal best check
     const bestKey=`${t}|||${st}`;
@@ -9168,6 +9170,23 @@ Return ONLY a JSON array — no prose, no markdown fences:
       })()}
     </div>
 
+    {/* Baseline assessment prompt — shown for new users with no sessions */}
+    {history.length===0&&authUser&&!quickStartTopic&&(
+      <div style={{background:`linear-gradient(135deg,${C.accent}22,${C.accent}0a)`,border:`2px solid ${C.accent}66`,borderRadius:16,padding:"20px 20px",marginBottom:14,animation:"fadeIn 0.4s ease"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+          <span style={{fontSize:32}}>🎯</span>
+          <div>
+            <div style={{fontSize:17,fontWeight:900,color:C.text,lineHeight:1.2}}>Find your starting point</div>
+            <div style={{fontSize:12,color:C.muted,marginTop:3}}>5 questions · ~8 minutes · AI-personalized</div>
+          </div>
+        </div>
+        <div style={{fontSize:13,color:C.textMid,marginBottom:14,lineHeight:1.6}}>ClearCFA sets your pass probability baseline and identifies your #1 knowledge gap — so every session after this targets exactly what you need.</div>
+        <button onClick={()=>generateQuestions("Ethics",null,"medium",5,"guided")} style={{width:"100%",padding:"14px",borderRadius:12,fontSize:15,fontWeight:800,background:C.accent,color:"#fff",border:"none",cursor:"pointer",letterSpacing:"0.02em"}}>
+          Start Baseline Assessment →
+        </button>
+      </div>
+    )}
+
     {/* Email quickstart — shown when user arrives via re-engagement email deep link */}
     {quickStartTopic&&(
       <div style={{background:`linear-gradient(135deg,${C.accent}22,${C.accent}0a)`,border:`2px solid ${C.accent}66`,borderRadius:16,padding:"18px 20px",marginBottom:14,animation:"fadeIn 0.3s ease"}}>
@@ -9301,6 +9320,53 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
     )}
 
+
+    {/* Beat yesterday card — return trigger */}
+    {(()=>{
+      if(!authUser||history.length===0)return null;
+      const today=localDateKey();
+      const yd=new Date();yd.setDate(yd.getDate()-1);
+      const yDate=yd.getFullYear()+'-'+String(yd.getMonth()+1).padStart(2,'0')+'-'+String(yd.getDate()).padStart(2,'0');
+      const todaySessions=history.filter(h=>h.dateKey===today);
+      const ydSessions=history.filter(h=>h.dateKey===yDate);
+      if(todaySessions.length>0||ydSessions.length===0)return null;
+      const ydBest=Math.max(...ydSessions.map(h=>h.pct||0));
+      return(
+        <div style={{background:`linear-gradient(135deg,${C.reward}18,${C.reward}08)`,border:`1px solid ${C.reward}44`,borderRadius:14,padding:"14px 16px",marginBottom:12,animation:"fadeIn 0.4s ease"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:800,color:C.reward}}>🔥 Beat yesterday's {ydBest}%</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:2}}>You scored {ydBest}% yesterday — can you top it today?</div>
+            </div>
+            <button onClick={()=>setScreen("setup")} style={{padding:"8px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:C.reward,color:"#000",border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>Go →</button>
+          </div>
+        </div>
+      );
+    })()}
+
+    {/* Learning curve callout — shows improvement after 5+ sessions */}
+    {(()=>{
+      if(!authUser||history.length<5)return null;
+      const byTopic={};
+      history.forEach(h=>{
+        if(!h.topic)return;
+        if(!byTopic[h.topic]){byTopic[h.topic]={recent:h,first:h};}
+        else{byTopic[h.topic].first=h;}
+      });
+      let best=null,bestDelta=0;
+      Object.values(byTopic).forEach(({recent,first})=>{
+        if(recent===first)return;
+        const delta=(recent.pct||0)-(first.pct||0);
+        if(delta>=10&&delta>bestDelta){bestDelta=delta;best={topic:recent.topic,delta};}
+      });
+      if(!best)return null;
+      return(
+        <div style={{background:`linear-gradient(135deg,${C.easy}18,${C.easy}08)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"14px 16px",marginBottom:12,animation:"fadeIn 0.4s ease"}}>
+          <div style={{fontSize:13,fontWeight:800,color:C.easy}}>📈 You've improved {best.delta}% on {best.topic}</div>
+          <div style={{fontSize:11,color:C.muted,marginTop:3}}>ClearCFA is working — keep the momentum going.</div>
+        </div>
+      );
+    })()}
 
     {/* Study time nudge — implementation intention reminder */}
     {(()=>{
@@ -9449,6 +9515,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       );
     })()}
+
+    {/* Exam date urgency prompt */}
+    {!studyGoal?.examDate&&authUser&&history.length>0&&history.length<=15&&(
+      <div style={{background:`linear-gradient(135deg,${C.medium}18,${C.medium}08)`,border:`1px solid ${C.medium}44`,borderRadius:14,padding:"14px 16px",marginBottom:12,animation:"fadeIn 0.4s ease"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:C.medium}}>📅 When is your exam?</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>Set your exam date so ClearCFA can pace your study plan and track countdown.</div>
+          </div>
+          <button onClick={()=>setScreen("studyPlan")} style={{padding:"8px 14px",borderRadius:10,fontSize:12,fontWeight:700,background:C.medium,color:"#000",border:"none",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>Set date →</button>
+        </div>
+      </div>
+    )}
 
     {/* Social opt-in leaderboard */}
     {authUser&&(()=>{
@@ -11159,6 +11238,37 @@ Return ONLY a JSON array — no prose, no markdown fences:
           🔗 LinkedIn Card
         </button>
       </div>
+
+      {/* First-session activation cards */}
+      {history.length===1&&(()=>{
+        const srCount=Object.keys(srDeck?.cards||{}).length;
+        const refLink=`https://praneethgollamudi.github.io/ClearCFA/?ref=${authUser?.id||""}`;
+        return(
+          <div style={{marginBottom:14}}>
+            {srCount>0&&(
+              <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:800,color:C.accentLight,marginBottom:4}}>📚 {srCount} wrong {srCount===1?"answer":"answers"} saved to your review deck</div>
+                <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.5}}>ClearCFA will resurface these at the perfect moment using spaced repetition — so you never forget them.</div>
+                <button onClick={()=>setScreen("srReview")} style={{padding:"8px 16px",borderRadius:10,fontSize:12,fontWeight:700,background:C.accent,color:"#fff",border:"none",cursor:"pointer"}}>Preview Review Deck →</button>
+              </div>
+            )}
+            {!pushSubbed&&(
+              <div style={{background:`linear-gradient(135deg,${C.medium}18,${C.medium}08)`,border:`1px solid ${C.medium}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:800,color:C.medium,marginBottom:4}}>🔔 Never miss a study day</div>
+                <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.5}}>Enable daily reminders and we'll nudge you when your SR cards are due and your streak is at risk.</div>
+                <button onClick={subscribePush} style={{padding:"8px 16px",borderRadius:10,fontSize:12,fontWeight:700,background:C.medium,color:"#000",border:"none",cursor:"pointer"}}>Enable Reminders →</button>
+              </div>
+            )}
+            {authUser&&(
+              <div style={{background:`linear-gradient(135deg,${C.easy}18,${C.easy}08)`,border:`1px solid ${C.easy}44`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:800,color:C.easy,marginBottom:4}}>🤝 Challenge a friend</div>
+                <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.5}}>Share your invite link — if they subscribe, you both get a free month of Pro.</div>
+                <button onClick={()=>{navigator.clipboard?.writeText(refLink).then(()=>showToast("🔗","Link copied!","Share it with a CFA friend.")).catch(()=>{});}} style={{padding:"8px 16px",borderRadius:10,fontSize:12,fontWeight:700,background:C.easy,color:"#000",border:"none",cursor:"pointer"}}>Copy Invite Link →</button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Duel creator: show shareable link after quiz */}
       {duelCreating&&lastSession&&(()=>{
