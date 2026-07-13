@@ -6121,8 +6121,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
   const generateWeightedMock=async(cnt=18)=>{
     if(generatingRef.current)return; generatingRef.current=true;
     setLoading(true);setError("");setLoadingProgress(0);setLoadingMsg("Building exam-weight mock…");
+    const progressInterval=setInterval(()=>{setLoadingProgress(p=>Math.min(85,p+2));},400);
     try{
-      if(!authUser?.id){setError("Exam-Weight Mock requires a ClearCFA account — please sign in.");setLoading(false);generatingRef.current=false;return;}
+      if(!authUser?.id){setError("Exam-Weight Mock requires a ClearCFA account — please sign in.");clearInterval(progressInterval);setLoading(false);generatingRef.current=false;return;}
       const weights=TOPIC_WEIGHTS[cfaLevel];
       if(!weights)throw new Error("No weight data for this level");
       const topicList=Object.entries(weights).map(([topic,[mn,mx]])=>({topic,mid:(mn+mx)/2}));
@@ -6133,6 +6134,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const topicsDesc=alloc.map(a=>`${a.topic}: ${a.count}`).join(", ");
       const prompt=`You are a CFA Level ${cfaLevel} exam creator. Generate exactly ${cnt} multiple-choice questions distributed across CFA topics matching real exam weights: ${topicsDesc}.\n\nEach question: LOS-anchored, exam-realistic difficulty, plausible distractors targeting real misconceptions. Interleave topic order — do NOT group by topic.\n\nCRITICAL for numerical questions: compute the correct answer first, then ensure that exact value appears verbatim as one option.\n\nReturn ONLY a JSON array:\n[{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic>","_subtopic":"<module>"}]`;
       const qs=await callClaude(prompt,cnt*400+500,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"weighted_mock"});
+      clearInterval(progressInterval);
       if(!Array.isArray(qs)||qs.length===0)throw new Error("No questions returned");
       const tagged=qs.map((q,i)=>({...q,id:`wm_${i}_${q.id||i}`,_weightedMock:true}));
       setLoadingProgress(100);await new Promise(r=>setTimeout(r,200));
@@ -6141,7 +6143,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       setQuestions(tagged);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);
       qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
       setScreen("quiz");
-    }catch(e){setError("Weighted mock failed: "+e.message);}
+    }catch(e){clearInterval(progressInterval);setError("Weighted mock failed: "+e.message);}
     setLoading(false);setLoadingProgress(0);generatingRef.current=false;
   };
 
