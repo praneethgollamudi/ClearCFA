@@ -303,12 +303,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-13-d
-{version:"2026-07-13-d",slides:[
-{emoji:"✅",color:C.hard,bg:C.hard,title:"Accurate Answer Validation",sub:"Bug Fix · 2026-07-13 update",desc:"Fixed a critical issue where the approximation symbol (≈) was incorrectly bypassing question validation logic. Your answers are now checked with the precision they deserve, ensuring you only mark questions correct when your responses truly match the expected standard.",tip:"Try re-attempting any questions with approximate values to see stricter validation in action."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Progress Tracking Now Works",sub:"Bug Fix · 2026-07-13 update",desc:"Resolved a display bug where exam-weight mock progress bars were stuck at 0%. Your progress through weighted practice exams now displays accurately, giving you real-time insight into how you're advancing through each topic.",tip:"Check your mock exam progress bar next time you run a weighted practice session—it should now move smoothly as you complete questions."},
-{emoji:"📈",color:C.easy,bg:C.easy,title:"Better Learning Insights",sub:"Study Tools · 2026-07-13 update",desc:"We've added deeper analytics to understand how you're using ClearCFA and where you need the most support. This helps us refine practice recommendations and spot where you're struggling, so future updates target your real study needs.",tip:"Your study patterns are now being tracked to personalize future feature releases—keep preparing as usual."},
-]},
 // WN_VER:2026-07-13-e
 {version:"2026-07-13-e",slides:[
 {emoji:"✉️",color:C.reward,bg:C.reward,title:"Stay Connected After Signup",sub:"UX · 2026-07-13 update",desc:"We've added email validation and push notifications during onboarding, so you'll receive personalized study reminders and exam tips right when you need them. This keeps you engaged and on track toward your CFA goals.",tip:"Check your email and notification settings after signing up to customize how often you hear from us."},
@@ -329,6 +323,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-14",slides:[
 {emoji:"🛡️",color:C.hard,bg:C.hard,title:"Results Screen Now Stable",sub:"Bug Fix · 2026-07-14 update",desc:"Fixed a crash that could occur on the results screen when certain data was missing. You can now safely review your quiz performance without interruptions.",tip:"Try completing a quiz and reviewing your results—the page will load smoothly every time."},
 ]},
+// WN_VER:2026-07-14-b
+{version:"2026-07-14-b",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smoother Results & Quiz Start",sub:"UX · 2026-07-14 update",desc:"Fixed crashes on the results screen and improved the first question experience so you can see your progress clearly and jump into practice without interruption. These stability improvements mean more time studying, less time troubleshooting.",tip:"Complete a full practice quiz to see your results display reliably every time."},
+{emoji:"⚡",color:C.reward,bg:C.reward,title:"Better Free-Tier Guidance",sub:"Study Tools · 2026-07-14 update",desc:"The app now clearly shows you which features require an upgrade, and displays your pass probability right on the home screen so you can track your readiness at a glance. Knowing your odds keeps you motivated and focused on what matters.",tip:"Check your pass probability widget on the home screen after each practice session to monitor progress."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -337,13 +336,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"fix: push_subscriptions migration type mismatch blocking Supabase deploys",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -394,6 +386,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-13
 {date:"2026-07-13",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-14
+{date:"2026-07-14",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
