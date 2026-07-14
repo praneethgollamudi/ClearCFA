@@ -303,12 +303,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-13-c
-{version:"2026-07-13-c",slides:[
-{emoji:"✅",color:C.hard,bg:C.hard,title:"Accurate Question Validation",sub:"Bug Fix · 2026-07-13 update",desc:"Fixed a bypass in question validation that was allowing approximate answers (≈) to incorrectly pass or fail. Your quiz results now reflect truly accurate scoring.",tip:"Retake any quizzes from before this update to see your corrected performance."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Mock Exam Progress Now Tracks Correctly",sub:"Bug Fix · 2026-07-13 update",desc:"Resolved an issue where the exam-weight mock progress bar was stuck at 0% and not updating. You'll now see accurate real-time progress as you work through weighted mock exams.",tip:"Start or resume a weighted mock exam to see the progress bar animate properly."},
-{emoji:"🎮",color:C.reward,bg:C.reward,title:"Personalized Study Engagement Features",sub:"Study Tools · 2026-07-13 update",desc:"Introduced activation and stickiness features that adapt to your study habits and learning patterns. The app now encourages consistency and helps you build sustainable exam prep momentum.",tip:"Notice how your daily study recommendations and reminders become more personalized over time."},
-]},
 // WN_VER:2026-07-13-d
 {version:"2026-07-13-d",slides:[
 {emoji:"✅",color:C.hard,bg:C.hard,title:"Accurate Answer Validation",sub:"Bug Fix · 2026-07-13 update",desc:"Fixed a critical issue where the approximation symbol (≈) was incorrectly bypassing question validation logic. Your answers are now checked with the precision they deserve, ensuring you only mark questions correct when your responses truly match the expected standard.",tip:"Try re-attempting any questions with approximate values to see stricter validation in action."},
@@ -330,6 +324,10 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎓",color:C.accentLight,bg:C.accentLight,title:"Smarter Onboarding & First Question",sub:"UX · 2026-07-13 update",desc:"Your first question now launches instantly after signup, getting you studying immediately instead of wading through setup screens. We've streamlined the initial experience so you can assess your level and build momentum right away.",tip:"You'll see your first practice question within seconds of completing signup—no friction."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Live Pass Probability on Your Dashboard",sub:"Study Tools · 2026-07-13 update",desc:"A new pass probability hero card now appears on your home screen, showing you real-time odds of exam success based on your current performance. This gives you instant confidence checks and motivation to keep grinding toward your target.",tip:"Check your probability card daily—it updates as you complete more questions and improve your weak topics."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Interactive Learning Checklists & Calc Hints",sub:"Study Tools · 2026-07-13 update",desc:"Study guides now include interactive checklists to track concept mastery, plus contextual calculator triggers that appear when you need them most. This keeps you organized and removes friction when you need to compute quickly during practice.",tip:"Look for the calculator icon in questions where math is involved—it highlights the exact formula you should use."},
+]},
+// WN_VER:2026-07-14
+{version:"2026-07-14",slides:[
+{emoji:"🛡️",color:C.hard,bg:C.hard,title:"Results Screen Now Stable",sub:"Bug Fix · 2026-07-14 update",desc:"Fixed a crash that could occur on the results screen when certain data was missing. You can now safely review your quiz performance without interruptions.",tip:"Try completing a quiz and reviewing your results—the page will load smoothly every time."},
 ]},
 // WN_END
 ];
