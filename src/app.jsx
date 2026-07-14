@@ -6540,7 +6540,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         setDailyAIUsage({...newUsage});
         const remaining=Math.max(0,FREE_DAILY_AI_LIMIT-newUsage.count);
         if(remaining>0&&remaining<=3){
-          showToast("⚡",`${remaining} free question${remaining===1?"":"s"} left today`,"Upgrade to Pro for unlimited questions — or come back at midnight for 20 more.",5000);
+          showToast("⚡",`${remaining} free question${remaining===1?"":"s"} left today`,"Upgrade to Pro for unlimited questions — or come back at midnight for 20 more.",false);
         }
       }
     }catch(e){
@@ -11235,9 +11235,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const qScore=lastSessionQuality;
     return wrap(<>
       {prequizPassProbRef.current!==null&&passProbability&&(()=>{
+        try{
         const before=prequizPassProbRef.current;
         const after=passProbability.probability;
-        const delta=after-before;
+        if(typeof before!=='number'||typeof after!=='number') return null;
+        const delta=Math.round(after-before);
         const col=after>=70?C.easy:after>=55?C.medium:C.hard;
         const deltaCol=delta>0?C.easy:delta<0?C.hard:C.muted;
         return(
@@ -11273,6 +11275,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </div>
           </div>
         );
+        }catch(e){ return null; }
       })()}
       <div style={{background:C.surface,border:`1px solid ${passed?"#22a05a44":C.hard+"44"}`,borderRadius:16,padding:"24px 22px",textAlign:"center",marginBottom:16}}>
         <ScoreRing pct={sessionPct} size={96}/>
