@@ -303,11 +303,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-13-b
-{version:"2026-07-13-b",slides:[
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Exam Progress Tracking Fixed",sub:"Bug Fix · 2026-07-13 update",desc:"The exam-weighted mock progress bar was stuck at 0% and now accurately reflects your preparation. You'll see real-time feedback on how much of the weighted exam content you've covered.",tip:"Check your Mock Exams tab to see your true progress towards readiness."},
-{emoji:"🔄",color:C.reward,bg:C.reward,title:"Smarter Study Reminders & Streaks",sub:"Study Tools · 2026-07-13 update",desc:"We've added Day 1 activation tracking and stickiness features, plus tiered re-engagement messaging personalized by your study behavior. The app now intelligently encourages you to return based on your habits.",tip:"Open notifications to see personalized messages that match your study style and keep your momentum going."},
-]},
 // WN_VER:2026-07-13-c
 {version:"2026-07-13-c",slides:[
 {emoji:"✅",color:C.hard,bg:C.hard,title:"Accurate Question Validation",sub:"Bug Fix · 2026-07-13 update",desc:"Fixed a bypass in question validation that was allowing approximate answers (≈) to incorrectly pass or fail. Your quiz results now reflect truly accurate scoring.",tip:"Retake any quizzes from before this update to see your corrected performance."},
@@ -330,6 +325,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📋",color:C.easy,bg:C.easy,title:"Study Checklist & Smart Tools",sub:"Study Tools · 2026-07-13 update",desc:"We've added a progress checklist to help you track what you've covered and a contextual calculator that appears when you need it most. Stay organized and calculate faster without switching apps.",tip:"Check your progress on the Study dashboard and look for the calculator icon during practice questions."},
 {emoji:"💌",color:C.accentLight,bg:C.accentLight,title:"Personalized Study Emails",sub:"UX · 2026-07-13 update",desc:"You'll now receive targeted emails with tips, spotlights on tough topics, and study nudges designed for your prep journey. We've also made it easy to confirm your email and opt into push notifications when you sign up.",tip:"Check your inbox after signing up or updating your preferences—your first study tip is on the way."},
 ]},
+// WN_VER:2026-07-13
+{version:"2026-07-13",slides:[
+{emoji:"🎓",color:C.accentLight,bg:C.accentLight,title:"Smarter Onboarding & First Question",sub:"UX · 2026-07-13 update",desc:"Your first question now launches instantly after signup, getting you studying immediately instead of wading through setup screens. We've streamlined the initial experience so you can assess your level and build momentum right away.",tip:"You'll see your first practice question within seconds of completing signup—no friction."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Live Pass Probability on Your Dashboard",sub:"Study Tools · 2026-07-13 update",desc:"A new pass probability hero card now appears on your home screen, showing you real-time odds of exam success based on your current performance. This gives you instant confidence checks and motivation to keep grinding toward your target.",tip:"Check your probability card daily—it updates as you complete more questions and improve your weak topics."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Interactive Learning Checklists & Calc Hints",sub:"Study Tools · 2026-07-13 update",desc:"Study guides now include interactive checklists to track concept mastery, plus contextual calculator triggers that appear when you need them most. This keeps you organized and removes friction when you need to compute quickly during practice.",tip:"Look for the calculator icon in questions where math is involved—it highlights the exact formula you should use."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -338,13 +339,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"fix: push_subscriptions migration type mismatch blocking Supabase deploys",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -374,6 +368,11 @@ const ADMIN_CHANGELOG=[
 "fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
 "fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
 "fix: cast uuid to text in leaderboard SQL join to fix Deploy Supabase workflow",
+]},
+// AC_VER:2026-07-13
+{date:"2026-07-13",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-13
 {date:"2026-07-13",entries:[
