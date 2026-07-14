@@ -5679,7 +5679,7 @@ function CFAMock(){
     const newHistory=[session,...historyRef.current];
     setHistory(newHistory);
     historyRef.current=newHistory;
-    ph.capture('session_completed',{topic:t,subtopic:st,pct,difficulty:diff,mode:m,cfaLevel,questions_count:cnt,is_first:newHistory.length===1});
+    ph.capture('session_completed',{topic:t,subtopic:st,pct,difficulty:diff,mode:m,cfaLevel,questions_count:qs.length,is_first:newHistory.length===1});
 
     // ── Milestone checks ──────────────────────────────────────────────────
     const oldXP=getTotalXP(newHistory.slice(1));
