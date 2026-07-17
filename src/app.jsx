@@ -5500,6 +5500,48 @@ function CFAMock(){
   useEffect(()=>{setNextActionText("");setNextActionLoading(false);},[questions]);
   useEffect(()=>{answersRef.current=answers;},[answers]);
   useEffect(()=>{flaggedQRef.current=flaggedQ;},[flaggedQ]);
+  // Background pre-warm: after results screen loads, silently generate & cache next session
+  useEffect(()=>{
+    if(screen!=="results"||!authUser?.id||fullExamMode||!topic||!subtopic)return;
+    const cHit=qcGet(qCacheRef.current,topic,subtopic,difficulty,count);
+    if(cHit&&filterNewQuestions(cHit.qs,qdb).length>=count)return;
+    const abort=new AbortController();
+    const fire=setTimeout(async()=>{
+      try{
+        const rqCnt=count+Math.ceil(count*(count>=15?0.3:0.5));
+        const dynCtx=buildDynamicContext(topic,subtopic,srDeck,levelHistory);
+        const raw=await callClaude(
+          buildQuestionPrompt(topic,subtopic,difficulty,rqCnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,null,[],[]),
+          rqCnt*380,
+          {retries:0,model:"claude-haiku-4-5-20251001",signal:abort.signal,feature:"prewarm"}
+        );
+        if(!Array.isArray(raw)||abort.signal.aborted)return;
+        const parsed=expandQuestionKeys(raw);
+        const bSeen=new Set();
+        const clean=parsed.filter(q=>{
+          if(!q?.question||!q?.answer||!q?.options?.[q.answer])return false;
+          const expU=(q.explanation||"").toUpperCase();
+          const pm=expU.match(/^CORRECT:\s*([A-C])\b/);
+          if(!pm||pm[1]!==(q.answer||"").toUpperCase())return false;
+          if(/APPROXIMATE|≈|\bAPPROX\b|ROUNDS TO/i.test(expU))return false;
+          const h=hashQuestion(q);
+          if(bSeen.has(h))return false;
+          bSeen.add(h);
+          return true;
+        });
+        if(clean.length<Math.ceil(count*0.7))return;
+        qCacheRef.current=qcAdd(qCacheRef.current,topic,subtopic,difficulty,clean);
+        storageSet(QCACHE_KEY,qCacheRef.current);
+        try{
+          const oc=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
+          if(!oc[topic])oc[topic]={};
+          oc[topic][subtopic]=(oc[topic][subtopic]||[]).concat(clean).slice(-30);
+          localStorage.setItem(OFFLINE_QS_KEY,JSON.stringify(oc));
+        }catch{}
+      }catch{}
+    },3500);
+    return()=>{clearTimeout(fire);abort.abort();};
+  },[screen,topic,subtopic,difficulty,count,authUser?.id]);
   useEffect(()=>{srDeckRef.current=srDeck;},[srDeck]);
   useEffect(()=>{usageStatsRef.current=usageStats;},[usageStats]);
   useEffect(()=>{topicRef.current=topic;},[topic]);
@@ -6476,7 +6518,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
-        const baseMax=requestCount*450;
+        const baseMax=requestCount*380;
         const tightMax=multiModules?.length>1?Math.round(baseMax*1.6):baseMax;
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
         const now=Date.now();
