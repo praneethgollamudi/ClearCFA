@@ -4,6 +4,18 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Rate-limit wait messaging (16f634a)**: Added 7-minute wait indication for rate-limited API requests instead of failing silently. When handling API rate limits, surface expected wait times to users rather than generic errors.
+
+
+**Silent short session handling (16f634a)**: Sessions shorter than a defined minimum threshold (e.g., <3 questions) no longer trigger analytics or logging. When implementing session tracking, respect minimum session length thresholds to avoid noise from incomplete or trivial sessions.
+
+
+**Duplicate question prevention (16f634a)**: Implemented deduplication logic to prevent the same question from appearing multiple times in a quiz session. When generating quiz questions, ensure questions are tracked and filtered to avoid repeats within a single session.
+
+
+**What's New version rotation cleanup (16f634a)**: Removed versions 2026-07-17-b, 2026-07-17-c, and 2026-07-17-d from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-17, 2026-07-17-e, and 2026-07-17-f. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
 **What's New version rotation cleanup (latest)**: Removed versions 2026-07-17, 2026-07-17-b, and 2026-07-17-c from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-17-d, 2026-07-17-e, and 2026-07-17-f. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1576,7 +1588,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1804800000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1804900000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
