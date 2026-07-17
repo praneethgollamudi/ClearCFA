@@ -5948,7 +5948,7 @@ ROOT_CAUSE: [one of: formula_error | concept_confusion | calculation_mistake | t
           }
           // Anthropic rate limit — retry with backoff (skip double-wait at top of loop)
           const retryAfter=res.headers.get("retry-after");
-          const waitMs=retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt+1);
+          const waitMs=Math.min(45000,retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt+1));
           lastError=new Error(`Rate limit`);
           if(attempt+1<retries) setLoadingMsg(`Rate limit hit — waiting ${Math.round(waitMs/1000)}s (attempt ${attempt+1}/${retries})...`);
           await new Promise(r=>setTimeout(r,waitMs));
@@ -5957,7 +5957,7 @@ ROOT_CAUSE: [one of: formula_error | concept_confusion | calculation_mistake | t
         }
         if(res.status===529){
           const retryAfter=res.headers.get("retry-after");
-          const waitMs=retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt+1);
+          const waitMs=Math.min(45000,retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt+1));
           lastError=new Error(`Rate limit`);
           if(attempt+1<retries) setLoadingMsg(`API busy — waiting ${Math.round(waitMs/1000)}s (attempt ${attempt+1}/${retries})...`);
           await new Promise(r=>setTimeout(r,waitMs));
@@ -6558,15 +6558,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
         return true;
       });
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");
-      const fresh=filterNewQuestions(parsed_clean,qdb);
+      // Dedup within this batch — prevents same-stem duplicates if AI returns them twice
+      const batchSeen=new Set();
+      const parsed_clean_deduped=parsed_clean.filter(q=>{const h=hashQuestion(q);if(batchSeen.has(h))return false;batchSeen.add(h);return true;});
+      const fresh=filterNewQuestions(parsed_clean_deduped,qdb);
       // Prefer unseen; fallback hard-blocks questions seen in the last 24 hours
       const SAME_DAY_MS=24*60*60*1000;
       let finalQs=fresh.length>=cnt?fresh.slice(0,cnt):(()=>{
-        const notToday=parsed_clean.filter(q=>{const h=hashQuestion(q);return !qdb[h]||(now-qdb[h].seen)>SAME_DAY_MS;});
+        const notToday=parsed_clean_deduped.filter(q=>{const h=hashQuestion(q);return !qdb[h]||(now-qdb[h].seen)>SAME_DAY_MS;});
         if(notToday.length>=cnt)return notToday.slice(0,cnt);
         // Still short — top up with oldest seen from other days (never same-day)
-        const todaySeen=new Set(parsed_clean.filter(q=>{const h=hashQuestion(q);return qdb[h]&&(now-qdb[h].seen)<=SAME_DAY_MS;}).map(q=>hashQuestion(q)));
-        const sorted=[...parsed_clean].filter(q=>!todaySeen.has(hashQuestion(q))).sort((a,b)=>(qdb[hashQuestion(a)]?.seen||0)-(qdb[hashQuestion(b)]?.seen||0));
+        const todaySeen=new Set(parsed_clean_deduped.filter(q=>{const h=hashQuestion(q);return qdb[h]&&(now-qdb[h].seen)<=SAME_DAY_MS;}).map(q=>hashQuestion(q)));
+        const sorted=[...parsed_clean_deduped].filter(q=>!todaySeen.has(hashQuestion(q))).sort((a,b)=>(qdb[hashQuestion(a)]?.seen||0)-(qdb[hashQuestion(b)]?.seen||0));
         return [...notToday,...sorted].slice(0,cnt);
       })();
       // If validation culled too many, top up from offline cache so user gets close to requested count
@@ -6581,17 +6584,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
         }catch{}
       }
       // Cache successful non-vignette sets for reuse
-      if(!isVignette&&parsed_clean.length>=5){
-        qCacheRef.current=qcAdd(qCacheRef.current,t,st,diff,parsed_clean);
+      if(!isVignette&&parsed_clean_deduped.length>=5){
+        qCacheRef.current=qcAdd(qCacheRef.current,t,st,diff,parsed_clean_deduped);
         storageSet(QCACHE_KEY,qCacheRef.current);
         // Also store in offline cache (topic→module→questions) for use without internet
         try{
           const offlineCache=JSON.parse(localStorage.getItem(OFFLINE_QS_KEY)||"{}");
           if(!offlineCache[t])offlineCache[t]={};
-          offlineCache[t][st]=(offlineCache[t][st]||[]).concat(parsed_clean).slice(-30);
+          offlineCache[t][st]=(offlineCache[t][st]||[]).concat(parsed_clean_deduped).slice(-30);
           localStorage.setItem(OFFLINE_QS_KEY,JSON.stringify(offlineCache));
         }catch{}
       }
+      // Notify user if we couldn't deliver all requested questions
+      if(finalQs.length<cnt){showToast("⚠️",`${finalQs.length} of ${cnt} questions generated`,`Some questions were filtered for quality or recently seen. Starting with ${finalQs.length}.`);}
       setLoadingProgress(100);setLoadingMsg(isVignette?"Vignettes ready!":"Questions ready!");
       // Clear pending gen — generation succeeded
       setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}
