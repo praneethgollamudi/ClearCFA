@@ -5795,7 +5795,7 @@ function CFAMock(){
 
     // Auto-escalation
     const topicHistory=historyRef.current.filter(h=>h.topic===t&&h.subtopic===st&&h.difficulty===diff);
-    if(pct>=80&&diff!=="Hard"&&topicHistory.length>=2)setAutoEscalation({topic:t,subtopic:st,from:diff,to:diff==="Easy"?"Medium":"Hard"});
+    if(pct>=70&&diff!=="Hard"&&topicHistory.length>=2)setAutoEscalation({topic:t,subtopic:st,from:diff,to:diff==="Easy"?"Medium":"Hard"});
 
     // Persist — both localStorage and Supabase use the synchronously-built values
     (async()=>{
@@ -6883,7 +6883,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const omSessions=levelHistory.filter(h=>h.isOfficeMode).slice(0,5);
     if(!omSessions.length) return "Medium";
     const avg=omSessions.reduce((s,h)=>s+(h.pct||0),0)/omSessions.length;
-    return avg>=80?"Hard":avg>=60?"Medium":"Easy";
+    return avg>=70?"Hard":avg>=50?"Medium":"Easy";
   },[history]);
 
   const smartNudge=useMemo(()=>{
@@ -9371,7 +9371,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             const worstMod=(()=>{const e=Object.entries(mr?.moduleStats||{}).filter(([,v])=>v!==null).sort(([,a],[,b])=>(a.pct??100)-(b.pct??100));return e[0]?.[0];})();
             const mod=mr?.untouchedModules?.[0]||worstMod||mr?.modules?.[0]||Object.keys(activeLOS[t]?.modules||{})[0];
             const modPct=mr?.moduleStats?.[mod]?.pct??null;
-            const diff=modPct===null?"Medium":modPct>=80?"Hard":modPct<50?"Easy":"Medium";
+            const diff=modPct===null?"Medium":modPct>=70?"Hard":modPct<45?"Easy":"Medium";
             return(
               <button key={t} onClick={()=>{
                 trackUsage("quick_start");
@@ -12554,7 +12554,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               const selMods=readinessPillSel[m.topic]||[];
               if(selMods.length>0){
                 const minAcc=selMods.reduce((mn,mod)=>Math.min(mn,m.moduleStats[mod]?.pct??0),100);
-                const diff=minAcc>=80?"Hard":minAcc>=60?"Medium":"Easy";
+                const diff=minAcc>=70?"Hard":minAcc>=50?"Medium":"Easy";
                 const multiMods=selMods.map(mod=>({t:m.topic,st:mod}));
                 return(
                   <div style={{display:"flex",gap:7,alignItems:"center"}}>
@@ -12565,7 +12565,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   </div>
                 );
               }
-              return(<button onClick={()=>{const t=m.untouchedModules[0]||m.modules[0];setMode("guided");const diff=notStarted?"Easy":m.accuracy>=80?"Hard":m.accuracy>=60?"Medium":"Easy";generateQuestions(m.topic,t,diff,10);}} style={{width:"100%",padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>{notStarted?`Start ${m.topic} →`:m.readiness>=70?"Drill to stay sharp →":"Drill Weakest Module →"}</button>);
+              return(<button onClick={()=>{const t=m.untouchedModules[0]||m.modules[0];setMode("guided");const diff=notStarted?"Easy":m.accuracy>=70?"Hard":m.accuracy>=50?"Medium":"Easy";generateQuestions(m.topic,t,diff,10);}} style={{width:"100%",padding:"9px",borderRadius:8,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>{notStarted?`Start ${m.topic} →`:m.readiness>=70?"Drill to stay sharp →":"Drill Weakest Module →"}</button>);
             })()}
           </div>
         );
