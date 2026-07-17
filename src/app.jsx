@@ -303,11 +303,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-13-e
-{version:"2026-07-13-e",slides:[
-{emoji:"✉️",color:C.reward,bg:C.reward,title:"Stay Connected After Signup",sub:"UX · 2026-07-13 update",desc:"We've added email validation and push notifications during onboarding, so you'll receive personalized study reminders and exam tips right when you need them. This keeps you engaged and on track toward your CFA goals.",tip:"Check your email and notification settings after signing up to customize how often you hear from us."},
-{emoji:"🎯",color:C.medium,bg:C.medium,title:"More Accurate Question Grading",sub:"Bug Fix · 2026-07-13 update",desc:"We fixed a validation issue that was incorrectly accepting approximate answers in certain question types. Now your quiz results accurately reflect your mastery of the material.",tip:"Retake any quizzes you've completed to see corrected scoring on questions with approximation symbols (≈)."},
-]},
 // WN_VER:2026-07-13-f
 {version:"2026-07-13-f",slides:[
 {emoji:"📋",color:C.easy,bg:C.easy,title:"Study Checklist & Smart Tools",sub:"Study Tools · 2026-07-13 update",desc:"We've added a progress checklist to help you track what you've covered and a contextual calculator that appears when you need it most. Stay organized and calculate faster without switching apps.",tip:"Check your progress on the Study dashboard and look for the calculator icon during practice questions."},
@@ -327,6 +322,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-14-b",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smoother Results & Quiz Start",sub:"UX · 2026-07-14 update",desc:"Fixed crashes on the results screen and improved the first question experience so you can see your progress clearly and jump into practice without interruption. These stability improvements mean more time studying, less time troubleshooting.",tip:"Complete a full practice quiz to see your results display reliably every time."},
 {emoji:"⚡",color:C.reward,bg:C.reward,title:"Better Free-Tier Guidance",sub:"Study Tools · 2026-07-14 update",desc:"The app now clearly shows you which features require an upgrade, and displays your pass probability right on the home screen so you can track your readiness at a glance. Knowing your odds keeps you motivated and focused on what matters.",tip:"Check your pass probability widget on the home screen after each practice session to monitor progress."},
+]},
+// WN_VER:2026-07-17
+{version:"2026-07-17",slides:[
+{emoji:"🛡️",color:C.hard,bg:C.hard,title:"Stabler Results & Practice Screens",sub:"Bug Fix · 2026-07-17 update",desc:"Fixed crashes on the results screen that occurred when data was missing or mismatched. You can now complete practice sessions and review your performance without interruptions.",tip:"Try finishing a full quiz—your results will load smoothly every time."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Better Question Quality Control",sub:"Study Tools · 2026-07-17 update",desc:"Improved validation to prevent questions with misaligned explanations from appearing in your study sessions. Every question you see now has a clear, matching explanation to reinforce learning.",tip:"If a question ever feels off, the explanation will now always address exactly what was asked."},
 ]},
 // WN_END
 ];
