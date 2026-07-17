@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-b
-{version:"2026-07-17-b",slides:[
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Difficulty Progression",sub:"AI · 2026-07-17 update",desc:"We've realigned how questions escalate in difficulty to match the 70% CFA pass mark. You'll now progress to harder material at the right pace, matching actual exam rigor. This keeps you challenged without hitting a wall too early.",tip:"Watch how questions get progressively tougher once you consistently score above 70%—that's the sweet spot."},
-{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Better Formula Explanations",sub:"Study Tools · 2026-07-17 update",desc:"The formula tab now includes a manual AI-powered generator that explains each formula in context, without distracting labels. You get clearer, more focused breakdowns when you need to understand *why* a formula works, not just what it is.",tip:"Tap the formula tab mid-quiz to instantly generate a plain-English explanation of any formula."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Results & Faster Feedback",sub:"UX · 2026-07-17 update",desc:"We've streamlined your results screen by removing redundant sections and fixed navigation so you can smoothly move between quizzes and home. You can also re-trigger AI debrief anytime to dig deeper into mistakes without restarting.",tip:"After finishing a quiz, try tapping 'AI Debrief' again if you want a fresh analysis of your weak spots."},
-]},
 // WN_VER:2026-07-17-c
 {version:"2026-07-17-c",slides:[
 {emoji:"🧭",color:C.hard,bg:C.hard,title:"Smarter Difficulty Progression",sub:"Study Tools · 2026-07-17 update",desc:"Hard questions now unlock at 75% mastery instead of 70%, giving you a stronger foundation before tackling the toughest content. This 5% buffer ensures you're genuinely ready for exam-level difficulty.",tip:"You'll see Hard mode appear only when you're consistently scoring above the CFA pass mark — a sign you're truly prepared."},
@@ -328,6 +322,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-17-f",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Sharper, More Rigorous Questions",sub:"AI · 2026-07-17 update",desc:"We've refined question generation prompts across all difficulty levels to better match CFA exam rigor and question patterns. Easy, Medium, and Hard questions now align more closely with actual exam content, giving you a more authentic practice experience.",tip:"Try a Hard difficulty quiz to experience the sharpened challenge—questions now push you closer to the 75% pass threshold."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Difficulty Calibration",sub:"Study Tools · 2026-07-17 update",desc:"Hard difficulty questions are now calibrated to a 75% pass threshold, giving you a realistic 5% buffer above the official CFA passing mark. This helps you build confidence and readiness for exam day without overestimating your preparation level.",tip:"Use Hard mode as your final checkpoint—if you consistently score 75%+, you're in solid shape for the real exam."},
+]},
+// WN_VER:2026-07-17
+{version:"2026-07-17",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Sharper Hard Difficulty Questions",sub:"AI · 2026-07-17 update",desc:"Hard-level questions across all CFA levels now follow more rigorous prompts, delivering exam-realistic scenarios that better prepare you for the toughest test items. This means tighter question quality and more authentic challenge difficulty.",tip:"Try a Hard quiz in your weakest topic—you'll notice questions now demand deeper conceptual reasoning."},
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Your Topic Mastery Grid",sub:"Study Tools · 2026-07-17 update",desc:"A new topic×difficulty accuracy matrix now shows exactly which subjects and difficulty levels you excel in—and where you need focus. Pacing indicators keep you on track toward your exam date.",tip:"Open your dashboard after your next quiz session to see your strengths visualized by topic and difficulty."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Refined Easy & Medium Question Quality",sub:"AI · 2026-07-17 update",desc:"Easy and Medium difficulty prompts have been sharpened across all three CFA levels for clearer, more consistent question generation. You'll experience better foundational drills that reinforce core concepts without ambiguity.",tip:"Start with Easy questions in a new topic—they're now even better for building confidence before stepping up."},
 ]},
 // WN_END
 ];
