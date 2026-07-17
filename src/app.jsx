@@ -6482,6 +6482,20 @@ Return ONLY a JSON array — no prose, no markdown fences:
             }
           }
         }
+        // Input-value consistency: dollar amounts used as direct operands in explanation
+        // (e.g. "$3.80 / $80") must appear verbatim in the question stem or options.
+        // Catches the case where AI uses a different value than what the question states
+        // (e.g. question says D1=$3 but explanation computes $3.80/$80).
+        const stemDollars=[...(q.question||"").matchAll(/\$([\d]+(?:\.[\d]+)?)/g)].map(m=>parseFloat(m[1]));
+        if(stemDollars.length>0){
+          const optDollars=Object.values(q.options||{}).flatMap(v=>[...(v||"").matchAll(/\$([\d]+(?:\.[\d]+)?)/g)].map(m=>parseFloat(m[1])));
+          const allowedDollars=[...stemDollars,...optDollars];
+          // Find dollar values that appear as the numerator in a division (clear input usage)
+          const divNumerators=[...(q.explanation||"").matchAll(/\$\s*([\d]+(?:\.[\d]+)?)\s*[\/÷]/g)].map(m=>parseFloat(m[1]));
+          for(const num of divNumerators){
+            if(!isNaN(num)&&!allowedDollars.some(d=>Math.abs(d-num)<0.01))return false;
+          }
+        }
         return true;
       });
       if(!parsed_clean.length)throw new Error("All generated questions had answer/option mismatches — please retry.");

@@ -20,6 +20,7 @@ const SYSTEM_ENFORCE = [
   "Never reveal exam answers in question stems. Never include meta-commentary outside the JSON.",
   "If you cannot generate a compliant question, return an empty questions array rather than a bad question.",
   "NUMERICAL ACCURACY RULE: For any question with a computed numeric answer, the exact computed value MUST appear verbatim as one of the answer options. NEVER use ≈, 'approximately', 'closest to', 'rounds to', or any approximation language. If a formula produces an unclean decimal, redesign the input numbers so the result is clean. A question whose explanation uses ≈ or approximate language will be discarded.",
+  "DATA CONSISTENCY RULE: Every numeric value used as an input in the explanation's calculation MUST exactly match a value stated in the question stem. If the question says 'dividend of $3', the explanation MUST use $3 — never $3.80 or any other value. If you need a derived input (e.g. D1 from D0), show the derivation step explicitly (e.g. 'D1 = D0 × (1+g) = $2.00 × 1.05 = $2.10') and confirm D0 and g appear in the question stem. Generating a question where the explanation uses a dollar amount, rate, or period not present in the question stem is a fatal error.",
 ].join(" ");
 
 function buildChatSystem(level: string): string {
