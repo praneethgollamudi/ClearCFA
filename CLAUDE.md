@@ -9,6 +9,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 **What's New version rotation cleanup (cf1e203)**: Removed versions 2026-07-13, 2026-07-14, and 2026-07-14-b from WHATS_NEW_SLIDES rotation to consolidate messaging. Currently active versions are 2026-07-17, 2026-07-17-b, 2026-07-17-c, and 2026-07-17-d. When rotating new versions, verify the complete active list and remove obsolete slides to prevent duplicate announcements.
 
+**What's New version 2026-07-17-d and 2026-07-17-e (cf1e203)**: New slide sets announcing Smarter AI Debrief Analysis (gap identification, pass impact calculation, spaced-repetition cards, root cause analysis) and Formula Generation tools. Removed versions 2026-07-14, 2026-07-14-b, and 2026-07-17 from rotation. Currently active versions are 2026-07-17-b, 2026-07-17-c, 2026-07-17-d, and 2026-07-17-e.
+
+
 
 **Formula tab manual AI generator (bb7f3d1)**: Removed misleading formula tab label and added manual AI formula generator to support dynamic formula creation. When implementing formula tools, ensure labels accurately describe functionality and provide AI-powered generation as fallback for custom formula needs.
 
@@ -29,6 +32,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 
 **AI debrief enhancement pack (7fbcfb7)**: AI debrief now tracks gap memory (knowledge gaps from failed questions), pass impact metrics (how each gap affects pass probability), spaced repetition cards for weak concepts, and root cause analysis to explain why answers were wrong. When designing debrief flows, scaffold from understanding mistakes → identifying gaps → drilling weak concepts → tracking progress.
+
+**Manual formula generator in formula tab (bb7f3d1)**: Formula tab now includes AI-powered formula generator allowing users to request custom formulas for specific topics. Generator produces dynamically-created formulas tailored to learning gaps. Ensure formula tab UI clearly distinguishes pre-built formulas from AI-generated custom ones.
+
+
+**Pass impact metrics calculation**: AI debrief now calculates estimated impact of each knowledge gap on overall pass probability, enabling users to prioritize studying topics with highest exam impact. When implementing gap-based learning, use pass impact to order drills by consequence rather than difficulty alone.
+
 
 
 **AI debrief first-person language (28c6ba3)**: AI debrief now uses "you" pronouns and implements step-by-step revision→drill flow to guide users from understanding mistakes to drilling weak concepts. When designing post-quiz feedback, use conversational language and scaffold learning from explanation to practice.
@@ -1522,7 +1531,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1803900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1804000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
