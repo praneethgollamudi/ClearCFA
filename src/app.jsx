@@ -4797,6 +4797,7 @@ function CFAMock(){
   const timerRef=useRef(null);const startRef=useRef(null);
   const qShownAtRef=useRef({});
   const qTimesRef=useRef({});
+  const [liveQSecs,setLiveQSecs]=useState(0);
   const [history,setHistory]=useState([]);const [historyLoaded,setHistoryLoaded]=useState(false);
   const historyRef=useRef([]);
   const [srDeck,setSrDeck]=useState({});const [srLoaded,setSrLoaded]=useState(false);
@@ -5536,6 +5537,18 @@ function CFAMock(){
       qShownAtRef.current[q.id]=Date.now();
     }
   },[currentQ,screen,questions]);
+
+  useEffect(()=>{
+    if(screen!=="quiz"||mode==="speed_drill"||!questions.length)return;
+    setLiveQSecs(0);
+    const iv=setInterval(()=>{
+      const q=questions[currentQ];
+      if(q&&qShownAtRef.current[q.id]){
+        setLiveQSecs(Math.round((Date.now()-qShownAtRef.current[q.id])/1000));
+      }
+    },1000);
+    return()=>clearInterval(iv);
+  },[currentQ,screen,mode,questions]);
 
   useEffect(()=>{
     clearInterval(speedDrillRef.current);
@@ -10886,6 +10899,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
       )}
+      {mode!=="speed_drill"&&!fullExamMode&&!answered&&(()=>{
+        const col=liveQSecs>=90?C.hard:liveQSecs>=60?C.medium:C.easy;
+        const label=liveQSecs>=90?"Over CFA target":liveQSecs>=60?"Near 90s limit":"On pace";
+        return(
+          <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
+            <span style={{fontSize:11,fontWeight:700,padding:"2px 9px",borderRadius:6,color:col,background:col+"18",border:`1px solid ${col}33`,minWidth:44,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>⏱ {liveQSecs}s</span>
+            <span style={{fontSize:10,color:col,fontWeight:600,opacity:0.85}}>{label}</span>
+          </div>
+        );
+      })()}
       <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
         {q.concept&&<Badge color={C.muted}>{q.concept}</Badge>}
         <Badge color={C.accent+"cc"}>{q._subtopic||subtopic}</Badge>
@@ -12703,7 +12726,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
       {/* Tab nav */}
       <div style={{display:"flex",gap:6,marginBottom:16,overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:2}}>
-        {[["sessions","Sessions"],["time","Time"],["patterns","Errors"],["quality","Quality"],["sr","Retention"],["flags","Flagged"]].map(([tab,label])=>(
+        {[["sessions","Sessions"],["time","Time"],["patterns","Errors"],["quality","Quality"],["sr","Retention"],["flags","Flagged"],["matrix","Matrix"]].map(([tab,label])=>(
           <button key={tab} onClick={()=>setDashTab(tab)} style={{flexShrink:0,padding:"8px 12px",borderRadius:8,fontSize:12,fontWeight:600,border:dashTab===tab?`1.5px solid ${C.accent}`:`1.5px solid ${C.border}`,background:dashTab===tab?C.accent+"18":C.surface,color:dashTab===tab?C.accentLight:C.muted,cursor:"pointer",whiteSpace:"nowrap"}}>{label}</button>
         ))}
       </div>
@@ -13102,6 +13125,63 @@ Return ONLY a JSON array — no prose, no markdown fences:
             </div>
             <button onClick={()=>{apiLogRef.current=[];storageSet(API_LOG_KEY,[]);}} style={{width:"100%",padding:"9px",borderRadius:9,fontSize:11,fontWeight:600,background:"none",border:`1px solid #2a1018`,color:"#5a2a3a",cursor:"pointer",marginBottom:12}}>Clear API Log</button>
           </>)}
+        </>);
+      })()}
+
+      {dashTab==="matrix"&&(()=>{
+        const diffs=["Easy","Medium","Hard"];
+        const diffC2={Easy:C.easy,Medium:C.medium,Hard:C.hard};
+        const allTopics=[...new Set(levelHistory.map(h=>h.topic).filter(Boolean))].sort();
+        if(!allTopics.length)return(<div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"28px 20px",textAlign:"center",color:C.muted,fontSize:13}}>No sessions yet. Complete some practice sessions to populate the matrix.</div>);
+        return(<>
+          <div style={{fontSize:12,color:C.muted,marginBottom:12}}>Average accuracy per topic × difficulty. Green ≥75%, amber 50–74%, red &lt;50%.</div>
+          <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",borderRadius:11,border:`1px solid ${C.border}`}}>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:C.surfaceHigh}}>
+                  <th style={{padding:"10px 12px",textAlign:"left",fontWeight:700,color:C.muted,fontSize:11,whiteSpace:"nowrap",borderBottom:`1px solid ${C.border}`}}>Topic</th>
+                  {diffs.map(d=>(
+                    <th key={d} style={{padding:"10px 12px",textAlign:"center",fontWeight:700,color:diffC2[d],fontSize:11,whiteSpace:"nowrap",borderBottom:`1px solid ${C.border}`}}>{d}</th>
+                  ))}
+                  <th style={{padding:"10px 12px",textAlign:"center",fontWeight:700,color:C.muted,fontSize:11,whiteSpace:"nowrap",borderBottom:`1px solid ${C.border}`}}>Overall</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allTopics.map((t,ti)=>{
+                  const topicSess=levelHistory.filter(h=>h.topic===t);
+                  const overallAcc=topicSess.length?Math.round(topicSess.reduce((s,h)=>s+(h.pct||0),0)/topicSess.length):null;
+                  const overallCol=overallAcc===null?C.border:overallAcc>=75?C.easy:overallAcc>=50?C.medium:C.hard;
+                  return(
+                    <tr key={t} style={{borderBottom:ti<allTopics.length-1?`1px solid ${C.border}`:"none",background:ti%2===0?C.surface:C.dim}}>
+                      <td style={{padding:"9px 12px",fontWeight:600,color:C.text,fontSize:11,whiteSpace:"nowrap"}}>{t}</td>
+                      {diffs.map(d=>{
+                        const ss=topicSess.filter(h=>h.difficulty===d);
+                        if(!ss.length)return(<td key={d} style={{padding:"9px 12px",textAlign:"center",color:C.border,fontSize:11}}>—</td>);
+                        const acc=Math.round(ss.reduce((s,h)=>s+(h.pct||0),0)/ss.length);
+                        const bg=acc>=75?C.easy+"18":acc>=50?C.medium+"18":C.hard+"18";
+                        const col=acc>=75?C.easy:acc>=50?C.medium:C.hard;
+                        return(<td key={d} style={{padding:"9px 12px",textAlign:"center",background:bg,borderLeft:`1px solid ${C.border}`}}>
+                          <span style={{fontWeight:800,color:col,fontVariantNumeric:"tabular-nums"}}>{acc}%</span>
+                          <div style={{fontSize:9,color:C.muted,marginTop:1}}>{ss.length}×</div>
+                        </td>);
+                      })}
+                      <td style={{padding:"9px 12px",textAlign:"center",borderLeft:`1px solid ${C.border}`}}>
+                        {overallAcc!==null?<span style={{fontWeight:800,color:overallCol,fontVariantNumeric:"tabular-nums"}}>{overallAcc}%</span>:<span style={{color:C.border}}>—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{display:"flex",gap:10,marginTop:12,flexWrap:"wrap"}}>
+            {[["≥75%","strong","#22c55e18",C.easy],["50–74%","needs work","#f59e0b18",C.medium],["<50%","gap","#ef444418",C.hard]].map(([range,label,bg,col])=>(
+              <div key={range} style={{display:"flex",alignItems:"center",gap:5,fontSize:10,color:C.muted}}>
+                <div style={{width:14,height:14,borderRadius:3,background:bg,border:`1px solid ${col}44`}}/>
+                <span>{range} {label}</span>
+              </div>
+            ))}
+          </div>
         </>);
       })()}
 
