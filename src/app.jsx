@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-b
-{version:"2026-07-17-b",slides:[
-{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"AI Debrief Now Guides Your Review",sub:"AI · 2026-07-17 update",desc:"After each quiz, the AI debrief now walks you through a step-by-step revision and drill flow tailored to your mistakes. This replaces generic feedback with a personalized learning path that targets your weak spots.",tip:"After finishing a quiz, follow the AI's suggested drills—they're sequenced to build confidence before retesting."},
-{emoji:"🛡️",color:C.hard,bg:C.hard,title:"Results Screen Now Stable & Reliable",sub:"Bug Fix · 2026-07-17 update",desc:"Fixed crashes that occurred on the results screen when data was missing or mismatched. You can now confidently review your quiz performance without fear of the app freezing or crashing.",tip:"Results load instantly—tap into your debrief right away to start improving."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Better Question Validation & Quality",sub:"Study Tools · 2026-07-17 update",desc:"The app now rejects questions where explanations don't match the question content, ensuring every practice question is reliable and coherent. This removes confusing or contradictory items from your prep.",tip:"You'll notice fewer head-scratching moments—every explanation now aligns perfectly with what you're being asked."},
-]},
 // WN_VER:2026-07-17-c
 {version:"2026-07-17-c",slides:[
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Debrief Analysis",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies memory gaps, shows how each mistake impacts your pass probability, generates spaced-repetition cards, and pinpoints root causes of errors. This transforms each quiz into a targeted learning session instead of just a score.",tip:"After completing a quiz, review the AI debrief to see which concepts need drilling—the app will guide you through revision and adaptive drills automatically."},
@@ -334,6 +328,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🔧",color:C.medium,bg:C.medium,title:"Cleaner Formula Reference Tab",sub:"Study Tools · 2026-07-17 update",desc:"Formula tab now removes confusing labels and adds a manual AI formula generator so you can search and create custom formula cards on demand. Study formulas more intuitively without clutter.",tip:"Use the AI formula generator to build formulas for specific topics—faster than scrolling through a static list."},
 {emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smoother Quiz Review Navigation",sub:"UX · 2026-07-17 update",desc:"Back button now correctly returns you from Revision screen to Results screen, letting you review mistakes and insights without losing your place. Exam prep workflows are now more fluid.",tip:"Review a question detail, then tap back—you'll land right where you left off in your results summary."},
 ]},
+// WN_VER:2026-07-17
+{version:"2026-07-17",slides:[
+{emoji:"🧠",color:C.reward,bg:C.reward,title:"Generate Formulas with AI",sub:"AI · 2026-07-17 update",desc:"The formula tab now includes a manual AI formula generator to help you understand complex equations on demand. Get instant, personalized explanations for any formula without leaving your study session.",tip:"Tap the formula generator button when you're stuck on an equation during your revision."},
+{emoji:"🔄",color:C.accentLight,bg:C.accentLight,title:"Smoother Navigation & Debrief Retry",sub:"UX · 2026-07-17 update",desc:"Fixed back button behavior from the revision screen and restored the ability to re-trigger AI debriefs when you need another perspective. Navigation now flows seamlessly between screens so you stay focused on learning.",tip:"Use the back button to jump between your results and revision screens without losing your place."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Results Screen",sub:"Study Tools · 2026-07-17 update",desc:"Removed the redundant AI Diagnosis section from your results screen to reduce clutter and highlight only the insights you need. Your exam feedback is now more focused and easier to scan.",tip:"Check your results page now—it's faster to review your key performance metrics."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -357,13 +357,14 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-13
-{date:"2026-07-13",entries:[
+// AC_VER:2026-07-14
+{date:"2026-07-14",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-14
-{date:"2026-07-14",entries:[
+// AC_VER:2026-07-17
+{date:"2026-07-17",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
