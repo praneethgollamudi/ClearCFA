@@ -54,6 +54,7 @@ const DUEL_KEY             = "cfa_duel_v1";
 const SG_KEY               = "cfa_study_group_v1";
 const PUSH_SUB_KEY         = "cfa_push_sub_v1";
 const VAPID_PUB_KEY        = "BBXW1DGWNhK1tUyzVkrsfhiNF5PIwiztq7PsRntHGvuzxnPsnR07UV-H631e-UHPWzIPkeouGg_giEsH3BVjQM8";
+const GAP_HISTORY_KEY      = "cfa_gap_history_v1";
 const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","masteryGrid","studyPlan","revision","studyPath","calcTrainer","backup","srReview"]);
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
@@ -2035,7 +2036,7 @@ function buildLinkedInImage({sessionPct,sessionScore,total,subtopic,difficulty,t
 
 function parseDebrief(text){
   const get=(label)=>{const m=text.match(new RegExp(label+":\\s*([^\\n]+)"));return m?m[1].trim():"";};
-  return{pattern:get("PATTERN"),fix:get("FIX"),priority:get("PRIORITY"),time:get("TIME"),coach:get("COACH")};
+  return{pattern:get("PATTERN"),fix:get("FIX"),priority:get("PRIORITY"),time:get("TIME"),coach:get("COACH"),rootCause:get("ROOT_CAUSE")};
 }
 
 function parseRefresherReveal(text){
@@ -4954,6 +4955,8 @@ function CFAMock(){
   const [milestoneOverlay,setMilestoneOverlay]=useState(null);
   const [nextActionText,setNextActionText]=useState("");
   const [nextActionLoading,setNextActionLoading]=useState(false);
+  const [gapHistory,setGapHistory]=useState(()=>{try{return JSON.parse(localStorage.getItem(GAP_HISTORY_KEY)||"[]");}catch{return [];}});
+  const [srAdded,setSrAdded]=useState(false);
   const [duelChallenge,setDuelChallenge]=useState(null);
   const [duelCreating,setDuelCreating]=useState(false);
   const [duelTopicPicking,setDuelTopicPicking]=useState(false);
@@ -5174,7 +5177,7 @@ function CFAMock(){
             PRESETS_KEY,MISSION_KEY,CONFIDENCE_KEY,WORKED_EX_KEY,
             DYNAMIC_PN_KEY,DYNAMIC_FORMULAS_KEY,STREAK_FREEZE_KEY,
             CALC_SNAP_KEY,SESSION_DRAFT_KEY,FLAGS_KEY,
-            BESTS_KEY,RESOLVED_GAPS_KEY,REMINDER_TIME_KEY,LAST_SCREEN_KEY,
+            BESTS_KEY,RESOLVED_GAPS_KEY,REMINDER_TIME_KEY,LAST_SCREEN_KEY,GAP_HISTORY_KEY,
           ];
           SESSION_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch{}});
           ph.reset();
@@ -5186,7 +5189,7 @@ function CFAMock(){
           setDailyMission(null);setDailyRefresher(null);
           setTopicLessons({});setConfidenceLog({});
           setWorkedExamples({});setSessionDraft(null);
-          setQuestionFlags([]);setPersonalBests({});
+          setQuestionFlags([]);setPersonalBests({});setGapHistory([]);
         }
         localStorage.setItem(LAST_UID_KEY,currentAuth.id);
       }
@@ -5792,11 +5795,12 @@ PATTERN: [1 sentence using "you" — the single error pattern explaining most of
 FIX: [1 specific action for you to take today — concrete and actionable]
 PRIORITY: [exact concept name from wrong list to drill first]
 TIME: [realistic time to close this gap, e.g. "20 min" or "1 hour"]
-COACH: [1 honest, direct sentence using "you" — no generic cheerleading]`;
+COACH: [1 honest, direct sentence using "you" — no generic cheerleading]
+ROOT_CAUSE: [one of: formula_error | concept_confusion | calculation_mistake | trap_answer | reading_error]`;
       debriefPromptRef.current=debriefPrompt;
       setAiDebriefError(null);
       callAIChat(authUserRef.current.id,[{role:"user",content:debriefPrompt}],350,cfaLevel)
-        .then(r=>{const txt=r&&r.trim();if(txt)setAiDebrief(txt);else setAiDebriefError("error");})
+        .then(r=>{const txt=r&&r.trim();if(txt){setAiDebrief(txt);const pd=parseDebrief(txt);if(pd.priority){const entry={date:localDateKey(),topic:t,subtopic:st,priority:pd.priority,pattern:pd.pattern||"",rootCause:pd.rootCause||"",level:cfaLevel};setGapHistory(prev=>{const next=[...prev,entry].slice(-50);try{localStorage.setItem(GAP_HISTORY_KEY,JSON.stringify(next));}catch{}return next;});}}else setAiDebriefError("error");})
         .catch(e=>{setAiDebriefError(e.quotaExceeded?"quota":"error");})
         .finally(()=>setAiDebriefLoading(false));
     }
@@ -6268,7 +6272,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     genAbortRef.current?.abort();
     const genAbort=new AbortController();
     genAbortRef.current=genAbort;
-    setNextActionText(""); setNextActionLoading(false);
+    setNextActionText(""); setNextActionLoading(false); setSrAdded(false);
     setDuelCreating(false);
     // Reset focus mode counters for the new session
     focusSwitchesRef.current=0; focusTotalAwayMsRef.current=0;
@@ -11775,13 +11779,51 @@ Return ONLY a JSON array — no prose, no markdown fences:
           )}
           {aiDebrief&&(()=>{
             const d=parseDebrief(aiDebrief);
+            // Feature 1: Persistent Gap Memory — detect recurring blind spot
+            const sameTopicGaps=gapHistory.filter(g=>g.topic===topic&&g.level===cfaLevel&&g.priority===d.priority);
+            const isRecurring=d.priority&&sameTopicGaps.length>=2;
+            // Feature 4: Pass Probability Impact
+            const topicMR=moduleReadiness.find(m=>m.topic===topic||m.topic===topic+" Investments"||topic===m.topic+" Investments");
+            const topicAccuracy=topicMR?.accuracy??null;
+            const topicWeight=topicMR?.weight??10;
+            const ppImpact=(topicAccuracy!==null&&topicAccuracy<70)?Math.max(1,Math.round((70-topicAccuracy)*topicWeight/100*0.35)):null;
+            // Feature 5: Root Cause icons and advice
+            const RC_META={
+              formula_error:{icon:"📐",label:"Formula Error",tip:"Write the formula from memory, then re-derive it for this question."},
+              concept_confusion:{icon:"🧠",label:"Concept Confusion",tip:"Read the Power Notes definition, then summarise it in one sentence."},
+              calculation_mistake:{icon:"🔢",label:"Calculation Mistake",tip:"Redo the calculation step-by-step on paper — identify where you diverged."},
+              trap_answer:{icon:"🪤",label:"Trap Answer",tip:"Review the distractor logic — why is each wrong option tempting?"},
+              reading_error:{icon:"👁️",label:"Reading Error",tip:"Re-read the question stem slowly. Underline key qualifiers (most/least/except)."},
+            };
+            const rc=d.rootCause&&RC_META[d.rootCause];
             return(
               <div>
                 {d.coach&&<div style={{fontSize:12,color:C.muted,lineHeight:1.6,fontStyle:"italic",marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>"{d.coach}"</div>}
+                {/* Feature 1: Recurring blind spot badge */}
+                {isRecurring&&(
+                  <div style={{background:"#f59e0b15",border:"1px solid #f59e0b44",borderRadius:8,padding:"6px 10px",marginBottom:9,fontSize:11,color:"#f59e0b",fontWeight:700,display:"flex",gap:6,alignItems:"center"}}>
+                    🔁 Recurring blind spot — this is the {sameTopicGaps.length+1}× you've struggled with <b style={{color:"#fcd34d"}}>{d.priority}</b>
+                  </div>
+                )}
                 {d.pattern&&(
                   <div style={{background:C.accent+"0d",borderLeft:`3px solid ${C.accent}44`,borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:9,fontSize:12,color:C.textMid,lineHeight:1.65}}>
                     <div style={{fontSize:10,fontWeight:700,color:C.accentLight,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>⚠ Gap identified</div>
                     {d.pattern}
+                  </div>
+                )}
+                {/* Feature 4: Pass probability impact */}
+                {ppImpact&&ppImpact>0&&(
+                  <div style={{fontSize:11,color:C.hard,marginBottom:9,display:"flex",gap:5,alignItems:"center"}}>
+                    <span>📉</span>
+                    <span>Your accuracy on {topic?.split(" ")[0]} is {Math.round(topicAccuracy)}% — fixing this could lift your pass probability by ~{ppImpact}%</span>
+                  </div>
+                )}
+                {/* Feature 5: Root cause chip */}
+                {rc&&(
+                  <div style={{display:"inline-flex",alignItems:"center",gap:6,background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,padding:"4px 10px",marginBottom:9,fontSize:11}}>
+                    <span>{rc.icon}</span>
+                    <span style={{color:C.textMid,fontWeight:700}}>{rc.label}</span>
+                    <span style={{color:C.muted}}>— {rc.tip}</span>
                   </div>
                 )}
                 {d.fix&&(
@@ -11795,6 +11837,30 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     Focus concept: <b style={{color:C.accentLight}}>{d.priority}</b>
                     {d.time&&<span style={{marginLeft:8,background:C.accent+"15",border:`1px solid ${C.accent}33`,borderRadius:20,padding:"2px 8px",color:C.accentLight}}>⏱ {d.time}</span>}
                   </div>
+                )}
+                {/* Feature 3: Auto-SR card button */}
+                {wrongs.length>0&&(
+                  <button onClick={()=>{
+                    if(srAdded)return;
+                    setSrDeck(deck=>{
+                      let updated={...deck};
+                      wrongs.forEach(q=>{
+                        const key=`${topic}|||${subtopic}|||${q.id}`;
+                        if(!updated[key]){
+                          const existing={concept:(q.concept||subtopic).slice(0,60),topic,subtopic,question:q.question||"",options:q.options,answer:q.answer,explanation:(q.explanation||"").slice(0,1200),los_tested:(q.los_tested||"").slice(0,120),wrongCount:1,interval:1,repetitions:0,ef:2.5,nextReview:localDateKey(),mastered:false};
+                          updated={...updated,[key]:existing};
+                        }
+                      });
+                      try{localStorage.setItem(SR_KEY,JSON.stringify(updated));}catch{}
+                      return updated;
+                    });
+                    setSrAdded(true);
+                  }} style={{width:"100%",padding:"8px",borderRadius:9,fontSize:12,fontWeight:700,marginBottom:10,
+                    background:srAdded?"#22c55e15":"#6366f115",
+                    border:srAdded?"1px solid #22c55e44":`1px solid ${C.accent}44`,
+                    color:srAdded?C.easy:C.accentLight,cursor:srAdded?"default":"pointer"}}>
+                    {srAdded?`✅ ${wrongs.length} card${wrongs.length!==1?"s":""} added to SR deck`:`📥 Add ${wrongs.length} wrong answer${wrongs.length!==1?"s":""} to SR deck`}
+                  </button>
                 )}
                 {/* Step 1 — Revise */}
                 <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Step 1 — Review the concept</div>
