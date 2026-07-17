@@ -304,10 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-14
-{version:"2026-07-14",slides:[
-{emoji:"🛡️",color:C.hard,bg:C.hard,title:"Results Screen Now Stable",sub:"Bug Fix · 2026-07-14 update",desc:"Fixed a crash that could occur on the results screen when certain data was missing. You can now safely review your quiz performance without interruptions.",tip:"Try completing a quiz and reviewing your results—the page will load smoothly every time."},
-]},
 // WN_VER:2026-07-14-b
 {version:"2026-07-14-b",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smoother Results & Quiz Start",sub:"UX · 2026-07-14 update",desc:"Fixed crashes on the results screen and improved the first question experience so you can see your progress clearly and jump into practice without interruption. These stability improvements mean more time studying, less time troubleshooting.",tip:"Complete a full practice quiz to see your results display reliably every time."},
@@ -330,6 +326,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🔄",color:C.medium,bg:C.medium,title:"Guided Revision & Drill Flow",sub:"Study Tools · 2026-07-17 update",desc:"When you complete a question set, ClearCFA now seamlessly guides you from reviewing mistakes to drilling weak areas in one continuous workflow. You stay focused without juggling multiple screens.",tip:"Notice the step-by-step flow after your next quiz—let it guide you from revision straight into targeted practice on gaps."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Crash Fixed on Results Screen",sub:"Bug Fix · 2026-07-17 update",desc:"Resolved a crash that occurred when viewing quiz results. Your results now load reliably every time.",tip:"You should no longer see errors after completing quizzes—results will always display smoothly."},
 ]},
+// WN_VER:2026-07-17-d
+{version:"2026-07-17-d",slides:[
+{emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Debrief Analysis",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies memory gaps, calculates pass impact, generates spaced-repetition cards, and pinpoints root causes of mistakes. You'll understand not just what you got wrong, but why—and what to study next.",tip:"After any quiz, tap into the AI debrief to see your personalized gap memory and root-cause analysis."},
+{emoji:"🔄",color:C.medium,bg:C.medium,title:"Streamlined Revision-to-Drill Flow",sub:"Study Tools · 2026-07-17 update",desc:"Navigation between revision and drill screens is now seamless, and AI debrief guides you directly into focused drills on weak topics. You'll spend less time navigating and more time actually learning.",tip:"After reviewing a debrief, follow the step-by-step revision flow to drill your gaps immediately."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Question Quality Control",sub:"Bug Fix · 2026-07-17 update",desc:"Questions with mismatched explanations are now rejected during import, ensuring every question you study has accurate, reliable explanations. You can trust every drill.",tip:"You'll notice fewer confusing or contradictory questions in your practice sessions going forward."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -338,16 +340,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-13
-{date:"2026-07-13",entries:[
-"fix: push_subscriptions migration type mismatch blocking Supabase deploys",
-"Fix admin-stats auth — email fallback now unconditional, not gated on userId",
-"Fix admin-stats auth for OAuth users — remove length guard on email fallback",
-"fix: admin-stats — authorize by email+userId presence, no sessions table check",
-"fix: admin-stats auth — email fallback always runs even when ADMIN_USER_ID is set",
-"fix: grant admin dashboard access to sai.praneeth557@gmail.com + add email preview button",
-"fix: cast uuid to text in leaderboard SQL join to fix Deploy Supabase workflow",
-]},
 // AC_VER:2026-07-13
 {date:"2026-07-13",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -380,6 +372,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-14
 {date:"2026-07-14",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-17
+{date:"2026-07-17",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
