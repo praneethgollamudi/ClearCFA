@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17
-{version:"2026-07-17",slides:[
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Sharper Hard Difficulty Questions",sub:"AI · 2026-07-17 update",desc:"Hard-level questions across all CFA levels now follow more rigorous prompts, delivering exam-realistic scenarios that better prepare you for the toughest test items. This means tighter question quality and more authentic challenge difficulty.",tip:"Try a Hard quiz in your weakest topic—you'll notice questions now demand deeper conceptual reasoning."},
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Your Topic Mastery Grid",sub:"Study Tools · 2026-07-17 update",desc:"A new topic×difficulty accuracy matrix now shows exactly which subjects and difficulty levels you excel in—and where you need focus. Pacing indicators keep you on track toward your exam date.",tip:"Open your dashboard after your next quiz session to see your strengths visualized by topic and difficulty."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Refined Easy & Medium Question Quality",sub:"AI · 2026-07-17 update",desc:"Easy and Medium difficulty prompts have been sharpened across all three CFA levels for clearer, more consistent question generation. You'll experience better foundational drills that reinforce core concepts without ambiguity.",tip:"Start with Easy questions in a new topic—they're now even better for building confidence before stepping up."},
-]},
 // WN_VER:2026-07-17-b
 {version:"2026-07-17-b",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Your Study Progress",sub:"Study Tools · 2026-07-17 update",desc:"We've added a pacing indicator and topic×difficulty accuracy matrix so you can see exactly which areas need more work. Monitor your strengths across all three CFA levels in one clear view.",tip:"Check your accuracy matrix after each quiz session to identify which topics and difficulty levels to focus on next."},
@@ -330,6 +324,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"AI Identifies Your Next Step",sub:"AI · 2026-07-17 update",desc:"After completing a practice session, ClearCFA now diagnoses your weak topics and recommends exactly what to study next. This personalized roadmap saves you time deciding what to focus on and accelerates your path to passing.",tip:"Check the 'Next Action' section on your results screen after your next quiz."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter Question Quality",sub:"Study Tools · 2026-07-17 update",desc:"We've fixed contradictory questions where the explanation disagreed with the premise, and eliminated duplicates that wasted your study time. You now spend every minute on valid, high-quality practice that actually prepares you.",tip:"Notice fewer 'trick' questions and repeat content in your sessions."},
 {emoji:"⚡",color:C.medium,bg:C.medium,title:"Faster Quiz Sessions",sub:"Speed · 2026-07-17 update",desc:"We've removed unnecessary delays that forced you to wait between short study sessions. Questions now load smoothly without artificial pauses, so you can keep studying at your own pace without interruption.",tip:"Start a quick 5-minute drill and notice how fast it launches your first question."},
+]},
+// WN_VER:2026-07-17-f
+{version:"2026-07-17-f",slides:[
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster, Longer Study Sessions",sub:"Speed · 2026-07-17 update",desc:"We fixed rate-limit delays and question duplication issues that were slowing down session generation. Your quizzes now start instantly without silent waits or repeated content.",tip:"Request any session length—we now guarantee you get exactly the questions you asked for."},
+{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"AI-Powered Next Steps After Every Quiz",sub:"AI · 2026-07-17 update",desc:"After finishing a practice session, you now get an AI diagnosis that recommends your next action—review weak topics, drill similar questions, or move forward. No more guessing what to study next.",tip:"Check your results screen to see personalized next-action recommendations tailored to your performance."},
+{emoji:"✅",color:C.hard,bg:C.hard,title:"Smarter, More Accurate Questions",sub:"Study Tools · 2026-07-17 update",desc:"We fixed a logic error where question premises contradicted their explanations. Every question you see now has consistent, trustworthy content so you study with confidence.",tip:"You'll notice explanations now always align perfectly with the question intent—no more confusing contradictions."},
 ]},
 // WN_END
 ];
