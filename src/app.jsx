@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-c
-{version:"2026-07-17-c",slides:[
-{emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Debrief Analysis",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies memory gaps, shows how each mistake impacts your pass probability, generates spaced-repetition cards, and pinpoints root causes of errors. This transforms each quiz into a targeted learning session instead of just a score.",tip:"After completing a quiz, review the AI debrief to see which concepts need drilling—the app will guide you through revision and adaptive drills automatically."},
-{emoji:"🔄",color:C.medium,bg:C.medium,title:"Guided Revision & Drill Flow",sub:"Study Tools · 2026-07-17 update",desc:"When you complete a question set, ClearCFA now seamlessly guides you from reviewing mistakes to drilling weak areas in one continuous workflow. You stay focused without juggling multiple screens.",tip:"Notice the step-by-step flow after your next quiz—let it guide you from revision straight into targeted practice on gaps."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Crash Fixed on Results Screen",sub:"Bug Fix · 2026-07-17 update",desc:"Resolved a crash that occurred when viewing quiz results. Your results now load reliably every time.",tip:"You should no longer see errors after completing quizzes—results will always display smoothly."},
-]},
 // WN_VER:2026-07-17-d
 {version:"2026-07-17-d",slides:[
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Debrief Analysis",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies memory gaps, calculates pass impact, generates spaced-repetition cards, and pinpoints root causes of mistakes. You'll understand not just what you got wrong, but why—and what to study next.",tip:"After any quiz, tap into the AI debrief to see your personalized gap memory and root-cause analysis."},
@@ -334,6 +328,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🔄",color:C.accentLight,bg:C.accentLight,title:"Smoother Navigation & Debrief Retry",sub:"UX · 2026-07-17 update",desc:"Fixed back button behavior from the revision screen and restored the ability to re-trigger AI debriefs when you need another perspective. Navigation now flows seamlessly between screens so you stay focused on learning.",tip:"Use the back button to jump between your results and revision screens without losing your place."},
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Results Screen",sub:"Study Tools · 2026-07-17 update",desc:"Removed the redundant AI Diagnosis section from your results screen to reduce clutter and highlight only the insights you need. Your exam feedback is now more focused and easier to scan.",tip:"Check your results page now—it's faster to review your key performance metrics."},
 ]},
+// WN_VER:2026-07-17-b
+{version:"2026-07-17-b",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Difficulty Progression",sub:"AI · 2026-07-17 update",desc:"We've realigned how questions escalate in difficulty to match the 70% CFA pass mark. You'll now progress to harder material at the right pace, matching actual exam rigor. This keeps you challenged without hitting a wall too early.",tip:"Watch how questions get progressively tougher once you consistently score above 70%—that's the sweet spot."},
+{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Better Formula Explanations",sub:"Study Tools · 2026-07-17 update",desc:"The formula tab now includes a manual AI-powered generator that explains each formula in context, without distracting labels. You get clearer, more focused breakdowns when you need to understand *why* a formula works, not just what it is.",tip:"Tap the formula tab mid-quiz to instantly generate a plain-English explanation of any formula."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Results & Faster Feedback",sub:"UX · 2026-07-17 update",desc:"We've streamlined your results screen by removing redundant sections and fixed navigation so you can smoothly move between quizzes and home. You can also re-trigger AI debrief anytime to dig deeper into mistakes without restarting.",tip:"After finishing a quiz, try tapping 'AI Debrief' again if you want a fresh analysis of your weak spots."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -352,13 +352,14 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-13
-{date:"2026-07-13",entries:[
+// AC_VER:2026-07-14
+{date:"2026-07-14",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-14
-{date:"2026-07-14",entries:[
+// AC_VER:2026-07-17
+{date:"2026-07-17",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
