@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-13
-{version:"2026-07-13",slides:[
-{emoji:"🎓",color:C.accentLight,bg:C.accentLight,title:"Smarter Onboarding & First Question",sub:"UX · 2026-07-13 update",desc:"Your first question now launches instantly after signup, getting you studying immediately instead of wading through setup screens. We've streamlined the initial experience so you can assess your level and build momentum right away.",tip:"You'll see your first practice question within seconds of completing signup—no friction."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Live Pass Probability on Your Dashboard",sub:"Study Tools · 2026-07-13 update",desc:"A new pass probability hero card now appears on your home screen, showing you real-time odds of exam success based on your current performance. This gives you instant confidence checks and motivation to keep grinding toward your target.",tip:"Check your probability card daily—it updates as you complete more questions and improve your weak topics."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Interactive Learning Checklists & Calc Hints",sub:"Study Tools · 2026-07-13 update",desc:"Study guides now include interactive checklists to track concept mastery, plus contextual calculator triggers that appear when you need them most. This keeps you organized and removes friction when you need to compute quickly during practice.",tip:"Look for the calculator icon in questions where math is involved—it highlights the exact formula you should use."},
-]},
 // WN_VER:2026-07-14
 {version:"2026-07-14",slides:[
 {emoji:"🛡️",color:C.hard,bg:C.hard,title:"Results Screen Now Stable",sub:"Bug Fix · 2026-07-14 update",desc:"Fixed a crash that could occur on the results screen when certain data was missing. You can now safely review your quiz performance without interruptions.",tip:"Try completing a quiz and reviewing your results—the page will load smoothly every time."},
@@ -330,6 +324,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🛡️",color:C.hard,bg:C.hard,title:"Results Screen Now Stable & Reliable",sub:"Bug Fix · 2026-07-17 update",desc:"Fixed crashes that occurred on the results screen when data was missing or mismatched. You can now confidently review your quiz performance without fear of the app freezing or crashing.",tip:"Results load instantly—tap into your debrief right away to start improving."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Better Question Validation & Quality",sub:"Study Tools · 2026-07-17 update",desc:"The app now rejects questions where explanations don't match the question content, ensuring every practice question is reliable and coherent. This removes confusing or contradictory items from your prep.",tip:"You'll notice fewer head-scratching moments—every explanation now aligns perfectly with what you're being asked."},
 ]},
+// WN_VER:2026-07-17-c
+{version:"2026-07-17-c",slides:[
+{emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Debrief Analysis",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies memory gaps, shows how each mistake impacts your pass probability, generates spaced-repetition cards, and pinpoints root causes of errors. This transforms each quiz into a targeted learning session instead of just a score.",tip:"After completing a quiz, review the AI debrief to see which concepts need drilling—the app will guide you through revision and adaptive drills automatically."},
+{emoji:"🔄",color:C.medium,bg:C.medium,title:"Guided Revision & Drill Flow",sub:"Study Tools · 2026-07-17 update",desc:"When you complete a question set, ClearCFA now seamlessly guides you from reviewing mistakes to drilling weak areas in one continuous workflow. You stay focused without juggling multiple screens.",tip:"Notice the step-by-step flow after your next quiz—let it guide you from revision straight into targeted practice on gaps."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Crash Fixed on Results Screen",sub:"Bug Fix · 2026-07-17 update",desc:"Resolved a crash that occurred when viewing quiz results. Your results now load reliably every time.",tip:"You should no longer see errors after completing quizzes—results will always display smoothly."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -338,12 +338,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-13
 {date:"2026-07-13",entries:[
 "fix: push_subscriptions migration type mismatch blocking Supabase deploys",
@@ -386,6 +380,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-14
 {date:"2026-07-14",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-17
+{date:"2026-07-17",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
