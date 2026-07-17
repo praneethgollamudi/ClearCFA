@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version rotation cleanup (0045f3f)**: Removed versions 2026-07-17-c, 2026-07-17-d, and 2026-07-17-e from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-17-f and 2026-07-17-b. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
+**Medium difficulty prompt sharpened (0045f3f)**: Medium difficulty question generation across all three CFA levels now uses more rigorous prompts to ensure discriminating questions that challenge mid-performing candidates. When tuning question generation, maintain elevated rigor for medium difficulty to ensure consistent quality progression from easy to hard.
+
+
 **L1 Hard difficulty prompt sharpened (6744d25)**: Hard difficulty question generation now uses more rigorous prompts to ensure discriminating questions that challenge high-performing candidates. When tuning question generation, maintain this elevated rigor for hard difficulty to preserve question quality as difficulty increases.
 
 
@@ -1549,7 +1555,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1804300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1804400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.

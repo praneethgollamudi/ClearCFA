@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-f
-{version:"2026-07-17-f",slides:[
-{emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Practice Debrief",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies knowledge gaps, estimates pass impact, generates spaced-repetition cards, and pinpoints root causes of mistakes. This transforms every practice session into targeted skill-building instead of just reviewing what you got wrong.",tip:"After a quiz, tap into your debrief to see which concept triggered your error and how critical it is to exam success."},
-{emoji:"🔧",color:C.medium,bg:C.medium,title:"Cleaner Formula Reference Tab",sub:"Study Tools · 2026-07-17 update",desc:"Formula tab now removes confusing labels and adds a manual AI formula generator so you can search and create custom formula cards on demand. Study formulas more intuitively without clutter.",tip:"Use the AI formula generator to build formulas for specific topics—faster than scrolling through a static list."},
-{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smoother Quiz Review Navigation",sub:"UX · 2026-07-17 update",desc:"Back button now correctly returns you from Revision screen to Results screen, letting you review mistakes and insights without losing your place. Exam prep workflows are now more fluid.",tip:"Review a question detail, then tap back—you'll land right where you left off in your results summary."},
-]},
 // WN_VER:2026-07-17
 {version:"2026-07-17",slides:[
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"Generate Formulas with AI",sub:"AI · 2026-07-17 update",desc:"The formula tab now includes a manual AI formula generator to help you understand complex equations on demand. Get instant, personalized explanations for any formula without leaving your study session.",tip:"Tap the formula generator button when you're stuck on an equation during your revision."},
@@ -332,6 +326,10 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Harder Questions, Better Prep",sub:"AI · 2026-07-17 update",desc:"Level 1 Hard difficulty questions are now more rigorous and aligned with actual CFA exam rigor. Questions escalate faster as you improve, so you're challenged right when you're ready.",tip:"When you hit 70% on a topic, expect tougher questions that push you closer to CFA pass-level difficulty."},
 {emoji:"✅",color:C.accentLight,bg:C.accentLight,title:"Smoother Revision Navigation",sub:"UX · 2026-07-17 update",desc:"The back and home buttons on the revision screen now work reliably, and you can re-trigger AI debrief explanations without reloading. Less friction, more learning.",tip:"Try reviewing a question again—tap the debrief button to get a fresh AI explanation instantly."},
 ]},
+// WN_VER:2026-07-17-e
+{version:"2026-07-17-e",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Difficulty Calibration",sub:"AI · 2026-07-17 update",desc:"We've fine-tuned question difficulty across all three CFA levels to better match the actual exam challenge. Medium and Hard questions now align precisely with CFA pass-mark standards, so you train on questions that truly reflect exam rigor.",tip:"Try a Hard quiz and notice how questions now push you right at the 75% mastery threshold—exactly where exam-day performance matters most."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -340,8 +338,8 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-14
-{date:"2026-07-14",entries:[
+// AC_VER:2026-07-17
+{date:"2026-07-17",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
