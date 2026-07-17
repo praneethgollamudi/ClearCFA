@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**AI debrief first-person language (28c6ba3)**: AI debrief now uses "you" pronouns and implements step-by-step revision→drill flow to guide users from understanding mistakes to drilling weak concepts. When designing post-quiz feedback, use conversational language and scaffold learning from explanation to practice.
+
+
+**Question explanation validation fix (28c6ba3)**: Fixed issue where questions with explanation inputs mismatched to question stem were being accepted. When validating question data during import or generation, ensure explanation inputs actually correspond to the question stem content to maintain data integrity.
+
+
+**What's New version 2026-07-14 (2026-07-14)**: New slide set announcing Results Screen stability fix. Removed versions 2026-07-13-c, 2026-07-13-d, and 2026-07-13-e from rotation due to consolidated messaging. Currently active versions are 2026-07-13-f, 2026-07-13, and 2026-07-14.
+
+
 **What's New version rotation cleanup (997758f)**: Removed versions 2026-07-13-b, 2026-07-13-c, and 2026-07-13-d from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-13-e, 2026-07-13-f, and 2026-07-13. Their content (progress tracking fixes, approximation bypass fix, smarter reminders) is now consolidated into newer slide versions.
 
 
@@ -1363,6 +1372,9 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+**Results screen crash on missing data (2623cba)**: ReferenceError can occur if results screen tries to access undefined exam data. Always validate exam session state exists before rendering results components, especially hero cards with pass probability or statistics.
+
+
 - **Results screen hero card data guard**: Results screen hero card rendering requires defensive checks before displaying pass probability or stats. Verify data is populated in session state before rendering to prevent ReferenceError crashes on edge cases (2623cba, ad03820).
 
 
@@ -1476,7 +1488,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1803400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1803500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
