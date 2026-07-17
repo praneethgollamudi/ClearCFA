@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-d
-{version:"2026-07-17-d",slides:[
-{emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Debrief Analysis",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies memory gaps, calculates pass impact, generates spaced-repetition cards, and pinpoints root causes of mistakes. You'll understand not just what you got wrong, but why—and what to study next.",tip:"After any quiz, tap into the AI debrief to see your personalized gap memory and root-cause analysis."},
-{emoji:"🔄",color:C.medium,bg:C.medium,title:"Streamlined Revision-to-Drill Flow",sub:"Study Tools · 2026-07-17 update",desc:"Navigation between revision and drill screens is now seamless, and AI debrief guides you directly into focused drills on weak topics. You'll spend less time navigating and more time actually learning.",tip:"After reviewing a debrief, follow the step-by-step revision flow to drill your gaps immediately."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Question Quality Control",sub:"Bug Fix · 2026-07-17 update",desc:"Questions with mismatched explanations are now rejected during import, ensuring every question you study has accurate, reliable explanations. You can trust every drill.",tip:"You'll notice fewer confusing or contradictory questions in your practice sessions going forward."},
-]},
 // WN_VER:2026-07-17-e
 {version:"2026-07-17-e",slides:[
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Debrief Analysis",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies knowledge gaps, estimates pass impact, generates spaced-repetition flashcards, and pinpoints root causes of errors—all in one personalized review. This transforms raw quiz results into targeted, actionable study insights so you focus on what matters most.",tip:"After completing a quiz, check the AI debrief to see your root-cause breakdown and suggested SR cards—they're pre-loaded and ready to drill."},
@@ -334,6 +328,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Better Formula Explanations",sub:"Study Tools · 2026-07-17 update",desc:"The formula tab now includes a manual AI-powered generator that explains each formula in context, without distracting labels. You get clearer, more focused breakdowns when you need to understand *why* a formula works, not just what it is.",tip:"Tap the formula tab mid-quiz to instantly generate a plain-English explanation of any formula."},
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Results & Faster Feedback",sub:"UX · 2026-07-17 update",desc:"We've streamlined your results screen by removing redundant sections and fixed navigation so you can smoothly move between quizzes and home. You can also re-trigger AI debrief anytime to dig deeper into mistakes without restarting.",tip:"After finishing a quiz, try tapping 'AI Debrief' again if you want a fresh analysis of your weak spots."},
 ]},
+// WN_VER:2026-07-17-c
+{version:"2026-07-17-c",slides:[
+{emoji:"🧭",color:C.hard,bg:C.hard,title:"Smarter Difficulty Progression",sub:"Study Tools · 2026-07-17 update",desc:"Hard questions now unlock at 75% mastery instead of 70%, giving you a stronger foundation before tackling the toughest content. This 5% buffer ensures you're genuinely ready for exam-level difficulty.",tip:"You'll see Hard mode appear only when you're consistently scoring above the CFA pass mark — a sign you're truly prepared."},
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Cleaner Results & Faster Feedback",sub:"UX · 2026-07-17 update",desc:"We removed redundant diagnostic sections and fixed navigation issues after quizzes, so you get straight to AI debrief and revision without friction. Results screens now load faster and let you jump back into study mode instantly.",tip:"After completing a quiz, tap into the AI Debrief immediately — no extra screens cluttering your workflow."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -347,13 +346,14 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-13
-{date:"2026-07-13",entries:[
+// AC_VER:2026-07-14
+{date:"2026-07-14",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-14
-{date:"2026-07-14",entries:[
+// AC_VER:2026-07-17
+{date:"2026-07-17",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
