@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Pacing indicator and accuracy matrix (ef8d930)**: Added pacing indicator showing quiz completion progress and topic×difficulty accuracy matrix tracking performance across all topic-difficulty combinations. When implementing progress tracking, use these new metrics to help users visualize pacing relative to exam timeline and identify topic-difficulty weak spots.
+
+
 **What's New version rotation cleanup (latest)**: Removed versions 2026-07-17-d, 2026-07-17-e, and 2026-07-17-f from WHATS_NEW_SLIDES rotation. Currently active version is 2026-07-17 and 2026-07-17-c. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1561,7 +1564,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1804500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1804600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
