@@ -304,11 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-14-b
-{version:"2026-07-14-b",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smoother Results & Quiz Start",sub:"UX · 2026-07-14 update",desc:"Fixed crashes on the results screen and improved the first question experience so you can see your progress clearly and jump into practice without interruption. These stability improvements mean more time studying, less time troubleshooting.",tip:"Complete a full practice quiz to see your results display reliably every time."},
-{emoji:"⚡",color:C.reward,bg:C.reward,title:"Better Free-Tier Guidance",sub:"Study Tools · 2026-07-14 update",desc:"The app now clearly shows you which features require an upgrade, and displays your pass probability right on the home screen so you can track your readiness at a glance. Knowing your odds keeps you motivated and focused on what matters.",tip:"Check your pass probability widget on the home screen after each practice session to monitor progress."},
-]},
 // WN_VER:2026-07-17
 {version:"2026-07-17",slides:[
 {emoji:"🛡️",color:C.hard,bg:C.hard,title:"Stabler Results & Practice Screens",sub:"Bug Fix · 2026-07-17 update",desc:"Fixed crashes on the results screen that occurred when data was missing or mismatched. You can now complete practice sessions and review your performance without interruptions.",tip:"Try finishing a full quiz—your results will load smoothly every time."},
@@ -331,6 +326,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Debrief Analysis",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies memory gaps, calculates pass impact, generates spaced-repetition cards, and pinpoints root causes of mistakes. You'll understand not just what you got wrong, but why—and what to study next.",tip:"After any quiz, tap into the AI debrief to see your personalized gap memory and root-cause analysis."},
 {emoji:"🔄",color:C.medium,bg:C.medium,title:"Streamlined Revision-to-Drill Flow",sub:"Study Tools · 2026-07-17 update",desc:"Navigation between revision and drill screens is now seamless, and AI debrief guides you directly into focused drills on weak topics. You'll spend less time navigating and more time actually learning.",tip:"After reviewing a debrief, follow the step-by-step revision flow to drill your gaps immediately."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Cleaner Question Quality Control",sub:"Bug Fix · 2026-07-17 update",desc:"Questions with mismatched explanations are now rejected during import, ensuring every question you study has accurate, reliable explanations. You can trust every drill.",tip:"You'll notice fewer confusing or contradictory questions in your practice sessions going forward."},
+]},
+// WN_VER:2026-07-17-e
+{version:"2026-07-17-e",slides:[
+{emoji:"🧠",color:C.reward,bg:C.reward,title:"Smarter AI Debrief Analysis",sub:"AI · 2026-07-17 update",desc:"AI debrief now identifies knowledge gaps, estimates pass impact, generates spaced-repetition flashcards, and pinpoints root causes of errors—all in one personalized review. This transforms raw quiz results into targeted, actionable study insights so you focus on what matters most.",tip:"After completing a quiz, check the AI debrief to see your root-cause breakdown and suggested SR cards—they're pre-loaded and ready to drill."},
+{emoji:"✏️",color:C.accentLight,bg:C.accentLight,title:"Generate & Customize Formulas",sub:"Study Tools · 2026-07-17 update",desc:"The formula tab now includes a manual AI formula generator so you can request custom formulas tailored to specific topics or learning gaps. Clearer labels and streamlined design make it easier to find exactly what you need without confusion.",tip:"Tap the AI generator icon in the formula tab to create a formula cheat sheet for any topic in seconds."},
+{emoji:"🔄",color:C.medium,bg:C.medium,title:"Seamless Revision & Drill Flow",sub:"UX · 2026-07-17 update",desc:"Navigation between Results and Revision screens is now smooth and intuitive, and the revision-to-drill flow is optimized with personalized step-by-step guidance. You can move between review, correction, and targeted drills without friction.",tip:"After reviewing your mistakes, follow the guided drill path to reinforce concepts before moving to your next quiz."},
 ]},
 // WN_END
 ];
@@ -365,13 +366,14 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-13
-{date:"2026-07-13",entries:[
+// AC_VER:2026-07-14
+{date:"2026-07-14",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-14
-{date:"2026-07-14",entries:[
+// AC_VER:2026-07-17
+{date:"2026-07-17",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
