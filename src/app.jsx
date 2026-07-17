@@ -304,11 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-f
-{version:"2026-07-17-f",slides:[
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Sharper, More Rigorous Questions",sub:"AI · 2026-07-17 update",desc:"We've refined question generation prompts across all difficulty levels to better match CFA exam rigor and question patterns. Easy, Medium, and Hard questions now align more closely with actual exam content, giving you a more authentic practice experience.",tip:"Try a Hard difficulty quiz to experience the sharpened challenge—questions now push you closer to the 75% pass threshold."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Difficulty Calibration",sub:"Study Tools · 2026-07-17 update",desc:"Hard difficulty questions are now calibrated to a 75% pass threshold, giving you a realistic 5% buffer above the official CFA passing mark. This helps you build confidence and readiness for exam day without overestimating your preparation level.",tip:"Use Hard mode as your final checkpoint—if you consistently score 75%+, you're in solid shape for the real exam."},
-]},
 // WN_VER:2026-07-17
 {version:"2026-07-17",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Sharper Hard Difficulty Questions",sub:"AI · 2026-07-17 update",desc:"Hard-level questions across all CFA levels now follow more rigorous prompts, delivering exam-realistic scenarios that better prepare you for the toughest test items. This means tighter question quality and more authentic challenge difficulty.",tip:"Try a Hard quiz in your weakest topic—you'll notice questions now demand deeper conceptual reasoning."},
@@ -329,6 +324,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-17-d",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"See Your Accuracy by Topic",sub:"Study Tools · 2026-07-17 update",desc:"New pacing indicator and topic×difficulty accuracy matrix show exactly where you're strong and weak across the CFA curriculum. Instantly identify which concepts need more focus before exam day.",tip:"Check your accuracy matrix after each study session to prioritize weak areas in your next quiz."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter, Cleaner Questions",sub:"AI · 2026-07-17 update",desc:"Fixed contradictory questions where the premise and explanation disagreed, and removed duplicate questions from your study feed. You now get only high-quality, logically sound practice questions.",tip:"If you notice any question that still feels off, use the feedback button—we're always refining."},
+]},
+// WN_VER:2026-07-17-e
+{version:"2026-07-17-e",slides:[
+{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"AI Identifies Your Next Step",sub:"AI · 2026-07-17 update",desc:"After completing a practice session, ClearCFA now diagnoses your weak topics and recommends exactly what to study next. This personalized roadmap saves you time deciding what to focus on and accelerates your path to passing.",tip:"Check the 'Next Action' section on your results screen after your next quiz."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter Question Quality",sub:"Study Tools · 2026-07-17 update",desc:"We've fixed contradictory questions where the explanation disagreed with the premise, and eliminated duplicates that wasted your study time. You now spend every minute on valid, high-quality practice that actually prepares you.",tip:"Notice fewer 'trick' questions and repeat content in your sessions."},
+{emoji:"⚡",color:C.medium,bg:C.medium,title:"Faster Quiz Sessions",sub:"Speed · 2026-07-17 update",desc:"We've removed unnecessary delays that forced you to wait between short study sessions. Questions now load smoothly without artificial pauses, so you can keep studying at your own pace without interruption.",tip:"Start a quick 5-minute drill and notice how fast it launches your first question."},
 ]},
 // WN_END
 ];
