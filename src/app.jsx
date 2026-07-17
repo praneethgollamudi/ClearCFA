@@ -303,11 +303,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-13-f
-{version:"2026-07-13-f",slides:[
-{emoji:"📋",color:C.easy,bg:C.easy,title:"Study Checklist & Smart Tools",sub:"Study Tools · 2026-07-13 update",desc:"We've added a progress checklist to help you track what you've covered and a contextual calculator that appears when you need it most. Stay organized and calculate faster without switching apps.",tip:"Check your progress on the Study dashboard and look for the calculator icon during practice questions."},
-{emoji:"💌",color:C.accentLight,bg:C.accentLight,title:"Personalized Study Emails",sub:"UX · 2026-07-13 update",desc:"You'll now receive targeted emails with tips, spotlights on tough topics, and study nudges designed for your prep journey. We've also made it easy to confirm your email and opt into push notifications when you sign up.",tip:"Check your inbox after signing up or updating your preferences—your first study tip is on the way."},
-]},
 // WN_VER:2026-07-13
 {version:"2026-07-13",slides:[
 {emoji:"🎓",color:C.accentLight,bg:C.accentLight,title:"Smarter Onboarding & First Question",sub:"UX · 2026-07-13 update",desc:"Your first question now launches instantly after signup, getting you studying immediately instead of wading through setup screens. We've streamlined the initial experience so you can assess your level and build momentum right away.",tip:"You'll see your first practice question within seconds of completing signup—no friction."},
@@ -328,6 +323,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🛡️",color:C.hard,bg:C.hard,title:"Stabler Results & Practice Screens",sub:"Bug Fix · 2026-07-17 update",desc:"Fixed crashes on the results screen that occurred when data was missing or mismatched. You can now complete practice sessions and review your performance without interruptions.",tip:"Try finishing a full quiz—your results will load smoothly every time."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Better Question Quality Control",sub:"Study Tools · 2026-07-17 update",desc:"Improved validation to prevent questions with misaligned explanations from appearing in your study sessions. Every question you see now has a clear, matching explanation to reinforce learning.",tip:"If a question ever feels off, the explanation will now always address exactly what was asked."},
 ]},
+// WN_VER:2026-07-17-b
+{version:"2026-07-17-b",slides:[
+{emoji:"🤖",color:C.accentLight,bg:C.accentLight,title:"AI Debrief Now Guides Your Review",sub:"AI · 2026-07-17 update",desc:"After each quiz, the AI debrief now walks you through a step-by-step revision and drill flow tailored to your mistakes. This replaces generic feedback with a personalized learning path that targets your weak spots.",tip:"After finishing a quiz, follow the AI's suggested drills—they're sequenced to build confidence before retesting."},
+{emoji:"🛡️",color:C.hard,bg:C.hard,title:"Results Screen Now Stable & Reliable",sub:"Bug Fix · 2026-07-17 update",desc:"Fixed crashes that occurred on the results screen when data was missing or mismatched. You can now confidently review your quiz performance without fear of the app freezing or crashing.",tip:"Results load instantly—tap into your debrief right away to start improving."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Better Question Validation & Quality",sub:"Study Tools · 2026-07-17 update",desc:"The app now rejects questions where explanations don't match the question content, ensuring every practice question is reliable and coherent. This removes confusing or contradictory items from your prep.",tip:"You'll notice fewer head-scratching moments—every explanation now aligns perfectly with what you're being asked."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -336,13 +337,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-12
-{date:"2026-07-12",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"fix: push_subscriptions migration type mismatch blocking Supabase deploys",
-]},
 // AC_VER:2026-07-12
 {date:"2026-07-12",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -391,6 +385,12 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-14
 {date:"2026-07-14",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-17
+{date:"2026-07-17",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
