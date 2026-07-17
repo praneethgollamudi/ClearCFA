@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17
-{version:"2026-07-17",slides:[
-{emoji:"🧠",color:C.reward,bg:C.reward,title:"Generate Formulas with AI",sub:"AI · 2026-07-17 update",desc:"The formula tab now includes a manual AI formula generator to help you understand complex equations on demand. Get instant, personalized explanations for any formula without leaving your study session.",tip:"Tap the formula generator button when you're stuck on an equation during your revision."},
-{emoji:"🔄",color:C.accentLight,bg:C.accentLight,title:"Smoother Navigation & Debrief Retry",sub:"UX · 2026-07-17 update",desc:"Fixed back button behavior from the revision screen and restored the ability to re-trigger AI debriefs when you need another perspective. Navigation now flows seamlessly between screens so you stay focused on learning.",tip:"Use the back button to jump between your results and revision screens without losing your place."},
-{emoji:"✨",color:C.easy,bg:C.easy,title:"Cleaner Results Screen",sub:"Study Tools · 2026-07-17 update",desc:"Removed the redundant AI Diagnosis section from your results screen to reduce clutter and highlight only the insights you need. Your exam feedback is now more focused and easier to scan.",tip:"Check your results page now—it's faster to review your key performance metrics."},
-]},
 // WN_VER:2026-07-17-b
 {version:"2026-07-17-b",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Difficulty Progression",sub:"AI · 2026-07-17 update",desc:"We've realigned how questions escalate in difficulty to match the 70% CFA pass mark. You'll now progress to harder material at the right pace, matching actual exam rigor. This keeps you challenged without hitting a wall too early.",tip:"Watch how questions get progressively tougher once you consistently score above 70%—that's the sweet spot."},
@@ -329,6 +323,11 @@ const WHATS_NEW_SLIDES=[
 // WN_VER:2026-07-17-e
 {version:"2026-07-17-e",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Difficulty Calibration",sub:"AI · 2026-07-17 update",desc:"We've fine-tuned question difficulty across all three CFA levels to better match the actual exam challenge. Medium and Hard questions now align precisely with CFA pass-mark standards, so you train on questions that truly reflect exam rigor.",tip:"Try a Hard quiz and notice how questions now push you right at the 75% mastery threshold—exactly where exam-day performance matters most."},
+]},
+// WN_VER:2026-07-17-f
+{version:"2026-07-17-f",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Sharper, More Rigorous Questions",sub:"AI · 2026-07-17 update",desc:"We've refined question generation prompts across all difficulty levels to better match CFA exam rigor and question patterns. Easy, Medium, and Hard questions now align more closely with actual exam content, giving you a more authentic practice experience.",tip:"Try a Hard difficulty quiz to experience the sharpened challenge—questions now push you closer to the 75% pass threshold."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Difficulty Calibration",sub:"Study Tools · 2026-07-17 update",desc:"Hard difficulty questions are now calibrated to a 75% pass threshold, giving you a realistic 5% buffer above the official CFA passing mark. This helps you build confidence and readiness for exam day without overestimating your preparation level.",tip:"Use Hard mode as your final checkpoint—if you consistently score 75%+, you're in solid shape for the real exam."},
 ]},
 // WN_END
 ];
