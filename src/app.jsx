@@ -6472,13 +6472,15 @@ Return ONLY a JSON array — no prose, no markdown fences:
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
-        const baseMax={3:1500,5:2200,10:4500,15:6500,20:8000}[cnt]||(cnt*450);
+        // Request 50% more than needed so quality-filter culls leave us with cnt survivors
+        const requestCount=cnt+Math.ceil(cnt*0.5);
+        const baseMax=requestCount*450;
         const tightMax=multiModules?.length>1?Math.round(baseMax*1.6):baseMax;
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
         const now=Date.now();
         const seenStems=Object.values(qdb).filter(v=>v.topic===t&&(now-v.seen)<QDB_FRESHNESS_MS&&v.stem).sort((a,b)=>b.seen-a.seen).map(v=>v.stem);
         const testedLOS=levelHistory.filter(h=>h.topic===t&&(multiModules?.length>1?multiModules.some(mm=>mm.st===h.subtopic):h.subtopic===st)).flatMap(h=>h.coveredLOS||[]);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,cnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems,testedLOS),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`,signal:genAbort.signal});
+        let raw=await callClaude(buildQuestionPrompt(t,st,diff,requestCount,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems,testedLOS),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`,signal:genAbort.signal});
         if(Array.isArray(raw))raw=expandQuestionKeys(raw);
         parsed=raw;
       }
