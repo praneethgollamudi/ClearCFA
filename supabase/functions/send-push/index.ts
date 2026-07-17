@@ -148,15 +148,16 @@ serve(async (req) => {
   const body = await req.json().catch(() => ({}));
   const { accessToken, userId, email, title, message, targetUserId } = body;
 
-  // Admin auth check
+  // Admin auth check — accept any email in ADMIN_EMAILS list
+  const ADMIN_EMAILS = [ADMIN_EMAIL, "sai.praneeth557@gmail.com"].filter(Boolean);
   const sb = createClient(SUPABASE_URL, SERVICE_KEY);
-  const isAdmin = email === ADMIN_EMAIL;
+  let isAdmin = email && ADMIN_EMAILS.some(e => e.toLowerCase() === email.toLowerCase());
+  if (!isAdmin && accessToken) {
+    const { data: { user } } = await sb.auth.getUser(accessToken).catch(() => ({ data: { user: null } }));
+    if (user?.email && ADMIN_EMAILS.some(e => e.toLowerCase() === user.email!.toLowerCase())) isAdmin = true;
+  }
   if (!isAdmin) {
-    // Fallback: verify via auth
-    const { data: { user } } = await sb.auth.getUser(accessToken);
-    if (!user || user.email !== ADMIN_EMAIL) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
-    }
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: CORS });
   }
 
   // Fetch subscriptions

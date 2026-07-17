@@ -12238,7 +12238,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               try{
                 const res=await fetch(`${SUPABASE_URL}/functions/v1/send-push`,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`},body:JSON.stringify({accessToken:authUser?.accessToken,userId:authUser?.id,email:authUser?.email})});
                 const data=await res.json();
-                setAdminEngageResult({type:"push",data});
+                setAdminEngageResult(data.error?{type:"push",error:data.error}:{type:"push",data});
               }catch(e){setAdminEngageResult({type:"push",error:e.message});}
               setPushSending(false);
             }} disabled={pushSending||reengageSending} style={{padding:"9px 16px",borderRadius:9,fontSize:12,fontWeight:700,background:C.accent+"22",color:C.accentLight,border:`1px solid ${C.accent}44`,cursor:"pointer"}}>
