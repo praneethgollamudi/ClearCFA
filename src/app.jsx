@@ -304,11 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-d
-{version:"2026-07-17-d",slides:[
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Harder Questions, Better Prep",sub:"AI · 2026-07-17 update",desc:"Level 1 Hard difficulty questions are now more rigorous and aligned with actual CFA exam rigor. Questions escalate faster as you improve, so you're challenged right when you're ready.",tip:"When you hit 70% on a topic, expect tougher questions that push you closer to CFA pass-level difficulty."},
-{emoji:"✅",color:C.accentLight,bg:C.accentLight,title:"Smoother Revision Navigation",sub:"UX · 2026-07-17 update",desc:"The back and home buttons on the revision screen now work reliably, and you can re-trigger AI debrief explanations without reloading. Less friction, more learning.",tip:"Try reviewing a question again—tap the debrief button to get a fresh AI explanation instantly."},
-]},
 // WN_VER:2026-07-17-e
 {version:"2026-07-17-e",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Difficulty Calibration",sub:"AI · 2026-07-17 update",desc:"We've fine-tuned question difficulty across all three CFA levels to better match the actual exam challenge. Medium and Hard questions now align precisely with CFA pass-mark standards, so you train on questions that truly reflect exam rigor.",tip:"Try a Hard quiz and notice how questions now push you right at the 75% mastery threshold—exactly where exam-day performance matters most."},
@@ -328,6 +323,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-17-b",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Your Study Progress",sub:"Study Tools · 2026-07-17 update",desc:"We've added a pacing indicator and topic×difficulty accuracy matrix so you can see exactly which areas need more work. Monitor your strengths across all three CFA levels in one clear view.",tip:"Check your accuracy matrix after each quiz session to identify which topics and difficulty levels to focus on next."},
 {emoji:"🎓",color:C.medium,bg:C.medium,title:"Sharper, More Realistic Questions",sub:"AI · 2026-07-17 update",desc:"Our AI question generator now creates even more precise Easy and Medium difficulty questions across all three CFA levels. Your practice sessions better match the exam's actual style and rigor.",tip:"Try a full quiz today—you'll notice questions feel more nuanced and closer to what you'll see on test day."},
+]},
+// WN_VER:2026-07-17-c
+{version:"2026-07-17-c",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Accuracy by Topic & Difficulty",sub:"Study Tools · 2026-07-17 update",desc:"New pacing indicator and topic×difficulty accuracy matrix show exactly where you're strongest and weakest across the curriculum. Pinpoint knowledge gaps faster so you can focus study time on what matters most.",tip:"Check your accuracy matrix after each quiz session to identify which topic-difficulty combos need more practice."},
+{emoji:"✅",color:C.reward,bg:C.reward,title:"Better Question Quality & Clarity",sub:"AI · 2026-07-17 update",desc:"Fixed contradictions in question premises and refined difficulty calibration across all three CFA levels. You'll now see more consistent, higher-quality questions that accurately test your knowledge without confusing wording.",tip:"You may notice fewer trick questions—this means the exam simulation is now more faithful to actual CFA exams."},
 ]},
 // WN_END
 ];
