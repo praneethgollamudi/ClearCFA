@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version rotation cleanup (997758f)**: Removed versions 2026-07-13-b, 2026-07-13-c, and 2026-07-13-d from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-13-e, 2026-07-13-f, and 2026-07-13. Their content (progress tracking fixes, approximation bypass fix, smarter reminders) is now consolidated into newer slide versions.
+
+
 **What's New version rotation: 2026-07-13-b and 2026-07-13-c removal (2623cba)**: Consolidated duplicate messaging by removing versions 2026-07-13-b (exam progress tracking fix, smarter reminders) and 2026-07-13-c (accurate question validation, mock progress). Content from these versions is now covered by newer slides including 2026-07-13-d, 2026-07-13-e, 2026-07-13-f, and 2026-07-13.
 
 
@@ -1360,6 +1363,12 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+- **Results screen hero card data guard**: Results screen hero card rendering requires defensive checks before displaying pass probability or stats. Verify data is populated in session state before rendering to prevent ReferenceError crashes on edge cases (2623cba, ad03820).
+
+
+- **Explanation input validation**: Questions must have explanation input fields that match the question stem. When importing or validating question data, ensure explanation inputs are present and correspond to the question content to avoid rejection during validation (997758f).
+
+
 - **What's New version ordering**: Recent consolidation removed versions 2026-07-12-b and 2026-07-12-c; currently active are 2026-07-12, 2026-07-12-d, 2026-07-12-e, 2026-07-12-f. When adding future versions, verify against the WHATS_NEW_SLIDES array to prevent duplicate feature announcements across versions.
 
 
@@ -1467,7 +1476,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1803300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1803400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
