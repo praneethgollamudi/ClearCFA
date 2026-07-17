@@ -739,7 +739,7 @@ function pickNextSession(moduleReadiness,daysLeft,history=[]){
   let module=top.untouchedModules?.[0];
   if(!module){const worst=Object.entries(top.moduleStats||{}).filter(([,v])=>v!==null).sort(([,a],[,b])=>(a.pct??100)-(b.pct??100));module=worst[0]?.[0]||top.modules[0];}
   const modPct=top.moduleStats?.[module]?.pct??null;
-  const difficulty=modPct===null?"Medium":modPct>=70?"Hard":modPct<45?"Easy":"Medium";
+  const difficulty=modPct===null?"Medium":modPct>=75?"Hard":modPct<45?"Easy":"Medium";
   return{topic:top.topic,module:module||top.modules[0],difficulty,priority:top.priority};
 }
 
@@ -752,7 +752,7 @@ function getAdaptiveSuggestions(moduleReadiness,daysLeft,history=[]){
     if(!module){const worst=Object.entries(mr.moduleStats||{}).filter(([,v])=>v!==null).sort(([,a],[,b])=>(a.pct??100)-(b.pct??100));module=worst[0]?.[0]||mr.modules[0];}
     if(!module)return null;
     const modPct=mr.moduleStats?.[module]?.pct??null;
-    const difficulty=modPct===null?"Medium":modPct>=70?"Hard":modPct<45?"Easy":"Medium";
+    const difficulty=modPct===null?"Medium":modPct>=75?"Hard":modPct<45?"Easy":"Medium";
     const urgency=priority>0.8?"critical":priority>0.5?"high":priority>0.3?"medium":"low";
     let reason;
     if(mr.sessions===0)reason=`Not started yet — ${mr.weight}% of the exam`;
