@@ -6502,6 +6502,14 @@ Return ONLY a JSON array — no prose, no markdown fences:
         // Reject if explanation names a DIFFERENT letter as the correct one
         const lm=expU.match(/CORRECT ANSWER IS\s+([A-C])\b/)||expU.match(/(?:THEREFORE|SO|THUS|HENCE)[,\s]+(?:OPTION\s+)?([A-C])\s+IS(?:\s+THE)?\s+CORRECT\b/)||expU.match(/\bOPTION\s+([A-C])\s+IS(?:\s+THE)?\s+CORRECT\s+ANSWER\b/)||expU.match(/\b(?:THUS|HENCE)[,\s]+([A-C])\s+IS\s+(?:THE\s+)?(?:CORRECT|RIGHT)\b/);
         if(lm&&lm[1]!==qAns)return false;
+        // Reject "prefer X" questions where explanation concludes a DIFFERENT entity is preferred/dominates
+        // e.g. question asks "when should Portfolio Alpha be preferred" but explanation says "Beta is always preferred"
+        const qPrefMatch=(q.question||"").match(/\bprefer\s+(?:portfolio\s+|strategy\s+|asset\s+)?([A-Za-z]+)/i);
+        if(qPrefMatch){
+          const qEnt=qPrefMatch[1].toUpperCase();
+          const epM=expU.match(/\b([A-Za-z]{3,})\s+IS\s+(?:ALWAYS\s+)?(?:PREFERRED|DOMINANT|SUPERIOR|OPTIMAL)\b/)||expU.match(/\b([A-Za-z]{3,})\s+(?:ALWAYS\s+)?DOMINATES\b/)||expU.match(/\bINVESTOR[S]?\s+SHOULD\s+(?:ALWAYS\s+)?(?:CHOOSE|SELECT|PREFER)\s+([A-Za-z]+)\b/);
+          if(epM){const expEnt=(epM[1]||epM[2]||"").toUpperCase();const STOP=["NOT","THE","A","AN","IT","THIS","THAT","STRATEGY","OPTION","PORTFOLIO","ASSET","EACH","ANY","BOTH","ALL","LESS","MORE","HIGHER","LOWER"];if(expEnt.length>2&&!STOP.includes(expEnt)&&expEnt!==qEnt)return false;}
+        }
         // Reject if explanation says "correct answer is [value]" that doesn't match options[answer]
         const vm=(q.explanation||"").match(/correct answer is\s+([^\.\n]{2,40})/i);
         if(vm){const norm=s=>s.toLowerCase().replace(/\s+/g,"").replace(/[^0-9a-z.%]/g,"");const stated=norm(vm[1]);const ansOpt=norm(q.options[q.answer]||"");if(stated.length>1&&ansOpt.length>1&&stated!==ansOpt&&!ansOpt.includes(stated)&&!stated.includes(ansOpt))return false;}
