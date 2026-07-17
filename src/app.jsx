@@ -5780,17 +5780,19 @@ function CFAMock(){
       }).join("\n");
       const mins=elapsed?Math.round(elapsed/60):null;
       const timeStr=mins?`, ${mins} min`:"";
-      const debriefPrompt=`CFA Level ${cfaLevel} exam coach. Student scored ${pct}% on ${diff} ${t} — ${st} (${wrongQs.length} wrong / ${qs.length} total${timeStr}).
+      const debriefPrompt=`CFA Level ${cfaLevel} exam coach giving direct personal feedback. Always address the student as "you" — never say "the student", "your student", or refer to them in third person.
+
+You scored ${pct}% on ${diff} ${t} — ${st} (${wrongQs.length} wrong / ${qs.length} total${timeStr}).
 
 Wrong concepts:
 ${wrongItems}
 
 Respond in EXACTLY this format — no preamble, no extra text:
-PATTERN: [1 sentence — the single error pattern explaining most mistakes]
-FIX: [1 specific action to take today — concrete and actionable]
+PATTERN: [1 sentence using "you" — the single error pattern explaining most of your mistakes]
+FIX: [1 specific action for you to take today — concrete and actionable]
 PRIORITY: [exact concept name from wrong list to drill first]
 TIME: [realistic time to close this gap, e.g. "20 min" or "1 hour"]
-COACH: [1 honest, direct sentence — no generic cheerleading]`;
+COACH: [1 honest, direct sentence using "you" — no generic cheerleading]`;
       debriefPromptRef.current=debriefPrompt;
       setAiDebriefError(null);
       callAIChat(authUserRef.current.id,[{role:"user",content:debriefPrompt}],350,cfaLevel)
@@ -11638,7 +11640,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
               setNextActionLoading(true);
               try{
                 const wrongConcepts=wrongs.slice(0,5).map(q=>q.concept||q.los_tested||q.question.slice(0,60)).join("; ");
-                const prompt=`CFA L${cfaLevel} coach. Student scored ${sessionPct}% on ${subtopic}. Wrong answers: ${wrongConcepts}. In exactly 2 sentences: (1) name the specific concept gap, (2) one targeted drill action to fix it. Be direct.`;
+                const prompt=`CFA L${cfaLevel} coach giving direct personal feedback. Address the student as "you" — never say "your student" or "the student". They scored ${sessionPct}% on ${subtopic}. Wrong: ${wrongConcepts}. In exactly 2 sentences using "you": (1) name the specific concept you struggle with, (2) one targeted action for you to fix it. Be direct.`;
                 const result=await callAIChat(authUser.id,[{role:"user",content:prompt}],200,cfaLevel,{throws:true});
                 setNextActionText(result);
               }catch(e){
@@ -11660,7 +11662,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
             <div>
               <div style={{fontSize:11,fontWeight:700,color:C.accentLight,marginBottom:6,letterSpacing:"0.05em",textTransform:"uppercase"}}>🤖 AI Diagnosis</div>
               <div style={{fontSize:13,color:C.text,lineHeight:1.65,marginBottom:12}}>{nextActionText}</div>
-              <button onClick={()=>generateQuestions(topic,subtopic,difficulty,10,"guided")}
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Step 1 — Review</div>
+              <div style={{display:"flex",gap:8,marginBottom:10}}>
+                <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setScreen("revision");}}
+                  style={{flex:1,padding:"9px 8px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                  📚 Notes →
+                </button>
+                <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("formulas");setScreen("revision");}}
+                  style={{flex:1,padding:"9px 8px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                  📐 Formulas →
+                </button>
+              </div>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Step 2 — Drill</div>
+              <button onClick={()=>generateQuestions(topic,subtopic,"Hard",10,"guided")}
                 style={{width:"100%",padding:"10px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
                 🔁 Drill it now →
               </button>
@@ -11763,29 +11777,43 @@ Return ONLY a JSON array — no prose, no markdown fences:
             const d=parseDebrief(aiDebrief);
             return(
               <div>
+                {d.coach&&<div style={{fontSize:12,color:C.muted,lineHeight:1.6,fontStyle:"italic",marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>"{d.coach}"</div>}
                 {d.pattern&&(
                   <div style={{background:C.accent+"0d",borderLeft:`3px solid ${C.accent}44`,borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:9,fontSize:12,color:C.textMid,lineHeight:1.65}}>
-                    <div style={{fontSize:10,fontWeight:700,color:C.accentLight,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>⚠ Root pattern</div>
+                    <div style={{fontSize:10,fontWeight:700,color:C.accentLight,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>⚠ Gap identified</div>
                     {d.pattern}
                   </div>
                 )}
                 {d.fix&&(
-                  <div style={{background:"#22c55e0d",borderLeft:"3px solid #22c55e44",borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:9,fontSize:12,color:"#86efac",lineHeight:1.65}}>
-                    <div style={{fontSize:10,fontWeight:700,color:"#22c55e77",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>🎯 Do next</div>
+                  <div style={{background:"#22c55e0d",borderLeft:"3px solid #22c55e44",borderRadius:"0 8px 8px 0",padding:"9px 12px",marginBottom:10,fontSize:12,color:"#86efac",lineHeight:1.65}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#22c55e77",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.06em"}}>🎯 Action</div>
                     {d.fix}
                   </div>
                 )}
-                {(d.priority||d.time)&&(
-                  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:10}}>
-                    {d.priority&&<span style={{fontSize:11,color:C.textMid}}>Focus: <b style={{color:C.accentLight}}>{d.priority}</b></span>}
-                    {d.time&&<span style={{fontSize:11,background:C.accent+"15",border:`1px solid ${C.accent}33`,borderRadius:20,padding:"2px 10px",color:C.accentLight,flexShrink:0}}>⏱ {d.time}</span>}
+                {d.priority&&(
+                  <div style={{fontSize:11,color:C.muted,marginBottom:10}}>
+                    Focus concept: <b style={{color:C.accentLight}}>{d.priority}</b>
+                    {d.time&&<span style={{marginLeft:8,background:C.accent+"15",border:`1px solid ${C.accent}33`,borderRadius:20,padding:"2px 8px",color:C.accentLight}}>⏱ {d.time}</span>}
                   </div>
                 )}
-                <button onClick={()=>generateQuestions(topic,subtopic,difficulty,5,"guided")}
-                  style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",marginBottom:d.coach?10:0}}>
-                  🔁 Drill weak concepts now — 5 questions
+                {/* Step 1 — Revise */}
+                <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Step 1 — Review the concept</div>
+                <div style={{display:"flex",gap:8,marginBottom:10}}>
+                  <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setScreen("revision");}}
+                    style={{flex:1,padding:"9px 8px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                    📚 Notes →
+                  </button>
+                  <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("formulas");setScreen("revision");}}
+                    style={{flex:1,padding:"9px 8px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
+                    📐 Formulas →
+                  </button>
+                </div>
+                {/* Step 2 — Drill */}
+                <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Step 2 — Drill the gap</div>
+                <button onClick={()=>generateQuestions(topic,subtopic,"Hard",5,"guided")}
+                  style={{width:"100%",padding:"10px",borderRadius:10,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                  🔁 Targeted drill — 5 questions →
                 </button>
-                {d.coach&&<div style={{fontSize:11,color:C.muted,lineHeight:1.6,fontStyle:"italic",textAlign:"center"}}>"{d.coach}"</div>}
               </div>
             );
           })()}
