@@ -2690,6 +2690,7 @@ function RevisionScreen({onBack, backLabel="Home", initialTopic=null, initialTab
   const coachMsgsEndRef = useRef(null);
   const [coachOnboardDone, setCoachOnboardDone] = useState(()=>{try{return !!localStorage.getItem("cfa_coach_onboard_v1");}catch{return false;}});
   const [expandedLessonConcept, setExpandedLessonConcept] = useState(null);
+  const [manualFormulaInput, setManualFormulaInput] = useState("");
 
   // Reset formula module accordion when topic changes
   useEffect(()=>{setExpandedFormulaModule(null);setExpandedFormula(null);},[selTopic]);
@@ -3272,6 +3273,32 @@ function RevisionScreen({onBack, backLabel="Home", initialTopic=null, initialTab
                 );
               })()}
 
+              {/* Manual formula generation — always visible when signed in */}
+              {userId&&(
+                <div style={{marginBottom:14,background:"#0a0818",border:"1px solid #8040c033",borderRadius:10,padding:"10px 12px"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#a060e0",marginBottom:7,textTransform:"uppercase",letterSpacing:"0.08em"}}>✨ Generate formula for any concept</div>
+                  <div style={{display:"flex",gap:7}}>
+                    <input
+                      value={manualFormulaInput}
+                      onChange={e=>setManualFormulaInput(e.target.value)}
+                      onKeyDown={e=>{if(e.key==="Enter"&&manualFormulaInput.trim()&&!formulaGenerating[manualFormulaInput.trim().toLowerCase()])generateFormulaForConcept({subtopic:manualFormulaInput.trim(),concept:manualFormulaInput.trim(),topic:selTopic,explanation:"",wrongCount:1});}}
+                      placeholder="e.g. Duration, WACC, DDM…"
+                      style={{flex:1,padding:"7px 10px",borderRadius:7,fontSize:12,background:"#0d0d20",border:"1px solid #8040c044",color:"#c090f0",outline:"none","::placeholder":{color:"#604080"}}}
+                    />
+                    <button
+                      onClick={()=>{if(!manualFormulaInput.trim()||formulaGenerating[manualFormulaInput.trim().toLowerCase()])return;generateFormulaForConcept({subtopic:manualFormulaInput.trim(),concept:manualFormulaInput.trim(),topic:selTopic,explanation:"",wrongCount:1});}}
+                      disabled={!manualFormulaInput.trim()||!!formulaGenerating[manualFormulaInput.trim().toLowerCase()]}
+                      style={{padding:"7px 13px",borderRadius:7,fontSize:12,fontWeight:700,background:"#8040c018",border:"1px solid #8040c055",color:formulaGenerating[manualFormulaInput.trim().toLowerCase()]?"#6060b0":"#c090f0",cursor:(!manualFormulaInput.trim()||formulaGenerating[manualFormulaInput.trim().toLowerCase()])?"default":"pointer",whiteSpace:"nowrap"}}>
+                      {formulaGenerating[manualFormulaInput.trim().toLowerCase()]?"⏳…":"✨ Generate"}
+                    </button>
+                  </div>
+                  {manualFormulaInput.trim()&&formulaGenError[manualFormulaInput.trim().toLowerCase()]&&(
+                    <div style={{fontSize:10,color:"#f87171",marginTop:5}}>{formulaGenError[manualFormulaInput.trim().toLowerCase()]}</div>
+                  )}
+                  <div style={{fontSize:10,color:"#604080",marginTop:5}}>Type any CFA concept — AI generates the formula, variables and a worked example</div>
+                </div>
+              )}
+
               {/* Clear AI formulas button — shown when topic has any stored AI formulas */}
               {(dynamicFormulas[selTopic]||[]).length>0&&(
                 <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
@@ -3296,7 +3323,7 @@ function RevisionScreen({onBack, backLabel="Home", initialTopic=null, initialTab
                           style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",background:isModOpen?(isAISection?"#8040c018":`${C.accent}0a`):"transparent",border:"none",cursor:"pointer",textAlign:"left"}}>
                           <div>
                             <div style={{fontSize:13,fontWeight:700,color:isAISection?"#c090f0":C.text}}>{modName}</div>
-                            <div style={{fontSize:10,color:C.muted,marginTop:2}}>{mFormulas.length} formula{mFormulas.length!==1?"s":""} · AI-generated from your mistakes</div>
+                            <div style={{fontSize:10,color:C.muted,marginTop:2}}>{mFormulas.length} formula{mFormulas.length!==1?"s":""}{isAISection?" · AI-generated from your mistakes":""}</div>
                           </div>
                           <span style={{fontSize:11,color:C.muted}}>{isModOpen?"▲":"▼"}</span>
                         </button>
