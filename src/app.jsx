@@ -4978,8 +4978,6 @@ function CFAMock(){
   const [dailyQ,setDailyQ]=useState(null); // initialized per-user in authUser effect below
   const [dailyQReview,setDailyQReview]=useState(false);
   const [milestoneOverlay,setMilestoneOverlay]=useState(null);
-  const [nextActionText,setNextActionText]=useState("");
-  const [nextActionLoading,setNextActionLoading]=useState(false);
   const [gapHistory,setGapHistory]=useState(()=>{try{return JSON.parse(localStorage.getItem(GAP_HISTORY_KEY)||"[]");}catch{return [];}});
   const [srAdded,setSrAdded]=useState(false);
   const [revisionFromScreen,setRevisionFromScreen]=useState("home");
@@ -6298,7 +6296,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     genAbortRef.current?.abort();
     const genAbort=new AbortController();
     genAbortRef.current=genAbort;
-    setNextActionText(""); setNextActionLoading(false); setSrAdded(false);
+    setSrAdded(false);
     setDuelCreating(false);
     // Reset focus mode counters for the new session
     focusSwitchesRef.current=0; focusTotalAwayMsRef.current=0;
@@ -11662,56 +11660,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setRevisionFromScreen("results");setScreen("revision");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise {topic?.split(" ")[0]}</button>
       </div>
 
-      {/* AI Diagnosis — "What should I do next?" */}
-      {!fullExamMode&&wrongs.length>0&&authUser?.id&&(
-        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14}}>
-          {!nextActionText&&!nextActionLoading&&(
-            <button onClick={async()=>{
-              setNextActionLoading(true);
-              try{
-                const wrongConcepts=wrongs.slice(0,5).map(q=>q.concept||q.los_tested||q.question.slice(0,60)).join("; ");
-                const prompt=`CFA L${cfaLevel} coach giving direct personal feedback. Address the student as "you" — never say "your student" or "the student". They scored ${sessionPct}% on ${subtopic}. Wrong: ${wrongConcepts}. In exactly 2 sentences using "you": (1) name the specific concept you struggle with, (2) one targeted action for you to fix it. Be direct.`;
-                const result=await callAIChat(authUser.id,[{role:"user",content:prompt}],200,cfaLevel,{throws:true});
-                setNextActionText(result);
-              }catch(e){
-                if(e.quotaExceeded)setUpgradeModal({reason:"chat_limit"});
-                else setNextActionText("Unable to generate diagnosis. Try again later.");
-              }
-              setNextActionLoading(false);
-            }} style={{width:"100%",padding:"11px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent}22,${C.accent}11)`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
-              🤖 Diagnose my gaps →
-            </button>
-          )}
-          {nextActionLoading&&(
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"4px 0"}}>
-              <div style={{width:14,height:14,border:`2px solid ${C.accent}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0}}/>
-              <span style={{fontSize:12,color:C.muted}}>Analysing your gaps…</span>
-            </div>
-          )}
-          {nextActionText&&!nextActionLoading&&(
-            <div>
-              <div style={{fontSize:11,fontWeight:700,color:C.accentLight,marginBottom:6,letterSpacing:"0.05em",textTransform:"uppercase"}}>🤖 AI Diagnosis</div>
-              <div style={{fontSize:13,color:C.text,lineHeight:1.65,marginBottom:12}}>{nextActionText}</div>
-              <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Step 1 — Review</div>
-              <div style={{display:"flex",gap:8,marginBottom:10}}>
-                <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setScreen("revision");}}
-                  style={{flex:1,padding:"9px 8px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
-                  📚 Notes →
-                </button>
-                <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("formulas");setScreen("revision");}}
-                  style={{flex:1,padding:"9px 8px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
-                  📐 Formulas →
-                </button>
-              </div>
-              <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Step 2 — Drill</div>
-              <button onClick={()=>generateQuestions(topic,subtopic,"Hard",10,"guided")}
-                style={{width:"100%",padding:"10px",borderRadius:9,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
-                🔁 Drill it now →
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* #4 — Post-session upgrade nudge for free users who scored ≥70% */}
       {!proStatus&&sessionPct>=70&&(
