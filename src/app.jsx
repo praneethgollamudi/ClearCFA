@@ -304,10 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-e
-{version:"2026-07-17-e",slides:[
-{emoji:"🎯",color:C.hard,bg:C.hard,title:"Smarter Difficulty Calibration",sub:"AI · 2026-07-17 update",desc:"We've fine-tuned question difficulty across all three CFA levels to better match the actual exam challenge. Medium and Hard questions now align precisely with CFA pass-mark standards, so you train on questions that truly reflect exam rigor.",tip:"Try a Hard quiz and notice how questions now push you right at the 75% mastery threshold—exactly where exam-day performance matters most."},
-]},
 // WN_VER:2026-07-17-f
 {version:"2026-07-17-f",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Sharper, More Rigorous Questions",sub:"AI · 2026-07-17 update",desc:"We've refined question generation prompts across all difficulty levels to better match CFA exam rigor and question patterns. Easy, Medium, and Hard questions now align more closely with actual exam content, giving you a more authentic practice experience.",tip:"Try a Hard difficulty quiz to experience the sharpened challenge—questions now push you closer to the 75% pass threshold."},
@@ -328,6 +324,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-17-c",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Accuracy by Topic & Difficulty",sub:"Study Tools · 2026-07-17 update",desc:"New pacing indicator and topic×difficulty accuracy matrix show exactly where you're strongest and weakest across the curriculum. Pinpoint knowledge gaps faster so you can focus study time on what matters most.",tip:"Check your accuracy matrix after each quiz session to identify which topic-difficulty combos need more practice."},
 {emoji:"✅",color:C.reward,bg:C.reward,title:"Better Question Quality & Clarity",sub:"AI · 2026-07-17 update",desc:"Fixed contradictions in question premises and refined difficulty calibration across all three CFA levels. You'll now see more consistent, higher-quality questions that accurately test your knowledge without confusing wording.",tip:"You may notice fewer trick questions—this means the exam simulation is now more faithful to actual CFA exams."},
+]},
+// WN_VER:2026-07-17-d
+{version:"2026-07-17-d",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"See Your Accuracy by Topic",sub:"Study Tools · 2026-07-17 update",desc:"New pacing indicator and topic×difficulty accuracy matrix show exactly where you're strong and weak across the CFA curriculum. Instantly identify which concepts need more focus before exam day.",tip:"Check your accuracy matrix after each study session to prioritize weak areas in your next quiz."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Smarter, Cleaner Questions",sub:"AI · 2026-07-17 update",desc:"Fixed contradictory questions where the premise and explanation disagreed, and removed duplicate questions from your study feed. You now get only high-quality, logically sound practice questions.",tip:"If you notice any question that still feels off, use the feedback button—we're always refining."},
 ]},
 // WN_END
 ];
