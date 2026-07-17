@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**AI debrief enhancement pack (7fbcfb7)**: AI debrief now tracks gap memory (knowledge gaps from failed questions), pass impact metrics (how each gap affects pass probability), spaced repetition cards for weak concepts, and root cause analysis to explain why answers were wrong. When designing debrief flows, scaffold from understanding mistakes → identifying gaps → drilling weak concepts → tracking progress.
+
+
 **AI debrief first-person language (28c6ba3)**: AI debrief now uses "you" pronouns and implements step-by-step revision→drill flow to guide users from understanding mistakes to drilling weak concepts. When designing post-quiz feedback, use conversational language and scaffold learning from explanation to practice.
 
 
@@ -1372,6 +1375,12 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+- **Gap history storage key**: New constant `GAP_HISTORY_KEY = "cfa_gap_history_v1"` tracks knowledge gaps from quiz debrief sessions. When working with user study history, reference this key for gap-based analytics and spaced repetition scheduling.
+
+
+- **Question validation strictness**: Questions with explanation inputs must directly correspond to the question stem content. Mismatched explanations will be rejected during import or generation (28c6ba3, 997758f). Always validate that explanation text actually addresses the stem before accepting question data.
+
+
 **Results screen crash on missing data (2623cba)**: ReferenceError can occur if results screen tries to access undefined exam data. Always validate exam session state exists before rendering results components, especially hero cards with pass probability or statistics.
 
 
@@ -1485,10 +1494,11 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_duel_v1` | `DUEL_KEY` |
 | `cfa_study_group_v1` | `SG_KEY` |
 | `cfa_push_sub_v1` | `PUSH_SUB_KEY` |
+| `cfa_gap_history_v1` | `GAP_HISTORY_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1803500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1803600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1658,3 +1668,5 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **Push subscriptions user_id type conversion (7b7229f)**: push_subscriptions.user_id column is now TEXT to support both Supabase auth UUIDs and password-based users (SHA-256 hex strings). When modifying push subscription schema or access control, drop dependent RLS policies BEFORE altering the column type to prevent migration failures.
 
 **Leaderboard sessions.data JSONB casting (78e568c, c60895f)**: Leaderboard SQL function now explicitly casts sessions.data to jsonb and user_id to text in joins. When querying leaderboard or aggregating session metrics, ensure type casting is applied to prevent PostgreSQL type mismatch errors.
+
+**What's New version 2026-07-14-b (7fbcfb7)**: New slide set covering Smoother Results & Quiz Start (results screen stability, first question UX) and Better Free-Tier Guidance (feature upgrade hints, pass probability on dashboard). Versions 2026-07-13-d, 2026-07-13-e, and 2026-07-13-f have been removed from rotation.
