@@ -304,11 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-b
-{version:"2026-07-17-b",slides:[
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Your Study Progress",sub:"Study Tools · 2026-07-17 update",desc:"We've added a pacing indicator and topic×difficulty accuracy matrix so you can see exactly which areas need more work. Monitor your strengths across all three CFA levels in one clear view.",tip:"Check your accuracy matrix after each quiz session to identify which topics and difficulty levels to focus on next."},
-{emoji:"🎓",color:C.medium,bg:C.medium,title:"Sharper, More Realistic Questions",sub:"AI · 2026-07-17 update",desc:"Our AI question generator now creates even more precise Easy and Medium difficulty questions across all three CFA levels. Your practice sessions better match the exam's actual style and rigor.",tip:"Try a full quiz today—you'll notice questions feel more nuanced and closer to what you'll see on test day."},
-]},
 // WN_VER:2026-07-17-c
 {version:"2026-07-17-c",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Accuracy by Topic & Difficulty",sub:"Study Tools · 2026-07-17 update",desc:"New pacing indicator and topic×difficulty accuracy matrix show exactly where you're strongest and weakest across the curriculum. Pinpoint knowledge gaps faster so you can focus study time on what matters most.",tip:"Check your accuracy matrix after each quiz session to identify which topic-difficulty combos need more practice."},
@@ -330,6 +325,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster, Longer Study Sessions",sub:"Speed · 2026-07-17 update",desc:"We fixed rate-limit delays and question duplication issues that were slowing down session generation. Your quizzes now start instantly without silent waits or repeated content.",tip:"Request any session length—we now guarantee you get exactly the questions you asked for."},
 {emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"AI-Powered Next Steps After Every Quiz",sub:"AI · 2026-07-17 update",desc:"After finishing a practice session, you now get an AI diagnosis that recommends your next action—review weak topics, drill similar questions, or move forward. No more guessing what to study next.",tip:"Check your results screen to see personalized next-action recommendations tailored to your performance."},
 {emoji:"✅",color:C.hard,bg:C.hard,title:"Smarter, More Accurate Questions",sub:"Study Tools · 2026-07-17 update",desc:"We fixed a logic error where question premises contradicted their explanations. Every question you see now has consistent, trustworthy content so you study with confidence.",tip:"You'll notice explanations now always align perfectly with the question intent—no more confusing contradictions."},
+]},
+// WN_VER:2026-07-17
+{version:"2026-07-17",slides:[
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster, More Reliable Quiz Sessions",sub:"Speed · 2026-07-17 update",desc:"We've eliminated duplicate questions, fixed session timeouts, and improved question generation so your practice quizzes start instantly without delays. You now get exactly the session size you requested, every time.",tip:"Start a quiz and watch—no more waiting or partial sessions."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smart Next-Step Guidance After Each Quiz",sub:"AI · 2026-07-17 update",desc:"After you finish a quiz, our AI now diagnoses your performance and recommends exactly what to study next—whether that's reviewing a specific topic, drilling harder questions, or moving forward. No more guessing what to do after each session.",tip:"Check your results screen for personalized study recommendations tailored to your gaps."},
+{emoji:"⏱️",color:C.medium,bg:C.medium,title:"Accurate Progress Indicators",sub:"UX · 2026-07-17 update",desc:"The loading bar now reflects actual AI generation time, so you always know how long a quiz will take to build. No more misleading progress meters.",tip:"Watch the loading bar accurately track your quiz generation from start to finish."},
 ]},
 // WN_END
 ];
