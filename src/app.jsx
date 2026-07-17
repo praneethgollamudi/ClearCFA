@@ -2618,7 +2618,7 @@ function LessonSection({title, items, color}){
   );
 }
 
-function RevisionScreen({onBack, backLabel="Home", initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1", isPro=false, onStartQuiz=null, topicLessons={}, setTopicLessons=()=>{}, onUpgrade=null, topicReadiness=[]}){
+function RevisionScreen({onBack, backLabel="Home", onHome=null, initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1", isPro=false, onStartQuiz=null, topicLessons={}, setTopicLessons=()=>{}, onUpgrade=null, topicReadiness=[]}){
   const activePowerNotes=getActivePowerNotes(cfaLevel);
   const activeFormulas=getActiveFormulas(cfaLevel);
   const activeLOSR=getActiveLOS(cfaLevel);
@@ -2924,7 +2924,10 @@ function RevisionScreen({onBack, backLabel="Home", initialTopic=null, initialTab
           <h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📚 Quick Revision</h2>
           <div style={{fontSize:11,color:C.muted,marginTop:2}}>Curated high-yield facts · Zero API cost</div>
         </div>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← {backLabel}</button>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← {backLabel}</button>
+          {onHome&&<button onClick={onHome} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13,opacity:0.55}}>· Home</button>}
+        </div>
       </div>
 
       {/* Tab switcher */}
@@ -5599,9 +5602,13 @@ function CFAMock(){
   };
   useEffect(()=>{
     if(screen!=="results"){
-      sessionCommittedRef.current=false;
-      setAiDebrief(null);
-      setConfidenceLog({});
+      // Don't reset when just peeking at revision/studyPath and coming back — only reset
+      // when actually leaving results for a new context (home, quiz, setup, etc.)
+      if(screen!=="revision"&&screen!=="studyPath"){
+        sessionCommittedRef.current=false;
+        setAiDebrief(null);
+        setConfidenceLog({});
+      }
       return;
     }
     if(sessionCommittedRef.current) return; // already committed for this session
@@ -13589,7 +13596,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ════════════════════════════════════════
   // SCREEN: revision
   // ════════════════════════════════════════
-  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen(revisionFromScreen);setRevisionConcept(null);setRevisionFromScreen("home");}} backLabel={revisionFromScreen==="results"?"Results":"Home"} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel} isPro={proStatus} topicLessons={topicLessons} setTopicLessons={setTopicLessons} onUpgrade={(cfg)=>setUpgradeModal(cfg)} topicReadiness={moduleReadiness} onStartQuiz={(topic)=>{setScreen("home");const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});setTimeout(()=>generateQuestions(topic,mods[0]||topic,"Medium",10,"guided"),100);}}/>;
+  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen(revisionFromScreen);setRevisionConcept(null);setRevisionFromScreen("home");}} backLabel={revisionFromScreen==="results"?"Results":"Home"} onHome={revisionFromScreen==="results"?()=>{setScreen("home");setRevisionConcept(null);setRevisionFromScreen("home");}:null} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel} isPro={proStatus} topicLessons={topicLessons} setTopicLessons={setTopicLessons} onUpgrade={(cfg)=>setUpgradeModal(cfg)} topicReadiness={moduleReadiness} onStartQuiz={(topic)=>{setScreen("home");const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});setTimeout(()=>generateQuestions(topic,mods[0]||topic,"Medium",10,"guided"),100);}}/>;
 
   // ══ STUDY PATH SCREEN ════════════════════════════════════════════════════════
   // ════════════════════════════════════════
