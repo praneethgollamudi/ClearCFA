@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version rotation cleanup (latest)**: Removed versions 2026-07-17, 2026-07-17-b, and 2026-07-17-c from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-17-d, 2026-07-17-e, and 2026-07-17-f. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
+**Question premise contradiction validation (b5f4adf)**: Added validation to reject 'prefer X' questions where the explanation concludes Y is preferred instead. When generating preference-based questions, ensure the correct answer and explanation are logically consistent to prevent contradictory question content.
+
+
 **Send-push auth dual email support (6966246)**: Auth endpoint now accepts both admin emails for send-push authentication and surfaces `data.error` for error handling. When implementing admin endpoints, ensure flexible email validation and proper error response structure.
 
 
@@ -1570,7 +1576,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1804700000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1804800000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
