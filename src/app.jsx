@@ -4997,6 +4997,8 @@ function CFAMock(){
   const [sgJoinCode,setSgJoinCode]=useState("");
   const [sgCreateName,setSgCreateName]=useState("");
   const [sgLoading,setSgLoading]=useState(false);
+  const [nextActionText,setNextActionText]=useState("");
+  const [nextActionLoading,setNextActionLoading]=useState(false);
   const [sgError,setSgError]=useState("");
   const [notifEnabled,setNotifEnabled]=useState(()=>{try{return localStorage.getItem("cfa_notif_v1")==="1";}catch{return false;}});
   const [pushSubbed,setPushSubbed]=useState(()=>{try{return localStorage.getItem(PUSH_SUB_KEY)==="1";}catch{return false;}});
@@ -5493,6 +5495,7 @@ function CFAMock(){
   const multiModulesRef=useRef(null);
   useEffect(()=>{window.scrollTo(0,0);document.body.scrollTop=0;document.documentElement.scrollTop=0;const t=setTimeout(()=>{window.scrollTo(0,0);document.body.scrollTop=0;document.documentElement.scrollTop=0;window.scrollTo({top:0,left:0,behavior:'instant'});},100);return()=>clearTimeout(t);},[currentQ]);
   useEffect(()=>{questionsRef.current=questions;},[questions]);
+  useEffect(()=>{setNextActionText("");setNextActionLoading(false);},[questions]);
   useEffect(()=>{answersRef.current=answers;},[answers]);
   useEffect(()=>{flaggedQRef.current=flaggedQ;},[flaggedQ]);
   useEffect(()=>{srDeckRef.current=srDeck;},[srDeck]);
@@ -11706,6 +11709,42 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setRevisionFromScreen("results");setScreen("revision");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise {topic?.split(" ")[0]}</button>
       </div>
 
+      {/* AI Next Action Diagnosis */}
+      {!fullExamMode&&wrongs.length>0&&authUser?.id&&(
+        <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px 18px",marginBottom:14}}>
+          {!nextActionText&&!nextActionLoading&&(
+            <button onClick={async()=>{
+              setNextActionLoading(true);
+              try{
+                const wrongSummary=wrongs.slice(0,5).map(q=>q.concept||q.los_tested||q.question.slice(0,60)).join("; ");
+                const prompt=`CFA L${cfaLevel} coach. Student just scored ${sessionPct}% on ${subtopic||topic}.\nWrong answers: ${wrongSummary}\nIn exactly 2 sentences: (1) name the specific concept gap, (2) one drill action to fix it. Be direct.`;
+                const txt=await callAIChat([{role:"user",content:prompt}],authUser?.id,proStatus);
+                setNextActionText(txt||"");
+              }catch(e){
+                if(e.quotaExceeded)setUpgradeModal({reason:"chat_limit"});
+                else setNextActionText("Unable to diagnose right now. Try again after your next session.");
+              }finally{setNextActionLoading(false);}
+            }} style={{width:"100%",padding:"11px",borderRadius:10,fontSize:13,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              🤖 Diagnose my gaps →
+            </button>
+          )}
+          {nextActionLoading&&(
+            <div style={{display:"flex",alignItems:"center",gap:10,color:C.muted,fontSize:13}}>
+              <div style={{width:16,height:16,border:`2px solid ${C.accent}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+              Analysing your mistakes…
+            </div>
+          )}
+          {nextActionText&&!nextActionLoading&&(
+            <div>
+              <div style={{fontSize:12,fontWeight:700,color:C.accentLight,marginBottom:8,letterSpacing:"0.03em"}}>🤖 AI DIAGNOSIS</div>
+              <div style={{fontSize:13,color:C.text,lineHeight:1.65,marginBottom:12}}>{nextActionText}</div>
+              <button onClick={()=>generateQuestions(topic,subtopic,difficulty,Math.min(8,wrongs.length+3),"guided")} style={{width:"100%",padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>
+                🔁 Drill it now →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* #4 — Post-session upgrade nudge for free users who scored ≥70% */}
       {!proStatus&&sessionPct>=70&&(
