@@ -6413,7 +6413,10 @@ Return ONLY a JSON array — no prose, no markdown fences:
       }
     }
 
-    const estimatedMs=Math.max(8000,cnt*1200);
+    // Over-generation buffer: ask AI for more questions than needed so quality filters
+    // still leave cnt survivors. 50% buffer for short sessions, 30% for long (mocks).
+    const requestCount=isVignette?cnt:cnt+Math.ceil(cnt*(cnt>=15?0.3:0.5));
+    const estimatedMs=Math.max(8000,requestCount*1200);
     const msgs=isVignette
       ?["Writing scenario...","Building item set...","Engineering distractors...","Almost ready..."]
       :["Reading LOS statements...","Anchoring to 2026 curriculum...","Engineering distractors...","Checking for duplicates...","Almost ready..."];
@@ -6473,8 +6476,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
-        // Request 50% more than needed so quality-filter culls leave us with cnt survivors
-        const requestCount=cnt+Math.ceil(cnt*0.5);
         const baseMax=requestCount*450;
         const tightMax=multiModules?.length>1?Math.round(baseMax*1.6):baseMax;
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
