@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Difficulty escalation threshold lowered to 70% (65146b3)**: Changed difficulty escalation threshold from 80% to 70% to align with CFA pass mark. Questions now escalate to harder difficulty when users score 70%+ on a topic, better matching actual exam readiness. When tuning question difficulty progression, reference this pass-mark-aligned threshold rather than arbitrary escalation points.
+
+
+**What's New version 2026-07-17-e (cf1e203)**: New slide set announcing Smarter AI Debrief Analysis (knowledge gaps, pass impact estimates, spaced-repetition flashcards, root cause analysis) and Formula Generation tools (manual AI formula generator for custom topic-specific formulas). Versions 2026-07-14-b, 2026-07-17, and 2026-07-17-b have been removed from rotation. Currently active versions are 2026-07-17-c, 2026-07-17-d, and 2026-07-17-e.
+
+
 **Redundant AI Diagnosis removal (cf1e203)**: Removed duplicate AI Diagnosis section from results screen that was superseded by the AI debrief flow. When designing results screen components, ensure new debrief features don't duplicate diagnosis or analysis sections that already exist elsewhere in the flow.
 
 
@@ -1531,7 +1537,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1804000000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1804100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
