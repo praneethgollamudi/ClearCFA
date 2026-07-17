@@ -2618,7 +2618,7 @@ function LessonSection({title, items, color}){
   );
 }
 
-function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1", isPro=false, onStartQuiz=null, topicLessons={}, setTopicLessons=()=>{}, onUpgrade=null, topicReadiness=[]}){
+function RevisionScreen({onBack, backLabel="Home", initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1", isPro=false, onStartQuiz=null, topicLessons={}, setTopicLessons=()=>{}, onUpgrade=null, topicReadiness=[]}){
   const activePowerNotes=getActivePowerNotes(cfaLevel);
   const activeFormulas=getActiveFormulas(cfaLevel);
   const activeLOSR=getActiveLOS(cfaLevel);
@@ -2923,7 +2923,7 @@ function RevisionScreen({onBack, initialTopic=null, initialTab="notes", userId="
           <h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📚 Quick Revision</h2>
           <div style={{fontSize:11,color:C.muted,marginTop:2}}>Curated high-yield facts · Zero API cost</div>
         </div>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← {backLabel}</button>
       </div>
 
       {/* Tab switcher */}
@@ -4021,7 +4021,7 @@ function StudyPathScreen({onBack, onLearn, onPractice, srDeck={}, cfaLevel="1", 
           <h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📚 Study Path</h2>
           <div style={{fontSize:11,color:C.muted,marginTop:2}}>Topics sorted by exam weight</div>
         </div>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← {backLabel}</button>
       </div>
       {nextTopic&&(
         <div style={{background:`linear-gradient(135deg,${C.accent}22,${C.accentLight}11)`,borderRadius:12,padding:"14px 16px",marginBottom:16,border:`1px solid ${C.accent}44`}}>
@@ -4957,6 +4957,7 @@ function CFAMock(){
   const [nextActionLoading,setNextActionLoading]=useState(false);
   const [gapHistory,setGapHistory]=useState(()=>{try{return JSON.parse(localStorage.getItem(GAP_HISTORY_KEY)||"[]");}catch{return [];}});
   const [srAdded,setSrAdded]=useState(false);
+  const [revisionFromScreen,setRevisionFromScreen]=useState("home");
   const [duelChallenge,setDuelChallenge]=useState(null);
   const [duelCreating,setDuelCreating]=useState(false);
   const [duelTopicPicking,setDuelTopicPicking]=useState(false);
@@ -11633,7 +11634,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       )}
       <div style={{display:"flex",gap:9,marginBottom:16}}>
         <button onClick={()=>{setScreen("home");setFocusSuggestions(null);}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:600,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>Home</button>
-        <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setScreen("revision");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise {topic?.split(" ")[0]}</button>
+        <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setRevisionFromScreen("results");setScreen("revision");}} style={{flex:1,padding:"10px",borderRadius:10,fontSize:13,fontWeight:700,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>📚 Revise {topic?.split(" ")[0]}</button>
       </div>
 
       {/* AI Diagnosis — "What should I do next?" */}
@@ -11865,11 +11866,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 {/* Step 1 — Revise */}
                 <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Step 1 — Review the concept</div>
                 <div style={{display:"flex",gap:8,marginBottom:10}}>
-                  <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setScreen("revision");}}
+                  <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setRevisionFromScreen("results");setScreen("revision");}}
                     style={{flex:1,padding:"9px 8px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                     📚 Notes →
                   </button>
-                  <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("formulas");setScreen("revision");}}
+                  <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("formulas");setRevisionFromScreen("results");setScreen("revision");}}
                     style={{flex:1,padding:"9px 8px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surface,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                     📐 Formulas →
                   </button>
@@ -11909,7 +11910,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     </button>
                   ))}
                 </div>
-                <button onClick={()=>{setRevisionTopic(q._topic||topic);setRevisionTab("notes");setRevisionConcept(q.concept||q.los_tested||null);setScreen("revision");}}
+                <button onClick={()=>{setRevisionTopic(q._topic||topic);setRevisionTab("notes");setRevisionConcept(q.concept||q.los_tested||null);setRevisionFromScreen("results");setScreen("revision");}}
                   style={{marginTop:10,fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:7,background:C.accent+"18",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer"}}>
                   📚 Review in Power Notes →
                 </button>
@@ -13613,7 +13614,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ════════════════════════════════════════
   // SCREEN: revision
   // ════════════════════════════════════════
-  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen("home");setRevisionConcept(null);}} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel} isPro={proStatus} topicLessons={topicLessons} setTopicLessons={setTopicLessons} onUpgrade={(cfg)=>setUpgradeModal(cfg)} topicReadiness={moduleReadiness} onStartQuiz={(topic)=>{setScreen("home");const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});setTimeout(()=>generateQuestions(topic,mods[0]||topic,"Medium",10,"guided"),100);}}/>;
+  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen(revisionFromScreen);setRevisionConcept(null);setRevisionFromScreen("home");}} backLabel={revisionFromScreen==="results"?"Results":"Home"} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel} isPro={proStatus} topicLessons={topicLessons} setTopicLessons={setTopicLessons} onUpgrade={(cfg)=>setUpgradeModal(cfg)} topicReadiness={moduleReadiness} onStartQuiz={(topic)=>{setScreen("home");const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});setTimeout(()=>generateQuestions(topic,mods[0]||topic,"Medium",10,"guided"),100);}}/>;
 
   // ══ STUDY PATH SCREEN ════════════════════════════════════════════════════════
   // ════════════════════════════════════════
