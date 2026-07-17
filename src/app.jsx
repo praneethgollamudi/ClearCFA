@@ -304,11 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-c
-{version:"2026-07-17-c",slides:[
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Track Accuracy by Topic & Difficulty",sub:"Study Tools · 2026-07-17 update",desc:"New pacing indicator and topic×difficulty accuracy matrix show exactly where you're strongest and weakest across the curriculum. Pinpoint knowledge gaps faster so you can focus study time on what matters most.",tip:"Check your accuracy matrix after each quiz session to identify which topic-difficulty combos need more practice."},
-{emoji:"✅",color:C.reward,bg:C.reward,title:"Better Question Quality & Clarity",sub:"AI · 2026-07-17 update",desc:"Fixed contradictions in question premises and refined difficulty calibration across all three CFA levels. You'll now see more consistent, higher-quality questions that accurately test your knowledge without confusing wording.",tip:"You may notice fewer trick questions—this means the exam simulation is now more faithful to actual CFA exams."},
-]},
 // WN_VER:2026-07-17-d
 {version:"2026-07-17-d",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"See Your Accuracy by Topic",sub:"Study Tools · 2026-07-17 update",desc:"New pacing indicator and topic×difficulty accuracy matrix show exactly where you're strong and weak across the CFA curriculum. Instantly identify which concepts need more focus before exam day.",tip:"Check your accuracy matrix after each study session to prioritize weak areas in your next quiz."},
@@ -331,6 +326,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster, More Reliable Quiz Sessions",sub:"Speed · 2026-07-17 update",desc:"We've eliminated duplicate questions, fixed session timeouts, and improved question generation so your practice quizzes start instantly without delays. You now get exactly the session size you requested, every time.",tip:"Start a quiz and watch—no more waiting or partial sessions."},
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smart Next-Step Guidance After Each Quiz",sub:"AI · 2026-07-17 update",desc:"After you finish a quiz, our AI now diagnoses your performance and recommends exactly what to study next—whether that's reviewing a specific topic, drilling harder questions, or moving forward. No more guessing what to do after each session.",tip:"Check your results screen for personalized study recommendations tailored to your gaps."},
 {emoji:"⏱️",color:C.medium,bg:C.medium,title:"Accurate Progress Indicators",sub:"UX · 2026-07-17 update",desc:"The loading bar now reflects actual AI generation time, so you always know how long a quiz will take to build. No more misleading progress meters.",tip:"Watch the loading bar accurately track your quiz generation from start to finish."},
+]},
+// WN_VER:2026-07-17-b
+{version:"2026-07-17-b",slides:[
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Quiz Generation",sub:"Speed · 2026-07-17 update",desc:"We've optimized question generation to be significantly quicker, with smarter loading indicators that match real generation time. Your study sessions now start faster so you can spend more time practicing.",tip:"Watch the calibrated loading bar—it now accurately reflects how long your custom quiz will take to generate."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Instant Next-Step Guidance",sub:"AI · 2026-07-17 update",desc:"After you complete a quiz, ClearCFA now diagnoses exactly what to focus on next based on your performance. Get personalized recommendations instead of guessing where to improve.",tip:"Check your results screen after your next quiz to see your AI-powered study roadmap."},
 ]},
 // WN_END
 ];
