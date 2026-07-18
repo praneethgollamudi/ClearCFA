@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-f
-{version:"2026-07-18-f",slides:[
-{emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Vibrant New Color Theme",sub:"UX · 2026-07-18 update",desc:"We've redesigned ClearCFA with a energizing midnight navy base and brighter, vibrant accents to reduce eye strain during long study sessions. The new palette makes key concepts and progress indicators pop, so you stay focused and motivated.",tip:"Notice how the green highlights now stand out instantly when marking questions correct—it's your visual reward for mastery."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother App Launch & Loading",sub:"Speed · 2026-07-18 update",desc:"We fixed the loading screen to show accurate, event-driven progress steps and softened retry logic so app startup feels faster and more reliable. No more stalled spinners or confusing status labels—you get to your study materials quicker.",tip:"Watch for clear step labels (\"Initializing,\" \"Syncing,\" etc.) that now accurately reflect what's actually happening behind the scenes."},
-{emoji:"🎯",color:C.reward,bg:C.reward,title:"Quiz Layout & Navigation Fixed",sub:"Bug Fix · 2026-07-18 update",desc:"We resolved three critical issues: demo quiz layout now displays correctly, eliminated awkward empty space at the bottom of screens, and made the \"Try CFA Prep\" call-to-action prominent and easy to find. Your study experience is now cleaner and more intuitive.",tip:"Start a demo quiz to see the improved layout—questions and answers are now perfectly aligned without distracting gaps."},
-]},
 // WN_VER:2026-07-18
 {version:"2026-07-18",slides:[
 {emoji:"🎯",color:C.hard,bg:C.hard,title:"Official Exam Style Questions",sub:"Study Tools · 2026-07-18 update",desc:"Practice with 7 new question formats that match the exact style and difficulty of official CFA mock exams. You'll build familiarity with real exam patterns before test day.",tip:"Start a mock exam session to see the new official-style questions in action."},
@@ -337,6 +331,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smart Study Plans from Mock Exams",sub:"Study Tools · 2026-07-18 update",desc:"Upload a mock exam PDF and ClearCFA now generates a phased study plan tailored to your performance gaps. Skip guesswork and focus your prep exactly where you need it most.",tip:"After taking a practice exam, tap 'Analyze Mock' to instantly unlock a personalized roadmap."},
 {emoji:"🛠️",color:C.hard,bg:C.hard,title:"Better Error Messages on PDF Upload",sub:"Bug Fix · 2026-07-18 update",desc:"PDF analysis now shows you exactly what went wrong instead of silently failing. Clear feedback means faster troubleshooting and fewer frustrated uploads.",tip:"If a PDF upload doesn't work, read the error message—it will tell you the specific issue to fix."},
 {emoji:"✅",color:C.easy,bg:C.easy,title:"Clearer Navigation & Study Plan Labels",sub:"UX · 2026-07-18 update",desc:"Study Path now loads reliably, and we've renamed 'Week Plan' to 'Exam Plan' for clarity. Finding your study roadmap is now faster and less confusing.",tip:"Open the More menu and look for 'Exam Plan'—this is your main study blueprint for exam day."},
+]},
+// WN_VER:2026-07-18-e
+{version:"2026-07-18-e",slides:[
+{emoji:"📚",color:C.reward,bg:C.reward,title:"Smart Study Plans from PDFs",sub:"Study Tools · 2026-07-18 update",desc:"Upload mock exam PDFs and ClearCFA automatically generates a phased study plan tailored to your performance. This replaces manual topic selection and helps you focus on weak areas first.",tip:"Try uploading a practice exam PDF in the Study section to see your personalized exam plan."},
+{emoji:"🛠️",color:C.medium,bg:C.medium,title:"Better Error Messages for PDFs",sub:"Bug Fix · 2026-07-18 update",desc:"PDF upload failures now show you the real error instead of silently failing. You'll know exactly what went wrong so you can fix it and try again.",tip:"If a PDF upload doesn't work, check the error message that now appears on screen."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Study Path & Menu Improvements",sub:"UX · 2026-07-18 update",desc:"Fixed the Study Path blank screen issue and renamed 'Week Plan' to 'Exam Plan' for clarity. Your prep flow is now more stable and easier to navigate.",tip:"Head to the More menu to find 'Exam Plan' and build your next study roadmap."},
 ]},
 // WN_END
 ];
@@ -402,6 +402,7 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
+"Fix edge function auth: add --no-verify-jwt to deploy command",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
