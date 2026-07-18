@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-e
-{version:"2026-07-18-e",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Exam & Quiz Loading",sub:"Speed · 2026-07-18 update",desc:"We've parallelized performance bottlenecks across full exams, session saves, and app startup. Your practice sessions now launch and save noticeably faster, keeping momentum while you study.",tip:"Notice how full exams and demo quizzes load instantly—no more waiting between sections."},
-{emoji:"🎨",color:C.accentLight,bg:C.reward,title:"Vibrant New Color Theme",sub:"UX · 2026-07-18 update",desc:"We've redesigned ClearCFA with a midnight navy base and brighter, more vibrant accents including energized greens. The interface is now easier on the eyes and more motivating during long study sessions.",tip:"Open the app in light mode to see the crisp skeleton loaders and refined visual hierarchy."},
-{emoji:"✨",color:C.hard,bg:C.hard,title:"Cleaner Demo Quiz & Sign-Up",sub:"UX · 2026-07-18 update",desc:"We fixed three critical layout issues: demo quiz now displays properly, removed distracting empty space, and made the 'Try CFA Prep' call-to-action impossible to miss. Getting started is now seamless.",tip:"Try the demo quiz right now—you'll immediately see the improved layout and clearer next steps."},
-]},
 // WN_VER:2026-07-18-f
 {version:"2026-07-18-f",slides:[
 {emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Vibrant New Color Theme",sub:"UX · 2026-07-18 update",desc:"We've redesigned ClearCFA with a energizing midnight navy base and brighter, vibrant accents to reduce eye strain during long study sessions. The new palette makes key concepts and progress indicators pop, so you stay focused and motivated.",tip:"Notice how the green highlights now stand out instantly when marking questions correct—it's your visual reward for mastery."},
@@ -338,6 +332,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎓",color:C.medium,bg:C.medium,title:"Official Exam Style Questions & Coaching",sub:"Study Tools · 2026-07-18 update",desc:"New Official Exam Style questions match the exact format and difficulty of real CFA exams, plus post-mock error diagnosis and coaching help you understand what went wrong. You'll prepare with confidence, not guesses.",tip:"Check the new 'Official Exam Style' filter in your quiz settings to practice questions that look and feel like test day."},
 {emoji:"🔧",color:C.easy,bg:C.easy,title:"Fixed Study Path & Menu Labels",sub:"Bug Fix · 2026-07-18 update",desc:"Resolved Study Path blank screen issue and renamed 'Week Plan' to 'Exam Plan' throughout the app for clarity. Navigation is now smooth and labels match what you're actually doing.",tip:"Open your Exam Plan from the More menu to start a focused countdown to test day."},
 ]},
+// WN_VER:2026-07-18-d
+{version:"2026-07-18-d",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smart Study Plans from Mock Exams",sub:"Study Tools · 2026-07-18 update",desc:"Upload a mock exam PDF and ClearCFA now generates a phased study plan tailored to your performance gaps. Skip guesswork and focus your prep exactly where you need it most.",tip:"After taking a practice exam, tap 'Analyze Mock' to instantly unlock a personalized roadmap."},
+{emoji:"🛠️",color:C.hard,bg:C.hard,title:"Better Error Messages on PDF Upload",sub:"Bug Fix · 2026-07-18 update",desc:"PDF analysis now shows you exactly what went wrong instead of silently failing. Clear feedback means faster troubleshooting and fewer frustrated uploads.",tip:"If a PDF upload doesn't work, read the error message—it will tell you the specific issue to fix."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Clearer Navigation & Study Plan Labels",sub:"UX · 2026-07-18 update",desc:"Study Path now loads reliably, and we've renamed 'Week Plan' to 'Exam Plan' for clarity. Finding your study roadmap is now faster and less confusing.",tip:"Open the More menu and look for 'Exam Plan'—this is your main study blueprint for exam day."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -346,8 +346,8 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-17
-{date:"2026-07-17",entries:[
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
