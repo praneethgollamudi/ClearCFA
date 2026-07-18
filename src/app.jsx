@@ -4061,7 +4061,7 @@ function StudyPathScreen({onBack, onLearn, onPractice, srDeck={}, cfaLevel="1", 
           <h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📚 Study Path</h2>
           <div style={{fontSize:11,color:C.muted,marginTop:2}}>Topics sorted by exam weight</div>
         </div>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← {backLabel}</button>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
       </div>
       {nextTopic&&(
         <div style={{background:`linear-gradient(135deg,${C.accent}22,${C.accentLight}11)`,borderRadius:12,padding:"14px 16px",marginBottom:16,border:`1px solid ${C.accent}44`}}>
@@ -7257,7 +7257,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       {key:"ethics",label:"Ethics",icon:"⚖️",action:()=>{trackUsage("ethics");const cases=getEthicsCases("all",10);if(cases.length){setTopic("Ethics");setSubtopic("Ethics Case Studies");setDifficulty("Medium");setCount(cases.length);setMode("guided");setQuestions(cases);setAnswers({});setCurrentQ(0);setShowExp(false);setLastSession(null);setFullExamMode(false);setVignetteMode(false);setScreen("quiz");}}},
       {key:"revise",label:"Notes",icon:"📝",action:()=>{trackUsage("revise");setRevisionTopic(null);setRevisionTab("notes");setScreen("revision");}},
       {key:"formulas",label:"Formulas",icon:"🔢",action:()=>{trackUsage("formulas");setFormulaDrillMode(true);setFormulaDrillIdx(0);setFormulaFlipped(false);setRevisionTopic(null);setRevisionTab("formulas");setScreen("revision");}},
-      {key:"week_plan",label:"Week Plan",icon:"🗓",proTag:true,action:()=>{trackUsage("week_plan");if(!proStatus){setUpgradeModal({reason:"plan"});return;}setWeeklyPlanScreen(true);}},
+      {key:"week_plan",label:"Exam Plan",icon:"📅",action:()=>{trackUsage("week_plan");setScreen("studyPlan");}},
       {key:"calc_trainer",label:"Calc Trainer",icon:"🧮",action:()=>{trackUsage("calc_trainer");setCalcProblem(null);setCalcSteps([]);setCalcInputs({});setCalcChecked({});setCalcError("");setScreen("calcTrainer");}},
       {key:"los_coverage",label:"LOS Map",icon:"🗺",action:()=>{trackUsage("los_coverage");setScreen("losCoverage");}},
       {key:"mastery_grid",label:"Mastery",icon:"🏆",action:()=>{trackUsage("mastery_grid");setScreen("masteryGrid");}},
