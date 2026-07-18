@@ -304,11 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-b
-{version:"2026-07-17-b",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Quiz Generation",sub:"Speed · 2026-07-17 update",desc:"We've optimized question generation to be significantly quicker, with smarter loading indicators that match real generation time. Your study sessions now start faster so you can spend more time practicing.",tip:"Watch the calibrated loading bar—it now accurately reflects how long your custom quiz will take to generate."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Instant Next-Step Guidance",sub:"AI · 2026-07-17 update",desc:"After you complete a quiz, ClearCFA now diagnoses exactly what to focus on next based on your performance. Get personalized recommendations instead of guessing where to improve.",tip:"Check your results screen after your next quiz to see your AI-powered study roadmap."},
-]},
 // WN_VER:2026-07-18
 {version:"2026-07-18",slides:[
 {emoji:"⚡",color:C.reward,bg:C.reward,title:"3x Faster Mock Generation",sub:"Speed · 2026-07-18 update",desc:"Mock exams now generate in a fraction of the time thanks to parallel question creation. You'll spend less time waiting and more time studying.",tip:"Start a full mock session and watch the loading bar accurately reflect real generation speed."},
@@ -332,6 +327,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We parallelized question generation and exam startup, cutting load times by two-thirds. Now you can generate full practice exams and jump into studying without waiting.",tip:"Launch a full mock exam now—notice how quickly questions populate compared to before."},
 {emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Sharper, More Energetic Design",sub:"UX · 2026-07-18 update",desc:"We redesigned the color theme with a deeper midnight navy base and vibrant accent greens for better focus and visual hierarchy. The new palette reduces eye strain during long study sessions.",tip:"Open a quiz and notice the cleaner contrast—greens now pop to highlight key study elements."},
 {emoji:"🛠️",color:C.medium,bg:C.medium,title:"Quiz Layout & CTAs Fixed",sub:"Bug Fix · 2026-07-18 update",desc:"We resolved three critical issues: demo quiz layout now renders correctly, empty space at quiz bottom is gone, and the 'Try Now' button is easy to find. Your study flow is now seamless.",tip:"Start a demo quiz—the layout should feel polished and the Try CTA should be obvious."},
+]},
+// WN_VER:2026-07-18-e
+{version:"2026-07-18-e",slides:[
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Exam & Quiz Loading",sub:"Speed · 2026-07-18 update",desc:"We've parallelized performance bottlenecks across full exams, session saves, and app startup. Your practice sessions now launch and save noticeably faster, keeping momentum while you study.",tip:"Notice how full exams and demo quizzes load instantly—no more waiting between sections."},
+{emoji:"🎨",color:C.accentLight,bg:C.reward,title:"Vibrant New Color Theme",sub:"UX · 2026-07-18 update",desc:"We've redesigned ClearCFA with a midnight navy base and brighter, more vibrant accents including energized greens. The interface is now easier on the eyes and more motivating during long study sessions.",tip:"Open the app in light mode to see the crisp skeleton loaders and refined visual hierarchy."},
+{emoji:"✨",color:C.hard,bg:C.hard,title:"Cleaner Demo Quiz & Sign-Up",sub:"UX · 2026-07-18 update",desc:"We fixed three critical layout issues: demo quiz now displays properly, removed distracting empty space, and made the 'Try CFA Prep' call-to-action impossible to miss. Getting started is now seamless.",tip:"Try the demo quiz right now—you'll immediately see the improved layout and clearer next steps."},
 ]},
 // WN_END
 ];
@@ -377,8 +378,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-17
-{date:"2026-07-17",entries:[
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
