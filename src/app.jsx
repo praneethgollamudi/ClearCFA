@@ -13860,22 +13860,23 @@ Return ONLY a JSON array — no prose, no markdown fences:
           const trend=allProbs.length>1?last-first:null;
           // Keyword map: CFA broad topic → strings to search for in exam plan text
           const TOPIC_KWORDS={
-            "Ethics":["standard","gips","professional","conduct","cfa institute","referral","loyalty","suitability","misrepresent","disclosure","independence","objectivity"],
-            "Quantitative Methods":["quant","statistic","regression","probabili","hypothesis","linear","time series","correlation","variance","z-score","t-test"],
-            "Economics":["econom","gdp","monetary","fiscal","currency","inflation","exchange rate","supply","demand","aggregate"],
-            "Financial Statement Analysis":["financial statement","fsa","accounting","balance sheet","income statement","cash flow","ratio","inventory","depreciation","goodwill"],
-            "Corporate Issuers":["corporate","capital structure","leverage","dividend polic","wacc","capital budget","merger","acquisition"],
-            "Equity":["equity","stock","p/e","earnings","valuation","dividend discount","dcf","residual income","price-to"],
-            "Fixed Income":["fixed income","bond","duration","yield","credit spread","coupon","maturity","convexity","sovereign"],
-            "Derivatives":["derivative","option","future","forward","swap","hedge","put","call","underlying"],
-            "Alternatives":["alternative","private equity","hedge fund","real estate","infrastructure","commodity","venture"],
-            "Portfolio Management":["portfolio","asset allocation","risk management","sharpe","diversif","investment policy","ips","mpt","capital market"],
+            "Ethics":["ethics","standard","gips","professional","conduct","cfa institute","referral","loyalty","suitability","misrepresent","disclosure","independence","objectivity","fiduciary","material nonpublic","front-run","soft dollar","compensation","conflict of interest","research objectivity","supervisor","prudent","fair dealing","diligence"],
+            "Quantitative Methods":["quantitative","quant","statistic","regression","probabili","hypothesis","linear","time series","correlation","variance","z-score","t-test","tvm","time value","npv","irr","sampling","confidence interval","normal distribution","bayes","monte carlo","technical analysis","mean","median","standard deviation","p-value","chi-square","autocorrelation","heteroskedasticity"],
+            "Economics":["economics","econom","gdp","monetary","fiscal","currency","inflation","exchange rate","supply","demand","aggregate","macro","micro","business cycle","multiplier","central bank","interest rate policy","purchasing power","current account","capital account","comparative advantage","market structure","oligopol","monopol","elasticity","labor market","output gap","phillips curve"],
+            "Financial Statement Analysis":["financial statement","financial reporting","fsa","accounting","balance sheet","income statement","cash flow","ratio","inventory","depreciation","goodwill","ifrs","gaap","revenue recognition","pension","lease","deferred tax","intangible","impairment","receivable","accrual","ebitda","operating profit","gross margin","working capital","off-balance","segment","intercorporate","minority interest","consolidat"],
+            "Corporate Issuers":["corporate issuer","corporate finance","capital structure","leverage","dividend polic","wacc","capital budget","merger","acquisition","buyback","repurchase","esg","governance","stakeholder","agency","payout","cost of capital","optimal capital","business risk","operating leverage","financial leverage","m&a","takeover","private placement","restructur"],
+            "Equity":["equity","stock","share","p/e","price-to-earnings","earnings","valuation","dividend discount","dcf","ddm","residual income","price-to-book","ev/ebitda","relative value","roe","fundamental","gordon growth","free cash flow","eps","pe ratio","peg","comparable","industry analysis","competitive advantage","porter","market share","return on equity","intrinsic value","growth stock","value stock"],
+            "Fixed Income":["fixed income","bond","duration","yield","credit spread","coupon","maturity","convexity","sovereign","term structure","ytm","par value","callable","floating rate","credit risk","default risk","spread","securit","mortgage","cdo","clo","asset-backed","yield curve","immunization","active fixed","passive fixed","duration matching","liability-driven","credit analysis","high yield","investment grade","rating"],
+            "Derivatives":["derivative","option","future","forward","swap","hedge","put","call","underlying","binomial","black-scholes","delta","gamma","theta","vega","interest rate swap","credit default","cds","collar","covered call","protective put","straddle","strangle","arbitrage","no-arbitrage","replication","synthetic"],
+            "Alternatives":["alternative","private equity","hedge fund","real estate","infrastructure","commodity","venture capital","real asset","direct lending","art","collectible","timberland","farmland","reit","fund of funds","pe fund","buyout","growth equity","distressed","event-driven","global macro","managed futures","convertible arb","relative value arb","liquid alt"],
+            "Portfolio Management":["portfolio","asset allocation","risk management","sharpe","diversif","investment policy","ips","mpt","capital market","capm","beta","alpha","benchmark","factor","rebalancing","liability","multi-asset","strategic","tactical","behavioral","mean-variance","efficient frontier","risk-return","correlation","covariance","tracking error","information ratio","active return","passive","index","target-date","glide path"],
           };
-          // All exam plan text in one string for matching
+          // All exam plan text in one string for matching (include all AI-generated fields)
           const examPlanAllText=[
             ...(examStudyPlan.weakTopics||[]),
             ...(examStudyPlan.strongTopics||[]),
-            ...(examStudyPlan.phases||[]).flatMap(p=>[p.primaryFocus,p.secondaryFocus,...(p.keyTopics||[])].filter(Boolean)),
+            ...(examStudyPlan.phases||[]).flatMap(p=>[p.title,p.primaryFocus,p.secondaryFocus,p.description,...(p.keyTopics||[]),...(p.actions||[])].filter(Boolean)),
+            ...(examStudyPlan.keyInsights||[]),
             examStudyPlan.summary||"",
           ].join(" ").toLowerCase();
           const weakTopicsText=(examStudyPlan.weakTopics||[]).join(" ").toLowerCase();
