@@ -2629,7 +2629,7 @@ function LessonSection({title, items, color}){
   );
 }
 
-function RevisionScreen({onBack, backLabel="Home", onHome=null, initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1", isPro=false, onStartQuiz=null, topicLessons={}, setTopicLessons=()=>{}, onUpgrade=null, topicReadiness=[]}){
+function RevisionScreen({onBack, backLabel="Home", onHome=null, initialTopic=null, initialTab="notes", userId="", srDeck={}, focusConcept=null, cfaLevel="1", isPro=false, onStartQuiz=null, topicLessons={}, setTopicLessons=()=>{}, onUpgrade=null, topicReadiness=[], mockWeakModules=[]}){
   const activePowerNotes=getActivePowerNotes(cfaLevel);
   const activeFormulas=getActiveFormulas(cfaLevel);
   const activeLOSR=getActiveLOS(cfaLevel);
@@ -2974,6 +2974,26 @@ function RevisionScreen({onBack, backLabel="Home", onHome=null, initialTopic=nul
       )}
 
       {/* ── WRONG ANSWERS FOR THIS TOPIC ── */}
+      {/* ── MOCK EXAM WEAK AREAS ── */}
+      {tab==="notes" && mockWeakModules.length>0 && (
+        <div style={{background:`${C.medium}10`,border:`1.5px solid ${C.medium}44`,borderRadius:12,padding:"12px 14px",marginBottom:14}}>
+          <div style={{fontSize:11,fontWeight:800,color:C.medium,marginBottom:8,textTransform:"uppercase",letterSpacing:"0.07em"}}>📊 Weak areas from your mock exam</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:10}}>
+            {mockWeakModules.map((m,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:7}}>
+                <span style={{fontSize:10,color:C.medium,flexShrink:0}}>⚠</span>
+                <span style={{fontSize:12,color:C.text,fontWeight:600}}>{m}</span>
+              </div>
+            ))}
+          </div>
+          {onStartQuiz&&(
+            <button onClick={()=>onStartQuiz(selTopic)} style={{width:"100%",padding:"9px 12px",borderRadius:9,fontSize:12,fontWeight:700,background:`${C.medium}18`,border:`1px solid ${C.medium}44`,color:C.medium,cursor:"pointer"}}>
+              🎯 Drill these weak areas →
+            </button>
+          )}
+        </div>
+      )}
+
       {tab==="notes" && (()=>{
         const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0)).slice(0,12);
         if(!wrongCards.length) return null;
@@ -6309,6 +6329,7 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       }
       const {plan,perfSummary}=data;
       if(!plan||!Array.isArray(plan.phases)){setPdfError("AI returned an unexpected response. Try again.");setPdfUploading(false);return;}
+      plan.daysLeftAtCreation=daysLeft;
       try{localStorage.setItem(EXAM_PLAN_KEY,JSON.stringify(plan));}catch{}
       setExamStudyPlan(plan);
       const newHistory=[...mockPerfHistory,{...perfSummary,uploadedAt:new Date().toISOString()}].slice(-10);
@@ -9430,8 +9451,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:11,color:C.muted,marginTop:2}}>Personalised to your weak spots</div>
         </div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          {weeklyPlan&&(
-            <button onClick={()=>setWeeklyPlanScreen(true)} style={{fontSize:10,fontWeight:700,padding:"4px 9px",borderRadius:7,background:C.accent+"15",border:`1px solid ${C.accent}33`,color:C.accentLight,cursor:"pointer"}}>
+          {(examStudyPlan||weeklyPlan)&&(
+            <button onClick={()=>examStudyPlan?setScreen("studyPlan"):setWeeklyPlanScreen(true)} style={{fontSize:10,fontWeight:700,padding:"4px 9px",borderRadius:7,background:C.accent+"15",border:`1px solid ${C.accent}33`,color:C.accentLight,cursor:"pointer"}}>
               Full Plan
             </button>
           )}
@@ -9441,8 +9462,61 @@ Return ONLY a JSON array — no prose, no markdown fences:
         </div>
       </div>
 
-      {/* Today's plan sessions from weekly plan */}
+      {/* Today's plan sessions — prefer exam plan, fall back to weekly plan */}
       {(()=>{
+        // ── EXAM PLAN (preferred) ──────────────────────────────────────────
+        if(examStudyPlan){
+          const phases=examStudyPlan.phases||[];
+          // Determine which phase we're currently in using daysLeftAtCreation
+          const origin=examStudyPlan.daysLeftAtCreation||phases[phases.length-1]?.endDay||60;
+          const elapsed=origin-daysLeft;
+          const currentPhase=phases.find(p=>(p.endDay||0)>=elapsed)||phases[0];
+          if(!currentPhase) return null;
+          const keyTopics=(currentPhase.keyTopics||[]).slice(0,3);
+          if(!keyTopics.length) return null;
+          const topic=currentPhase.primaryFocus||examStudyPlan.weakTopics?.[0]||"Ethics";
+          const planDrillKeys=keyTopics.map(kt=>`examplan_${kt}`);
+          const startedCount=planDrillKeys.filter(k=>todayStarted[k]).length;
+          return(
+            <div style={{marginBottom:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div>
+                  <div style={{fontSize:10,fontWeight:800,color:C.accentLight,letterSpacing:"0.07em",textTransform:"uppercase"}}>📅 From Your Exam Plan</div>
+                  <div style={{fontSize:10,color:C.muted,marginTop:1}}>{currentPhase.title}</div>
+                </div>
+                <div style={{fontSize:11,color:startedCount===keyTopics.length?C.easy:C.muted,fontWeight:startedCount===keyTopics.length?700:400}}>
+                  {startedCount===keyTopics.length?"✓ All done!":startedCount+"/"+keyTopics.length+" done"}
+                </div>
+              </div>
+              <div style={{height:3,borderRadius:2,background:C.border,marginBottom:10}}>
+                <div style={{height:"100%",borderRadius:2,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,width:`${keyTopics.length?((startedCount/keyTopics.length)*100):0}%`,transition:"width 0.5s ease"}}/>
+              </div>
+              {keyTopics.map((kt,i)=>{
+                const sKey=planDrillKeys[i];
+                const done=!!todayStarted[sKey];
+                return(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 12px",background:done?"rgba(34,197,94,0.05)":C.surfaceHigh,border:`1px solid ${done?"rgba(34,197,94,0.2)":C.border}`,borderRadius:10,marginBottom:6,transition:"all 0.2s"}}>
+                    <div style={{flex:1,marginRight:8,minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                        {done&&<span style={{fontSize:12,color:C.easy}}>✓</span>}
+                        <span style={{fontSize:12,fontWeight:700,color:done?C.muted:C.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{kt}</span>
+                        <span style={{fontSize:9,padding:"1px 6px",borderRadius:10,background:C.accent+"22",color:C.accentLight,fontWeight:700,textTransform:"uppercase",flexShrink:0}}>drill</span>
+                      </div>
+                      <div style={{fontSize:11,color:C.muted}}>{topic} · 10Q · Medium</div>
+                    </div>
+                    <button onClick={()=>{
+                      pendingPlanKeyRef.current=sKey;
+                      generateQuestions(topic,kt,"medium",10,"guided");
+                    }} style={{fontSize:11,fontWeight:700,padding:"7px 12px",borderRadius:8,background:done?C.surface:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:done?C.muted:"#fff",border:done?`1px solid ${C.border}`:"none",cursor:"pointer",flexShrink:0,transition:"all 0.2s"}}>
+                      {done?"Again →":"Start →"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+        // ── WEEKLY PLAN (fallback) ─────────────────────────────────────────
         if(!weeklyPlan) return null;
         const todayName=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date().getDay()];
         const todayPlanSessions=(weeklyPlan.days||[]).find(d=>d.day===todayName)?.sessions||[];
@@ -9478,13 +9552,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   </div>
                   <button onClick={()=>{
                     if(session.type==="sr"){
-                      // SR is local — mark done immediately
                       setTodayStarted(prev=>{const n={...prev,[sKey]:true};try{localStorage.setItem("cfa_today_started",JSON.stringify(n));}catch{}return n;});
                       const cards=dueCards.filter(c=>c.topic===session.topic);
                       const queue=cards.length?cards.slice(0,session.count):[...dueCards].slice(0,session.count);
                       if(queue.length){setSrQueue(queue);setSrIdx(0);setSrAnswer(null);setScreen("srReview");}
                     }else{
-                      // Mark done only after quiz completes successfully
                       pendingPlanKeyRef.current=sKey;
                       generateQuestions(session.topic,session.module,session.difficulty,session.count,"guided");
                     }
@@ -13754,18 +13826,38 @@ Return ONLY a JSON array — no prose, no markdown fences:
                   </div>
                   {phase.weeklyTarget&&<div style={{fontSize:11,color:C.textMid,marginBottom:6,display:"flex",alignItems:"flex-start",gap:6}}><span style={{color:col,flexShrink:0}}>📆</span>{phase.weeklyTarget}</div>}
                   {phase.milestoneGoal&&<div style={{fontSize:11,color:C.textMid,marginBottom:6,display:"flex",alignItems:"flex-start",gap:6}}><span style={{color:C.easy,flexShrink:0}}>🎯</span>{phase.milestoneGoal}</div>}
-                  {phase.keyTopics&&phase.keyTopics.length>0&&(
-                    <div style={{fontSize:10,color:C.muted,marginBottom:10}}>Focus modules: {phase.keyTopics.slice(0,3).join(" · ")}</div>
-                  )}
                   {phase.checkpointAction&&(
                     <div style={{fontSize:11,color:C.muted,padding:"8px 10px",background:C.surfaceHigh,borderRadius:8,marginBottom:10,lineHeight:1.45}}>
                       <span style={{fontWeight:700,color:C.textMid}}>Checkpoint: </span>{phase.checkpointAction}
                     </div>
                   )}
-                  {topic&&!isLast&&(
-                    <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(topic,null,"medium",10,"guided"),100);}} style={{width:"100%",padding:"9px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:`${col}18`,border:`1px solid ${col}44`,color:col,cursor:"pointer"}}>
-                      Start {topic} Drill →
-                    </button>
+                  {/* Actionable drill buttons per keyTopic */}
+                  {phase.keyTopics&&phase.keyTopics.length>0&&(
+                    <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:topic?8:0}}>
+                      <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>Practice these weak areas:</div>
+                      {phase.keyTopics.slice(0,4).map((kt,ki)=>(
+                        <button key={ki} onClick={()=>generateQuestions(topic||examStudyPlan.weakTopics?.[0]||"Ethics",kt,"medium",10,"guided")}
+                          style={{width:"100%",padding:"9px 12px",borderRadius:9,fontSize:12,fontWeight:600,background:`${col}12`,border:`1px solid ${col}33`,color:C.text,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <span>🎯 {kt}</span>
+                          <span style={{fontSize:11,color:col,fontWeight:700,flexShrink:0,marginLeft:6}}>Drill →</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {/* Study notes + full drill for primary topic */}
+                  {topic&&(
+                    <div style={{display:"flex",gap:7,marginTop:phase.keyTopics?.length?0:4}}>
+                      <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setRevisionFromScreen("studyPlan");setScreen("revision");}}
+                        style={{flex:1,padding:"9px 10px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>
+                        📖 Study Notes
+                      </button>
+                      {isLast&&(
+                        <button onClick={()=>generateQuestions(topic,null,"hard",18,"timed")}
+                          style={{flex:1,padding:"9px 10px",borderRadius:9,fontSize:12,fontWeight:700,background:`${col}18`,border:`1px solid ${col}44`,color:col,cursor:"pointer"}}>
+                          🏁 Mock Exam
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -14094,7 +14186,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // ════════════════════════════════════════
   // SCREEN: revision
   // ════════════════════════════════════════
-  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen(revisionFromScreen);setRevisionConcept(null);setRevisionFromScreen("home");}} backLabel={revisionFromScreen==="results"?"Results":"Home"} onHome={revisionFromScreen==="results"?()=>{setScreen("home");setRevisionConcept(null);setRevisionFromScreen("home");}:null} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel} isPro={proStatus} topicLessons={topicLessons} setTopicLessons={setTopicLessons} onUpgrade={(cfg)=>setUpgradeModal(cfg)} topicReadiness={moduleReadiness} onStartQuiz={(topic)=>{setScreen("home");const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});setTimeout(()=>generateQuestions(topic,mods[0]||topic,"Medium",10,"guided"),100);}}/>;
+  if(screen==="revision") return <RevisionScreen onBack={()=>{setScreen(revisionFromScreen);setRevisionConcept(null);setRevisionFromScreen("home");}} backLabel={revisionFromScreen==="results"?"Results":"Home"} onHome={revisionFromScreen==="results"?()=>{setScreen("home");setRevisionConcept(null);setRevisionFromScreen("home");}:null} initialTopic={revisionTopic} initialTab={revisionTab} userId={authUser?.id||""} srDeck={srDeck} focusConcept={revisionConcept} cfaLevel={cfaLevel} isPro={proStatus} topicLessons={topicLessons} setTopicLessons={setTopicLessons} onUpgrade={(cfg)=>setUpgradeModal(cfg)} topicReadiness={moduleReadiness} mockWeakModules={(()=>{if(!examStudyPlan||!revisionTopic)return[];const t=revisionTopic.toLowerCase();return(examStudyPlan.phases||[]).filter(p=>p.primaryFocus?.toLowerCase()===t||p.secondaryFocus?.toLowerCase()===t||(examStudyPlan.weakTopics||[]).some(w=>w.toLowerCase()===t)).flatMap(p=>p.keyTopics||[]).filter((v,i,a)=>a.indexOf(v)===i);})()}  onStartQuiz={(topic)=>{setScreen("home");const mods=Object.keys(getActiveLOS(cfaLevel)[topic]?.modules||{});setTimeout(()=>generateQuestions(topic,mods[0]||topic,"Medium",10,"guided"),100);}}/>;
 
   // ══ STUDY PATH SCREEN ════════════════════════════════════════════════════════
   // ════════════════════════════════════════
