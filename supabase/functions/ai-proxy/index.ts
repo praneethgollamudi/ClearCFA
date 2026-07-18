@@ -476,10 +476,21 @@ Generate a JSON study plan. Return ONLY valid JSON with no markdown or explanati
 
 TOPIC SCORES RULES (topicScores field):
 - Extract the ACTUAL numeric score for each CFA topic area found in the PDF
-- Use ONLY these exact keys matching official CFA topic names: "Ethics", "Quantitative Methods", "Economics", "Financial Statement Analysis", "Corporate Issuers", "Equity", "Fixed Income", "Derivatives", "Alternatives", "Portfolio Management"
+- Use ONLY these exact canonical keys in the output JSON: "Ethics", "Quantitative Methods", "Economics", "Financial Statement Analysis", "Corporate Issuers", "Equity", "Fixed Income", "Derivatives", "Alternatives", "Portfolio Management"
 - Convert fractions to percentages: 14/20 → 70, 9/15 → 60
 - Only include topics where you found an actual score in the PDF — omit topics with no score data
 - Values must be integers 0-100 (percentage scored)
+- LABEL MAPPING — mock PDFs use many different names for the same topic. Map them as follows:
+  "Ethical and Professional Standards" / "Professional Standards" / "Ethics & Professional Standards" → "Ethics"
+  "Financial Reporting and Analysis" / "FRA" / "Financial Reporting & Analysis" / "Financial Statement & Analysis" → "Financial Statement Analysis"
+  "Corporate Finance" / "Corporate Finance and Issuers" / "Corporate Finance & Issuers" / "Corporate Issuers & Governance" → "Corporate Issuers"
+  "Equity Investments" / "Equity Analysis" / "Equity Investment" → "Equity"
+  "Fixed-Income" / "Fixed Income Analysis" / "Fixed Income Investments" / "Fixed-Income Investments" → "Fixed Income"
+  "Derivatives Analysis" / "Derivative Instruments" → "Derivatives"
+  "Alternative Investments" / "Alternatives Investments" → "Alternatives"
+  "Portfolio Management and Wealth Planning" / "Portfolio Management & Wealth Planning" → "Portfolio Management"
+  "Quantitative Methods in Investment Analysis" / "Quantitative Analysis" → "Quantitative Methods"
+  "Economics and Markets" / "Economic Analysis" → "Economics"
 
 STRICT RULES:
 - Create 2-4 phases based on ${daysLeft} days available. LAST phase must always be "Final Mock & Review" (last 7-10 days: 2 full mocks + targeted fixes).
