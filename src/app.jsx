@@ -7281,7 +7281,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       </div>
       <div style={{width:"100%",maxWidth:420,marginBottom:16,display:"flex",flexDirection:"column",gap:7}}>
         {[1,2,3].map(i=>(
-          <div key={i} style={{height:50,borderRadius:9,background:`linear-gradient(90deg,${C.surface} 25%,${C.dim} 50%,${C.surface} 75%)`,backgroundSize:"200% 100%",animation:`shimmer 1.6s ease-in-out infinite`,animationDelay:`${(i-1)*0.2}s`,border:`1px solid ${C.border}`}}/>
+          <div key={i} style={{height:50,borderRadius:9,background:`linear-gradient(90deg,${C.surfaceHigh} 25%,${C.borderHigh} 50%,${C.surfaceHigh} 75%)`,backgroundSize:"400% 100%",animation:`shimmer 1.6s ease-in-out infinite`,animationDelay:`${(i-1)*0.2}s`,border:`1px solid ${C.border}`}}/>
         ))}
       </div>
       <div style={{width:"100%",maxWidth:420}}>
