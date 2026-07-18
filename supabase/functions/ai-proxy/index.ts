@@ -182,6 +182,7 @@ async function checkAndIncrementQuota(
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
 
+  try {
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
@@ -471,22 +472,34 @@ STRICT RULES:
 - Each phase must have a realistic weekly target (not more than 1-2 hr/day).
 - uploadCount must be ${uploadCount}.`;
 
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2500,
-        temperature: 0.3,
-        messages: [{ role: 'user', content: analysisPrompt }],
-      }),
-    });
-
-    if (!aiRes.ok) {
-      return jsonResponse({ error: 'AI analysis failed — try again.' }, 502);
+    let aiRes: Response;
+    try {
+      aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2500,
+          temperature: 0.3,
+          messages: [{ role: 'user', content: analysisPrompt }],
+        }),
+      });
+    } catch (fetchErr) {
+      return jsonResponse({ error: `Network error reaching AI — try again. (${(fetchErr as Error).message})` }, 502);
     }
 
-    const aiData = await aiRes.json() as { content?: Array<{ text?: string }>; usage?: { input_tokens?: number; output_tokens?: number } };
+    if (!aiRes.ok) {
+      let errDetail = '';
+      try { const e = await aiRes.json() as Record<string,unknown>; errDetail = String(e?.error ?? e?.message ?? ''); } catch { /* ignore */ }
+      return jsonResponse({ error: `AI analysis failed (${aiRes.status})${errDetail ? ': ' + errDetail : ''} — try again.` }, 502);
+    }
+
+    let aiData: { content?: Array<{ text?: string }>; usage?: { input_tokens?: number; output_tokens?: number } };
+    try {
+      aiData = await aiRes.json() as { content?: Array<{ text?: string }>; usage?: { input_tokens?: number; output_tokens?: number } };
+    } catch {
+      return jsonResponse({ error: 'AI returned an unreadable response — try again.' }, 502);
+    }
     const rawText = aiData?.content?.[0]?.text ?? '';
 
     let plan: Record<string, unknown>;
@@ -519,4 +532,8 @@ STRICT RULES:
   }
 
   return jsonResponse({ error: 'Unknown requestType.' }, 400);
+
+  } catch (topErr) {
+    return jsonResponse({ error: `Server error: ${(topErr as Error).message ?? 'unknown'}` }, 500);
+  }
 });

@@ -6303,7 +6303,7 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       const data=await res.json();
       if(!res.ok||data.error){
         if(data.quotaExceeded)setUpgradeModal({reason:"limit"});
-        else setPdfError(data.error||"Analysis failed. Please try again.");
+        else setPdfError(data.error||data.message||`Analysis failed (${res.status}). Please try again.`);
         setPdfUploading(false);return;
       }
       const {plan,perfSummary}=data;
