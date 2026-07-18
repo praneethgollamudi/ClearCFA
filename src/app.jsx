@@ -306,12 +306,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-c
-{version:"2026-07-18-c",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We've parallelized question generation across multiple processing threads, cutting mock exam load times by 3x. Start your full-length practice test in seconds instead of minutes.",tip:"Launch a full exam now—you'll notice questions appear instantly as you navigate."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Demo Quiz Now Works Smoothly",sub:"UX · 2026-07-18 update",desc:"Fixed three critical layout bugs: demo quiz display, empty space handling, and the Try button visibility. The onboarding experience is now clean and intuitive.",tip:"New users will see a polished demo quiz with no visual glitches when they first open the app."},
-{emoji:"⚙️",color:C.medium,bg:C.medium,title:"Faster App Launch & Session Loading",sub:"Speed · 2026-07-18 update",desc:"Optimized startup performance and session restore operations by parallelizing background reads. Your saved progress loads instantly so you can jump back into studying without delay.",tip:"Watch how quickly your study history and bookmarks appear when you reopen the app."},
-]},
 // WN_VER:2026-07-18-d
 {version:"2026-07-18-d",slides:[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We parallelized question generation and exam startup, cutting load times by two-thirds. Now you can generate full practice exams and jump into studying without waiting.",tip:"Launch a full mock exam now—notice how quickly questions populate compared to before."},
@@ -335,6 +329,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Mock Exam Generation",sub:"Speed · 2026-07-18 update",desc:"We've optimized weighted mock generation to run in parallel, eliminating network timeouts on mobile. Your practice exams now load reliably, even on slower connections.",tip:"Generate a full mock exam without worrying about connection drops—especially helpful on 4G."},
 {emoji:"🎨",color:C.reward,bg:C.reward,title:"Refreshed Dark Mode Colors",sub:"UX · 2026-07-18 update",desc:"We've redesigned the color theme with midnight navy accents and vibrant greens for better contrast and reduced eye strain. The new palette is easier on your eyes during long study sessions.",tip:"Open the app in dark mode to see the new energized greens and sharper text clarity."},
 {emoji:"🔄",color:C.medium,bg:C.medium,title:"Smoother Loading Screens",sub:"Bug Fix · 2026-07-18 update",desc:"Loading screens now use event-driven steps with accurate labels and smarter retry logic. You'll see exactly what's happening during startup and experience fewer stalled screens.",tip:"Watch the loading progress bar—it now reflects real operations instead of vague spinner animation."},
+]},
+// WN_VER:2026-07-18-b
+{version:"2026-07-18-b",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Master Official Mock Exams",sub:"Study Tools · 2026-07-18 update",desc:"We've added 7 new features specifically designed to help you ace CFA official mock exams. These tools integrate directly into your exam prep workflow to build confidence before test day.",tip:"Check the Mock Exam section to discover AI-powered analysis features that weren't there before."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Reliable Mock Generation on Mobile",sub:"Speed · 2026-07-18 update",desc:"We fixed network failures when generating weighted mocks on slower connections by parallelizing the process. Now your mock exams load consistently, whether you're on WiFi or cellular.",tip:"Try generating a weighted mock on your phone—it should complete without interruption even on 4G."},
+{emoji:"✨",color:C.accentLight,bg:C.accentLight,title:"Smoother Loading Experience",sub:"UX · 2026-07-18 update",desc:"Loading screens now display accurate, event-driven progress steps and soften retry behavior for better transparency. Plus, we fixed shimmer animations in light mode so they're always visible.",tip:"Watch the loading screen on your next quiz—you'll see real-time step updates instead of generic spinners."},
 ]},
 // WN_END
 ];
@@ -362,8 +362,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-17
-{date:"2026-07-17",entries:[
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
