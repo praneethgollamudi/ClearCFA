@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version rotation cleanup (04fdc66)**: Removed versions 2026-07-18 and 2026-07-18-b from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-c, 2026-07-18-d, 2026-07-18-e, and 2026-07-18-f. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
+**Exam Plan content tabs (04fdc66)**: Added Notes, Formulas, and Deep Study CTAs to Exam Plan tabs with mock-aware content rendering. When updating Exam Plan UI, ensure tab content reflects user's mock performance context and displays phase-specific study resources appropriate to current readiness level.
+
+
 **What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-f and 2026-07-18 from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-b, 2026-07-18-c, 2026-07-18-d, and 2026-07-18-e. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1718,7 +1724,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1806900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1807100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
