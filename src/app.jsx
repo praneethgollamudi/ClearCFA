@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18
-{version:"2026-07-18",slides:[
-{emoji:"⚡",color:C.reward,bg:C.reward,title:"3x Faster Mock Generation",sub:"Speed · 2026-07-18 update",desc:"Mock exams now generate in a fraction of the time thanks to parallel question creation. You'll spend less time waiting and more time studying.",tip:"Start a full mock session and watch the loading bar accurately reflect real generation speed."},
-{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Next Action Diagnosis After Every Test",sub:"AI · 2026-07-18 update",desc:"Get personalized AI-driven recommendations on your results screen showing exactly what to study next. The app now analyzes your performance and points you toward your biggest gaps.",tip:"Check your results screen after completing a practice test to see your custom study roadmap."},
-{emoji:"🎯",color:C.medium,bg:C.medium,title:"Sharper Difficulty Levels & Better Pacing",sub:"Study Tools · 2026-07-18 update",desc:"Difficulty prompts are now calibrated per CFA level, and questions better match true exam rigor—especially at Hard level (75% pass-rate threshold). You'll also see a pacing indicator and accuracy matrix by topic and difficulty to track real progress.",tip:"Compare your performance across topics and difficulties on the results matrix to identify which areas need the most focus."},
-]},
 // WN_VER:2026-07-18-b
 {version:"2026-07-18-b",slides:[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Mock Exams Load 3x Faster",sub:"Speed · 2026-07-18 update",desc:"We've parallelized question generation across multiple processors, dramatically cutting the time it takes to launch full practice exams and save your progress. You'll spend more time studying and less time waiting.",tip:"Start a full mock exam now—you'll notice the loading bar fills instantly instead of grinding through a long delay."},
@@ -333,6 +327,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Exam & Quiz Loading",sub:"Speed · 2026-07-18 update",desc:"We've parallelized performance bottlenecks across full exams, session saves, and app startup. Your practice sessions now launch and save noticeably faster, keeping momentum while you study.",tip:"Notice how full exams and demo quizzes load instantly—no more waiting between sections."},
 {emoji:"🎨",color:C.accentLight,bg:C.reward,title:"Vibrant New Color Theme",sub:"UX · 2026-07-18 update",desc:"We've redesigned ClearCFA with a midnight navy base and brighter, more vibrant accents including energized greens. The interface is now easier on the eyes and more motivating during long study sessions.",tip:"Open the app in light mode to see the crisp skeleton loaders and refined visual hierarchy."},
 {emoji:"✨",color:C.hard,bg:C.hard,title:"Cleaner Demo Quiz & Sign-Up",sub:"UX · 2026-07-18 update",desc:"We fixed three critical layout issues: demo quiz now displays properly, removed distracting empty space, and made the 'Try CFA Prep' call-to-action impossible to miss. Getting started is now seamless.",tip:"Try the demo quiz right now—you'll immediately see the improved layout and clearer next steps."},
+]},
+// WN_VER:2026-07-18-f
+{version:"2026-07-18-f",slides:[
+{emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Vibrant New Color Theme",sub:"UX · 2026-07-18 update",desc:"We've redesigned ClearCFA with a energizing midnight navy base and brighter, vibrant accents to reduce eye strain during long study sessions. The new palette makes key concepts and progress indicators pop, so you stay focused and motivated.",tip:"Notice how the green highlights now stand out instantly when marking questions correct—it's your visual reward for mastery."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother App Launch & Loading",sub:"Speed · 2026-07-18 update",desc:"We fixed the loading screen to show accurate, event-driven progress steps and softened retry logic so app startup feels faster and more reliable. No more stalled spinners or confusing status labels—you get to your study materials quicker.",tip:"Watch for clear step labels (\"Initializing,\" \"Syncing,\" etc.) that now accurately reflect what's actually happening behind the scenes."},
+{emoji:"🎯",color:C.reward,bg:C.reward,title:"Quiz Layout & Navigation Fixed",sub:"Bug Fix · 2026-07-18 update",desc:"We resolved three critical issues: demo quiz layout now displays correctly, eliminated awkward empty space at the bottom of screens, and made the \"Try CFA Prep\" call-to-action prominent and easy to find. Your study experience is now cleaner and more intuitive.",tip:"Start a demo quiz to see the improved layout—questions and answers are now perfectly aligned without distracting gaps."},
 ]},
 // WN_END
 ];
@@ -372,8 +372,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-17
-{date:"2026-07-17",entries:[
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
