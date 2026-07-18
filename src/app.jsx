@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-c
-{version:"2026-07-18-c",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We've parallelized question generation across multiple processing threads, cutting mock exam load times by 3x. Start your full-length practice test in seconds instead of minutes.",tip:"Launch a full exam now—you'll notice questions appear instantly as you navigate."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Demo Quiz Now Works Smoothly",sub:"UX · 2026-07-18 update",desc:"Fixed three critical layout bugs: demo quiz display, empty space handling, and the Try button visibility. The onboarding experience is now clean and intuitive.",tip:"New users will see a polished demo quiz with no visual glitches when they first open the app."},
-{emoji:"⚙️",color:C.medium,bg:C.medium,title:"Faster App Launch & Session Loading",sub:"Speed · 2026-07-18 update",desc:"Optimized startup performance and session restore operations by parallelizing background reads. Your saved progress loads instantly so you can jump back into studying without delay.",tip:"Watch how quickly your study history and bookmarks appear when you reopen the app."},
-]},
 // WN_VER:2026-07-18-d
 {version:"2026-07-18-d",slides:[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We parallelized question generation and exam startup, cutting load times by two-thirds. Now you can generate full practice exams and jump into studying without waiting.",tip:"Launch a full mock exam now—notice how quickly questions populate compared to before."},
@@ -338,6 +332,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Smart Error Diagnosis & Coaching",sub:"AI · 2026-07-18 update",desc:"ClearCFA now analyzes your mistakes and delivers personalized coaching on why you missed each question. You'll learn the concept gaps driving your errors, not just the correct answer.",tip:"Review your last quiz or mock exam to see detailed error diagnosis for each wrong answer."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Reliable Mock Exam Loading",sub:"Speed · 2026-07-18 update",desc:"We fixed mobile network issues that were interrupting mock exam generation. Weighted mocks now load consistently, even on slower connections.",tip:"Generate a weighted mock on your phone—it should now complete without interruptions."},
 ]},
+// WN_VER:2026-07-18-b
+{version:"2026-07-18-b",slides:[
+{emoji:"📋",color:C.reward,bg:C.reward,title:"Mock Exams Now Guide Your Study",sub:"Study Tools · 2026-07-18 update",desc:"Upload any CFA mock PDF and ClearCFA automatically builds a phased study plan tailored to your performance. This replaces generic prep with targeted revision of your weakest topics.",tip:"After completing a mock, upload the PDF to instantly generate your personalized roadmap."},
+{emoji:"🎓",color:C.hard,bg:C.hard,title:"Official Exam Style Practice & Coaching",sub:"AI · 2026-07-18 update",desc:"New official CFA exam-format questions with instant error diagnosis and AI coaching on every mistake. You'll learn *why* you got it wrong and how to avoid it on test day.",tip:"Look for the 'Official Exam Style' badge in quiz settings to practice questions that mirror the real test."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Mock Generation on Mobile",sub:"Speed · 2026-07-18 update",desc:"Mock exam generation now runs in parallel, eliminating network timeouts on slower connections. Your mocks load reliably whether you're on WiFi or cellular.",tip:"Generate mocks anywhere—the app handles connection glitches seamlessly now."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -358,8 +358,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-17
-{date:"2026-07-17",entries:[
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
