@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Exam Plan topic keyword matching expansion (b52eea1)**: Topic keyword matching now spans across all CFA subjects (Financial Reporting, Equity Analysis, Fixed Income, Derivatives, Alternative Investments, etc.) to improve Readiness Tracker accuracy. When updating keyword lists for topic matching, ensure comprehensive coverage across all Level I, II, III subjects to maintain consistent module-level performance correlation.
+
+
+**What's New version rotation cleanup (b52eea1)**: Removed versions 2026-07-18-f and 2026-07-18 from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-b, 2026-07-18-c, 2026-07-18-d, and 2026-07-18-e. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
 **What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-e and 2026-07-18-f from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18, 2026-07-18-b, 2026-07-18-c, 2026-07-18-d, and 2026-07-18-e. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1751,7 +1757,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1807500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1807600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
