@@ -1,5 +1,5 @@
 // ClearCFA AI Proxy — Supabase Edge Function
-// Deploy: supabase functions deploy ai-proxy --project-ref uucxyuqxqjpbxecemdvf
+// Deploy: supabase functions deploy ai-proxy --project-ref uucxyuqxqjpbxecemdvf --no-verify-jwt
 // Secrets: supabase secrets set ANTHROPIC_API_KEY=sk-ant-... --project-ref uucxyuqxqjpbxecemdvf
 
 const CORS_HEADERS = {
