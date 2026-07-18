@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-b
-{version:"2026-07-18-b",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Track Your Exam Readiness",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now shows pass probability trends and live progress bars across all topics. See exactly where you stand and what's pulling your score down in real time.",tip:"Check the Readiness Tracker in your Exam Plan to identify weak topics before mock exams."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Study Navigation",sub:"UX · 2026-07-18 update",desc:"Your Exam Plan now connects seamlessly to Today's Focus, revision notes, and deep-dive study materials in organized tabs. Jump straight from your plan to exactly what you need to study—no friction.",tip:"Tap \"Deep Study\" or \"Formulas\" tabs in your Exam Plan to access focused content for each topic."},
-{emoji:"🧠",color:C.medium,bg:C.medium,title:"Mock-Aware Study Guidance",sub:"AI · 2026-07-18 update",desc:"The app now uses your mock exam performance to surface the most relevant notes, formulas, and study CTAs. Every suggestion is tailored to your actual weak spots, not generic content.",tip:"After taking a mock exam, return to your Exam Plan to see AI-prioritized study recommendations."},
-]},
 // WN_VER:2026-07-18-c
 {version:"2026-07-18-c",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Track Your Exam Readiness",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now shows your pass probability trend and real-time progress bars across all domains. Watch your readiness improve as you complete study phases and mock exams.",tip:"Open Exam Plan to see how your recent progress affects your predicted pass probability."},
@@ -336,6 +330,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Readiness Tracker Now Smarter",sub:"Study Tools · 2026-07-18 update",desc:"The Exam Plan Readiness Tracker now compares your mock exam accuracy directly against in-app practice accuracy at the module level, giving you a clearer picture of where you're truly exam-ready. This helps you focus remediation on topics where your performance diverges most between practice modes.",tip:"Look for modules where your mock score lags behind in-app performance—those are your priority areas."},
 {emoji:"🎯",color:C.medium,bg:C.medium,title:"Cleaner, Faster Menu Navigation",sub:"UX · 2026-07-18 update",desc:"The More menu has been streamlined to 8 focused items with duplicate analytics options removed, making it faster to find what you need. Less clutter means less time hunting for settings and more time studying.",tip:"Swipe to the More menu and notice how quickly you can now reach key features."},
 ]},
+// WN_VER:2026-07-18
+{version:"2026-07-18",slides:[
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Exam Plan Matching",sub:"Study Tools · 2026-07-18 update",desc:"The Readiness Tracker now intelligently matches your exam plan text against all CFA topics, giving you instant visibility into which modules align with your study goals. This helps you prioritize the right content without manual cross-referencing.",tip:"Open your Exam Plan and check the Readiness Tracker—it'll now highlight which of your flagged modules connect to your planned topics."},
+{emoji:"📊",color:C.medium,bg:C.medium,title:"Mock vs In-App Accuracy Insights",sub:"Study Tools · 2026-07-18 update",desc:"The Readiness Tracker now displays side-by-side mock exam and in-app quiz accuracy at the module level, letting you spot knowledge gaps where practice tests differ from lesson quizzes. This reveals whether you truly understand a topic or just perform well in one format.",tip:"Look for modules where your mock accuracy is lower than in-app—those are your priority areas for deeper review."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -352,12 +351,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -383,6 +376,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
