@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version rotation cleanup (latest)**: Removed versions 2026-07-17-d, 2026-07-17-e, and 2026-07-17-f from WHATS_NEW_SLIDES rotation. Currently active version is 2026-07-17. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
+**Energize color theme: midnight navy base, brighter accents, vibrant greens (9e41e23)**: Updated DARK_PALETTE with deeper midnight navy backgrounds (#0b0d1e), brighter accent blues (#6d74f8), and more vibrant greens (#22c55e). Light palette also refreshed with stronger success green (#16a34a). When maintaining or extending the color system, reference these new palette values to maintain visual consistency across new components.
+
+
 **Demo quiz layout UX fixes (3466203)**: Fixed demo quiz layout issues, empty bottom spacing, and buried 'Try' CTA visibility to improve initial user experience. When designing onboarding flows, ensure demo content is prominently discoverable and layout doesn't obscure conversion funnels.
 
 
@@ -1633,7 +1639,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1805600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1805700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.

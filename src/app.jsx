@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17
-{version:"2026-07-17",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster, More Reliable Quiz Sessions",sub:"Speed · 2026-07-17 update",desc:"We've eliminated duplicate questions, fixed session timeouts, and improved question generation so your practice quizzes start instantly without delays. You now get exactly the session size you requested, every time.",tip:"Start a quiz and watch—no more waiting or partial sessions."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smart Next-Step Guidance After Each Quiz",sub:"AI · 2026-07-17 update",desc:"After you finish a quiz, our AI now diagnoses your performance and recommends exactly what to study next—whether that's reviewing a specific topic, drilling harder questions, or moving forward. No more guessing what to do after each session.",tip:"Check your results screen for personalized study recommendations tailored to your gaps."},
-{emoji:"⏱️",color:C.medium,bg:C.medium,title:"Accurate Progress Indicators",sub:"UX · 2026-07-17 update",desc:"The loading bar now reflects actual AI generation time, so you always know how long a quiz will take to build. No more misleading progress meters.",tip:"Watch the loading bar accurately track your quiz generation from start to finish."},
-]},
 // WN_VER:2026-07-17-b
 {version:"2026-07-17-b",slides:[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Quiz Generation",sub:"Speed · 2026-07-17 update",desc:"We've optimized question generation to be significantly quicker, with smarter loading indicators that match real generation time. Your study sessions now start faster so you can spend more time practicing.",tip:"Watch the calibrated loading bar—it now accurately reflects how long your custom quiz will take to generate."},
@@ -332,6 +326,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We've parallelized question generation across multiple processing threads, cutting mock exam load times by 3x. Start your full-length practice test in seconds instead of minutes.",tip:"Launch a full exam now—you'll notice questions appear instantly as you navigate."},
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Demo Quiz Now Works Smoothly",sub:"UX · 2026-07-18 update",desc:"Fixed three critical layout bugs: demo quiz display, empty space handling, and the Try button visibility. The onboarding experience is now clean and intuitive.",tip:"New users will see a polished demo quiz with no visual glitches when they first open the app."},
 {emoji:"⚙️",color:C.medium,bg:C.medium,title:"Faster App Launch & Session Loading",sub:"Speed · 2026-07-18 update",desc:"Optimized startup performance and session restore operations by parallelizing background reads. Your saved progress loads instantly so you can jump back into studying without delay.",tip:"Watch how quickly your study history and bookmarks appear when you reopen the app."},
+]},
+// WN_VER:2026-07-18-d
+{version:"2026-07-18-d",slides:[
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We parallelized question generation and exam startup, cutting load times by two-thirds. Now you can generate full practice exams and jump into studying without waiting.",tip:"Launch a full mock exam now—notice how quickly questions populate compared to before."},
+{emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Sharper, More Energetic Design",sub:"UX · 2026-07-18 update",desc:"We redesigned the color theme with a deeper midnight navy base and vibrant accent greens for better focus and visual hierarchy. The new palette reduces eye strain during long study sessions.",tip:"Open a quiz and notice the cleaner contrast—greens now pop to highlight key study elements."},
+{emoji:"🛠️",color:C.medium,bg:C.medium,title:"Quiz Layout & CTAs Fixed",sub:"Bug Fix · 2026-07-18 update",desc:"We resolved three critical issues: demo quiz layout now renders correctly, empty space at quiz bottom is gone, and the 'Try Now' button is easy to find. Your study flow is now seamless.",tip:"Start a demo quiz—the layout should feel polished and the Try CTA should be obvious."},
 ]},
 // WN_END
 ];
@@ -383,8 +383,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-17
-{date:"2026-07-17",entries:[
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
