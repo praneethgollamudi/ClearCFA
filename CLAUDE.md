@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**PDF analysis error surfacing (8b90ce0)**: Fixed silent failures in PDF analysis by ensuring real server errors surface to client instead of being swallowed. When handling PDF import workflows, ensure error messages from the backend are properly propagated and displayed to users for debugging.
+
+
+**What's New version rotation cleanup (8b90ce0)**: Removed versions 2026-07-18-c and 2026-07-18-d from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-e, 2026-07-18-f, 2026-07-18-b, and 2026-07-18. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
 **What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-b and 2026-07-18-c from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-d, 2026-07-18-f, and 2026-07-18. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1694,7 +1700,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1806400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1806500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
