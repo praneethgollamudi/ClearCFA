@@ -13802,6 +13802,91 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         )}
 
+        {/* Readiness Tracker */}
+        {(mockPerfHistory.length>0||examStudyPlan.weakTopics?.length>0)&&(()=>{
+          const allProbs=mockPerfHistory.map(h=>({
+            prob:parseInt((h.estimatedPassProb||"0").replace("%",""))||0,
+            date:h.uploadedAt?new Date(h.uploadedAt).toLocaleDateString("en-US",{month:"short",day:"numeric"}):"Mock"
+          }));
+          const maxProb=Math.max(...allProbs.map(h=>h.prob),75);
+          const first=allProbs[0]?.prob||0,last=allProbs[allProbs.length-1]?.prob||0;
+          const trend=allProbs.length>1?last-first:null;
+          const weakProgress=(examStudyPlan.weakTopics||[]).map(t=>{
+            const mr=moduleReadiness.find(m=>m.topic?.toLowerCase()===t.toLowerCase());
+            return{topic:t,accuracy:mr?.accuracy??null,sessions:mr?.sessions||0};
+          });
+          return(
+            <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:16}}>
+              <div style={{fontSize:11,fontWeight:800,color:C.accentLight,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:14}}>📊 Readiness Tracker</div>
+
+              {/* Pass prob history bars */}
+              {allProbs.length>0&&(
+                <div style={{marginBottom:weakProgress.length>0?16:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div style={{fontSize:12,fontWeight:700,color:C.text}}>Mock Pass Probability</div>
+                    {trend!==null&&<div style={{fontSize:11,fontWeight:800,color:trend>=0?C.easy:C.hard,background:trend>=0?C.easy+"18":C.hard+"18",padding:"2px 8px",borderRadius:20}}>{trend>=0?"↑ +":""}{trend<0?"↓ ":""}{Math.abs(trend)}% trend</div>}
+                  </div>
+                  <div style={{display:"flex",gap:4,alignItems:"flex-end",height:54,marginBottom:4}}>
+                    {allProbs.map((h,i)=>{
+                      const barH=Math.max((h.prob/maxProb)*44,6);
+                      const isLatest=i===allProbs.length-1;
+                      const col=h.prob>=70?C.easy:h.prob>=55?C.medium:C.hard;
+                      return(
+                        <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",gap:3}}>
+                          <div style={{fontSize:9,fontWeight:800,color:isLatest?col:C.muted}}>{h.prob}%</div>
+                          <div style={{width:"100%",borderRadius:"3px 3px 0 0",height:barH+"px",background:isLatest?col:col+"55",transition:"height 0.4s"}}/>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{display:"flex",gap:4,marginBottom:8}}>
+                    {allProbs.map((h,i)=>(
+                      <div key={i} style={{flex:1,fontSize:8,color:C.muted,textAlign:"center",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>
+                        {allProbs.length===1?"Your mock":h.date}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{padding:"6px 10px",background:C.surfaceHigh,borderRadius:8,display:"flex",alignItems:"center",gap:7}}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:last>=70?C.easy:last>=55?C.medium:C.hard,flexShrink:0}}/>
+                    <div style={{fontSize:10,color:C.textMid,lineHeight:1.4}}>
+                      {last>=70?"At or above the CFA pass mark — stay consistent.":last>=55?`${70-last}% below pass mark — focused drilling is critical.`:`Need +${70-last}% — intensive practice on weak areas is essential.`}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* In-app progress on weak topics */}
+              {weakProgress.length>0&&(
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,color:C.text,marginBottom:10}}>In-App Progress on Weak Areas</div>
+                  {weakProgress.map((w,i)=>{
+                    const col=w.accuracy===null?C.muted:w.accuracy>=70?C.easy:w.accuracy>=50?C.medium:C.hard;
+                    const label=w.accuracy===null?"Not practiced yet":w.accuracy>=70?"On track ✓":w.accuracy>=50?"Needs work":"Weak — drill now";
+                    return(
+                      <div key={i} style={{marginBottom:i<weakProgress.length-1?12:0}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                          <div style={{fontSize:12,color:C.text,fontWeight:600}}>{w.topic}</div>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            {w.sessions>0&&<div style={{fontSize:9,color:C.muted}}>{w.sessions} session{w.sessions>1?"s":""}</div>}
+                            <div style={{fontSize:12,fontWeight:800,color:col}}>{w.accuracy===null?"—":w.accuracy+"%"}</div>
+                          </div>
+                        </div>
+                        <div style={{height:5,background:C.surfaceHigh,borderRadius:5,overflow:"hidden",marginBottom:3}}>
+                          <div style={{height:"100%",width:w.accuracy!==null?Math.min(w.accuracy,100)+"%":"0%",background:col,borderRadius:5,transition:"width 0.5s"}}/>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <div style={{fontSize:9,color:w.accuracy===null?C.muted:col}}>{label}</div>
+                          {w.accuracy===null&&<button onClick={()=>generateQuestions(w.topic,null,"medium",10,"guided")} style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:6,background:C.accent+"18",border:`1px solid ${C.accent}33`,color:C.accentLight,cursor:"pointer"}}>Start →</button>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Phase cards */}
         <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:10}}>Your Phased Plan</div>
         <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
