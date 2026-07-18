@@ -57,6 +57,8 @@ const VAPID_PUB_KEY        = "BBXW1DGWNhK1tUyzVkrsfhiNF5PIwiztq7PsRntHGvuzxnPsnR
 const GAP_HISTORY_KEY      = "cfa_gap_history_v1";
 const CONFUSION_KEY        = "cfa_confusion_v1";
 const ERROR_PATTERNS_KEY   = "cfa_error_patterns_v1";
+const EXAM_PLAN_KEY        = "cfa_exam_plan_v1";
+const MOCK_PERF_KEY        = "cfa_mock_perf_v1";
 const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","masteryGrid","studyPlan","revision","studyPath","calcTrainer","backup","srReview"]);
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
@@ -4867,6 +4869,10 @@ function CFAMock(){
   const [essayGrades,setEssayGrades]=useState({});
   const [essayGrading,setEssayGrading]=useState({});
   const [weeklyPlan,setWeeklyPlan]=useState(()=>{try{const p=localStorage.getItem(PLAN_KEY);return p?JSON.parse(p):null;}catch{return null;}});
+  const [examStudyPlan,setExamStudyPlan]=useState(()=>{try{const p=localStorage.getItem(EXAM_PLAN_KEY);return p?JSON.parse(p):null;}catch{return null;}});
+  const [mockPerfHistory,setMockPerfHistory]=useState(()=>{try{const p=localStorage.getItem(MOCK_PERF_KEY);return p?JSON.parse(p):[];}catch{return [];}});
+  const [pdfUploading,setPdfUploading]=useState(false);
+  const [pdfError,setPdfError]=useState("");
   const [todayStarted,setTodayStarted]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_today_started")||"{}");}catch{return {};}});
   const [focusDone,setFocusDone]=useState(()=>{try{const s=JSON.parse(localStorage.getItem("cfa_focus_done")||"null");if(s&&s.date===localDateKey())return s.done||{};}catch{}return {};});
   const [weeklyPlanLoading,setWeeklyPlanLoading]=useState(false);
@@ -6245,6 +6251,72 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
         : msg);
     }
     setWeeklyPlanLoading(false);
+  };
+
+  // Extract text from a PDF File using pdf.js (loaded dynamically)
+  const extractPDFText=async(file)=>{
+    if(!window.pdfjsLib){
+      await new Promise((resolve,reject)=>{
+        const s=document.createElement("script");
+        s.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+        s.onload=resolve;s.onerror=()=>reject(new Error("Could not load PDF reader. Check your connection."));
+        document.head.appendChild(s);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+    const ab=await file.arrayBuffer();
+    const pdf=await window.pdfjsLib.getDocument({data:ab}).promise;
+    let text="";
+    for(let i=1;i<=Math.min(pdf.numPages,60);i++){
+      const page=await pdf.getPage(i);
+      const content=await page.getTextContent();
+      text+=content.items.map(it=>it.str).join(" ")+"\n";
+    }
+    return text.trim();
+  };
+
+  // Upload a mock PDF and generate/update the exam-length study plan
+  const uploadMockPDF=async(file)=>{
+    if(!authUser){showToast("⚠️","Sign in required","Please sign in to use PDF analysis.");return;}
+    setPdfUploading(true);setPdfError("");
+    try{
+      const pdfText=await extractPDFText(file);
+      if(!pdfText||pdfText.length<80){
+        setPdfError("Could not read text from this PDF. Make sure it's a text-based PDF, not a scanned image.");
+        setPdfUploading(false);return;
+      }
+      const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));
+      const res=await fetch(AI_PROXY_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          userId:authUser.id,
+          requestType:"analyze_mock_pdf",
+          pdfText:pdfText.slice(0,14000),
+          examDate:examDate.toISOString().slice(0,10),
+          cfaLevel,
+          daysLeft,
+          mockPerfHistory,
+          level:cfaLevel,
+        }),
+      });
+      const data=await res.json();
+      if(!res.ok||data.error){
+        if(data.quotaExceeded)setUpgradeModal({reason:"limit"});
+        else setPdfError(data.error||"Analysis failed. Please try again.");
+        setPdfUploading(false);return;
+      }
+      const {plan,perfSummary}=data;
+      if(!plan||!Array.isArray(plan.phases)){setPdfError("AI returned an unexpected response. Try again.");setPdfUploading(false);return;}
+      try{localStorage.setItem(EXAM_PLAN_KEY,JSON.stringify(plan));}catch{}
+      setExamStudyPlan(plan);
+      const newHistory=[...mockPerfHistory,{...perfSummary,uploadedAt:new Date().toISOString()}].slice(-10);
+      try{localStorage.setItem(MOCK_PERF_KEY,JSON.stringify(newHistory));}catch{}
+      setMockPerfHistory(newHistory);
+      showToast("✅","Plan updated","Your exam study plan has been updated based on this mock review.");
+    }catch(e){
+      setPdfError("Upload failed: "+(e.message||"unknown error"));
+    }finally{setPdfUploading(false);}
   };
 
   // Auto-generate weekly plan silently after 3+ sessions if not yet created
@@ -13591,71 +13663,127 @@ Return ONLY a JSON array — no prose, no markdown fences:
   // SCREEN: studyPlan
   // ════════════════════════════════════════
   if(screen==="studyPlan") return wrap((()=>{
-    const plan=studyPlanData||[];
-    const today=plan[0];
-    const typeColor={learn:C.accent,review:C.medium,ethics:C.easy};
-    const exportICS=()=>{
-      if(!plan.length)return;
-      const now=new Date();
-      const pad=n=>String(n).padStart(2,'0');
-      const icsDate=(baseDate,addDays)=>{
-        const d=new Date(baseDate);d.setDate(d.getDate()+addDays);
-        return`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-      };
-      const escape=s=>(s||'').replace(/[\\,;]/g,'\\$&').replace(/\n/g,'\\n');
-      const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//ClearCFA//Study Plan//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
-      plan.slice(0,60).forEach((day)=>{
-        const d=icsDate(now,day.dayNum-1);
-        const uid=`clearcfa-${d}-${(day.topic||'').replace(/\s/g,'').slice(0,10)}@clearcfa.com`;
-        const summ=`CFA L${cfaLevel} Study: ${(day.topic||'').split(' ').slice(0,3).join(' ')}`;
-        const desc=escape(`${day.module} · ${day.count} questions · ${day.difficulty} · ${day.type}\nClearCFA — clearcfa.com`);
-        lines.push('BEGIN:VEVENT',`UID:${uid}`,`DTSTART;VALUE=DATE:${d}`,`DTEND;VALUE=DATE:${d}`,`SUMMARY:${escape(summ)}`,`DESCRIPTION:${desc}`,'END:VEVENT');
-      });
-      lines.push('END:VCALENDAR');
-      const blob=new Blob([lines.join('\r\n')],{type:'text/calendar'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');a.href=url;a.download='clearcfa-study-plan.ics';a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),1000);
-      showToast("📅","Calendar exported","Import clearcfa-study-plan.ics into Google Calendar, Outlook, or Apple Calendar.");
-    };
+    const phaseColors=[C.accent,C.medium,C.easy,C.hard];
+    const lastUpload=mockPerfHistory.length>0?mockPerfHistory[mockPerfHistory.length-1]:null;
+    const lastUploadDate=lastUpload?new Date(lastUpload.uploadedAt).toLocaleDateString("en-US",{month:"short",day:"numeric"}):null;
     return(<>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-        <div><h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📅 2-Month Study Plan</h2><div style={{fontSize:11,color:C.muted,marginTop:2}}>Personalised to your weak topics · {daysLeft} days to exam</div></div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div>
+          <h2 style={{margin:0,fontSize:20,fontWeight:800,color:C.text}}>📅 Exam Study Plan</h2>
+          <div style={{fontSize:11,color:C.muted,marginTop:2}}>{daysLeft} days to exam{lastUploadDate?` · Based on ${mockPerfHistory.length} mock review${mockPerfHistory.length>1?"s":""}`:""}</div>
+        </div>
         <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:13}}>← Home</button>
       </div>
-      {plan.length>0&&(
-        <button onClick={exportICS} style={{width:"100%",padding:"10px 14px",borderRadius:10,marginBottom:14,fontSize:12,fontWeight:700,background:`${C.accent}15`,border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-          📆 Export to Calendar (.ics)
-          <span style={{fontSize:10,fontWeight:600,color:C.muted}}>Google · Outlook · Apple</span>
-        </button>
-      )}
-      {today&&(
-        <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}08)`,border:`1px solid ${C.accent}44`,borderRadius:14,padding:"16px",marginBottom:16}}>
-          <div style={{fontSize:10,fontWeight:800,color:C.accentLight,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>Today's Session</div>
-          <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:2}}>{today.topic}</div>
-          <div style={{fontSize:12,color:C.muted,marginBottom:12}}>{today.module} · {today.count} questions · {today.difficulty}</div>
-          <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(today.topic,today.module,today.difficulty,today.count,"guided"),100);}} style={{width:"100%",padding:"12px",borderRadius:10,fontSize:13,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer",boxShadow:`0 4px 14px ${C.accent}44`}}>
-            Start Today's Session →
-          </button>
+
+      {/* Upload section */}
+      <div style={{background:examStudyPlan?C.surface:`linear-gradient(135deg,${C.accent}12,${C.accent}05)`,border:`1px solid ${examStudyPlan?C.border:C.accent+"44"}`,borderRadius:14,padding:16,marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:4}}>
+          {examStudyPlan?"📎 Update plan with a new mock":"📎 Upload your CFA mock review PDF"}
+        </div>
+        <div style={{fontSize:11,color:C.muted,marginBottom:12,lineHeight:1.5}}>
+          {examStudyPlan
+            ?"Upload another mock review PDF to update your plan and track what's improved."
+            :"Upload your official CFA mock exam review PDF and Claude will build a personalised phased study plan from today until your exam — covering every weak area in priority order."}
+        </div>
+        {pdfError&&<div style={{fontSize:11,color:C.hard,marginBottom:10,padding:"8px 10px",background:C.hard+"15",borderRadius:8}}>{pdfError}</div>}
+        <label style={{display:"block",cursor:pdfUploading?"not-allowed":"pointer"}}>
+          <input type="file" accept=".pdf,application/pdf" style={{display:"none"}} disabled={pdfUploading}
+            onChange={e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(f)uploadMockPDF(f);}}/>
+          <div style={{width:"100%",padding:"11px 14px",borderRadius:10,fontSize:13,fontWeight:700,background:pdfUploading?C.surfaceHigh:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:pdfUploading?C.muted:"#fff",border:"none",cursor:pdfUploading?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:pdfUploading?"none":`0 4px 14px ${C.accent}44`,transition:"all 0.2s",userSelect:"none"}}>
+            {pdfUploading?<><span style={{display:"inline-block",width:14,height:14,border:`2px solid ${C.muted}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Analyzing mock…</>:"⬆ Upload Mock Review PDF"}
+          </div>
+        </label>
+        {lastUploadDate&&<div style={{fontSize:10,color:C.muted,marginTop:8,textAlign:"center"}}>Last updated {lastUploadDate} · {mockPerfHistory.length} mock{mockPerfHistory.length>1?"s":""} analyzed</div>}
+      </div>
+
+      {/* Phased plan (if generated) */}
+      {examStudyPlan&&(<>
+        {/* Summary card */}
+        <div style={{background:`linear-gradient(135deg,${C.accent}18,${C.accent}06)`,border:`1px solid ${C.accent}33`,borderRadius:14,padding:16,marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+            <div style={{fontSize:10,fontWeight:800,color:C.accentLight,letterSpacing:"0.1em",textTransform:"uppercase"}}>AI Coaching Summary</div>
+            {examStudyPlan.estimatedPassProb&&<div style={{fontSize:11,fontWeight:700,color:C.easy,background:C.easy+"22",padding:"3px 9px",borderRadius:20}}>est. {examStudyPlan.estimatedPassProb} pass</div>}
+          </div>
+          <div style={{fontSize:13,color:C.text,lineHeight:1.55}}>{examStudyPlan.summary}</div>
+          {examStudyPlan.keyInsights&&examStudyPlan.keyInsights.length>0&&(
+            <div style={{marginTop:10,display:"flex",flexDirection:"column",gap:4}}>
+              {examStudyPlan.keyInsights.map((ins,i)=>(
+                <div key={i} style={{fontSize:11,color:C.textMid,display:"flex",alignItems:"flex-start",gap:6}}>
+                  <span style={{color:C.accent,flexShrink:0,marginTop:1}}>•</span>{ins}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Topic strength bars */}
+        {(examStudyPlan.weakTopics?.length>0||examStudyPlan.strongTopics?.length>0)&&(
+          <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+            {(examStudyPlan.weakTopics||[]).slice(0,4).map(t=>(
+              <div key={t} style={{fontSize:10,fontWeight:700,padding:"4px 9px",borderRadius:20,background:C.hard+"20",color:C.hard,border:`1px solid ${C.hard}33`}}>⚠ {t}</div>
+            ))}
+            {(examStudyPlan.strongTopics||[]).slice(0,2).map(t=>(
+              <div key={t} style={{fontSize:10,fontWeight:700,padding:"4px 9px",borderRadius:20,background:C.easy+"20",color:C.easy,border:`1px solid ${C.easy}33`}}>✓ {t}</div>
+            ))}
+          </div>
+        )}
+
+        {/* Phase cards */}
+        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:10}}>Your Phased Plan</div>
+        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
+          {(examStudyPlan.phases||[]).map((phase,i)=>{
+            const col=phaseColors[i%phaseColors.length];
+            const isLast=i===(examStudyPlan.phases.length-1);
+            const topic=phase.primaryFocus||"";
+            return(
+              <div key={phase.id||i} style={{background:C.surface,border:`1px solid ${col}44`,borderRadius:14,overflow:"hidden"}}>
+                {/* Phase header */}
+                <div style={{background:`${col}18`,borderBottom:`1px solid ${col}30`,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <div style={{fontSize:10,fontWeight:800,color:col,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:2}}>{phase.weeks}</div>
+                    <div style={{fontSize:14,fontWeight:800,color:C.text}}>{phase.title}</div>
+                  </div>
+                  <div style={{fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:20,background:`${col}22`,color:col,border:`1px solid ${col}44`,whiteSpace:"nowrap",flexShrink:0,marginLeft:8}}>{isLast?"🏁 Final":"Phase "+(i+1)}</div>
+                </div>
+                {/* Phase body */}
+                <div style={{padding:"12px 14px"}}>
+                  <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+                    <div style={{fontSize:11,fontWeight:700,padding:"4px 9px",borderRadius:20,background:`${col}18`,color:col}}>{phase.primaryFocus}</div>
+                    {phase.secondaryFocus&&<div style={{fontSize:11,fontWeight:700,padding:"4px 9px",borderRadius:20,background:C.surfaceHigh,color:C.textMid,border:`1px solid ${C.border}`}}>{phase.secondaryFocus}</div>}
+                  </div>
+                  {phase.weeklyTarget&&<div style={{fontSize:11,color:C.textMid,marginBottom:6,display:"flex",alignItems:"flex-start",gap:6}}><span style={{color:col,flexShrink:0}}>📆</span>{phase.weeklyTarget}</div>}
+                  {phase.milestoneGoal&&<div style={{fontSize:11,color:C.textMid,marginBottom:6,display:"flex",alignItems:"flex-start",gap:6}}><span style={{color:C.easy,flexShrink:0}}>🎯</span>{phase.milestoneGoal}</div>}
+                  {phase.keyTopics&&phase.keyTopics.length>0&&(
+                    <div style={{fontSize:10,color:C.muted,marginBottom:10}}>Focus modules: {phase.keyTopics.slice(0,3).join(" · ")}</div>
+                  )}
+                  {phase.checkpointAction&&(
+                    <div style={{fontSize:11,color:C.muted,padding:"8px 10px",background:C.surfaceHigh,borderRadius:8,marginBottom:10,lineHeight:1.45}}>
+                      <span style={{fontWeight:700,color:C.textMid}}>Checkpoint: </span>{phase.checkpointAction}
+                    </div>
+                  )}
+                  {topic&&!isLast&&(
+                    <button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(topic,null,"medium",10,"guided"),100);}} style={{width:"100%",padding:"9px 14px",borderRadius:9,fontSize:12,fontWeight:700,background:`${col}18`,border:`1px solid ${col}44`,color:col,cursor:"pointer"}}>
+                      Start {topic} Drill →
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{fontSize:10,color:C.muted,textAlign:"center",marginBottom:4}}>
+          Plan based on {examStudyPlan.uploadCount||1} mock review{(examStudyPlan.uploadCount||1)>1?"s":""}. Upload more PDFs to refine it.
+        </div>
+      </>)}
+
+      {/* Fallback: no plan yet */}
+      {!examStudyPlan&&!pdfUploading&&(
+        <div style={{textAlign:"center",padding:"32px 16px",color:C.muted}}>
+          <div style={{fontSize:32,marginBottom:12}}>📄</div>
+          <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:6}}>No plan yet</div>
+          <div style={{fontSize:12,lineHeight:1.6}}>Upload your CFA mock review PDF above and Claude will build a full exam-length study plan — phase by phase, topic by topic, based on your actual mock results.</div>
         </div>
       )}
-      <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:10}}>Upcoming Schedule</div>
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {plan.slice(0,30).map((day,i)=>(
-          <div key={i} style={{background:C.surface,border:`1px solid ${i===0?C.accent+"55":C.border}`,borderRadius:11,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{flex:1}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                <span style={{fontSize:10,fontWeight:800,color:C.muted}}>Day {day.dayNum}</span>
-                <span style={{fontSize:9,padding:"2px 7px",borderRadius:10,background:(typeColor[day.type]||C.accent)+"22",color:typeColor[day.type]||C.accent,fontWeight:700,textTransform:"uppercase"}}>{day.type}</span>
-              </div>
-              <div style={{fontSize:12,fontWeight:700,color:C.text}}>{day.topic.split(" ").slice(0,3).join(" ")}</div>
-              <div style={{fontSize:11,color:C.muted}}>{day.module.slice(0,40)}{day.module.length>40?"…":""} · {day.count}Q</div>
-            </div>
-            {i>0&&<button onClick={()=>{setScreen("home");setTimeout(()=>generateQuestions(day.topic,day.module,day.difficulty,day.count,"guided"),100);}} style={{fontSize:10,fontWeight:700,padding:"6px 10px",borderRadius:8,background:C.accent+"22",border:`1px solid ${C.accent}44`,color:C.accentLight,cursor:"pointer",flexShrink:0,marginLeft:10}}>Start</button>}
-          </div>
-        ))}
-        {plan.length>30&&<div style={{textAlign:"center",fontSize:11,color:C.muted,padding:"8px"}}>+{plan.length-30} more days planned</div>}
-      </div>
     </>);
   })());
 

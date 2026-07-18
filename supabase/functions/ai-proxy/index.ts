@@ -390,5 +390,133 @@ Deno.serve(async (req: Request) => {
     return jsonResponse(data, res.ok ? 200 : res.status);
   }
 
+  // ── ANALYZE MOCK PDF (exam-length study plan from uploaded mock review) ─────
+  if (requestType === 'analyze_mock_pdf') {
+    const pdfText = body.pdfText;
+    if (!pdfText || typeof pdfText !== 'string' || pdfText.length < 50) {
+      return jsonResponse({ error: 'Could not extract text from this PDF.' }, 400);
+    }
+
+    // 3 PDF analyses per day for free users, unlimited for Pro
+    const isPdfPro = await checkIsPro(supabaseUrl, supabaseServiceKey, userId as string);
+    if (!isPdfPro) {
+      const pdfDate = `pdf-${todayUTC()}`;
+      const svcHdrs = { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}`, 'Content-Type': 'application/json' };
+      try {
+        const getRes = await fetch(
+          `${supabaseUrl}/rest/v1/ai_quota?user_id=eq.${encodeURIComponent(userId as string)}&quota_date=eq.${pdfDate}&select=quota_count`,
+          { headers: { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}` } }
+        );
+        const rows = await getRes.json() as Array<{ quota_count: number }>;
+        const used = Array.isArray(rows) && rows.length > 0 ? (rows[0].quota_count ?? 0) : 0;
+        if (used >= 3) {
+          return jsonResponse({ error: 'Daily PDF analysis limit reached (3/day on free plan). Upgrade to Pro for unlimited.', quotaExceeded: true }, 429);
+        }
+        await fetch(`${supabaseUrl}/rest/v1/ai_quota`, {
+          method: 'POST',
+          headers: { ...svcHdrs, Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify({ user_id: userId, quota_date: pdfDate, quota_count: used + 1 }),
+        });
+      } catch { /* allow on DB error */ }
+    }
+
+    const cfaLvl = typeof level === 'string' ? level : '1';
+    const examDateStr = typeof body.examDate === 'string' ? body.examDate : 'approximately 60 days away';
+    const daysLeft = typeof body.daysLeft === 'number' ? body.daysLeft : 60;
+    const mockPerfHistory = Array.isArray(body.mockPerfHistory) ? body.mockPerfHistory : [];
+    const historyContext = mockPerfHistory.length > 0
+      ? `\n\nPRIOR UPLOAD HISTORY (${mockPerfHistory.length} previous mock reviews analyzed):\n${JSON.stringify(mockPerfHistory.slice(-3))}`
+      : '';
+    const uploadCount = mockPerfHistory.length + 1;
+
+    const analysisPrompt = `You are a CFA Level ${cfaLvl} exam coach. Analyze this mock exam review text and generate a phased study plan covering the time until the exam.
+
+MOCK EXAM REVIEW TEXT:
+${(pdfText as string).slice(0, 13000)}
+${historyContext}
+
+EXAM DATE: ${examDateStr}
+DAYS UNTIL EXAM: ${daysLeft}
+UPLOAD NUMBER: ${uploadCount} (this is the ${uploadCount === 1 ? '1st' : uploadCount === 2 ? '2nd' : uploadCount === 3 ? '3rd' : uploadCount + 'th'} mock review analyzed)
+
+Generate a JSON study plan. Return ONLY valid JSON with no markdown or explanation:
+{
+  "summary": "2-3 sentence plain-English coaching summary of what this mock shows and exactly what the user must do to pass",
+  "estimatedPassProb": "e.g. 52%",
+  "phases": [
+    {
+      "id": "phase1",
+      "title": "Phase 1: [short descriptive name based on actual weak areas]",
+      "weeks": "Weeks 1-N (dates if possible)",
+      "startDay": 1,
+      "endDay": 21,
+      "primaryFocus": "Exact CFA topic name",
+      "secondaryFocus": "Exact CFA topic name or null",
+      "weeklyTarget": "e.g. 5 sessions/week, 10Q each — Fixed Income only",
+      "milestoneGoal": "Specific measurable target: e.g. Score 70%+ on Fixed Income by Day 21",
+      "keyTopics": ["Exact module from mock", "Another exact module"],
+      "checkpointAction": "Specific action at end of this phase, e.g. take a 10Q Fixed Income drill and aim for 70%+"
+    }
+  ],
+  "weakTopics": ["topic based on mock data"],
+  "strongTopics": ["topic that scored well"],
+  "keyInsights": ["specific insight from the mock data", "another specific insight"],
+  "uploadCount": ${uploadCount}
+}
+
+STRICT RULES:
+- Create 2-4 phases based on ${daysLeft} days available. LAST phase must always be "Final Mock & Review" (last 7-10 days: 2 full mocks + targeted fixes).
+- Phase focus MUST come directly from the mock data — only mention topics that appear in the PDF text.
+- If prior history exists, note what IMPROVED vs. what is still weak across uploads.
+- Each phase must have a realistic weekly target (not more than 1-2 hr/day).
+- uploadCount must be ${uploadCount}.`;
+
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2500,
+        temperature: 0.3,
+        messages: [{ role: 'user', content: analysisPrompt }],
+      }),
+    });
+
+    if (!aiRes.ok) {
+      return jsonResponse({ error: 'AI analysis failed — try again.' }, 502);
+    }
+
+    const aiData = await aiRes.json() as { content?: Array<{ text?: string }>; usage?: { input_tokens?: number; output_tokens?: number } };
+    const rawText = aiData?.content?.[0]?.text ?? '';
+
+    let plan: Record<string, unknown>;
+    try {
+      const match = rawText.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('no JSON');
+      plan = JSON.parse(match[0]);
+      if (!Array.isArray(plan.phases)) throw new Error('no phases');
+    } catch {
+      return jsonResponse({ error: 'Could not parse study plan. Try uploading a clearer mock review PDF.' }, 500);
+    }
+
+    const perfSummary = {
+      weakTopics: plan.weakTopics ?? [],
+      estimatedPassProb: plan.estimatedPassProb ?? '?',
+    };
+
+    // Log token usage
+    const usage = aiData.usage;
+    if (usage?.input_tokens != null) {
+      const svcHdrs = { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}`, 'Content-Type': 'application/json' };
+      fetch(`${supabaseUrl}/rest/v1/api_usage`, {
+        method: 'POST',
+        headers: { ...svcHdrs, Prefer: 'return=minimal' },
+        body: JSON.stringify({ user_id: userId, request_type: 'analyze_mock_pdf', token_in: usage.input_tokens, token_out: usage.output_tokens ?? 0 }),
+      }).catch(() => {});
+    }
+
+    return jsonResponse({ plan, perfSummary });
+  }
+
   return jsonResponse({ error: 'Unknown requestType.' }, 400);
 });
