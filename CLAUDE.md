@@ -4,6 +4,21 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version rotation cleanup (b924231)**: Current active WHATS_NEW_SLIDES versions are 2026-07-18-b, 2026-07-18-c, and 2026-07-18-d. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
+**Confusion tracking storage (b924231)**: Added CONFUSION_KEY and ERROR_PATTERNS_KEY constants with confusionPairs state for tracking user confusion points and error patterns. These enable AI-driven diagnostics and personalized remediation. Ensure confusion data persists across sessions for longitudinal learning path optimization.
+
+
+**Post-mock coaching diagnostic (b924231)**: Added mockDiagnostic and mockDiagLoading state for full AI diagnostic after exam-weight mocks: verdict, biggest weakness, time-management feedback, and 3-topic drill plan. Fact-inversion errors auto-create spaced-repetition cards. When implementing mock completion flows, trigger diagnostic generation and display coaching report with drill buttons.
+
+
+**Official Exam Style toggle (b924231)**: Added officialStyle state to CFAMock for generating questions matching real CFA exam structure—plausible distractors, EXCEPT/LEAST LIKELY qualifiers, and CFA-specific error patterns. When generating questions with officialStyle enabled, adjust prompt to produce more realistic exam-difficulty content.
+
+
+**Error type classification in debrief (b924231)**: Added ERROR_TYPE field to debrief parsing to classify wrong answers into Direction Error, Scope Error, Lookalike Confusion, or Fact Inversion. When extending debrief logic, parse and display the ERROR_TYPE chip to help users target their remediation strategy.
+
+
 **What's New version rotation cleanup (e9bb83b)**: Removed versions 2026-07-18 and 2026-07-18-b from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-c, 2026-07-18-d, and 2026-07-18-f. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1665,7 +1680,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1806100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1806200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
