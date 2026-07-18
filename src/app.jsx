@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-e
-{version:"2026-07-18-e",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Track Readiness by Topic",sub:"Study Tools · 2026-07-18 update",desc:"The Readiness Tracker now matches your exam plan against CFA topics and shows your mock vs in-app accuracy at the module level. See exactly which topics you're ready for and which need more focus before exam day.",tip:"Open your Exam Plan and tap Readiness Tracker to compare your performance across all modules at once."},
-{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Study Resources In One Place",sub:"UX · 2026-07-18 update",desc:"Your Exam Plan now surfaces Notes, Formulas, and Deep Study options directly in tabbed sections, plus smart recommendations based on your mock performance. Stop hunting for study materials and access what you need in context.",tip:"After completing a mock exam, check the Exam Plan tabs to find targeted deep-dive content for topics where you struggled."},
-{emoji:"⚙️",color:C.medium,bg:C.medium,title:"Cleaner, Smarter Menu",sub:"UX · 2026-07-18 update",desc:"The More menu is now streamlined to 8 essential items, removing redundant analytics and clutter. Your settings and tools are easier to find and the app feels faster to navigate.",tip:"Tap the menu icon to see the refreshed options—everything you need is still there, just more organized."},
-]},
 // WN_VER:2026-07-18-f
 {version:"2026-07-18-f",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Readiness Tracker Now Smarter",sub:"Study Tools · 2026-07-18 update",desc:"The Exam Plan Readiness Tracker now compares your mock exam accuracy directly against in-app practice accuracy at the module level, giving you a clearer picture of where you're truly exam-ready. This helps you focus remediation on topics where your performance diverges most between practice modes.",tip:"Look for modules where your mock score lags behind in-app performance—those are your priority areas."},
@@ -334,6 +328,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Compare Mock vs In-App Performance",sub:"Study Tools · 2026-07-18 update",desc:"Mock exams now extract and display your actual topic scores side-by-side with in-app performance, giving you a clear picture of where you stand. This helps you spot gaps between practice and real exam conditions.",tip:"After taking a mock, check the analysis tab to see which topics need the most work before test day."},
 {emoji:"🎯",color:C.medium,bg:C.medium,title:"Smarter Exam Plan Topic Matching",sub:"Study Tools · 2026-07-18 update",desc:"Your exam plan now understands CFA topic keywords across all subjects, matching your goals to the exact modules you need. The readiness tracker also focuses only on mock-flagged modules, cutting noise and keeping you on track.",tip:"Open your exam plan to see flagged modules highlighted—these are the priority areas based on your mock performance."},
 ]},
+// WN_VER:2026-07-18-d
+{version:"2026-07-18-d",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Mock Exam Score Comparison",sub:"Study Tools · 2026-07-18 update",desc:"Your mock exam analysis now displays official PDF scores side-by-side with ClearCFA in-app results, giving you instant visibility into performance alignment. This helps you calibrate study focus where your real exam readiness differs from practice.",tip:"After uploading a mock PDF, check the Mock vs In-App breakdown to identify topic gaps."},
+{emoji:"🎯",color:C.medium,bg:C.medium,title:"Complete Topic Score Reporting",sub:"Bug Fix · 2026-07-18 update",desc:"Fixed topic label mapping so all your mock exam topic scores now populate correctly in the analysis report. You'll no longer see missing or incomplete score breakdowns when reviewing mock performance.",tip:"Re-upload any recent mocks to see all topic scores now fully captured."},
+{emoji:"📚",color:C.hard,bg:C.hard,title:"Smarter Exam Planning & Phase Balance",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now intelligently matches topic keywords across all CFA subjects and distributes multi-topic phases fairly, ensuring your study schedule reflects the actual exam curriculum. This prevents overlooked topics and uneven prep across related areas.",tip:"Review your Exam Plan timeline to see how topics are now more evenly distributed across phases."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -345,13 +345,6 @@ const ADMIN_CHANGELOG=[
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix edge function auth: add --no-verify-jwt to deploy command",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix edge function auth: add --no-verify-jwt to deploy command",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -362,6 +355,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
