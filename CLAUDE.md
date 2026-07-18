@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**PDF upload state and error handling (098a170)**: Added pdfUploading and pdfError state for tracking PDF import progress and failures. When extending PDF workflows, ensure error messages are user-friendly and file size/format validation occurs before API calls to reduce unnecessary cloud round-trips.
+
+
+**Mock PDF → phased exam study plan (098a170)**: Added EXAM_PLAN_KEY and MOCK_PERF_KEY constants for storing extracted mock exam PDFs and performance history. New extractPDFText() function dynamically loads pdf.js library and extracts text from first 60 pages. uploadMockPDF() generates phased study plans from mock PDFs. When implementing PDF import flows, handle pdf.js CDN loading errors gracefully and cap extraction to 60 pages to prevent memory issues on mobile.
+
+
 **What's New version rotation cleanup (b924231)**: Current active WHATS_NEW_SLIDES versions are 2026-07-18-b, 2026-07-18-c, and 2026-07-18-d. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1677,10 +1683,12 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_gap_history_v1` | `GAP_HISTORY_KEY` |
 | `cfa_confusion_v1` | `CONFUSION_KEY` |
 | `cfa_error_patterns_v1` | `ERROR_PATTERNS_KEY` |
+| `cfa_exam_plan_v1` | `EXAM_PLAN_KEY` |
+| `cfa_mock_perf_v1` | `MOCK_PERF_KEY` |
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1806200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1806300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
