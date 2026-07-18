@@ -7437,8 +7437,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
         );
       }
       return(
-        <div style={{minHeight:"100vh",background:C.bg,color:C.text,padding:"32px 20px"}}>
-          <div style={{maxWidth:440,margin:"0 auto"}}>
+        <div style={{minHeight:"100vh",background:C.bg,color:C.text,display:"flex",flexDirection:"column",overflowY:"auto"}}>
+          <div style={{maxWidth:720,margin:"0 auto",width:"100%",padding:"32px 20px 48px",flex:1,display:"flex",flexDirection:"column"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
               <div style={{display:"flex",alignItems:"center",gap:7}}>
                 <div style={{width:26,height:26,borderRadius:7,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13}}>⚡</div>
@@ -7467,6 +7467,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 );
               })}
             </div>
+            <div style={{flex:1,minHeight:24}}/>
             {answered&&(
               <div style={{background:C.surfaceHigh,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:12,color:C.textMid,lineHeight:1.65}}>
                 {dq.explanation}
@@ -7572,8 +7573,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
           </div>
         </div>
 
+        {/* ── Primary CTA: Try before signup ── */}
+        <div style={{padding:"20px 20px 0",maxWidth:420,margin:"0 auto"}}>
+          <button onClick={()=>{setDemoMode(true);setDemoQ(0);setDemoAnswers({});setDemoComplete(false);}}
+            style={{width:"100%",padding:"15px",borderRadius:12,fontSize:15,fontWeight:800,
+              background:`linear-gradient(135deg,${C.accent}22,${C.accentLight}18)`,
+              border:`1.5px solid ${C.accent}66`,color:C.accentLight,cursor:"pointer",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+              boxShadow:`0 2px 20px ${C.accent}22`,letterSpacing:"-0.2px"}}>
+            🎲 Try 5 questions — no account needed
+          </button>
+          <div style={{display:"flex",alignItems:"center",gap:10,margin:"16px 0 0"}}>
+            <div style={{flex:1,height:1,background:C.border}}/>
+            <span style={{fontSize:11,color:C.muted,whiteSpace:"nowrap"}}>or sign in to your account</span>
+            <div style={{flex:1,height:1,background:C.border}}/>
+          </div>
+        </div>
+
         {/* ── Auth Form ── */}
-        <div style={{padding:"24px 20px 0",maxWidth:420,margin:"0 auto"}}>
+        <div style={{padding:"16px 20px 0",maxWidth:420,margin:"0 auto"}}>
           <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:"20px 20px 16px",boxShadow:`0 4px 24px ${C.accent}0a`}}>
             {/* Toggle */}
             <div style={{display:"flex",background:C.surfaceHigh,borderRadius:10,padding:3,marginBottom:20}}>
@@ -7657,15 +7675,6 @@ Return ONLY a JSON array — no prose, no markdown fences:
               <a href="/ClearCFA/privacy.html" target="_blank" rel="noopener" style={{color:C.accentLight,textDecoration:"none"}}>Privacy Policy</a>
             </div>
           </div>
-        </div>
-
-        {/* ── Try before signup ── */}
-        <div style={{padding:"12px 20px 0",maxWidth:420,margin:"0 auto"}}>
-          <button onClick={()=>{setDemoMode(true);setDemoQ(0);setDemoAnswers({});setDemoComplete(false);}}
-            style={{width:"100%",padding:"11px",borderRadius:11,fontSize:12,fontWeight:600,
-              background:"none",border:`1.5px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>
-            🎲 Try 5 sample questions first — no account needed
-          </button>
         </div>
 
         {/* ── Testimonial ── */}
