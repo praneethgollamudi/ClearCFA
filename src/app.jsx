@@ -3194,6 +3194,42 @@ function RevisionScreen({onBack, backLabel="Home", onHome=null, initialTopic=nul
 
           {!drillMode && (
             <>
+              {/* ── Formulas from mock weak areas ── */}
+              {mockWeakModules.length>0&&(()=>{
+                const weakWords=mockWeakModules.map(m=>m.toLowerCase().split(/[\s\-\/\(\)]+/).filter(w=>w.length>3));
+                const groups=[];
+                for(let wi=0;wi<mockWeakModules.length;wi++){
+                  const words=weakWords[wi];
+                  const matched=enrichedFormulas.filter(f=>{
+                    const fmod=(f.module||"").toLowerCase();
+                    const fname=f.name.toLowerCase();
+                    return words.some(w=>fmod.includes(w)||fname.includes(w));
+                  });
+                  if(matched.length) groups.push({module:mockWeakModules[wi],formulas:matched.slice(0,6)});
+                }
+                if(!groups.length) return null;
+                return(
+                  <div style={{marginBottom:14,background:`${C.medium}08`,border:`1.5px solid ${C.medium}44`,borderRadius:12,padding:"12px 14px"}}>
+                    <div style={{fontSize:11,fontWeight:800,color:C.medium,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:10}}>📊 Formulas from your mock weak areas</div>
+                    {groups.map((g,gi)=>(
+                      <div key={gi} style={{marginBottom:gi<groups.length-1?12:0}}>
+                        <div style={{fontSize:11,fontWeight:700,color:C.textMid,marginBottom:6,display:"flex",alignItems:"center",gap:5}}>
+                          <span style={{color:C.medium,fontSize:10}}>⚠</span>{g.module}
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                          {g.formulas.map((f,fi)=>(
+                            <div key={fi} style={{background:C.surfaceHigh,border:`1px solid ${C.border}`,borderRadius:9,padding:"9px 12px"}}>
+                              <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:3}}>{f.name}</div>
+                              <div style={{fontSize:12,fontFamily:"monospace",color:C.accentLight,background:C.accent+"10",padding:"4px 8px",borderRadius:6}}>{f.f}</div>
+                              {f.note&&<div style={{fontSize:10,color:C.muted,marginTop:4,lineHeight:1.4}}>{f.note}</div>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               {/* ── Formulas from your mistakes — grouped by module ── */}
               {(()=>{
                 const wrongCards=Object.values(srDeck).filter(c=>c.topic===selTopic&&(c.wrongCount||0)>0).sort((a,b)=>(b.wrongCount||0)-(a.wrongCount||0));
@@ -3481,6 +3517,21 @@ function RevisionScreen({onBack, backLabel="Home", onHome=null, initialTopic=nul
             })}
           </div>
 
+          {/* Mock weak modules callout for learn tab */}
+          {mockWeakModules.length>0&&(
+            <div style={{background:`${C.medium}08`,border:`1.5px solid ${C.medium}44`,borderRadius:12,padding:"12px 14px",marginBottom:14}}>
+              <div style={{fontSize:11,fontWeight:800,color:C.medium,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:6}}>📊 Focus areas from your mock exam</div>
+              <div style={{fontSize:11,color:C.textMid,marginBottom:8,lineHeight:1.5}}>Your mock flagged these modules in {selTopic} — the deep study below covers them:</div>
+              <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                {mockWeakModules.map((m,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:7}}>
+                    <span style={{fontSize:10,color:C.medium,flexShrink:0}}>⚠</span>
+                    <span style={{fontSize:12,color:C.text,fontWeight:600}}>{m}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Not Pro — blurred teaser */}
           {!isPro&&(
             <div style={{textAlign:"center",padding:"28px 0"}}>
@@ -13931,20 +13982,30 @@ Return ONLY a JSON array — no prose, no markdown fences:
                       ))}
                     </div>
                   )}
-                  {/* Study notes + full drill for primary topic */}
+                  {/* Study resources: Notes, Formulas, Deep Study */}
                   {topic&&(
-                    <div style={{display:"flex",gap:7,marginTop:phase.keyTopics?.length?0:4}}>
-                      <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setRevisionFromScreen("studyPlan");setScreen("revision");}}
-                        style={{flex:1,padding:"9px 10px",borderRadius:9,fontSize:12,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer"}}>
-                        📖 Study Notes
-                      </button>
+                    <>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:phase.keyTopics?.length?0:4}}>
+                        <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("notes");setRevisionFromScreen("studyPlan");setScreen("revision");}}
+                          style={{padding:"8px 6px",borderRadius:9,fontSize:11,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",textAlign:"center"}}>
+                          📖 Notes
+                        </button>
+                        <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("formulas");setRevisionFromScreen("studyPlan");setScreen("revision");}}
+                          style={{padding:"8px 6px",borderRadius:9,fontSize:11,fontWeight:700,background:C.surfaceHigh,border:`1px solid ${C.border}`,color:C.textMid,cursor:"pointer",textAlign:"center"}}>
+                          📐 Formulas
+                        </button>
+                        <button onClick={()=>{setRevisionTopic(topic);setRevisionTab("learn");setRevisionFromScreen("studyPlan");setScreen("revision");}}
+                          style={{padding:"8px 6px",borderRadius:9,fontSize:11,fontWeight:700,background:proStatus?`${C.accent}15`:C.surfaceHigh,border:`1px solid ${proStatus?C.accent+"44":C.border}`,color:proStatus?C.accentLight:C.muted,cursor:"pointer",textAlign:"center"}}>
+                          🎓 Deep{proStatus?"":" 🔒"}
+                        </button>
+                      </div>
                       {isLast&&(
                         <button onClick={()=>generateQuestions(topic,null,"hard",18,"timed")}
-                          style={{flex:1,padding:"9px 10px",borderRadius:9,fontSize:12,fontWeight:700,background:`${col}18`,border:`1px solid ${col}44`,color:col,cursor:"pointer"}}>
-                          🏁 Mock Exam
+                          style={{width:"100%",marginTop:7,padding:"9px 10px",borderRadius:9,fontSize:12,fontWeight:700,background:`${col}18`,border:`1px solid ${col}44`,color:col,cursor:"pointer"}}>
+                          🏁 Full Mock Exam
                         </button>
                       )}
-                    </div>
+                    </>
                   )}
                 </div>
               </div>
