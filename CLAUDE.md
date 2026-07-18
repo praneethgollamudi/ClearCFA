@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Demo quiz layout UX fixes (3466203)**: Fixed demo quiz layout issues, empty bottom spacing, and buried 'Try' CTA visibility to improve initial user experience. When designing onboarding flows, ensure demo content is prominently discoverable and layout doesn't obscure conversion funnels.
+
+
+**3x faster mock generation via parallel question fan-out (3466203)**: Mock exam generation now parallelizes question creation across multiple API calls for significant speedup. This extends the earlier parallel fan-out optimization from quiz sessions to full mock exams. When implementing batch question generation, continue using controlled concurrency patterns.
+
+
+**What's New version rotation cleanup (3466203)**: Removed versions 2026-07-17-c, 2026-07-17-d, and 2026-07-17-e from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-17-f, 2026-07-17-b, and 2026-07-18. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
 **What's New version rotation cleanup (4148c64)**: Removed versions 2026-07-17-b, 2026-07-17-c, and 2026-07-17-d from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-17, 2026-07-17-e, and 2026-07-17-f. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1624,7 +1633,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1805500000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1805600000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
