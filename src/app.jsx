@@ -55,6 +55,8 @@ const SG_KEY               = "cfa_study_group_v1";
 const PUSH_SUB_KEY         = "cfa_push_sub_v1";
 const VAPID_PUB_KEY        = "BBXW1DGWNhK1tUyzVkrsfhiNF5PIwiztq7PsRntHGvuzxnPsnR07UV-H631e-UHPWzIPkeouGg_giEsH3BVjQM8";
 const GAP_HISTORY_KEY      = "cfa_gap_history_v1";
+const CONFUSION_KEY        = "cfa_confusion_v1";
+const ERROR_PATTERNS_KEY   = "cfa_error_patterns_v1";
 const RESTORABLE_SCREENS   = new Set(["readiness","dashboard","losCoverage","masteryGrid","studyPlan","revision","studyPath","calcTrainer","backup","srReview"]);
 const CFA_LEVEL_KEY = "cfa_level_v1";
 const MODEL_PRICING= {"claude-sonnet-4-6":{in:3.00,out:15.00},"claude-haiku-4-5-20251001":{in:0.80,out:4.00}};
@@ -2042,7 +2044,7 @@ function buildLinkedInImage({sessionPct,sessionScore,total,subtopic,difficulty,t
 
 function parseDebrief(text){
   const get=(label)=>{const m=text.match(new RegExp(label+":\\s*([^\\n]+)"));return m?m[1].trim():"";};
-  return{pattern:get("PATTERN"),fix:get("FIX"),priority:get("PRIORITY"),time:get("TIME"),coach:get("COACH"),rootCause:get("ROOT_CAUSE")};
+  return{pattern:get("PATTERN"),fix:get("FIX"),priority:get("PRIORITY"),time:get("TIME"),coach:get("COACH"),rootCause:get("ROOT_CAUSE"),errorType:get("ERROR_TYPE")};
 }
 
 function parseRefresherReveal(text){
@@ -4823,6 +4825,7 @@ function CFAMock(){
   const [showSavePreset,setShowSavePreset]=useState(false);
   const [warmupEnabled,setWarmupEnabled]=useState(false);
   const [challengeMode,setChallengeMode]=useState(false);
+  const [officialStyle,setOfficialStyle]=useState(false);
   const [focusLastGenerated,setFocusLastGenerated]=useState(null); // timestamp of last generation
   const [reportedQIds,setReportedQIds]=useState([]);
   const [lastSession,setLastSession]=useState(null);
@@ -4993,6 +4996,8 @@ function CFAMock(){
   const [dailyQReview,setDailyQReview]=useState(false);
   const [milestoneOverlay,setMilestoneOverlay]=useState(null);
   const [gapHistory,setGapHistory]=useState(()=>{try{return JSON.parse(localStorage.getItem(GAP_HISTORY_KEY)||"[]");}catch{return [];}});
+  const [confusionPairs,setConfusionPairs]=useState(()=>{try{return JSON.parse(localStorage.getItem(CONFUSION_KEY)||"{}");}catch{return {};}});
+  const [mockDiagnostic,setMockDiagnostic]=useState(null);const [mockDiagLoading,setMockDiagLoading]=useState(false);
   const [srAdded,setSrAdded]=useState(false);
   const [revisionFromScreen,setRevisionFromScreen]=useState("home");
   const [duelChallenge,setDuelChallenge]=useState(null);
@@ -5899,13 +5904,42 @@ FIX: [1 specific action for you to take today — concrete and actionable]
 PRIORITY: [exact concept name from wrong list to drill first]
 TIME: [realistic time to close this gap, e.g. "20 min" or "1 hour"]
 COACH: [1 honest, direct sentence using "you" — no generic cheerleading]
-ROOT_CAUSE: [one of: formula_error | concept_confusion | calculation_mistake | trap_answer | reading_error]`;
+ROOT_CAUSE: [one of: formula_error | concept_confusion | calculation_mistake | trap_answer | reading_error]
+ERROR_TYPE: [one of: direction_error | scope_error | lookalike_confusion | fact_inversion]`;
       debriefPromptRef.current=debriefPrompt;
       setAiDebriefError(null);
-      callAIChat(authUserRef.current.id,[{role:"user",content:debriefPrompt}],350,cfaLevel)
-        .then(r=>{const txt=r&&r.trim();if(txt){setAiDebrief(txt);const pd=parseDebrief(txt);if(pd.priority){const entry={date:localDateKey(),topic:t,subtopic:st,priority:pd.priority,pattern:pd.pattern||"",rootCause:pd.rootCause||"",level:cfaLevel};setGapHistory(prev=>{const next=[...prev,entry].slice(-50);try{localStorage.setItem(GAP_HISTORY_KEY,JSON.stringify(next));}catch{}return next;});}}else setAiDebriefError("error");})
+      callAIChat(authUserRef.current.id,[{role:"user",content:debriefPrompt}],400,cfaLevel)
+        .then(r=>{const txt=r&&r.trim();if(txt){setAiDebrief(txt);const pd=parseDebrief(txt);if(pd.priority){const entry={date:localDateKey(),topic:t,subtopic:st,priority:pd.priority,pattern:pd.pattern||"",rootCause:pd.rootCause||"",errorType:pd.errorType||"",level:cfaLevel};setGapHistory(prev=>{const next=[...prev,entry].slice(-50);try{localStorage.setItem(GAP_HISTORY_KEY,JSON.stringify(next));}catch{}return next;});}
+          // Feature 5: Confusion pair tracking
+          if(pd.errorType==="lookalike_confusion"||pd.rootCause==="concept_confusion"){const cpKey=t||"general";setConfusionPairs(prev=>{const existing=prev[cpKey]||[];const match=existing.find(p=>p.priority===pd.priority);const updated=match?existing.map(p=>p.priority===pd.priority?{...p,count:p.count+1,date:localDateKey()}:p):[...existing,{priority:pd.priority,pattern:pd.pattern||"",count:1,date:localDateKey()}];const next={...prev,[cpKey]:updated.slice(-10)};try{localStorage.setItem(CONFUSION_KEY,JSON.stringify(next));}catch{}return next;});}
+          // Feature 7: Auto-cloze SR cards for fact inversions
+          if(pd.errorType==="fact_inversion"&&wrongQs.length>0){setSrDeck(deck=>{let updated={...deck};wrongQs.slice(0,3).forEach(q=>{const clozKey=`${t}|||${st}|||cloze_${q.id}`;if(!updated[clozKey]){const factLine=(q.explanation||"").replace(/^Correct: [ABC]\.\s*/,"").split(/[.!]/)[0]||"";updated={...updated,[clozKey]:{concept:(q.concept||st).slice(0,60),topic:t,subtopic:st,question:`[Fact-inversion drill] ${q.concept||st}: ${factLine}`,options:q.options||{A:"",B:"",C:""},answer:q.answer,explanation:q.explanation||"",los_tested:q.los_tested||"",wrongCount:1,interval:1,repetitions:0,ef:2.5,nextReview:localDateKey(),mastered:false,_isCloze:true}}}});try{localStorage.setItem(SR_KEY,JSON.stringify(updated));}catch{}return updated;});}
+        }else setAiDebriefError("error");})
         .catch(e=>{setAiDebriefError(e.quotaExceeded?"quota":"error");})
         .finally(()=>setAiDebriefLoading(false));
+    }
+    // Feature 3: Post-Mock Diagnostic Report for weighted mocks
+    const isWeightedMock=qs.some(q=>q._weightedMock);
+    if(authUserRef.current?.id&&isWeightedMock&&qs.length>=10){
+      setMockDiagnostic(null);setMockDiagLoading(true);
+      const breakdown=getMockTopicBreakdown(qs,ans,qTimesRef.current||{});
+      const mockDiagPrompt=`You are a CFA Level ${cfaLevel} exam coach. A student just completed a ${qs.length}-question Exam-Weight Mock and scored ${pct}%.
+
+Topic breakdown (weakest first):
+${breakdown.map(b=>`• ${b.topic}: ${Math.round(b.pct)}% (${b.total} Qs, avg ${Math.round(b.avgSecs||90)}s)`).join("\n")}
+
+Respond in EXACTLY this format — no preamble:
+VERDICT: [Pass/Marginal/Fail + one honest sentence on readiness]
+TOP_WEAKNESS: [single most critical topic gap with specific sub-concept]
+TIME_MGMT: [one observation about timing from the data above]
+PRIORITY_1: [Topic: SubConcept to drill TODAY]
+PRIORITY_2: [second most urgent gap]
+PRIORITY_3: [third priority, or "Consolidate strong areas"]
+STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
+      callAIChat(authUserRef.current.id,[{role:"user",content:mockDiagPrompt}],600,cfaLevel)
+        .then(r=>{if(r&&r.trim())setMockDiagnostic(r.trim());})
+        .catch(()=>{})
+        .finally(()=>setMockDiagLoading(false));
     }
     // Log wrong answers for community analytics (fire-and-forget)
     if(authUserRef.current?.id&&wrongQs.length>0){
@@ -6394,6 +6428,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const genAbort=new AbortController();
     genAbortRef.current=genAbort;
     setSrAdded(false);
+    setMockDiagnostic(null);setMockDiagLoading(false);
     setDuelCreating(false);
     // Reset focus mode counters for the new session
     focusSwitchesRef.current=0; focusTotalAwayMsRef.current=0;
@@ -6555,7 +6590,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         setLoadingStep(2);setLoadingMsg(numCalls>1?"Generating questions in parallel…":"Generating with Claude AI…");
         const callPromises=Array.from({length:numCalls},(_,i)=>
           callClaude(
-            buildQuestionPrompt(t,st,diff,perCallCnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems,testedLOS),
+            buildQuestionPrompt(t,st,diff,perCallCnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems,testedLOS,officialStyle?"official":"standard"),
             perCallMax,
             {retries:numCalls===1?2:1,retryDelay:4000,model:useModel,feature:`questions:${diff}${numCalls>1?`:p${i}`:""}`,signal:genAbort.signal,onRetry:()=>{genEstimatedEndRef.current=Date.now()+estimatedMs;}}
           ).then(r=>Array.isArray(r)?expandQuestionKeys(r):[]).catch(()=>[])
@@ -10727,6 +10762,17 @@ Return ONLY a JSON array — no prose, no markdown fences:
         <div style={{position:"absolute",top:3,left:challengeMode?18:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s",boxShadow:"0 1px 4px #0006"}}/>
       </div>
     </div>
+
+    {/* Official Exam Style toggle */}
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:officialStyle?`${C.accent}10`:C.surface,border:`1px solid ${officialStyle?C.accent+"55":C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:14,cursor:"pointer"}} onClick={()=>setOfficialStyle(m=>!m)}>
+      <div>
+        <div style={{fontSize:13,fontWeight:700,color:officialStyle?C.accent:C.text}}>🎯 Official Exam Style</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:2}}>Questions match real CFA exam traps — all options plausible, EXCEPT/LEAST qualifiers, no throwaway distractors</div>
+      </div>
+      <div style={{width:38,height:22,borderRadius:11,background:officialStyle?C.accent:"#444",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+        <div style={{position:"absolute",top:3,left:officialStyle?18:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left 0.2s",boxShadow:"0 1px 4px #0006"}}/>
+      </div>
+    </div>
     {error&&<div style={{background:C.errorBg,border:`1px solid ${C.hard}44`,borderRadius:9,padding:"12px",color:C.hard,fontSize:13,marginBottom:14}}>{error}</div>}
     {(()=>{
       const ready=mode==="interleaved"||(selTopics.length>0&&selSubtopics.length>0);
@@ -11956,6 +12002,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
               reading_error:{icon:"👁️",label:"Reading Error",tip:"Re-read the question stem slowly. Underline key qualifiers (most/least/except)."},
             };
             const rc=d.rootCause&&RC_META[d.rootCause];
+            // Feature 1: Error Type Classification
+            const ET_META={
+              direction_error:{icon:"↕️",label:"Direction Error",tip:"You identified the right concept but inverted the direction. Write out the causal chain: A→B→C."},
+              scope_error:{icon:"🔭",label:"Scope Error",tip:"You applied a rule outside its valid scope. Note the exact condition that gates this rule."},
+              lookalike_confusion:{icon:"👯",label:"Lookalike Confusion",tip:"Two similar-sounding concepts: create a contrast table with one key distinguishing fact each."},
+              fact_inversion:{icon:"🔄",label:"Fact Inversion",tip:"You remembered the relationship but inverted it. Write the correct fact 3× from memory."},
+            };
+            const et=d.errorType&&ET_META[d.errorType];
+            // Confusion pairs for this topic
+            const topicConfusions=(confusionPairs[topic]||[]).filter(p=>p.count>=2).sort((a,b)=>b.count-a.count).slice(0,2);
             return(
               <div>
                 {d.coach&&<div style={{fontSize:12,color:C.muted,lineHeight:1.6,fontStyle:"italic",marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${C.border}`}}>"{d.coach}"</div>}
@@ -11984,6 +12040,30 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     <span>{rc.icon}</span>
                     <span style={{color:C.textMid,fontWeight:700}}>{rc.label}</span>
                     <span style={{color:C.muted}}>— {rc.tip}</span>
+                  </div>
+                )}
+                {/* Feature 1: Error type chip */}
+                {et&&(
+                  <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#f59e0b08",border:"1px solid #f59e0b33",borderRadius:20,padding:"4px 10px",marginBottom:9,fontSize:11,marginLeft:rc?6:0}}>
+                    <span>{et.icon}</span>
+                    <span style={{color:"#fcd34d",fontWeight:700}}>{et.label}</span>
+                    <span style={{color:C.muted}}>— {et.tip}</span>
+                  </div>
+                )}
+                {/* Feature 5: Recurring confusion pairs */}
+                {topicConfusions.length>0&&(
+                  <div style={{background:"#8b5cf615",border:"1px solid #8b5cf633",borderRadius:8,padding:"8px 11px",marginBottom:9}}>
+                    <div style={{fontSize:10,fontWeight:700,color:"#a78bfa",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:5}}>⚠ Recurring confusion</div>
+                    {topicConfusions.map((cp,ci)=>(
+                      <div key={ci} style={{fontSize:11,color:C.textMid,marginBottom:4}}>
+                        <b style={{color:"#c4b5fd"}}>{cp.priority}</b>
+                        <span style={{color:C.muted}}> — confused {cp.count}× ({cp.pattern?.slice(0,60)||"see fix above"})</span>
+                        <button onClick={()=>generateQuestions(topic,subtopic,"Medium",3,"guided")}
+                          style={{marginLeft:8,padding:"2px 8px",borderRadius:6,fontSize:10,fontWeight:700,background:"#8b5cf618",border:"1px solid #8b5cf644",color:"#c4b5fd",cursor:"pointer"}}>
+                          Disambiguation drill →
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {d.fix&&(
@@ -12057,6 +12137,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 <div style={{fontSize:12,color:C.muted,marginTop:8,lineHeight:1.65,borderTop:`1px solid ${C.border}`,paddingTop:8}}>{renderExplanation(q.explanation,C)}</div>
                 {q.los_tested&&<div style={{fontSize:11,color:C.muted,marginTop:6}}><span style={{fontWeight:700}}>LOS: </span>{q.los_tested}</div>}
                 {q.misconception_targeted&&<div style={{fontSize:11,color:C.muted,marginTop:4}}><span style={{fontWeight:700}}>Error pattern: </span>{q.misconception_targeted}</div>}
+                {/* Feature 6: Formula Muscle Memory — BA II Plus step-through for calc questions */}
+                {q.calc_steps?.applicable&&q.calc_steps?.keys?.length>0&&(
+                  <details style={{marginTop:8,borderRadius:8,border:`1px solid ${C.accent}30`,background:C.accent+"06"}}>
+                    <summary style={{padding:"6px 10px",fontSize:11,fontWeight:700,color:C.accentLight,cursor:"pointer",userSelect:"none"}}>
+                      🧮 BA II Plus step-through ({q.calc_steps.worksheet}) →
+                    </summary>
+                    <div style={{padding:"8px 12px"}}>
+                      <div style={{fontSize:10,color:C.muted,marginBottom:6}}>Press each key in sequence. Cover the next keys and recall before revealing:</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                        {q.calc_steps.keys.map((k,ki)=>(
+                          <span key={ki} style={{padding:"3px 7px",borderRadius:5,background:k.startsWith("[CPT]")||k.startsWith("[ENTER]")||k.startsWith("[↓]")?C.easy+"22":C.accent+"18",border:`1px solid ${k.startsWith("[CPT]")||k.startsWith("[ENTER]")||k.startsWith("[↓]")?C.easy+"44":C.accent+"33"}`,fontSize:11,fontWeight:700,color:k.startsWith("[CPT]")||k.startsWith("[ENTER]")||k.startsWith("[↓]")?C.easy:C.accentLight,fontFamily:"monospace"}}>
+                            {k}
+                          </span>
+                        ))}
+                      </div>
+                      {q.calc_steps.result&&<div style={{fontSize:12,color:C.easy,fontWeight:700}}>Result: {q.calc_steps.result}</div>}
+                    </div>
+                  </details>
+                )}
                 <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
                   <span style={{fontSize:10,color:C.muted}}>Helpful explanation?</span>
                   {[{v:1,label:"👍"},{v:-1,label:"👎"}].map(({v,label})=>(
@@ -12093,6 +12192,42 @@ Return ONLY a JSON array — no prose, no markdown fences:
                     Open Calc Trainer →
                   </button>
                 </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+      {/* Feature 3: Post-Mock Diagnostic Report */}
+      {(mockDiagLoading||mockDiagnostic)&&(
+        <div style={{background:`linear-gradient(135deg,${C.accent}10,${C.accent}05)`,border:`1px solid ${C.accent}33`,borderRadius:12,padding:"14px 16px",marginBottom:12}}>
+          <div style={{fontSize:12,fontWeight:800,color:C.accentLight,marginBottom:8}}>📊 Mock Exam Diagnostic</div>
+          {mockDiagLoading?(
+            <div style={{fontSize:12,color:C.muted}}>⏳ Generating your mock diagnostic…</div>
+          ):(()=>{
+            const getMD=(label)=>{const m=mockDiagnostic.match(new RegExp(label+":\\s*([^\\n]+)"));return m?m[1].trim():"";};
+            const verdict=getMD("VERDICT"),topWeak=getMD("TOP_WEAKNESS"),timeMgmt=getMD("TIME_MGMT"),
+                  p1=getMD("PRIORITY_1"),p2=getMD("PRIORITY_2"),p3=getMD("PRIORITY_3"),plan=getMD("STUDY_PLAN");
+            const vColor=verdict.toLowerCase().startsWith("pass")?C.easy:verdict.toLowerCase().startsWith("marginal")?"#f59e0b":C.hard;
+            return(
+              <div>
+                {verdict&&<div style={{fontSize:13,fontWeight:700,color:vColor,marginBottom:8,padding:"6px 10px",background:vColor+"12",borderRadius:7,border:`1px solid ${vColor}33`}}>{verdict}</div>}
+                {topWeak&&<div style={{fontSize:11,color:C.textMid,marginBottom:6}}><b style={{color:C.accentLight}}>🎯 Top gap:</b> {topWeak}</div>}
+                {timeMgmt&&<div style={{fontSize:11,color:C.muted,marginBottom:8}}><b style={{color:C.textMid}}>⏱ Timing:</b> {timeMgmt}</div>}
+                {(p1||p2||p3)&&(
+                  <div style={{marginBottom:8}}>
+                    <div style={{fontSize:10,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>Priority drill order</div>
+                    {[p1,p2,p3].filter(Boolean).map((p,i)=>(
+                      <div key={i} style={{fontSize:11,color:C.textMid,padding:"4px 0",borderBottom:i<2?`1px solid ${C.border}`:"none"}}>
+                        <span style={{color:C.muted,marginRight:5}}>{i+1}.</span>{p}
+                        <button onClick={()=>{const parts=p.split(":");generateQuestions(parts[0]?.trim()||topic,parts[1]?.trim()||subtopic,"Hard",5,"guided");}}
+                          style={{marginLeft:8,padding:"2px 7px",borderRadius:5,fontSize:10,fontWeight:700,background:C.accent+"15",border:`1px solid ${C.accent}33`,color:C.accentLight,cursor:"pointer"}}>
+                          Drill →
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {plan&&<div style={{fontSize:11,color:C.muted,fontStyle:"italic",paddingTop:6,borderTop:`1px solid ${C.border}`}}>📅 {plan}</div>}
               </div>
             );
           })()}

@@ -311,7 +311,20 @@ function buildDynamicContext(topic, module, srDeck, levelHistory){
   return{weakLOS,userMisconceptions,timingSignal,hasData:moduleCards.length>0};
 }
 
-function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null,dynCtx=null,multiModuleList=null,seenStems=[],testedLOS=[]){
+const TRAP_PATTERNS={
+  "Ethics":["applying a stricter-standard rule when local law sets only the minimum","treating gift disclosure as optional instead of requiring written employer approval","assuming independence is violated by any gift regardless of materiality","confusing Standard III-C (suitability) obligations with Standard III-B (fair dealing)"],
+  "Quantitative Methods":["using population standard deviation (÷n) instead of sample (÷n-1)","confusing a one-tailed p-value with a two-tailed critical region","dividing by (1+r) instead of multiplying when moving to a future value","mixing nominal and effective annual rates in annuity calculations"],
+  "Economics":["inverting the direction of currency appreciation on net exports (stronger domestic currency → lower exports, not higher)","applying the short-run Phillips curve conclusion to long-run equilibrium","confusing nominal GDP growth with real growth by ignoring the deflator","applying uncovered interest parity logic where covered interest parity applies"],
+  "Financial Statement Analysis":["adding an inventory increase to CFO when it should be subtracted (uses cash)","applying retrospective restatement to an accounting estimate change (estimates are always prospective)","using book value instead of market value to weight WACC components","confusing IFRS asset-revaluation gains recognised in OCI with US GAAP treatment where revaluation is not permitted"],
+  "Corporate Issuers":["applying a tax shield to preferred dividends (only interest on debt is tax-deductible)","using total assets instead of invested capital in ROIC calculation","confusing operating leverage (fixed operating costs) with financial leverage (fixed financing charges)"],
+  "Equity Investments":["using last year's dividend (D0) in the Gordon Growth Model denominator instead of next year's (D1)","ignoring the terminal value when summing a multi-stage DDM","applying trailing P/E when the question context calls for a forward P/E"],
+  "Fixed Income":["assuming a price increase when yield increases (they move inversely)","using par coupon rate instead of YTM to discount bond cash flows","applying modified duration for large yield moves without adding the convexity adjustment"],
+  "Derivatives":["confusing the payoff (max(S-X,0)) with the profit (payoff minus premium paid)","applying a long put payoff formula to a short put position","assuming options are always exercised at expiration regardless of moneyness"],
+  "Alternative Investments":["using called-up capital instead of committed capital in PE multiple calculations","applying listed equity valuation multiples directly to private companies without illiquidity or control discounts"],
+  "Portfolio Management":["confusing total variance with systematic variance when computing R²","using arithmetic return instead of geometric return for a multi-period performance measurement","applying the two-asset portfolio beta formula to the correlation between two assets"]
+};
+
+function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=null,miscData=null,dynCtx=null,multiModuleList=null,seenStems=[],testedLOS=[],style="standard"){
   const activeLos=losData||LOS;
   const activeMisc=miscData||MISCONCEPTIONS;
   // multiModuleList=[{t,st},...] when user selected multiple topics/modules
@@ -373,6 +386,15 @@ function buildQuestionPrompt(topic,module,difficulty,count,level="1",losData=nul
     if(parts.length) personalisedSection=`\n\n[PERSONALISED]\n${parts.join("\n")}`;
   }
 
+  // Feature 2: Trap-aware distractors
+  const topicTraps=TRAP_PATTERNS[topic]||[];
+  const multiTraps=isMulti?[...new Set(multiModuleList.flatMap(x=>TRAP_PATTERNS[x.t]||[]))]:[];
+  const activeTraps=[...topicTraps,...multiTraps].slice(0,4);
+  const trapSection=activeTraps.length?`\n\n[TRAP DISTRACTORS — embed these common error patterns into wrong options]\n${activeTraps.map(t=>`• ${t}`).join("\n")}`:"";
+
+  // Feature 4: Official exam calibration
+  const officialStyleNote=style==="official"?"\n\n[OFFICIAL CFA EXAM CALIBRATION] Every stem must contain at least one qualifying phrase that changes the correct answer if misread ('EXCEPT', 'LEAST likely', 'most appropriate', a specific time horizon or rate). All three options must be true statements from CFA curriculum — only one is correct given this specific question's context. Wrong options must represent the exact answer a candidate would get by applying the right formula to one wrong input, or the right answer to a slightly different version of this question. No throwaway distractors.":"";
+
   const levelGuidance=level==="2"
     ?`CFA Level 2 format: EVERY question must open with a 2–3 sentence mini-vignette/scenario (company, analyst, or portfolio context). Test deep analytical application, not recall. Complexity: ${difficulty==="Easy"?"identify which concept, ratio, or standard applies to the vignette — no calculation required. The answer is directly stated or immediately implied by one sentence in the scenario. Distractors are plausible alternatives from the same topic that don't fit this specific vignette context":difficulty==="Medium"?"apply a single concept to vignette data — student must identify the correct formula and select the right inputs from the scenario (not just read them off). Distractors use plausible but wrong inputs from the same vignette (e.g. wrong year's figure, wrong sign, pre-tax vs post-tax) or a related but incorrect formula":"evaluate competing interpretations or reconcile conflicting data"}.`
     :level==="3"
@@ -392,7 +414,7 @@ ${losText}
 
 Misconceptions to use in wrong options: ${misconceptions}
 
-${levelGuidance}${personalisedSection}${avoidBlock}
+${levelGuidance}${personalisedSection}${trapSection}${officialStyleNote}${avoidBlock}
 Return ONLY a JSON array, no markdown:
 [{"id":1,"question":"...","options":{"A":"...","B":"...","C":"..."},"answer":"A","explanation":"...","concept":"3-5 word tag","los_tested":"LOS text","misconception_targeted":"error exploited","distractor_explanations":{"B":"1 sentence why B is wrong","C":"1 sentence why C is wrong"},"calc_steps":{"applicable":true,"worksheet":"TVM","keys":["[2ND]","[CLR TVM]","5","[N]","6","[I/Y]","80","[PMT]","1000","[FV]","[CPT]","[PV]"],"result":"−1,084.25"}}]
 
