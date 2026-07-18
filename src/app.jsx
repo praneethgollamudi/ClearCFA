@@ -306,12 +306,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-b
-{version:"2026-07-18-b",slides:[
-{emoji:"🔍",color:C.hard,bg:C.hard,title:"Know Exactly Why You Got It Wrong",sub:"AI Debrief · 2026-07-18 update",desc:"After every wrong answer, the AI now labels your exact mistake: Direction Error, Scope Error, Lookalike Confusion, or Fact Inversion — each with a targeted drill tip so you fix the root cause, not just the symptom.",tip:"After your next session, look for the new error-type chip in the debrief. Use it to decide whether to re-read, contrast two concepts, or write the correct fact three times."},
-{emoji:"🎯",color:C.accent,bg:C.accent,title:"Official Exam Style Questions",sub:"Practice · 2026-07-18 update",desc:"Toggle 'Official Exam Style' on the setup screen to generate questions that match the real CFA exam: all three options are plausible, qualifiers like EXCEPT and LEAST LIKELY appear in the stem, and wrong answers are the exact mistakes the real exam targets.",tip:"Enable Official Exam Style for your next mock run — if you can score 70%+ with this on, you're ready."},
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Post-Mock Coaching + Smarter SR",sub:"Analysis · 2026-07-18 update",desc:"Finishing an Exam-Weight Mock now triggers a full AI diagnostic: verdict, your single biggest weakness, time-management feedback, and a 3-topic priority drill plan. Fact-inversion errors also auto-create spaced-repetition cards so you drill the exact relationship you inverted.",tip:"After your next 18-question mock, scroll past the score card for your personal coaching report — with one-tap drill buttons for each priority topic."},
-]},
 // WN_VER:2026-07-18-c
 {version:"2026-07-18-c",slides:[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We've parallelized question generation across multiple processing threads, cutting mock exam load times by 3x. Start your full-length practice test in seconds instead of minutes.",tip:"Launch a full exam now—you'll notice questions appear instantly as you navigate."},
@@ -335,6 +329,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Vibrant New Color Theme",sub:"UX · 2026-07-18 update",desc:"We've redesigned ClearCFA with a energizing midnight navy base and brighter, vibrant accents to reduce eye strain during long study sessions. The new palette makes key concepts and progress indicators pop, so you stay focused and motivated.",tip:"Notice how the green highlights now stand out instantly when marking questions correct—it's your visual reward for mastery."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother App Launch & Loading",sub:"Speed · 2026-07-18 update",desc:"We fixed the loading screen to show accurate, event-driven progress steps and softened retry logic so app startup feels faster and more reliable. No more stalled spinners or confusing status labels—you get to your study materials quicker.",tip:"Watch for clear step labels (\"Initializing,\" \"Syncing,\" etc.) that now accurately reflect what's actually happening behind the scenes."},
 {emoji:"🎯",color:C.reward,bg:C.reward,title:"Quiz Layout & Navigation Fixed",sub:"Bug Fix · 2026-07-18 update",desc:"We resolved three critical issues: demo quiz layout now displays correctly, eliminated awkward empty space at the bottom of screens, and made the \"Try CFA Prep\" call-to-action prominent and easy to find. Your study experience is now cleaner and more intuitive.",tip:"Start a demo quiz to see the improved layout—questions and answers are now perfectly aligned without distracting gaps."},
+]},
+// WN_VER:2026-07-18
+{version:"2026-07-18",slides:[
+{emoji:"🎯",color:C.hard,bg:C.hard,title:"Official Exam Style Questions",sub:"Study Tools · 2026-07-18 update",desc:"Practice with 7 new question formats that match the exact style and difficulty of official CFA mock exams. You'll build familiarity with real exam patterns before test day.",tip:"Start a mock exam session to see the new official-style questions in action."},
+{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Smart Error Diagnosis & Coaching",sub:"AI · 2026-07-18 update",desc:"ClearCFA now analyzes your mistakes and delivers personalized coaching on why you missed each question. You'll learn the concept gaps driving your errors, not just the correct answer.",tip:"Review your last quiz or mock exam to see detailed error diagnosis for each wrong answer."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Reliable Mock Exam Loading",sub:"Speed · 2026-07-18 update",desc:"We fixed mobile network issues that were interrupting mock exam generation. Weighted mocks now load consistently, even on slower connections.",tip:"Generate a weighted mock on your phone—it should now complete without interruptions."},
 ]},
 // WN_END
 ];
@@ -362,8 +362,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-17
-{date:"2026-07-17",entries:[
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
