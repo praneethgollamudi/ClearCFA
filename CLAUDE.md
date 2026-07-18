@@ -12,6 +12,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 **What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-f and 2026-07-18 from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-b, 2026-07-18-c, 2026-07-18-d, and 2026-07-18-e. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
+Removed versions 2026-07-18-b and 2026-07-18-c from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-d, 2026-07-18-e, 2026-07-18-f, and 2026-07-18. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
 
 **Readiness Tracker in Exam Plan (db71702)**: Added probability trend visualization and in-app progress bars to Exam Plan. When updating Exam Plan component, ensure readiness tracker state syncs with study phase progression and displays accurate performance trends from quiz history.
 
@@ -20,6 +23,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 
 **Exam Plan integration with Today's Focus (9c3a16b)**: Connected Exam Plan to Today's Focus dashboard, revision notes, and actionable phase CTAs. When updating Exam Plan or Today's Focus components, ensure state changes propagate between screens and CTA actions navigate to correct study phase with proper context loaded.
+
+Exam Plan now includes Readiness Tracker with probability trend visualization and real-time progress bars showing pass probability forecasts. When updating Exam Plan, ensure readiness trends persist across quiz sessions and accurately reflect cumulative performance metrics for informed study prioritization.
+
 
 
 **Edge function auth deployment (d7e9b64)**: Deploy edge functions with `--no-verify-jwt` flag to bypass JWT verification during CI/CD. When pushing edge function updates, ensure deployment command includes this flag to prevent auth failures in preview/staging environments.
@@ -1724,7 +1730,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1807100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1807200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1896,3 +1902,5 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **Leaderboard sessions.data JSONB casting (78e568c, c60895f)**: Leaderboard SQL function now explicitly casts sessions.data to jsonb and user_id to text in joins. When querying leaderboard or aggregating session metrics, ensure type casting is applied to prevent PostgreSQL type mismatch errors.
 
 **What's New version 2026-07-14-b (7fbcfb7)**: New slide set covering Smoother Results & Quiz Start (results screen stability, first question UX) and Better Free-Tier Guidance (feature upgrade hints, pass probability on dashboard). Versions 2026-07-13-d, 2026-07-13-e, and 2026-07-13-f have been removed from rotation.
+
+More menu trimmed to 8 focused items with analytics duplicates removed. When adding menu items, prioritize core study functions and avoid redundant feature exposure to maintain nav clarity and reduce cognitive load.
