@@ -4,6 +4,15 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**More menu streamlined to 8 items (10862e3)**: Trimmed More menu to 8 focused navigation items, removing redundant analytics entries. When updating the More menu, maintain focused scope and avoid duplicate feature links to reduce navigation clutter and improve UX clarity.
+
+
+**Exam Plan Readiness Tracker module-level accuracy (61e8b00)**: Readiness Tracker now displays module-level mock vs in-app accuracy comparisons alongside pass probability trends. When updating Readiness Tracker, ensure accuracy metrics distinguish between official mock performance and in-app quiz results to help users prioritize high-impact study areas.
+
+
+**What's New version rotation cleanup (61e8b00)**: Removed versions 2026-07-18-c and 2026-07-18-d from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-e, 2026-07-18-f, 2026-07-18-b, and 2026-07-18. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
 **What's New version rotation cleanup (04fdc66)**: Removed versions 2026-07-18 and 2026-07-18-b from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-c, 2026-07-18-d, 2026-07-18-e, and 2026-07-18-f. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1730,7 +1739,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1807200000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1807300000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
