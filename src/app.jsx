@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-f
-{version:"2026-07-18-f",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Exam Plan Guides Your Daily Study",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now connects directly to Today's Focus, revision notes, and actionable next steps. Every time you open the app, you'll see exactly what to study based on your personalized prep timeline.",tip:"Open Today's Focus to see your Exam Plan–driven recommendations for the day."},
-{emoji:"🛠️",color:C.medium,bg:C.medium,title:"PDF Errors Now Clearly Reported",sub:"Bug Fix · 2026-07-18 update",desc:"When PDF analysis encounters a problem, you'll now see a clear error message instead of silent failure. This helps you quickly understand what went wrong and retry or contact support.",tip:"If a PDF upload fails, check the error message for details on what to do next."},
-{emoji:"✨",color:C.reward,bg:C.reward,title:"Study Path Stability Improved",sub:"UX · 2026-07-18 update",desc:"Fixed Study Path blank screen issues so your learning flow stays uninterrupted. The Exam Plan (formerly Week Plan) is also now easier to find in the More menu.",tip:"Tap More to access your Exam Plan—your go-to prep roadmap."},
-]},
 // WN_VER:2026-07-18
 {version:"2026-07-18",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Track Your Exam Readiness",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now shows pass probability trends and real-time progress bars for each topic. Watch your readiness score climb as you complete practice questions and review sessions.",tip:"Open your Exam Plan to see your pass probability forecast update after each quiz attempt."},
@@ -336,6 +330,12 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-18-d",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Track Mock vs In-App Accuracy",sub:"Study Tools · 2026-07-18 update",desc:"Exam Plan now shows your module-level performance across both official mocks and in-app quizzes side-by-side, with pass probability trends. See exactly which topics need more focus before exam day.",tip:"Open Exam Plan and check the Readiness Tracker to compare your mock scores against in-app accuracy for each module."},
 {emoji:"📚",color:C.medium,bg:C.medium,title:"Notes, Formulas & Deep Study in One Place",sub:"UX · 2026-07-18 update",desc:"Exam Plan tabs now surface your notes, formula sheets, and deep-study content—plus smart CTA recommendations based on your mock performance. Stop switching between screens; everything you need is organized by topic.",tip:"Tap the Notes, Formulas, or Deep Study tabs within each module to jump straight to high-value content."},
+]},
+// WN_VER:2026-07-18-e
+{version:"2026-07-18-e",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Track Readiness by Topic",sub:"Study Tools · 2026-07-18 update",desc:"The Readiness Tracker now matches your exam plan against CFA topics and shows your mock vs in-app accuracy at the module level. See exactly which topics you're ready for and which need more focus before exam day.",tip:"Open your Exam Plan and tap Readiness Tracker to compare your performance across all modules at once."},
+{emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Study Resources In One Place",sub:"UX · 2026-07-18 update",desc:"Your Exam Plan now surfaces Notes, Formulas, and Deep Study options directly in tabbed sections, plus smart recommendations based on your mock performance. Stop hunting for study materials and access what you need in context.",tip:"After completing a mock exam, check the Exam Plan tabs to find targeted deep-dive content for topics where you struggled."},
+{emoji:"⚙️",color:C.medium,bg:C.medium,title:"Cleaner, Smarter Menu",sub:"UX · 2026-07-18 update",desc:"The More menu is now streamlined to 8 essential items, removing redundant analytics and clutter. Your settings and tools are easier to find and the app feels faster to navigate.",tip:"Tap the menu icon to see the refreshed options—everything you need is still there, just more organized."},
 ]},
 // WN_END
 ];
@@ -365,12 +365,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -396,6 +390,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
