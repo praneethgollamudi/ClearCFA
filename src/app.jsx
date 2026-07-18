@@ -6357,6 +6357,12 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
         setPdfError("Could not read text from this PDF. Make sure it's a text-based PDF, not a scanned image.");
         setPdfUploading(false);return;
       }
+      // Duplicate detection: fingerprint = length + first 120 + last 120 chars
+      const fingerprint=`${pdfText.length}|${pdfText.slice(0,120)}|${pdfText.slice(-120)}`;
+      if(examStudyPlan?.pdfFingerprint&&examStudyPlan.pdfFingerprint===fingerprint){
+        showToast("ℹ️","Already analyzed","This mock PDF has already been processed. Upload a different mock exam to track progress.");
+        setPdfUploading(false);return;
+      }
       const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));
       const res=await fetch(AI_PROXY_URL,{
         method:"POST",
@@ -6381,6 +6387,7 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       const {plan,perfSummary}=data;
       if(!plan||!Array.isArray(plan.phases)){setPdfError("AI returned an unexpected response. Try again.");setPdfUploading(false);return;}
       plan.daysLeftAtCreation=daysLeft;
+      plan.pdfFingerprint=fingerprint;
       try{localStorage.setItem(EXAM_PLAN_KEY,JSON.stringify(plan));}catch{}
       setExamStudyPlan(plan);
       const newHistory=[...mockPerfHistory,{...perfSummary,uploadedAt:new Date().toISOString()}].slice(-10);

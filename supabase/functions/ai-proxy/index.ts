@@ -440,33 +440,39 @@ EXAM DATE: ${examDateStr}
 DAYS UNTIL EXAM: ${daysLeft}
 UPLOAD NUMBER: ${uploadCount} (this is the ${uploadCount === 1 ? '1st' : uploadCount === 2 ? '2nd' : uploadCount === 3 ? '3rd' : uploadCount + 'th'} mock review analyzed)
 
+STEP 1 — Before writing JSON, identify ALL CFA topic areas where the mock score was below 70% (or below the CFA pass mark). List every weak area you see, not just the worst one. Common CFA Level ${cfaLvl} topics: Ethics, Quantitative Methods, Economics, Financial Statement Analysis, Corporate Issuers, Equity, Fixed Income, Derivatives, Alternatives, Portfolio Management.
+
+STEP 2 — Distribute phases across DIFFERENT weak topics. If 3+ topics are weak, each phase covers a DIFFERENT topic. Never assign the same primaryFocus to two consecutive phases.
+
 Generate a JSON study plan. Return ONLY valid JSON with no markdown or explanation:
 {
-  "summary": "2-3 sentence plain-English coaching summary of what this mock shows and exactly what the user must do to pass",
+  "summary": "2-3 sentence plain-English coaching summary naming ALL weak areas found and what the user must do across EACH to pass",
   "estimatedPassProb": "e.g. 52%",
   "phases": [
     {
       "id": "phase1",
-      "title": "Phase 1: [short descriptive name based on actual weak areas]",
+      "title": "Phase 1: [short descriptive name — must name the specific weak topic]",
       "weeks": "Weeks 1-N (dates if possible)",
       "startDay": 1,
       "endDay": 21,
-      "primaryFocus": "Exact CFA topic name",
-      "secondaryFocus": "Exact CFA topic name or null",
+      "primaryFocus": "Exact CFA topic name (DIFFERENT from other phases)",
+      "secondaryFocus": "Another weak CFA topic name or null",
       "weeklyTarget": "e.g. 5 sessions/week, 10Q each — Fixed Income only",
       "milestoneGoal": "Specific measurable target: e.g. Score 70%+ on Fixed Income by Day 21",
       "keyTopics": ["Exact module from mock", "Another exact module"],
       "checkpointAction": "Specific action at end of this phase, e.g. take a 10Q Fixed Income drill and aim for 70%+"
     }
   ],
-  "weakTopics": ["topic based on mock data"],
-  "strongTopics": ["topic that scored well"],
-  "keyInsights": ["specific insight from the mock data", "another specific insight"],
+  "weakTopics": ["ALL topics that scored below 70% on this mock — must include every weak area, not just the worst"],
+  "strongTopics": ["topic that scored well above 70%"],
+  "keyInsights": ["specific insight about a weak area", "specific insight about another weak area"],
   "uploadCount": ${uploadCount}
 }
 
 STRICT RULES:
 - Create 2-4 phases based on ${daysLeft} days available. LAST phase must always be "Final Mock & Review" (last 7-10 days: 2 full mocks + targeted fixes).
+- CRITICAL: Each non-final phase MUST have a DIFFERENT primaryFocus. If Ethics, Fixed Income, and Equity are all weak, Phase 1 = Ethics, Phase 2 = Fixed Income, Phase 3 = Equity. Never repeat the same topic.
+- weakTopics MUST list every CFA topic area that scored below 70% on this mock — not just one.
 - Phase focus MUST come directly from the mock data — only mention topics that appear in the PDF text.
 - If prior history exists, note what IMPROVED vs. what is still weak across uploads.
 - Each phase must have a realistic weekly target (not more than 1-2 hr/day).
