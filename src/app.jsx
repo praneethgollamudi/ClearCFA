@@ -13886,22 +13886,32 @@ Return ONLY a JSON array — no prose, no markdown fences:
           ].join(" ").toLowerCase();
           const weakTopicsText=(examStudyPlan.weakTopics||[]).join(" ").toLowerCase();
           const strongTopicsText=(examStudyPlan.strongTopics||[]).join(" ").toLowerCase();
+          const latestMockScores=(mockPerfHistory.length>0&&mockPerfHistory[mockPerfHistory.length-1]?.topicScores)||{};
+          const prevMockScores=(mockPerfHistory.length>1&&mockPerfHistory[mockPerfHistory.length-2]?.topicScores)||{};
+          const hasMockScores=Object.keys(latestMockScores).length>0;
           const weakProgress=moduleReadiness.map(mr=>{
-            const kwords=TOPIC_KWORDS[mr.topic]||[mr.topic.toLowerCase()];
-            const inWeak=kwords.some(k=>weakTopicsText.includes(k));
-            const inStrong=!inWeak&&kwords.some(k=>strongTopicsText.includes(k));
-            const inPlan=!inWeak&&!inStrong&&kwords.some(k=>examPlanAllText.includes(k));
-            const mockVerdict=inWeak?"weak":inStrong?"strong":inPlan?"mentioned":"neutral";
-            return{topic:mr.topic,accuracy:mr.accuracy??null,sessions:mr.sessions||0,totalQs:mr.totalQs||0,mockVerdict};
+            const mockScore=latestMockScores[mr.topic]!=null?Number(latestMockScores[mr.topic]):null;
+            const prevScore=prevMockScores[mr.topic]!=null?Number(prevMockScores[mr.topic]):null;
+            const delta=mockScore!==null&&prevScore!==null?mockScore-prevScore:null;
+            let mockVerdict;
+            if(mockScore!==null){
+              mockVerdict=mockScore<60?"weak":mockScore<70?"borderline":"strong";
+            }else{
+              const kwords=TOPIC_KWORDS[mr.topic]||[mr.topic.toLowerCase()];
+              const inWeak=kwords.some(k=>weakTopicsText.includes(k));
+              const inStrong=!inWeak&&kwords.some(k=>strongTopicsText.includes(k));
+              const inPlan=!inWeak&&!inStrong&&kwords.some(k=>examPlanAllText.includes(k));
+              mockVerdict=inWeak?"weak":inStrong?"strong":inPlan?"mentioned":"neutral";
+            }
+            return{topic:mr.topic,accuracy:mr.accuracy??null,sessions:mr.sessions||0,totalQs:mr.totalQs||0,mockScore,prevScore,delta,mockVerdict};
           })
-          .filter(m=>m.mockVerdict==="weak"||m.mockVerdict==="strong"||m.mockVerdict==="mentioned")
+          .filter(m=>m.mockScore!==null||m.mockVerdict==="weak"||m.mockVerdict==="strong"||m.mockVerdict==="mentioned")
           .sort((a,b)=>{
-            const rank=v=>v==="weak"?0:v==="mentioned"?1:v==="strong"?2:3;
-            if(rank(a.mockVerdict)!==rank(b.mockVerdict))return rank(a.mockVerdict)-rank(b.mockVerdict);
-            if(a.accuracy===null&&b.accuracy===null)return 0;
-            if(a.accuracy===null)return 1;
-            if(b.accuracy===null)return -1;
-            return a.accuracy-b.accuracy;
+            if(a.mockScore!==null&&b.mockScore!==null)return a.mockScore-b.mockScore;
+            if(a.mockScore!==null)return -1;
+            if(b.mockScore!==null)return 1;
+            const rank=v=>v==="weak"?0:v==="borderline"?1:v==="mentioned"?2:v==="strong"?3:4;
+            return rank(a.mockVerdict)-rank(b.mockVerdict);
           });
           return(
             <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:16}}>
@@ -13943,39 +13953,68 @@ Return ONLY a JSON array — no prose, no markdown fences:
                 </div>
               )}
 
-              {/* Module-wise accuracy: mock verdict + in-app accuracy */}
+              {/* Topic performance: mock score vs in-app accuracy */}
               {weakProgress.length>0&&(
                 <div>
-                  <div style={{fontSize:11,fontWeight:700,color:C.text,marginBottom:10}}>Module Accuracy — Mock vs In-App</div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                    <div style={{fontSize:11,fontWeight:700,color:C.text}}>Topic Performance</div>
+                    <div style={{fontSize:9,color:C.muted}}>Mock score vs in-app practice</div>
+                  </div>
                   {weakProgress.map((w,i)=>{
-                    const inAppCol=w.accuracy===null?C.muted:w.accuracy>=70?C.easy:w.accuracy>=50?C.medium:C.hard;
-                    const inAppLabel=w.accuracy===null?"Not practiced yet":w.accuracy>=70?"On track":w.accuracy>=50?"Needs work":"Drill now";
-                    const verdictBadge=w.mockVerdict==="weak"
-                      ?<span style={{fontSize:9,fontWeight:800,padding:"2px 6px",borderRadius:10,background:C.hard+"22",color:C.hard,border:`1px solid ${C.hard}44`,whiteSpace:"nowrap"}}>⚠ Mock weak</span>
-                      :w.mockVerdict==="strong"
-                      ?<span style={{fontSize:9,fontWeight:800,padding:"2px 6px",borderRadius:10,background:C.easy+"22",color:C.easy,border:`1px solid ${C.easy}44`,whiteSpace:"nowrap"}}>✓ Mock strong</span>
-                      :w.mockVerdict==="mentioned"
-                      ?<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:10,background:C.medium+"18",color:C.medium,border:`1px solid ${C.medium}33`,whiteSpace:"nowrap"}}>📋 In plan</span>
-                      :null;
+                    const mockCol=w.mockScore===null?C.muted:w.mockScore>=70?C.easy:w.mockScore>=55?C.medium:C.hard;
+                    const inAppCol=w.accuracy===null?C.muted:w.accuracy>=70?C.easy:w.accuracy>=55?C.medium:C.hard;
+                    const gap=w.mockScore!==null&&w.accuracy!==null?w.accuracy-w.mockScore:null;
+                    const drillDiff=w.mockScore!==null?w.mockScore:w.accuracy;
                     return(
-                      <div key={i} style={{marginBottom:i<weakProgress.length-1?12:0,paddingBottom:i<weakProgress.length-1?12:0,borderBottom:i<weakProgress.length-1?`1px solid ${C.border}`:undefined}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                          <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
-                            <div style={{fontSize:12,color:C.text,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{w.topic}</div>
-                            {verdictBadge}
+                      <div key={i} style={{marginBottom:i<weakProgress.length-1?16:0,paddingBottom:i<weakProgress.length-1?16:0,borderBottom:i<weakProgress.length-1?`1px solid ${C.border}`:undefined}}>
+                        {/* Topic header */}
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
+                          <div style={{fontSize:12,fontWeight:800,color:C.text}}>{w.topic}</div>
+                          {w.delta!==null&&(
+                            <span style={{fontSize:10,fontWeight:800,color:w.delta>=0?C.easy:C.hard,background:w.delta>=0?C.easy+"18":C.hard+"18",padding:"2px 8px",borderRadius:12,flexShrink:0}}>
+                              {w.delta>=0?"↑ +":"↓ "}{Math.abs(w.delta)}% vs last mock
+                            </span>
+                          )}
+                        </div>
+                        {/* Score cards */}
+                        <div style={{display:"flex",gap:8,marginBottom:7}}>
+                          <div style={{flex:1,background:w.mockScore!==null?mockCol+"14":C.surfaceHigh,borderRadius:10,padding:"9px 10px",border:`1px solid ${w.mockScore!==null?mockCol+"40":C.border}`}}>
+                            <div style={{fontSize:8,fontWeight:800,color:w.mockScore!==null?mockCol:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Mock Exam</div>
+                            <div style={{fontSize:24,fontWeight:900,color:w.mockScore!==null?mockCol:C.muted,lineHeight:1,marginBottom:6}}>
+                              {w.mockScore!==null?w.mockScore+"%":"—"}
+                            </div>
+                            {w.mockScore!==null&&(
+                              <div style={{height:3,background:mockCol+"25",borderRadius:3}}>
+                                <div style={{height:"100%",borderRadius:3,width:Math.min(w.mockScore,100)+"%",background:mockCol,transition:"width 0.6s"}}/>
+                              </div>
+                            )}
                           </div>
-                          <div style={{fontSize:13,fontWeight:800,color:inAppCol,flexShrink:0,marginLeft:8}}>{w.accuracy===null?"—":w.accuracy+"%"}</div>
+                          <div style={{flex:1,background:w.accuracy!==null?inAppCol+"14":C.surfaceHigh,borderRadius:10,padding:"9px 10px",border:`1px solid ${w.accuracy!==null?inAppCol+"40":C.border}`}}>
+                            <div style={{fontSize:8,fontWeight:800,color:w.accuracy!==null?inAppCol:C.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>In-App Practice</div>
+                            <div style={{fontSize:24,fontWeight:900,color:w.accuracy!==null?inAppCol:C.muted,lineHeight:1,marginBottom:6}}>
+                              {w.accuracy!==null?w.accuracy+"%":"—"}
+                            </div>
+                            {w.accuracy!==null&&(
+                              <div style={{height:3,background:inAppCol+"25",borderRadius:3}}>
+                                <div style={{height:"100%",borderRadius:3,width:Math.min(w.accuracy,100)+"%",background:inAppCol,transition:"width 0.6s"}}/>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div style={{height:5,background:C.surfaceHigh,borderRadius:5,overflow:"hidden",marginBottom:4}}>
-                          <div style={{height:"100%",width:w.accuracy!==null?Math.min(w.accuracy,100)+"%":"0%",background:inAppCol,borderRadius:5,transition:"width 0.5s"}}/>
-                        </div>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                          <div style={{fontSize:9,color:w.accuracy===null?C.muted:inAppCol}}>{inAppLabel}{w.sessions>0?` · ${w.sessions} session${w.sessions>1?"s":""}`:""}</div>
-                          {w.accuracy===null
-                            ?<button onClick={()=>generateQuestions(w.topic,null,"medium",10,"guided")} style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:6,background:C.accent+"18",border:`1px solid ${C.accent}33`,color:C.accentLight,cursor:"pointer"}}>Start →</button>
-                            :w.accuracy<70&&<button onClick={()=>generateQuestions(w.topic,null,w.accuracy<50?"hard":"medium",10,"guided")} style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:6,background:inAppCol+"18",border:`1px solid ${inAppCol}44`,color:inAppCol,cursor:"pointer"}}>Drill →</button>
-                          }
-                        </div>
+                        {/* Gap warning */}
+                        {gap!==null&&gap>=15&&(
+                          <div style={{fontSize:10,color:C.medium,background:C.medium+"14",padding:"5px 9px",borderRadius:7,marginBottom:7,display:"flex",gap:5,lineHeight:1.4}}>
+                            <span style={{flexShrink:0}}>⚠</span>
+                            <span>In-app score {gap}% higher than mock — practice this topic under timed, no-hint conditions</span>
+                          </div>
+                        )}
+                        {/* Drill button */}
+                        {(drillDiff===null||drillDiff<70)&&(
+                          <button onClick={()=>generateQuestions(w.topic,null,drillDiff!==null&&drillDiff<50?"hard":"medium",10,"guided")}
+                            style={{width:"100%",padding:"7px 12px",borderRadius:8,fontSize:11,fontWeight:700,background:w.mockScore!==null?mockCol+"18":C.accent+"18",border:`1px solid ${w.mockScore!==null?mockCol+"44":C.accent+"33"}`,color:w.mockScore!==null?mockCol:C.accentLight,cursor:"pointer"}}>
+                            {w.accuracy===null?"Start practice →":"Drill "+w.topic.split(" ")[0]+" →"}
+                          </button>
+                        )}
                       </div>
                     );
                   })}

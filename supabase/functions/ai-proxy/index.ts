@@ -448,6 +448,11 @@ Generate a JSON study plan. Return ONLY valid JSON with no markdown or explanati
 {
   "summary": "2-3 sentence plain-English coaching summary naming ALL weak areas found and what the user must do across EACH to pass",
   "estimatedPassProb": "e.g. 52%",
+  "topicScores": {
+    "Ethics": 58,
+    "Fixed Income": 45,
+    "Equity": 72
+  },
   "phases": [
     {
       "id": "phase1",
@@ -468,6 +473,13 @@ Generate a JSON study plan. Return ONLY valid JSON with no markdown or explanati
   "keyInsights": ["specific insight about a weak area", "specific insight about another weak area"],
   "uploadCount": ${uploadCount}
 }
+
+TOPIC SCORES RULES (topicScores field):
+- Extract the ACTUAL numeric score for each CFA topic area found in the PDF
+- Use ONLY these exact keys matching official CFA topic names: "Ethics", "Quantitative Methods", "Economics", "Financial Statement Analysis", "Corporate Issuers", "Equity", "Fixed Income", "Derivatives", "Alternatives", "Portfolio Management"
+- Convert fractions to percentages: 14/20 → 70, 9/15 → 60
+- Only include topics where you found an actual score in the PDF — omit topics with no score data
+- Values must be integers 0-100 (percentage scored)
 
 STRICT RULES:
 - Create 2-4 phases based on ${daysLeft} days available. LAST phase must always be "Final Mock & Review" (last 7-10 days: 2 full mocks + targeted fixes).
@@ -521,6 +533,7 @@ STRICT RULES:
     const perfSummary = {
       weakTopics: plan.weakTopics ?? [],
       estimatedPassProb: plan.estimatedPassProb ?? '?',
+      topicScores: plan.topicScores ?? {},
     };
 
     // Log token usage
