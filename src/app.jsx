@@ -13889,7 +13889,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
             const mockVerdict=inWeak?"weak":inStrong?"strong":inPlan?"mentioned":"neutral";
             return{topic:mr.topic,accuracy:mr.accuracy??null,sessions:mr.sessions||0,totalQs:mr.totalQs||0,mockVerdict};
           })
-          .filter(m=>m.sessions>0||m.mockVerdict==="weak"||m.mockVerdict==="mentioned")
+          .filter(m=>m.mockVerdict==="weak"||m.mockVerdict==="strong"||m.mockVerdict==="mentioned")
           .sort((a,b)=>{
             const rank=v=>v==="weak"?0:v==="mentioned"?1:v==="strong"?2:3;
             if(rank(a.mockVerdict)!==rank(b.mockVerdict))return rank(a.mockVerdict)-rank(b.mockVerdict);
