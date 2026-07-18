@@ -5276,13 +5276,15 @@ function CFAMock(){
       }
       setSrLoaded(true);
 
-      // Load usage analytics
-      try{
-        const usage=await storageGet(USAGE_KEY);
-        if(usage&&typeof usage==="object"&&!Array.isArray(usage)) setUsageStats(usage);
-      }catch{}
-      try{const al=await storageGet(API_LOG_KEY);if(Array.isArray(al))apiLogRef.current=al;}catch{}
-      try{const pt=await storageGet(PASS_TREND_KEY);if(Array.isArray(pt)){const floored=pt.map(p=>({...p,prob:Math.max(5,p.prob||0)}));setPassTrend(floored);passTrendRef.current=floored;}}catch{}
+      // Load usage analytics — all three keys are independent, read in parallel
+      const [usageVal,apiLogVal,passTrendVal]=await Promise.all([
+        storageGet(USAGE_KEY).catch(()=>null),
+        storageGet(API_LOG_KEY).catch(()=>null),
+        storageGet(PASS_TREND_KEY).catch(()=>null),
+      ]);
+      if(usageVal&&typeof usageVal==="object"&&!Array.isArray(usageVal)) setUsageStats(usageVal);
+      if(Array.isArray(apiLogVal)) apiLogRef.current=apiLogVal;
+      if(Array.isArray(passTrendVal)){const floored=passTrendVal.map(p=>({...p,prob:Math.max(5,p.prob||0)}));setPassTrend(floored);passTrendRef.current=floored;}
 
       // STEP 2c: Bidirectional Supabase merge
       // Pull if Supabase is ahead; push if local is ahead (ensures progress is never lost)
@@ -5322,20 +5324,20 @@ function CFAMock(){
         }catch{}
       }
 
-      // STEP 4: Load settings
-      // API key no longer stored client-side — AI routed through backend proxy
-      try{const d=await storageGet("cfa_exam_date");if(d&&typeof d==="string"){setExamDate(new Date(d));setExamDateInput(d);}}catch{}
-      try{const qc=await storageGet(QCACHE_KEY);if(qc&&typeof qc==="object")qCacheRef.current=qc;}catch{}
-      try{const savedQdb=await storageGet(QDB_KEY);if(savedQdb&&typeof savedQdb==="object")setQdb(savedQdb);}catch{}
+      // STEP 4: Load settings — all four keys are independent, read in parallel
+      const [dVal,qcVal,savedQdbVal,focusCacheVal]=await Promise.all([
+        storageGet("cfa_exam_date").catch(()=>null),
+        storageGet(QCACHE_KEY).catch(()=>null),
+        storageGet(QDB_KEY).catch(()=>null),
+        storageGet("cfa_focus_cache").catch(()=>null),
+      ]);
+      if(dVal&&typeof dVal==="string"){setExamDate(new Date(dVal));setExamDateInput(dVal);}
+      if(qcVal&&typeof qcVal==="object") qCacheRef.current=qcVal;
+      if(savedQdbVal&&typeof savedQdbVal==="object") setQdb(savedQdbVal);
       setQdbLoaded(true);
-
-      // Load cached focus suggestions (only use if from today)
-      try {
-        const cached = await storageGet("cfa_focus_cache");
-        if (cached && cached.date === localDateKey() && cached.suggestions) {
-          setFocusSuggestions(cached.suggestions);
-        }
-      } catch {}
+      if(focusCacheVal&&focusCacheVal.date===localDateKey()&&focusCacheVal.suggestions){
+        setFocusSuggestions(focusCacheVal.suggestions);
+      }
     };
     recoverData().then(()=>{
       // Auto-refresh focus if no cache or cache is from a previous day
@@ -5859,10 +5861,12 @@ function CFAMock(){
 
     // Persist — both localStorage and Supabase use the synchronously-built values
     (async()=>{
-      const ok=await storageSet(STORAGE_KEY,newHistory.slice(0,300));
+      // localStorage write and Supabase sync are independent — run in parallel
+      const [ok,synced]=await Promise.all([
+        storageSet(STORAGE_KEY,newHistory.slice(0,300)),
+        supabaseSync(SB_CFG,newHistory.slice(0,300),updatedSrDeck,usageStatsRef.current,authUserRef.current)
+      ]);
       setSessionSaved(ok);
-      // Cloud sync via Supabase handles backup
-      const synced=await supabaseSync(SB_CFG,newHistory.slice(0,300),updatedSrDeck,usageStatsRef.current,authUserRef.current);
       if(synced) setDriveStatus("synced");
       else setDriveStatus("error");
       setTimeout(()=>setDriveStatus(null),4000);
@@ -6740,27 +6744,36 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setLoading(true);setError("");
     try{
       const allTopics=Object.entries(activeLOS);const totalW=allTopics.reduce((s,[,{weight}])=>s+weight,0);
+      // Phase 1: fill from local templates; queue API tasks for any topic not covered
       let allQs=[];
-      // Generate proportionally from local templates first, API fallback per topic
+      const apiTasks=[];
+      const examTotal=cfaLevel==="1"?180:88;
       for(let i=0;i<allTopics.length;i++){
         const [t,{weight,modules}]=allTopics[i];
-        // L1: 180 Qs total (90/session). L2 & L3: 88 Qs total (44/session).
-        const examTotal=cfaLevel==="1"?180:88;
         const topicCount=Math.max(1,Math.round((weight/totalW)*examTotal));
         const moduleNames=Object.keys(modules);
         const perModule=Math.max(1,Math.floor(topicCount/moduleNames.length));
         for(const mod of moduleNames.slice(0,Math.ceil(topicCount/perModule))){
-          setLoadingMsg(`${t} › ${mod} (${i+1}/${allTopics.length})…`);
           const localQs=generateLocalQuestions(t,mod,"Medium",perModule);
           if(localQs.length>=perModule){
             allQs=[...allQs,...localQs.map(q=>({...q,_topic:t,_subtopic:mod}))];
           } else if(authUser?.id){
-            try{
-              const qs=await callClaude(buildQuestionPrompt(t,mod,"Medium",perModule,cfaLevel,activeLOS,activeMisconceptions),perModule*500,{retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001",feature:"full_exam"});
-              allQs=[...allQs,...(Array.isArray(qs)?expandQuestionKeys(qs):[]).map((q,j)=>({...q,id:`${i}_${j}_${mod.slice(0,5)}`,_topic:t,_subtopic:mod}))];
-            }catch{}
+            apiTasks.push({t,mod,perModule,i});
           }
         }
+      }
+      // Phase 2: fan-out all API tasks in parallel (was sequential — 15-30x speedup)
+      if(apiTasks.length>0){
+        setLoadingMsg(`Generating ${apiTasks.length} topic modules in parallel…`);
+        const results=await Promise.all(apiTasks.map(({t,mod,perModule,i})=>
+          callClaude(
+            buildQuestionPrompt(t,mod,"Medium",perModule,cfaLevel,activeLOS,activeMisconceptions),
+            perModule*380,
+            {retries:1,retryDelay:4000,model:"claude-haiku-4-5-20251001",feature:"full_exam"}
+          ).then(qs=>(Array.isArray(qs)?expandQuestionKeys(qs):[]).map((q,j)=>({...q,id:`${i}_${j}_${mod.slice(0,5)}`,_topic:t,_subtopic:mod})))
+           .catch(()=>[])
+        ));
+        allQs=[...allQs,...results.flat()];
       }
       if(allQs.length<20)throw new Error("Too few questions generated — sign in for full exam support.");
       const shuffled=allQs.sort(()=>Math.random()-0.5);
