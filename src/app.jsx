@@ -6266,10 +6266,19 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
   const generateWeightedMock=async(cnt=18)=>{
     if(generatingRef.current)return; generatingRef.current=true;
-    setLoading(true);setError("");setLoadingProgress(0);setLoadingMsg("Building exam-weight mock…");
-    const progressInterval=setInterval(()=>{setLoadingProgress(p=>Math.min(85,p+2));},400);
+    setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);setLoadingStep(1);setLoadingMsg("Building exam-weight mock…");
+    const estimatedMs=Math.max(10000,cnt*900);
+    loadingStartRef.current=Date.now();
+    genEstimatedEndRef.current=Date.now()+estimatedMs;
+    const progressInterval=setInterval(()=>{
+      const ts=Date.now();const end=genEstimatedEndRef.current;
+      let pct;
+      if(ts<end){const total=end-loadingStartRef.current;pct=Math.min(90,Math.round(((ts-loadingStartRef.current)/total)*90));setLoadingETA(Math.ceil((end-ts)/1000));}
+      else{pct=Math.min(99,90+Math.round(((ts-end)/30000)*9));setLoadingETA(null);}
+      setLoadingProgress(pct);
+    },200);
     try{
-      if(!authUser?.id){setError("Exam-Weight Mock requires a ClearCFA account — please sign in.");clearInterval(progressInterval);setLoading(false);generatingRef.current=false;return;}
+      if(!authUser?.id){setError("Exam-Weight Mock requires a ClearCFA account — please sign in.");clearInterval(progressInterval);setLoading(false);setLoadingStep(0);generatingRef.current=false;return;}
       const weights=TOPIC_WEIGHTS[cfaLevel];
       if(!weights)throw new Error("No weight data for this level");
       const topicList=Object.entries(weights).map(([topic,[mn,mx]])=>({topic,mid:(mn+mx)/2}));
@@ -6278,17 +6287,25 @@ Return ONLY a JSON array — no prose, no markdown fences:
       const allocTotal=alloc.reduce((s,a)=>s+a.count,0);
       if(allocTotal!==cnt) alloc[0].count+=cnt-allocTotal;
       const topicsDesc=alloc.map(a=>`${a.topic}: ${a.count}`).join(", ");
-      const prompt=`You are a CFA Level ${cfaLevel} exam creator. Generate exactly ${cnt} multiple-choice questions distributed across CFA topics matching real exam weights: ${topicsDesc}.\n\nEach question: LOS-anchored, exam-realistic difficulty, plausible distractors targeting real misconceptions. Interleave topic order — do NOT group by topic.\n\nCRITICAL for numerical questions:\n1. FIRST compute the exact answer to full precision.\n2. THEN make that exact value appear verbatim as one of the options.\n3. NEVER use ≈, "approximately", "closest", "rounds to", or any approximation language. If the formula produces an unclean decimal, CHANGE THE INPUT VALUES so the answer is clean, then restate the question.\n4. Wrong options must use recognisable formula errors (wrong rate, missing step, wrong period).\n5. The "answer" field must be the letter whose text exactly equals the correct result.\n\nReturn ONLY a JSON array:\n[{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic>","_subtopic":"<module>"}]`;
-      const qs=await callClaude(prompt,cnt*400+500,{retries:2,retryDelay:6000,model:"claude-haiku-4-5-20251001",feature:"weighted_mock"});
+      // Parallel fan-out: 3 calls for 18 qs (same pattern as generateQuestions)
+      const numCalls=cnt>=13?3:cnt>=7?2:1;
+      const perCallCnt=Math.ceil(cnt/numCalls);
+      const buildWMPrompt=()=>`You are a CFA Level ${cfaLevel} exam creator. Generate exactly ${perCallCnt} multiple-choice questions sampled proportionally from this topic distribution: ${topicsDesc}.\n\nEach question: LOS-anchored, exam-realistic difficulty, plausible distractors targeting real misconceptions. Vary topics across questions — do NOT group by topic.\n\nCRITICAL for numerical questions:\n1. FIRST compute the exact answer to full precision.\n2. THEN make that exact value appear verbatim as one of the options.\n3. NEVER use ≈, "approximately", "closest", "rounds to", or any approximation language. If the formula produces an unclean decimal, CHANGE THE INPUT VALUES so the answer is clean.\n4. Wrong options must use recognisable formula errors (wrong rate, missing step, wrong period).\n5. The "answer" field must be the letter whose text exactly equals the correct result.\n\nReturn ONLY a JSON array:\n[{"id":"q1","question":"…","options":{"A":"…","B":"…","C":"…","D":"…"},"answer":"A","explanation":"…","concept":"…","los_tested":"LOS X.X","misconception_targeted":"…","_topic":"<exact topic>","_subtopic":"<module>"}]`;
+      setLoadingStep(2);setLoadingMsg(numCalls>1?"Generating exam questions in parallel…":"Generating with Claude AI…");
+      const callPromises=Array.from({length:numCalls},(_,i)=>
+        callClaude(buildWMPrompt(),perCallCnt*420+500,{retries:2,retryDelay:4000,model:"claude-haiku-4-5-20251001",feature:`weighted_mock:p${i}`,onRetry:()=>{genEstimatedEndRef.current=Date.now()+estimatedMs;}})
+          .then(r=>Array.isArray(r)?r:[]).catch(()=>[])
+      );
+      const batches=await Promise.all(callPromises);
+      const qs=batches.flat();
       clearInterval(progressInterval);
-      if(!Array.isArray(qs)||qs.length===0)throw new Error("No questions returned");
-      // Apply approximation + structural validation (same rules as generateQuestions)
+      setLoadingStep(3);setLoadingMsg("Checking quality & uniqueness…");
+      if(!qs.length)throw new Error("No questions returned — please check your connection and retry.");
       const wm_clean=qs.filter(q=>{
         if(!q||!q.question||!q.answer||!q.options)return false;
         if(!q.options[q.answer])return false;
         const exp=(q.explanation||"").toLowerCase();
         if(/nearest available|closest answer|approximate(ly)?|not exactly|\bis closest\b|\bthe closest\b|closest option|closest to the|best approximat|due to rounding|≈|approximately equal|\bapprox\b|rounds to|rounded to the nearest/i.test(exp))return false;
-        // Numeric cross-check: explanation value must not match a wrong option more than the right one
         const optVals=Object.entries(q.options).map(([k,v])=>({k,v:parseFloat(String(v).replace(/[^0-9.-]/g,""))})).filter(o=>!isNaN(o.v));
         if(optVals.length>=2){
           const qAns=(q.answer||"").toUpperCase();
@@ -6304,15 +6321,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
         return true;
       });
       if(!wm_clean.length)throw new Error("All generated questions had numeric mismatches — please retry.");
-      const tagged=wm_clean.map((q,i)=>({...q,id:`wm_${i}_${q.id||i}`,_weightedMock:true}));
-      setLoadingProgress(100);await new Promise(r=>setTimeout(r,200));
+      const tagged=wm_clean.slice(0,cnt).map((q,i)=>({...q,id:`wm_${i}_${q.id||i}`,_weightedMock:true}));
+      setLoadingStep(4);setLoadingProgress(100);setLoadingMsg("Exam-weight mock ready!");
+      await new Promise(r=>setTimeout(r,200));
       setTopic("Mixed");setSubtopic(`Exam-Weight Mock L${cfaLevel}`);setDifficulty("Medium");
       setMode("guided");setVignetteMode(false);
       setQuestions(tagged);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);
       qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
       setScreen("quiz");
     }catch(e){clearInterval(progressInterval);setError("Weighted mock failed: "+e.message);}
-    setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+    setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;
   };
 
   const generateFSAVignette=async(subtopic,difficulty)=>{
