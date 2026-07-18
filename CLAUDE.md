@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-b and 2026-07-18-c from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-d, 2026-07-18-f, and 2026-07-18. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
+**Study Path blank screen fix (65c1287)**: Fixed Study Path (formerly "Week Plan") blank screen issue and renamed Week Plan to Exam Plan in More menu navigation. When maintaining navigation menus, verify renamed routes load correct component state and all referential links are updated to prevent orphaned screens.
+
+
 **PDF upload state and error handling (098a170)**: Added pdfUploading and pdfError state for tracking PDF import progress and failures. When extending PDF workflows, ensure error messages are user-friendly and file size/format validation occurs before API calls to reduce unnecessary cloud round-trips.
 
 
@@ -1688,7 +1694,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1806300000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1806400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
