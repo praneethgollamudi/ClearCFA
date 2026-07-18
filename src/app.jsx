@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18
-{version:"2026-07-18",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Track Your Exam Readiness",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now shows pass probability trends and real-time progress bars for each topic. Watch your readiness score climb as you complete practice questions and review sessions.",tip:"Open your Exam Plan to see your pass probability forecast update after each quiz attempt."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Integrated Study Flow",sub:"UX · 2026-07-18 update",desc:"Today's Focus, revision notes, and actionable phase guidance are now seamlessly connected to your Exam Plan. Jump directly from your study phase to the exact topics and practice you need next.",tip:"Tap any phase CTA in your Exam Plan to jump straight into focused study mode."},
-{emoji:"🛠️",color:C.medium,bg:C.medium,title:"Clearer Error Messages",sub:"Bug Fix · 2026-07-18 update",desc:"PDF analysis errors are now properly surfaced so you know exactly what went wrong instead of silent failures. Get real, actionable feedback when document uploads or processing encounters an issue.",tip:"If a PDF upload doesn't work, you'll now see a clear error message explaining the next step."},
-]},
 // WN_VER:2026-07-18-b
 {version:"2026-07-18-b",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Track Your Exam Readiness",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now shows pass probability trends and live progress bars across all topics. See exactly where you stand and what's pulling your score down in real time.",tip:"Check the Readiness Tracker in your Exam Plan to identify weak topics before mock exams."},
@@ -337,6 +331,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📚",color:C.accentLight,bg:C.accentLight,title:"Study Resources In One Place",sub:"UX · 2026-07-18 update",desc:"Your Exam Plan now surfaces Notes, Formulas, and Deep Study options directly in tabbed sections, plus smart recommendations based on your mock performance. Stop hunting for study materials and access what you need in context.",tip:"After completing a mock exam, check the Exam Plan tabs to find targeted deep-dive content for topics where you struggled."},
 {emoji:"⚙️",color:C.medium,bg:C.medium,title:"Cleaner, Smarter Menu",sub:"UX · 2026-07-18 update",desc:"The More menu is now streamlined to 8 essential items, removing redundant analytics and clutter. Your settings and tools are easier to find and the app feels faster to navigate.",tip:"Tap the menu icon to see the refreshed options—everything you need is still there, just more organized."},
 ]},
+// WN_VER:2026-07-18-f
+{version:"2026-07-18-f",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Readiness Tracker Now Smarter",sub:"Study Tools · 2026-07-18 update",desc:"The Exam Plan Readiness Tracker now compares your mock exam accuracy directly against in-app practice accuracy at the module level, giving you a clearer picture of where you're truly exam-ready. This helps you focus remediation on topics where your performance diverges most between practice modes.",tip:"Look for modules where your mock score lags behind in-app performance—those are your priority areas."},
+{emoji:"🎯",color:C.medium,bg:C.medium,title:"Cleaner, Faster Menu Navigation",sub:"UX · 2026-07-18 update",desc:"The More menu has been streamlined to 8 focused items with duplicate analytics options removed, making it faster to find what you need. Less clutter means less time hunting for settings and more time studying.",tip:"Swipe to the More menu and notice how quickly you can now reach key features."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -359,12 +358,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -390,6 +383,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
