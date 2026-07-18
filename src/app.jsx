@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-d
-{version:"2026-07-18-d",slides:[
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smart Study Plans from Mock Exams",sub:"Study Tools · 2026-07-18 update",desc:"Upload a mock exam PDF and ClearCFA now generates a phased study plan tailored to your performance gaps. Skip guesswork and focus your prep exactly where you need it most.",tip:"After taking a practice exam, tap 'Analyze Mock' to instantly unlock a personalized roadmap."},
-{emoji:"🛠️",color:C.hard,bg:C.hard,title:"Better Error Messages on PDF Upload",sub:"Bug Fix · 2026-07-18 update",desc:"PDF analysis now shows you exactly what went wrong instead of silently failing. Clear feedback means faster troubleshooting and fewer frustrated uploads.",tip:"If a PDF upload doesn't work, read the error message—it will tell you the specific issue to fix."},
-{emoji:"✅",color:C.easy,bg:C.easy,title:"Clearer Navigation & Study Plan Labels",sub:"UX · 2026-07-18 update",desc:"Study Path now loads reliably, and we've renamed 'Week Plan' to 'Exam Plan' for clarity. Finding your study roadmap is now faster and less confusing.",tip:"Open the More menu and look for 'Exam Plan'—this is your main study blueprint for exam day."},
-]},
 // WN_VER:2026-07-18-e
 {version:"2026-07-18-e",slides:[
 {emoji:"📚",color:C.reward,bg:C.reward,title:"Smart Study Plans from PDFs",sub:"Study Tools · 2026-07-18 update",desc:"Upload mock exam PDFs and ClearCFA automatically generates a phased study plan tailored to your performance. This replaces manual topic selection and helps you focus on weak areas first.",tip:"Try uploading a practice exam PDF in the Study section to see your personalized exam plan."},
@@ -337,6 +331,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Track Your Exam Readiness",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now shows pass probability trends and live progress bars across all topics. See exactly where you stand and what's pulling your score down in real time.",tip:"Check the Readiness Tracker in your Exam Plan to identify weak topics before mock exams."},
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Study Navigation",sub:"UX · 2026-07-18 update",desc:"Your Exam Plan now connects seamlessly to Today's Focus, revision notes, and deep-dive study materials in organized tabs. Jump straight from your plan to exactly what you need to study—no friction.",tip:"Tap \"Deep Study\" or \"Formulas\" tabs in your Exam Plan to access focused content for each topic."},
 {emoji:"🧠",color:C.medium,bg:C.medium,title:"Mock-Aware Study Guidance",sub:"AI · 2026-07-18 update",desc:"The app now uses your mock exam performance to surface the most relevant notes, formulas, and study CTAs. Every suggestion is tailored to your actual weak spots, not generic content.",tip:"After taking a mock exam, return to your Exam Plan to see AI-prioritized study recommendations."},
+]},
+// WN_VER:2026-07-18-c
+{version:"2026-07-18-c",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Track Your Exam Readiness",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now shows your pass probability trend and real-time progress bars across all domains. Watch your readiness improve as you complete study phases and mock exams.",tip:"Open Exam Plan to see how your recent progress affects your predicted pass probability."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"One Hub for Your Study Path",sub:"UX · 2026-07-18 update",desc:"Exam Plan now connects to Today's Focus, revision notes, and deep study resources in organized tabs. Start your session from one place and move seamlessly between planning, reviewing, and drilling.",tip:"Tap the Exam Plan tab to jump straight to Notes, Formulas, or Deep Study without hunting through menus."},
+{emoji:"⚙️",color:C.medium,bg:C.medium,title:"Cleaner Menu, Less Clutter",sub:"UX · 2026-07-18 update",desc:"The More menu is now streamlined to 8 focused items, removing duplicate analytics and navigation noise. Find what you need faster without unnecessary options.",tip:"Check the More menu—you'll spot a sharper, purpose-built set of tools."},
 ]},
 // WN_END
 ];
@@ -378,12 +378,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -409,6 +403,12 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
