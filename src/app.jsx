@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-17-f
-{version:"2026-07-17-f",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster, Longer Study Sessions",sub:"Speed · 2026-07-17 update",desc:"We fixed rate-limit delays and question duplication issues that were slowing down session generation. Your quizzes now start instantly without silent waits or repeated content.",tip:"Request any session length—we now guarantee you get exactly the questions you asked for."},
-{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"AI-Powered Next Steps After Every Quiz",sub:"AI · 2026-07-17 update",desc:"After finishing a practice session, you now get an AI diagnosis that recommends your next action—review weak topics, drill similar questions, or move forward. No more guessing what to study next.",tip:"Check your results screen to see personalized next-action recommendations tailored to your performance."},
-{emoji:"✅",color:C.hard,bg:C.hard,title:"Smarter, More Accurate Questions",sub:"Study Tools · 2026-07-17 update",desc:"We fixed a logic error where question premises contradicted their explanations. Every question you see now has consistent, trustworthy content so you study with confidence.",tip:"You'll notice explanations now always align perfectly with the question intent—no more confusing contradictions."},
-]},
 // WN_VER:2026-07-17
 {version:"2026-07-17",slides:[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster, More Reliable Quiz Sessions",sub:"Speed · 2026-07-17 update",desc:"We've eliminated duplicate questions, fixed session timeouts, and improved question generation so your practice quizzes start instantly without delays. You now get exactly the session size you requested, every time.",tip:"Start a quiz and watch—no more waiting or partial sessions."},
@@ -332,6 +326,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Mock Exams Load 3x Faster",sub:"Speed · 2026-07-18 update",desc:"We've parallelized question generation across multiple processors, dramatically cutting the time it takes to launch full practice exams and save your progress. You'll spend more time studying and less time waiting.",tip:"Start a full mock exam now—you'll notice the loading bar fills instantly instead of grinding through a long delay."},
 {emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Loading Indicators",sub:"UX · 2026-07-18 update",desc:"Our progress bars now accurately reflect actual generation time, so you know exactly how long each quiz or exam will take to build. No more guessing whether you're stuck or just waiting.",tip:"Watch the loading bar during quiz generation—it now matches real time perfectly, giving you confidence the app is working."},
 {emoji:"🚀",color:C.reward,bg:C.reward,title:"App Starts Up Faster",sub:"Speed · 2026-07-18 update",desc:"Optimized startup reads and background pre-warming mean ClearCFA launches quicker and is ready for you to study immediately. Every second counts when you're cramming for exam day.",tip:"Close and reopen the app—you'll feel the snappier startup the moment you open it."},
+]},
+// WN_VER:2026-07-18-c
+{version:"2026-07-18-c",slides:[
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We've parallelized question generation across multiple processing threads, cutting mock exam load times by 3x. Start your full-length practice test in seconds instead of minutes.",tip:"Launch a full exam now—you'll notice questions appear instantly as you navigate."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Demo Quiz Now Works Smoothly",sub:"UX · 2026-07-18 update",desc:"Fixed three critical layout bugs: demo quiz display, empty space handling, and the Try button visibility. The onboarding experience is now clean and intuitive.",tip:"New users will see a polished demo quiz with no visual glitches when they first open the app."},
+{emoji:"⚙️",color:C.medium,bg:C.medium,title:"Faster App Launch & Session Loading",sub:"Speed · 2026-07-18 update",desc:"Optimized startup performance and session restore operations by parallelizing background reads. Your saved progress loads instantly so you can jump back into studying without delay.",tip:"Watch how quickly your study history and bookmarks appear when you reopen the app."},
 ]},
 // WN_END
 ];
@@ -389,8 +389,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-17
-{date:"2026-07-17",entries:[
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
