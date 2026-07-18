@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-b
-{version:"2026-07-18-b",slides:[
-{emoji:"📋",color:C.reward,bg:C.reward,title:"Mock Exams Now Guide Your Study",sub:"Study Tools · 2026-07-18 update",desc:"Upload any CFA mock PDF and ClearCFA automatically builds a phased study plan tailored to your performance. This replaces generic prep with targeted revision of your weakest topics.",tip:"After completing a mock, upload the PDF to instantly generate your personalized roadmap."},
-{emoji:"🎓",color:C.hard,bg:C.hard,title:"Official Exam Style Practice & Coaching",sub:"AI · 2026-07-18 update",desc:"New official CFA exam-format questions with instant error diagnosis and AI coaching on every mistake. You'll learn *why* you got it wrong and how to avoid it on test day.",tip:"Look for the 'Official Exam Style' badge in quiz settings to practice questions that mirror the real test."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Mock Generation on Mobile",sub:"Speed · 2026-07-18 update",desc:"Mock exam generation now runs in parallel, eliminating network timeouts on slower connections. Your mocks load reliably whether you're on WiFi or cellular.",tip:"Generate mocks anywhere—the app handles connection glitches seamlessly now."},
-]},
 // WN_VER:2026-07-18-c
 {version:"2026-07-18-c",slides:[
 {emoji:"📊",color:C.hard,bg:C.hard,title:"Mock Exam → Personalized Study Plan",sub:"Study Tools · 2026-07-18 update",desc:"Upload your mock exam PDF and ClearCFA automatically generates a phased study plan targeting your weak areas. This transforms raw mock results into a concrete roadmap to exam day.",tip:"After taking an official mock, go to Study Plans and upload the PDF to see your personalized prep sequence."},
@@ -337,6 +331,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Exam Plan Guides Your Daily Study",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now connects directly to Today's Focus, revision notes, and actionable next steps. Every time you open the app, you'll see exactly what to study based on your personalized prep timeline.",tip:"Open Today's Focus to see your Exam Plan–driven recommendations for the day."},
 {emoji:"🛠️",color:C.medium,bg:C.medium,title:"PDF Errors Now Clearly Reported",sub:"Bug Fix · 2026-07-18 update",desc:"When PDF analysis encounters a problem, you'll now see a clear error message instead of silent failure. This helps you quickly understand what went wrong and retry or contact support.",tip:"If a PDF upload fails, check the error message for details on what to do next."},
 {emoji:"✨",color:C.reward,bg:C.reward,title:"Study Path Stability Improved",sub:"UX · 2026-07-18 update",desc:"Fixed Study Path blank screen issues so your learning flow stays uninterrupted. The Exam Plan (formerly Week Plan) is also now easier to find in the More menu.",tip:"Tap More to access your Exam Plan—your go-to prep roadmap."},
+]},
+// WN_VER:2026-07-18
+{version:"2026-07-18",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Track Your Exam Readiness",sub:"Study Tools · 2026-07-18 update",desc:"Your Exam Plan now shows pass probability trends and real-time progress bars for each topic. Watch your readiness score climb as you complete practice questions and review sessions.",tip:"Open your Exam Plan to see your pass probability forecast update after each quiz attempt."},
+{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Integrated Study Flow",sub:"UX · 2026-07-18 update",desc:"Today's Focus, revision notes, and actionable phase guidance are now seamlessly connected to your Exam Plan. Jump directly from your study phase to the exact topics and practice you need next.",tip:"Tap any phase CTA in your Exam Plan to jump straight into focused study mode."},
+{emoji:"🛠️",color:C.medium,bg:C.medium,title:"Clearer Error Messages",sub:"Bug Fix · 2026-07-18 update",desc:"PDF analysis errors are now properly surfaced so you know exactly what went wrong instead of silent failures. Get real, actionable feedback when document uploads or processing encounters an issue.",tip:"If a PDF upload doesn't work, you'll now see a clear error message explaining the next step."},
 ]},
 // WN_END
 ];
@@ -390,12 +390,6 @@ const ADMIN_CHANGELOG=[
 ]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -406,6 +400,13 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "Fix edge function auth: add --no-verify-jwt to deploy command",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"Fix edge function auth: add --no-verify-jwt to deploy command",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
