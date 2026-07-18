@@ -6458,8 +6458,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
 
     // Over-generation buffer: ask AI for more questions than needed so quality filters
     // still leave cnt survivors. 50% buffer for short sessions, 30% for long (mocks).
+    const numCalls=isVignette?1:cnt>=13?3:cnt>=7?2:1;
     const requestCount=isVignette?cnt:cnt+Math.ceil(cnt*(cnt>=15?0.3:0.5));
-    const estimatedMs=Math.max(8000,requestCount*1200);
+    const perCallCnt=Math.ceil(requestCount/numCalls);
+    // Parallel calls run simultaneously, so wall-clock ≈ slowest individual call
+    const estimatedMs=Math.max(7000,perCallCnt*1200);
     const msgs=isVignette
       ?["Writing scenario...","Building item set...","Engineering distractors...","Almost ready..."]
       :["Reading LOS statements...","Anchoring to 2026 curriculum...","Engineering distractors...","Checking for duplicates...","Almost ready..."];
@@ -6519,15 +6522,21 @@ Return ONLY a JSON array — no prose, no markdown fences:
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
       } else {
-        const baseMax=requestCount*380;
-        const tightMax=multiModules?.length>1?Math.round(baseMax*1.6):baseMax;
+        // Fan-out: parallel calls each request perCallCnt questions, merged after
+        const perCallMax=multiModules?.length>1?Math.round(perCallCnt*380*1.6):perCallCnt*380;
         const dynCtx=buildDynamicContext(t,st,srDeck,levelHistory);
         const now=Date.now();
         const seenStems=Object.values(qdb).filter(v=>v.topic===t&&(now-v.seen)<QDB_FRESHNESS_MS&&v.stem).sort((a,b)=>b.seen-a.seen).map(v=>v.stem);
         const testedLOS=levelHistory.filter(h=>h.topic===t&&(multiModules?.length>1?multiModules.some(mm=>mm.st===h.subtopic):h.subtopic===st)).flatMap(h=>h.coveredLOS||[]);
-        let raw=await callClaude(buildQuestionPrompt(t,st,diff,requestCount,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems,testedLOS),tightMax,{retries:2,retryDelay:4000,model:useModel,feature:`questions:${diff}`,signal:genAbort.signal});
-        if(Array.isArray(raw))raw=expandQuestionKeys(raw);
-        parsed=raw;
+        const callPromises=Array.from({length:numCalls},(_,i)=>
+          callClaude(
+            buildQuestionPrompt(t,st,diff,perCallCnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems,testedLOS),
+            perCallMax,
+            {retries:numCalls===1?2:1,retryDelay:4000,model:useModel,feature:`questions:${diff}${numCalls>1?`:p${i}`:""}`,signal:genAbort.signal}
+          ).then(r=>Array.isArray(r)?expandQuestionKeys(r):[]).catch(()=>[])
+        );
+        const batches=await Promise.all(callPromises);
+        parsed=batches.flat();
       }
       if(!Array.isArray(parsed)||!parsed.length)throw new Error("Empty");
       // Drop questions where the AI admitted the correct answer isn't in the options
