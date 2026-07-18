@@ -13859,18 +13859,39 @@ Return ONLY a JSON array — no prose, no markdown fences:
           const maxProb=Math.max(...allProbs.map(h=>h.prob),75);
           const first=allProbs[0]?.prob||0,last=allProbs[allProbs.length-1]?.prob||0;
           const trend=allProbs.length>1?last-first:null;
-          // Collect broad topics from phases (primaryFocus / secondaryFocus) — these match moduleReadiness
-          const phaseBroadTopics=[...new Set((examStudyPlan.phases||[]).flatMap(p=>[p.primaryFocus,p.secondaryFocus].filter(Boolean)))];
-          const weakSet=new Set((examStudyPlan.weakTopics||[]).map(t=>t.toLowerCase()));
-          const strongSet=new Set((examStudyPlan.strongTopics||[]).map(t=>t.toLowerCase()));
-          const weakProgress=phaseBroadTopics.map(t=>{
-            const mr=moduleReadiness.find(m=>m.topic?.toLowerCase()===t.toLowerCase());
-            const tl=t.toLowerCase();
-            const mockVerdict=weakSet.has(tl)?"weak":strongSet.has(tl)?"strong":"neutral";
-            return{topic:t,accuracy:mr?.accuracy??null,sessions:mr?.sessions||0,totalQs:mr?.totalQs||0,mockVerdict};
-          }).sort((a,b)=>{
-            // weak-mock first, then by in-app accuracy ascending (lowest priority), unstarted last
-            const rank=v=>v==="weak"?0:v==="neutral"?1:2;
+          // Keyword map: CFA broad topic → strings to search for in exam plan text
+          const TOPIC_KWORDS={
+            "Ethics":["standard","gips","professional","conduct","cfa institute","referral","loyalty","suitability","misrepresent","disclosure","independence","objectivity"],
+            "Quantitative Methods":["quant","statistic","regression","probabili","hypothesis","linear","time series","correlation","variance","z-score","t-test"],
+            "Economics":["econom","gdp","monetary","fiscal","currency","inflation","exchange rate","supply","demand","aggregate"],
+            "Financial Statement Analysis":["financial statement","fsa","accounting","balance sheet","income statement","cash flow","ratio","inventory","depreciation","goodwill"],
+            "Corporate Issuers":["corporate","capital structure","leverage","dividend polic","wacc","capital budget","merger","acquisition"],
+            "Equity":["equity","stock","p/e","earnings","valuation","dividend discount","dcf","residual income","price-to"],
+            "Fixed Income":["fixed income","bond","duration","yield","credit spread","coupon","maturity","convexity","sovereign"],
+            "Derivatives":["derivative","option","future","forward","swap","hedge","put","call","underlying"],
+            "Alternatives":["alternative","private equity","hedge fund","real estate","infrastructure","commodity","venture"],
+            "Portfolio Management":["portfolio","asset allocation","risk management","sharpe","diversif","investment policy","ips","mpt","capital market"],
+          };
+          // All exam plan text in one string for matching
+          const examPlanAllText=[
+            ...(examStudyPlan.weakTopics||[]),
+            ...(examStudyPlan.strongTopics||[]),
+            ...(examStudyPlan.phases||[]).flatMap(p=>[p.primaryFocus,p.secondaryFocus,...(p.keyTopics||[])].filter(Boolean)),
+            examStudyPlan.summary||"",
+          ].join(" ").toLowerCase();
+          const weakTopicsText=(examStudyPlan.weakTopics||[]).join(" ").toLowerCase();
+          const strongTopicsText=(examStudyPlan.strongTopics||[]).join(" ").toLowerCase();
+          const weakProgress=moduleReadiness.map(mr=>{
+            const kwords=TOPIC_KWORDS[mr.topic]||[mr.topic.toLowerCase()];
+            const inWeak=kwords.some(k=>weakTopicsText.includes(k));
+            const inStrong=!inWeak&&kwords.some(k=>strongTopicsText.includes(k));
+            const inPlan=!inWeak&&!inStrong&&kwords.some(k=>examPlanAllText.includes(k));
+            const mockVerdict=inWeak?"weak":inStrong?"strong":inPlan?"mentioned":"neutral";
+            return{topic:mr.topic,accuracy:mr.accuracy??null,sessions:mr.sessions||0,totalQs:mr.totalQs||0,mockVerdict};
+          })
+          .filter(m=>m.sessions>0||m.mockVerdict==="weak"||m.mockVerdict==="mentioned")
+          .sort((a,b)=>{
+            const rank=v=>v==="weak"?0:v==="mentioned"?1:v==="strong"?2:3;
             if(rank(a.mockVerdict)!==rank(b.mockVerdict))return rank(a.mockVerdict)-rank(b.mockVerdict);
             if(a.accuracy===null&&b.accuracy===null)return 0;
             if(a.accuracy===null)return 1;
@@ -13928,6 +13949,8 @@ Return ONLY a JSON array — no prose, no markdown fences:
                       ?<span style={{fontSize:9,fontWeight:800,padding:"2px 6px",borderRadius:10,background:C.hard+"22",color:C.hard,border:`1px solid ${C.hard}44`,whiteSpace:"nowrap"}}>⚠ Mock weak</span>
                       :w.mockVerdict==="strong"
                       ?<span style={{fontSize:9,fontWeight:800,padding:"2px 6px",borderRadius:10,background:C.easy+"22",color:C.easy,border:`1px solid ${C.easy}44`,whiteSpace:"nowrap"}}>✓ Mock strong</span>
+                      :w.mockVerdict==="mentioned"
+                      ?<span style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:10,background:C.medium+"18",color:C.medium,border:`1px solid ${C.medium}33`,whiteSpace:"nowrap"}}>📋 In plan</span>
                       :null;
                     return(
                       <div key={i} style={{marginBottom:i<weakProgress.length-1?12:0,paddingBottom:i<weakProgress.length-1?12:0,borderBottom:i<weakProgress.length-1?`1px solid ${C.border}`:undefined}}>
