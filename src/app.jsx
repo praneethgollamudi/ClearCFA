@@ -304,12 +304,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-b
-{version:"2026-07-18-b",slides:[
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Mock Exams Load 3x Faster",sub:"Speed · 2026-07-18 update",desc:"We've parallelized question generation across multiple processors, dramatically cutting the time it takes to launch full practice exams and save your progress. You'll spend more time studying and less time waiting.",tip:"Start a full mock exam now—you'll notice the loading bar fills instantly instead of grinding through a long delay."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Smarter Loading Indicators",sub:"UX · 2026-07-18 update",desc:"Our progress bars now accurately reflect actual generation time, so you know exactly how long each quiz or exam will take to build. No more guessing whether you're stuck or just waiting.",tip:"Watch the loading bar during quiz generation—it now matches real time perfectly, giving you confidence the app is working."},
-{emoji:"🚀",color:C.reward,bg:C.reward,title:"App Starts Up Faster",sub:"Speed · 2026-07-18 update",desc:"Optimized startup reads and background pre-warming mean ClearCFA launches quicker and is ready for you to study immediately. Every second counts when you're cramming for exam day.",tip:"Close and reopen the app—you'll feel the snappier startup the moment you open it."},
-]},
 // WN_VER:2026-07-18-c
 {version:"2026-07-18-c",slides:[
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"3x Faster Mock Exams",sub:"Speed · 2026-07-18 update",desc:"We've parallelized question generation across multiple processing threads, cutting mock exam load times by 3x. Start your full-length practice test in seconds instead of minutes.",tip:"Launch a full exam now—you'll notice questions appear instantly as you navigate."},
@@ -333,6 +327,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎨",color:C.accentLight,bg:C.accentLight,title:"Vibrant New Color Theme",sub:"UX · 2026-07-18 update",desc:"We've redesigned ClearCFA with a energizing midnight navy base and brighter, vibrant accents to reduce eye strain during long study sessions. The new palette makes key concepts and progress indicators pop, so you stay focused and motivated.",tip:"Notice how the green highlights now stand out instantly when marking questions correct—it's your visual reward for mastery."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Smoother App Launch & Loading",sub:"Speed · 2026-07-18 update",desc:"We fixed the loading screen to show accurate, event-driven progress steps and softened retry logic so app startup feels faster and more reliable. No more stalled spinners or confusing status labels—you get to your study materials quicker.",tip:"Watch for clear step labels (\"Initializing,\" \"Syncing,\" etc.) that now accurately reflect what's actually happening behind the scenes."},
 {emoji:"🎯",color:C.reward,bg:C.reward,title:"Quiz Layout & Navigation Fixed",sub:"Bug Fix · 2026-07-18 update",desc:"We resolved three critical issues: demo quiz layout now displays correctly, eliminated awkward empty space at the bottom of screens, and made the \"Try CFA Prep\" call-to-action prominent and easy to find. Your study experience is now cleaner and more intuitive.",tip:"Start a demo quiz to see the improved layout—questions and answers are now perfectly aligned without distracting gaps."},
+]},
+// WN_VER:2026-07-18
+{version:"2026-07-18",slides:[
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Mock Exam Generation",sub:"Speed · 2026-07-18 update",desc:"We've optimized weighted mock generation to run in parallel, eliminating network timeouts on mobile. Your practice exams now load reliably, even on slower connections.",tip:"Generate a full mock exam without worrying about connection drops—especially helpful on 4G."},
+{emoji:"🎨",color:C.reward,bg:C.reward,title:"Refreshed Dark Mode Colors",sub:"UX · 2026-07-18 update",desc:"We've redesigned the color theme with midnight navy accents and vibrant greens for better contrast and reduced eye strain. The new palette is easier on your eyes during long study sessions.",tip:"Open the app in dark mode to see the new energized greens and sharper text clarity."},
+{emoji:"🔄",color:C.medium,bg:C.medium,title:"Smoother Loading Screens",sub:"Bug Fix · 2026-07-18 update",desc:"Loading screens now use event-driven steps with accurate labels and smarter retry logic. You'll see exactly what's happening during startup and experience fewer stalled screens.",tip:"Watch the loading progress bar—it now reflects real operations instead of vague spinner animation."},
 ]},
 // WN_END
 ];
@@ -366,8 +366,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-17
-{date:"2026-07-17",entries:[
+// AC_VER:2026-07-18
+{date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
