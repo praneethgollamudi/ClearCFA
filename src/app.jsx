@@ -4870,9 +4870,11 @@ function CFAMock(){
   const [hoursThisWeek,setHoursThisWeek]=useState(7); // default 1hr/day
   const [officeModeActive,setOfficeModeActive]=useState(false); // 5-question blitz
   const [loadingProgress,setLoadingProgress]=useState(0);
+  const [loadingStep,setLoadingStep]=useState(0); // 0=idle,1=prompt,2=api,3=validate,4=ready
   const [loadingETA,setLoadingETA]=useState(null);
   const [loadingContext,setLoadingContext]=useState(null);
   const loadingStartRef=useRef(null);
+  const genEstimatedEndRef=useRef(null);
   const [apiKey,setApiKey]=useState("BACKEND"); // placeholder — AI routed through proxy
   const [theme,setTheme]=useState(()=>{try{return localStorage.getItem('cfa_theme')||'dark';}catch{return'dark';}});
   const toggleTheme=()=>{const t=theme==='dark'?'light':'dark';_applyTheme(t);try{localStorage.setItem('cfa_theme',t);}catch{};setTheme(t);};
@@ -5966,7 +5968,7 @@ ROOT_CAUSE: [one of: formula_error | concept_confusion | calculation_mistake | t
     return Uint8Array.from({length:raw.length},(_,i)=>raw.charCodeAt(i));
   }
 
-  const callClaude=async(prompt,maxTokens=8000,{retries=4,retryDelay=6000,model="claude-haiku-4-5-20251001",feature="",signal=null}={})=>{
+  const callClaude=async(prompt,maxTokens=8000,{retries=4,retryDelay=6000,model="claude-haiku-4-5-20251001",feature="",signal=null,onRetry=null}={})=>{
     if(!navigator.onLine) throw new Error("No internet — check your connection and retry.");
     let lastError;
     let currentMaxTokens=maxTokens;
@@ -5974,9 +5976,9 @@ ROOT_CAUSE: [one of: formula_error | concept_confusion | calculation_mistake | t
     for(let attempt=0;attempt<retries;attempt++){
       if(signal?.aborted)throw Object.assign(new Error("Cancelled"),{cancelled:true});
       if(attempt>0&&!skipTopWait){
-        // Exponential backoff: 6s, 12s, 24s (only when not already waited in 429/529 handler)
         const delay=retryDelay*Math.pow(2,attempt-1);
-        setLoadingMsg(`Retrying question generation (attempt ${attempt+1}/${retries})...`);
+        setLoadingMsg(attempt===retries-1?"Optimising your questions — almost there…":"Enhancing question quality…");
+        onRetry?.();
         await new Promise(r=>setTimeout(r,delay));
       }
       skipTopWait=false;
@@ -6003,7 +6005,7 @@ ROOT_CAUSE: [one of: formula_error | concept_confusion | calculation_mistake | t
           const retryAfter=res.headers.get("retry-after");
           const waitMs=Math.min(45000,retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt+1));
           lastError=new Error(`Rate limit`);
-          if(attempt+1<retries) setLoadingMsg(`Rate limit hit — waiting ${Math.round(waitMs/1000)}s (attempt ${attempt+1}/${retries})...`);
+          if(attempt+1<retries) setLoadingMsg(`Busy — resuming in ${Math.round(waitMs/1000)}s…`);
           await new Promise(r=>setTimeout(r,waitMs));
           skipTopWait=true;
           continue;
@@ -6012,7 +6014,7 @@ ROOT_CAUSE: [one of: formula_error | concept_confusion | calculation_mistake | t
           const retryAfter=res.headers.get("retry-after");
           const waitMs=Math.min(45000,retryAfter?parseInt(retryAfter)*1000:retryDelay*Math.pow(2,attempt+1));
           lastError=new Error(`Rate limit`);
-          if(attempt+1<retries) setLoadingMsg(`API busy — waiting ${Math.round(waitMs/1000)}s (attempt ${attempt+1}/${retries})...`);
+          if(attempt+1<retries) setLoadingMsg(`Server busy — resuming in ${Math.round(waitMs/1000)}s…`);
           await new Promise(r=>setTimeout(r,waitMs));
           skipTopWait=true;
           continue;
@@ -6384,7 +6386,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
     setSessionDraft(null);
     srProcessedRef.current=new Set();
     multiModulesRef.current=multiModules;
-    setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);
+    setLoading(true);setError("");setLoadingProgress(0);setLoadingETA(null);setLoadingStep(1);
     setLoadingContext({topic:t,subtopic:st,count:cnt,difficulty:diff,mode:m,isVignette:!!isVignette,modules:multiModules});
     loadingStartRef.current=Date.now();
     // Persist params so a page reload can offer to retry
@@ -6413,12 +6415,12 @@ Return ONLY a JSON array — no prose, no markdown fences:
           setVignetteMode(false);
           setQuestions(localQs);setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
           setScreen("quiz");
-          setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+          setLoading(false);setLoadingProgress(0);setLoadingStep(0);generatingRef.current=false;
           return;
         }
       }catch(localErr){
         setError(`Failed to load questions: ${localErr.message}`);
-        setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+        setLoading(false);setLoadingProgress(0);setLoadingStep(0);generatingRef.current=false;
         return;
       }
     }
@@ -6441,13 +6443,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
             setQuestions(fingerprintQuestions(offlineQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
             setQdb(prev=>addToQDB(offlineQs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
             setScreen("quiz");
-            setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+            setLoading(false);setLoadingProgress(0);setLoadingStep(0);generatingRef.current=false;
             return;
           }
         }catch{}
       }
       setError(isVignette?"Vignette mode requires a ClearCFA account. Please sign in.":"Sign in to generate AI-powered exam questions.");
-      setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+      setLoading(false);setLoadingProgress(0);setLoadingStep(0);generatingRef.current=false;
       return;
     }
     // ── Free tier daily limit ──
@@ -6456,7 +6458,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(usage.count>=FREE_DAILY_AI_LIMIT){
         setUpgradeModal({reason:"limit",passProb:passProbability?.probability??null,weakCount:moduleReadiness.filter(m=>m.accuracy!==null&&m.accuracy<60).length,streakDays:streak});
         ph.capture('upgrade_shown',{reason:'limit',pass_prob:passProbability?.probability??null});
-        setLoading(false);setLoadingProgress(0);generatingRef.current=false;
+        setLoading(false);setLoadingProgress(0);setLoadingStep(0);generatingRef.current=false;
         return;
       }
     }
@@ -6468,26 +6470,22 @@ Return ONLY a JSON array — no prose, no markdown fences:
     const perCallCnt=Math.ceil(requestCount/numCalls);
     // Parallel calls run simultaneously, so wall-clock ≈ slowest individual call
     const estimatedMs=Math.max(7000,perCallCnt*1200);
-    const msgs=isVignette
-      ?["Writing scenario...","Building item set...","Engineering distractors...","Almost ready..."]
-      :["Reading LOS statements...","Anchoring to 2026 curriculum...","Engineering distractors...","Checking for duplicates...","Almost ready..."];
-    setLoadingMsg(msgs[0]);
+    setLoadingMsg(isVignette?"Writing your vignette scenario…":"Selecting topic & learning outcomes…");
+    genEstimatedEndRef.current=Date.now()+estimatedMs;
     const progressInterval=setInterval(()=>{
-      const elapsed=Date.now()-loadingStartRef.current;
+      const ts=Date.now();
+      const end=genEstimatedEndRef.current;
       let pct;
-      if(elapsed<estimatedMs){
-        // Phase 1: 0→90% over estimatedMs
-        pct=Math.min(90,Math.round((elapsed/estimatedMs)*90));
-        setLoadingETA(Math.ceil((estimatedMs-elapsed)/1000));
-      } else {
-        // Phase 2: 90→99% slowly over next 45s — shows it's still working
-        const overrun=elapsed-estimatedMs;
+      if(ts<end){
+        const total=end-loadingStartRef.current;
+        pct=Math.min(90,Math.round(((ts-loadingStartRef.current)/total)*90));
+        setLoadingETA(Math.ceil((end-ts)/1000));
+      }else{
+        const overrun=ts-end;
         pct=Math.min(99,90+Math.round((overrun/45000)*9));
         setLoadingETA(null);
       }
       setLoadingProgress(pct);
-      const mi=Math.floor(elapsed/2000)%msgs.length;
-      setLoadingMsg(msgs[mi]);
     },200);
     // ── Question cache check (skip for vignettes) ─────────────────────────────
     if(!isVignette){
@@ -6501,16 +6499,16 @@ Return ONLY a JSON array — no prose, no markdown fences:
           const finalQs=fresh.slice(0,cnt);
           qCacheRef.current=qcMarkUsed(qCacheRef.current,t,st,diff,hit.ts);
           storageSet(QCACHE_KEY,qCacheRef.current);
-          setLoadingProgress(100);setLoadingMsg("Questions ready!");
+          setLoadingStep(4);setLoadingProgress(100);setLoadingMsg("Questions ready!");
           await new Promise(r=>setTimeout(r,250));
-          if(genIdRef.current!==myGenId){clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;return;}
+          if(genIdRef.current!==myGenId){clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;return;}
           setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
           setVignetteMode(false);
           setQuestions(fingerprintQuestions(finalQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
           setScreen("quiz");
           // Mark as seen immediately so abandoning session doesn't cause repeats
           setQdb(prev=>addToQDB(finalQs.map(q=>({...q,_topic:t,_subtopic:st})),prev));
-          clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
+          clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;
           return;
         }
       }
@@ -6523,9 +6521,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
       if(isVignette){
         const vignetteCount=Math.max(1,Math.ceil(cnt/3));
         const vigPrompt=buildVignettePrompt(t,st,diff,vignetteCount,st2||null,activeLOS,cfaLevel);
-        const rawVig=await callClaude(vigPrompt,2000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`,signal:genAbort.signal});
+        setLoadingStep(2);setLoadingMsg("Generating your vignette…");
+        const rawVig=await callClaude(vigPrompt,2000,{retries:2,retryDelay:4000,model:useModel,feature:`vignette:${diff}`,signal:genAbort.signal,onRetry:()=>{genEstimatedEndRef.current=Date.now()+estimatedMs;}});
         // Flatten vignettes into questions with shared context prepended
         parsed=flattenVignettes(rawVig,t,st);
+        setLoadingStep(3);setLoadingMsg("Checking quality & uniqueness…");
       } else {
         // Fan-out: parallel calls each request perCallCnt questions, merged after
         const perCallMax=multiModules?.length>1?Math.round(perCallCnt*380*1.6):perCallCnt*380;
@@ -6533,15 +6533,17 @@ Return ONLY a JSON array — no prose, no markdown fences:
         const now=Date.now();
         const seenStems=Object.values(qdb).filter(v=>v.topic===t&&(now-v.seen)<QDB_FRESHNESS_MS&&v.stem).sort((a,b)=>b.seen-a.seen).map(v=>v.stem);
         const testedLOS=levelHistory.filter(h=>h.topic===t&&(multiModules?.length>1?multiModules.some(mm=>mm.st===h.subtopic):h.subtopic===st)).flatMap(h=>h.coveredLOS||[]);
+        setLoadingStep(2);setLoadingMsg(numCalls>1?"Generating questions in parallel…":"Generating with Claude AI…");
         const callPromises=Array.from({length:numCalls},(_,i)=>
           callClaude(
             buildQuestionPrompt(t,st,diff,perCallCnt,cfaLevel,activeLOS,activeMisconceptions,dynCtx,multiModules,seenStems,testedLOS),
             perCallMax,
-            {retries:numCalls===1?2:1,retryDelay:4000,model:useModel,feature:`questions:${diff}${numCalls>1?`:p${i}`:""}`,signal:genAbort.signal}
+            {retries:numCalls===1?2:1,retryDelay:4000,model:useModel,feature:`questions:${diff}${numCalls>1?`:p${i}`:""}`,signal:genAbort.signal,onRetry:()=>{genEstimatedEndRef.current=Date.now()+estimatedMs;}}
           ).then(r=>Array.isArray(r)?expandQuestionKeys(r):[]).catch(()=>[])
         );
         const batches=await Promise.all(callPromises);
         parsed=batches.flat();
+        setLoadingStep(3);setLoadingMsg("Checking quality & uniqueness…");
       }
       if(!Array.isArray(parsed)||!parsed.length)throw new Error("Empty");
       // Drop questions where the AI admitted the correct answer isn't in the options
@@ -6662,11 +6664,11 @@ Return ONLY a JSON array — no prose, no markdown fences:
       }
       // Notify user if we couldn't deliver all requested questions
       if(finalQs.length<cnt){showToast("⚠️",`${finalQs.length} of ${cnt} questions generated`,`Some questions were filtered for quality or recently seen. Starting with ${finalQs.length}.`);}
-      setLoadingProgress(100);setLoadingMsg(isVignette?"Vignettes ready!":"Questions ready!");
+      setLoadingStep(4);setLoadingProgress(100);setLoadingMsg(isVignette?"Vignettes ready!":"Questions ready!");
       // Clear pending gen — generation succeeded
       setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}
       await new Promise(r=>setTimeout(r,350));
-      if(genIdRef.current!==myGenId){clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;return;}
+      if(genIdRef.current!==myGenId){clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;return;}
       setTopic(t);setSubtopic(st);setDifficulty(diff);setCount(cnt);setMode(m);
       setVignetteMode(isVignette);
       setQuestions(isVignette?finalQs:fingerprintQuestions(finalQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
@@ -6702,18 +6704,18 @@ Return ONLY a JSON array — no prose, no markdown fences:
             setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}
             clearInterval(progressInterval);
             await new Promise(r=>setTimeout(r,350));
-            if(genIdRef.current!==myGenId){setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;return;}
+            if(genIdRef.current!==myGenId){setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;return;}
             setTopic(t);setSubtopic(usedSt);setDifficulty(diff);setCount(cnt);setMode(m);
             setVignetteMode(false);
             setQuestions(fingerprintQuestions(offlineQs,authUserRef.current?.id));setAnswers({});setFlaggedQ({});setCurrentQ(0);setShowExp(false);setLastSession(null);qShownAtRef.current={};qTimesRef.current={};setFullExamMode(false);
             setQdb(prev=>addToQDB(offlineQs.map(q=>({...q,_topic:t,_subtopic:usedSt})),prev));
             setScreen("quiz");
-            setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
+            setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;
             return;
           }
         }catch{}
       }
-      if(e.cancelled){clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;return;}
+      if(e.cancelled){clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;return;}
       const msg=e.message||"Unknown error";
       setError(msg.includes("Rate limit")||msg.includes("retries failed")
         ? "API is busy — please wait a minute and try again."
@@ -6721,7 +6723,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
         ? "Connection timed out — tap to retry."
         : `Session failed: ${msg.slice(0,120)}. Tap to retry.`);
     }
-    clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;
+    clearInterval(progressInterval);setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;
   };
   generateQuestionsRef.current=generateQuestions;
 
@@ -7289,9 +7291,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{height:"100%",width:`${loadingProgress}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s ease",boxShadow:`0 0 10px ${C.accent}88`}}/>
         </div>
         <div style={{textAlign:"right",fontSize:12,fontWeight:800,color:C.accentLight,marginBottom:28}}>{loadingProgress}%</div>
-        {[["Anchoring to LOS curriculum",0],["Engineering distractor options",30],["Deduplication & quality check",70],["Ready to go",90]].map(([label,pct],i,arr)=>{
-          const done=loadingProgress>=pct+20;
-          const active=loadingProgress>=pct&&!done;
+        {[["Reading topic & LOS",1,0],["Generating with Claude AI",2,30],["Checking quality & uniqueness",3,70],["Ready to go",4,90]].map(([label,step,pct],i,arr)=>{
+          const done=loadingStep>0?loadingStep>step:loadingProgress>=pct+20;
+          const active=loadingStep>0?loadingStep===step:(loadingProgress>=pct&&loadingProgress<pct+20);
           return(
             <div key={i} style={{display:"flex",gap:14,marginBottom:i<arr.length-1?16:0,alignItems:"center"}}>
               <div style={{width:24,height:24,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0,transition:"all 0.3s",background:done?"#16a34a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,boxShadow:done?`0 0 10px #16a34a55`:active?`0 0 10px ${C.accent}55`:"none"}}>{done?"✓":i+1}</div>
@@ -7303,7 +7305,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           );
         })}
       </div>
-      <button onClick={()=>{genAbortRef.current?.abort();++genIdRef.current;setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+      <button onClick={()=>{genAbortRef.current?.abort();++genIdRef.current;setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;setError("");setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
         Cancel
       </button>
     </div>
@@ -10474,9 +10476,9 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{height:"100%",width:`${loadingProgress}%`,background:`linear-gradient(90deg,${C.accent},${C.accentLight})`,borderRadius:3,transition:"width 0.4s ease",boxShadow:`0 0 10px ${C.accent}88`}}/>
         </div>
         <div style={{textAlign:"right",fontSize:12,fontWeight:800,color:C.accentLight,marginBottom:28}}>{loadingProgress}%</div>
-        {[["Anchoring to LOS curriculum",0],["Engineering distractor options",30],["Deduplication & quality check",70],["Ready to go",90]].map(([label,pct],i,arr)=>{
-          const done=loadingProgress>=pct+20;
-          const active=loadingProgress>=pct&&!done;
+        {[["Reading topic & LOS",1,0],["Generating with Claude AI",2,30],["Checking quality & uniqueness",3,70],["Ready to go",4,90]].map(([label,step,pct],i,arr)=>{
+          const done=loadingStep>0?loadingStep>step:loadingProgress>=pct+20;
+          const active=loadingStep>0?loadingStep===step:(loadingProgress>=pct&&loadingProgress<pct+20);
           return(
             <div key={i} style={{display:"flex",gap:14,marginBottom:i<arr.length-1?16:0,alignItems:"center"}}>
               <div style={{width:24,height:24,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0,transition:"all 0.3s",background:done?"#16a34a":active?C.accent:C.dim,color:done||active?"#fff":C.muted,boxShadow:done?`0 0 10px #16a34a55`:active?`0 0 10px ${C.accent}55`:"none"}}>{done?"✓":i+1}</div>
@@ -10488,7 +10490,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           );
         })}
       </div>
-      <button onClick={()=>{genAbortRef.current?.abort();++genIdRef.current;setLoading(false);setLoadingProgress(0);setLoadingETA(null);generatingRef.current=false;setError("");setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
+      <button onClick={()=>{genAbortRef.current?.abort();++genIdRef.current;setLoading(false);setLoadingProgress(0);setLoadingETA(null);setLoadingStep(0);generatingRef.current=false;setError("");setPendingGen(null);try{localStorage.removeItem(PENDING_GEN_KEY);}catch{}}} style={{marginTop:44,fontSize:13,padding:"10px 28px",borderRadius:10,background:"none",border:`1px solid ${C.border}`,color:C.muted,cursor:"pointer"}}>
         Cancel
       </button>
     </div>
