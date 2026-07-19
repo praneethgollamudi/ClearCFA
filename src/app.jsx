@@ -6348,6 +6348,25 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
   // Classify a question's text content into a CFA topic using keyword scoring
   const classifyQText=(txt)=>{
     const lower=txt.toLowerCase();
+    // Priority 1: explicit CFA topic section labels as they appear in official PDFs.
+    // Check first 300 chars only so "equity" in a question body doesn't steal a Fixed Income question.
+    const head=lower.slice(0,300);
+    const TOPIC_LABELS=[
+      ["Ethics",["ethical and professional standards","ethics & professional","ethics and professional"]],
+      ["Quantitative Methods",["quantitative methods"]],
+      ["Economics",["economics"]],
+      ["Financial Statement Analysis",["financial reporting and analysis","financial statement analysis","financial reporting & analysis"]],
+      ["Corporate Issuers",["corporate issuers","corporate finance"]],
+      ["Equity",["equity investments","equity analysis"]],
+      ["Fixed Income",["fixed income","fixed-income"]],
+      ["Derivatives",["derivatives"]],
+      ["Alternatives",["alternative investments"]],
+      ["Portfolio Management",["portfolio management"]],
+    ];
+    for(const[topic,pats]of TOPIC_LABELS){
+      if(pats.some(p=>head.includes(p)))return topic;
+    }
+    // Priority 2: keyword scoring over full text
     let bestTopic=null,bestHits=0;
     for(const topic of MOCK_VALID_TOPICS){
       const hits=MOCK_TOPIC_KW[topic].filter(k=>lower.includes(k)).length;
@@ -6398,7 +6417,7 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       const scores={};
       for(const topic of MOCK_VALID_TOPICS){
         const d=topicData[topic];
-        if(d.n>=2)scores[topic]=Math.round(d.c/d.n*100);
+        if(d.n>=1)scores[topic]=Math.round(d.c/d.n*100);
       }
       return scores;
     }
