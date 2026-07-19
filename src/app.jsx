@@ -308,11 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-19-e
-{version:"2026-07-19-e",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Mock Exam Scores Now Parse Perfectly",sub:"Bug Fix · 2026-07-19 update",desc:"We fixed the PDF score parser to reliably extract all 10 CFA topic scores from your mock exams—no more missing data. Your performance breakdown is now complete and accurate every time you upload a practice test.",tip:"Upload a mock exam PDF and check your topic performance dashboard to see all 10 scores populated correctly."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Cleaner Mock Exam History",sub:"UX · 2026-07-19 update",desc:"When you re-analyze a mock exam, we now replace the old entry instead of creating duplicates—keeping your history clean and easy to review. Topic labels are also normalized consistently so you can compare results across exams without confusion.",tip:"Re-upload a mock exam you've analyzed before and notice it updates your existing record instead of cluttering your history."},
-]},
 // WN_VER:2026-07-19-f
 {version:"2026-07-19-f",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Mock PDFs Parse Perfectly Now",sub:"Study Tools · 2026-07-19 update",desc:"We fixed how ClearCFA reads your mock exam PDFs—it now reliably extracts all 10 CFA topic scores and classifies every question by topic, even in Q-by-Q format. You'll see accurate breakdowns of your strengths and weaknesses across each curriculum area.",tip:"Upload your mock PDF and check the detailed topic performance chart to focus your next study session."},
@@ -334,6 +329,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"✨",color:C.reward,bg:C.medium,title:"Instant Feedback During PDF Upload",sub:"UX · 2026-07-19 update",desc:"You'll now see a notification the moment PDF analysis begins, even if you scroll down while waiting. No more wondering if your upload is being processed.",tip:"Look for the toast message at the bottom of your screen right after selecting a PDF."},
 {emoji:"🛡️",color:C.hard,bg:C.easy,title:"More Reliable Re-Analysis",sub:"Bug Fix · 2026-07-19 update",desc:"When re-analyzing a PDF, the app now shows you exactly which questions failed to process and skips re-reading the file unnecessarily. You get clearer error messages so you know what to do next.",tip:"If a re-analysis fails, check the error toast to see which questions couldn't be classified."},
 ]},
+// WN_VER:2026-07-19-d
+{version:"2026-07-19-d",slides:[
+{emoji:"📄",color:C.accentLight,bg:C.accentLight,title:"Smarter PDF Topic Detection",sub:"AI · 2026-07-19 update",desc:"ClearCFA now accurately identifies CFA topic labels within your uploaded PDFs, even when questions are organized non-linearly. This means your quiz questions are tagged with the correct study area automatically.",tip:"Upload past papers or custom materials—your questions will instantly sort by the right CFA topic."},
+{emoji:"✨",color:C.easy,bg:C.easy,title:"Instant Feedback When Analyzing PDFs",sub:"UX · 2026-07-19 update",desc:"You'll now see a confirmation message the moment PDF analysis begins, even if you're scrolled down in the app. No more wondering if your upload started.",tip:"Watch for the toast notification at the bottom of your screen right after you select a PDF."},
+{emoji:"🛠️",color:C.medium,bg:C.medium,title:"Re-analyze Now Shows All Issues",sub:"Bug Fix · 2026-07-19 update",desc:"When you re-analyze a PDF, the app now displays error messages for every failed question instead of stopping silently. You'll know exactly what went wrong and can fix it.",tip:"If re-analysis stumbles, check the error toasts to see which questions couldn't be processed."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -342,15 +343,15 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-19
+{date:"2026-07-19",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
