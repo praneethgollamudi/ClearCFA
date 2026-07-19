@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-c and 2026-07-18-d from WHATS_NEW_SLIDES rotation. Added new versions 2026-07-19-d and 2026-07-19-e. Currently active versions are 2026-07-19, 2026-07-19-b, 2026-07-19-c, 2026-07-19-d, and 2026-07-19-e. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
 **What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-b and 2026-07-18-c from WHATS_NEW_SLIDES rotation. Added new versions 2026-07-19-c and 2026-07-19-d. Currently active versions are 2026-07-18-d, 2026-07-18-e, 2026-07-18-f, 2026-07-19, 2026-07-19-b, 2026-07-19-c, and 2026-07-19-d. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1805,7 +1808,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1808400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1808500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
@@ -1979,3 +1982,5 @@ Recent slides (2026-06-30-d, 2026-06-30-e) document formula column display fixes
 **What's New version 2026-07-14-b (7fbcfb7)**: New slide set covering Smoother Results & Quiz Start (results screen stability, first question UX) and Better Free-Tier Guidance (feature upgrade hints, pass probability on dashboard). Versions 2026-07-13-d, 2026-07-13-e, and 2026-07-13-f have been removed from rotation.
 
 More menu trimmed to 8 focused items with analytics duplicates removed. When adding menu items, prioritize core study functions and avoid redundant feature exposure to maintain nav clarity and reduce cognitive load.
+
+**Mock PDF Q-by-Q format classification (e4276c4)**: Mock PDF parser now classifies all 90 questions by topic when analyzing Q-by-Q format PDFs. When handling question-by-question mock results, ensure the classification engine maps all questions to their corresponding CFA topics before computing aggregate topic scores.
