@@ -424,82 +424,104 @@ Deno.serve(async (req: Request) => {
     const cfaLvl = typeof level === 'string' ? level : '1';
     const examDateStr = typeof body.examDate === 'string' ? body.examDate : 'approximately 60 days away';
     const daysLeft = typeof body.daysLeft === 'number' ? body.daysLeft : 60;
+    const isQbyQ = body.isQbyQ === true;
     const mockPerfHistory = Array.isArray(body.mockPerfHistory) ? body.mockPerfHistory : [];
     const historyContext = mockPerfHistory.length > 0
-      ? `\n\nPRIOR UPLOAD HISTORY (${mockPerfHistory.length} previous mock reviews analyzed):\n${JSON.stringify(mockPerfHistory.slice(-3))}`
+      ? `\n\nPRIOR MOCK HISTORY (${mockPerfHistory.length} previous uploads):\n${JSON.stringify(mockPerfHistory.slice(-3).map((h: Record<string,unknown>) => ({ estimatedPassProb: h.estimatedPassProb, weakTopics: h.weakTopics, topicScores: h.topicScores, uploadedAt: h.uploadedAt })))}`
       : '';
     const uploadCount = mockPerfHistory.length + 1;
 
-    const analysisPrompt = `You are a CFA Level ${cfaLvl} exam coach. Analyze this mock exam review text and generate a phased study plan covering the time until the exam.
+    const qbyqSection = isQbyQ ? `
+THIS IS A CFA INSTITUTE Q-BY-Q MOCK REVIEW:
+Each line shows Q[n]\u2713 (correct) or Q[n]\u2717 (wrong), followed by ~140 chars of question content.
+To find per-topic scores, classify each Q into a CFA topic using keywords, then count correct/total per topic.
 
-MOCK EXAM REVIEW TEXT:
+TOPIC KEYWORD GUIDE:
+• Ethics: standard iv/iii/ii/i/v/vi/vii, gips, professional conduct, suitability, material nonpublic, front-running, soft dollar, referral fee, conflict of interest, fiduciary, mosaic theory, misrepresentation, loyalty, fair dealing, diligence
+• Quantitative Methods: time value of money, npv, irr, probability, regression, hypothesis test, confidence interval, variance, t-test, z-score, sampling, standard deviation, p-value, continuously compounded, geometric mean, holding period return, stratified sampling, autocorrelation
+• Economics: gdp, monetary policy, fiscal policy, exchange rate, inflation, aggregate demand, aggregate supply, business cycle, central bank, oligopoly, monopoly, elasticity, phillips curve, money supply, concentration ratio, minimum efficient scale, herfindahl, purchasing power parity
+• Financial Statement Analysis: financial statement, balance sheet, income statement, cash flow statement, inventory, ifrs, gaap, revenue recognition, depreciation, deferred tax, impairment, accrual, ebitda, current ratio, asset turnover, days sales, working capital, goodwill, consolidat, receivables turnover
+• Corporate Issuers: capital structure, wacc, dividend policy, capital budgeting, m&a, governance, agency, modigliani, leverage, payout, cost of equity, share repurchase, buyback, esg, board of directors, restructuring
+• Equity: equity valuation, p/e ratio, price-to-earnings, dividend discount model, ddm, residual income, price-to-book, ev/ebitda, gordon growth, comparable company, enterprise value, earnings per share, free cash flow to equity, return on equity, intrinsic value
+• Fixed Income: bond price, duration, yield to maturity, credit spread, coupon, convexity, callable bond, ytm, floating rate, securitization, mortgage-backed, yield curve, immunization, credit analysis, zero coupon, term structure, credit rating
+• Derivatives: call option, put option, futures, forward contract, swap, black-scholes, option delta, gamma, credit default swap, covered call, protective put, straddle, no-arbitrage, strike price, option premium
+• Alternatives: private equity, hedge fund, real estate, reit, venture capital, leveraged buyout, real asset, buyout fund, commodity, infrastructure, fund of funds, carried interest
+• Portfolio Management: portfolio, asset allocation, sharpe ratio, diversification, investment policy statement, capm, beta, benchmark, rebalancing, efficient frontier, mean-variance, tracking error, information ratio, active management
+
+Classify EVERY question — if content is ambiguous, use best keyword match. Do NOT leave any topic with 0 questions if you can identify any match.
+` : `
+THIS IS A TOPIC-LEVEL SUMMARY FORMAT:
+Look for topic names followed by scores or fractions (e.g. "Ethics: 7/15" or "Fixed Income 47%").
+Extract the ACTUAL numeric score for each CFA topic area found.
+`;
+
+    const analysisPrompt = `You are a CFA Level ${cfaLvl} exam coach. Analyze this mock exam data and generate a targeted phased study plan.
+
+MOCK EXAM DATA:
 ${(pdfText as string).slice(0, 13000)}
 ${historyContext}
 
 EXAM DATE: ${examDateStr}
 DAYS UNTIL EXAM: ${daysLeft}
-UPLOAD NUMBER: ${uploadCount} (this is the ${uploadCount === 1 ? '1st' : uploadCount === 2 ? '2nd' : uploadCount === 3 ? '3rd' : uploadCount + 'th'} mock review analyzed)
+UPLOAD NUMBER: ${uploadCount}
+${qbyqSection}
+STEP 1 — Determine per-topic accuracy scores for ALL 10 CFA topics:
+${isQbyQ
+  ? '- Classify every Q line by topic using the keyword guide above, then compute (correct / total) * 100 per topic'
+  : '- Find each topic name in the PDF and its adjacent score/fraction'}
+- Identify topics below 70% (weak) and at/above 70% (strong)
 
-STEP 1 — Before writing JSON, identify ALL CFA topic areas where the mock score was below 70% (or below the CFA pass mark). List every weak area you see, not just the worst one. Common CFA Level ${cfaLvl} topics: Ethics, Quantitative Methods, Economics, Financial Statement Analysis, Corporate Issuers, Equity, Fixed Income, Derivatives, Alternatives, Portfolio Management.
+STEP 2 — Rank weak topics by score (lowest first), then create one phase per weak topic.
+- Each phase = one distinct weak topic (never repeat same primaryFocus)
+- LAST phase always = "Final Mock & Review" (last 7-10 days: 2 full mocks + targeted fixes)
 
-STEP 2 — Distribute phases across DIFFERENT weak topics. If 3+ topics are weak, each phase covers a DIFFERENT topic. Never assign the same primaryFocus to two consecutive phases.
-
-Generate a JSON study plan. Return ONLY valid JSON with no markdown or explanation:
+Return ONLY valid JSON (no markdown, no explanation):
 {
-  "summary": "2-3 sentence plain-English coaching summary naming ALL weak areas found and what the user must do across EACH to pass",
+  "summary": "2-3 sentence coaching summary naming the specific weak topics with their scores and what the user must do to reach 70%+ in each",
   "estimatedPassProb": "e.g. 52%",
   "topicScores": {
-    "Ethics": 58,
-    "Fixed Income": 45,
-    "Equity": 72
+    "Ethics": 46,
+    "Quantitative Methods": 60,
+    "Economics": 57,
+    "Financial Statement Analysis": 45,
+    "Corporate Issuers": 80,
+    "Equity": 50,
+    "Fixed Income": 55,
+    "Derivatives": 60,
+    "Alternatives": 65,
+    "Portfolio Management": 56
   },
   "phases": [
     {
       "id": "phase1",
-      "title": "Phase 1: [short descriptive name — must name the specific weak topic]",
-      "weeks": "Weeks 1-N (dates if possible)",
+      "title": "Phase 1: [specific weak topic name e.g. Financial Statement Analysis Foundation]",
+      "weeks": "Weeks 1-N",
       "startDay": 1,
       "endDay": 21,
-      "primaryFocus": "Exact CFA topic name (DIFFERENT from other phases)",
-      "secondaryFocus": "Another weak CFA topic name or null",
-      "weeklyTarget": "e.g. 5 sessions/week, 10Q each — Fixed Income only",
-      "milestoneGoal": "Specific measurable target: e.g. Score 70%+ on Fixed Income by Day 21",
-      "keyTopics": ["Exact module from mock", "Another exact module"],
-      "checkpointAction": "Specific action at end of this phase, e.g. take a 10Q Fixed Income drill and aim for 70%+"
+      "primaryFocus": "Exact CFA topic (UNIQUE across phases)",
+      "secondaryFocus": "Second weak topic or null",
+      "weeklyTarget": "5 sessions/week, 10Q each — target 70%+ by end of phase",
+      "milestoneGoal": "Score 70%+ on [topic] drills by Day 21",
+      "keyTopics": ["Sub-topic or module from questions", "Another sub-topic"],
+      "checkpointAction": "Take a 15Q [topic] drill; if below 65% extend phase by 1 week"
     }
   ],
-  "weakTopics": ["ALL topics that scored below 70% on this mock — must include every weak area, not just the worst"],
-  "strongTopics": ["topic that scored well above 70%"],
-  "keyInsights": ["specific insight about a weak area", "specific insight about another weak area"],
+  "weakTopics": ["every topic below 70% — ALL of them, not just the worst"],
+  "strongTopics": ["topics at 70%+"],
+  "keyInsights": ["specific pattern you noticed in wrong answers", "another actionable insight"],
   "uploadCount": ${uploadCount}
 }
 
-TOPIC SCORES RULES (topicScores field):
-- Extract the ACTUAL numeric score for each CFA topic area found in the PDF
-- Use ONLY these exact canonical keys in the output JSON: "Ethics", "Quantitative Methods", "Economics", "Financial Statement Analysis", "Corporate Issuers", "Equity", "Fixed Income", "Derivatives", "Alternatives", "Portfolio Management"
-- Convert fractions to percentages: 14/20 → 70, 9/15 → 60
-- Only include topics where you found an actual score in the PDF — omit topics with no score data
-- Values must be integers 0-100 (percentage scored)
-- LABEL MAPPING — mock PDFs use many different names for the same topic. Map them as follows:
-  "Ethical and Professional Standards" / "Professional Standards" / "Ethics & Professional Standards" → "Ethics"
-  "Financial Reporting and Analysis" / "FRA" / "Financial Reporting & Analysis" / "Financial Statement & Analysis" → "Financial Statement Analysis"
-  "Corporate Finance" / "Corporate Finance and Issuers" / "Corporate Finance & Issuers" / "Corporate Issuers & Governance" → "Corporate Issuers"
-  "Equity Investments" / "Equity Analysis" / "Equity Investment" → "Equity"
-  "Fixed-Income" / "Fixed Income Analysis" / "Fixed Income Investments" / "Fixed-Income Investments" → "Fixed Income"
-  "Derivatives Analysis" / "Derivative Instruments" → "Derivatives"
-  "Alternative Investments" / "Alternatives Investments" → "Alternatives"
-  "Portfolio Management and Wealth Planning" / "Portfolio Management & Wealth Planning" → "Portfolio Management"
-  "Quantitative Methods in Investment Analysis" / "Quantitative Analysis" → "Quantitative Methods"
-  "Economics and Markets" / "Economic Analysis" → "Economics"
-
-STRICT RULES:
-- Create 2-4 phases based on ${daysLeft} days available. LAST phase must always be "Final Mock & Review" (last 7-10 days: 2 full mocks + targeted fixes).
-- CRITICAL: Each non-final phase MUST have a DIFFERENT primaryFocus. If Ethics, Fixed Income, and Equity are all weak, Phase 1 = Ethics, Phase 2 = Fixed Income, Phase 3 = Equity. Never repeat the same topic.
-- weakTopics MUST list every CFA topic area that scored below 70% on this mock — not just one.
-- Phase focus MUST come directly from the mock data — only mention topics that appear in the PDF text.
-- If prior history exists, note what IMPROVED vs. what is still weak across uploads.
-- Each phase must have a realistic weekly target (not more than 1-2 hr/day).
-- uploadCount must be ${uploadCount}.`;
+RULES:
+- topicScores: use EXACTLY these 10 keys: "Ethics", "Quantitative Methods", "Economics", "Financial Statement Analysis", "Corporate Issuers", "Equity", "Fixed Income", "Derivatives", "Alternatives", "Portfolio Management"
+- ${isQbyQ ? 'Include ALL 10 topics in topicScores (classify every question)' : 'Include only topics where you found a score in the PDF'}
+- Values are integers 0-100
+- Create 2-4 phases for ${daysLeft} days — LAST phase must be "Final Mock & Review"
+- Each non-final phase has a DIFFERENT primaryFocus — never repeat a topic
+- weakTopics: list EVERY topic below 70% (could be 8 or 9 topics if overall score is ~56%)
+- Realistic targets: 1-2 hr/day max per phase
+- uploadCount must equal ${uploadCount}
+${mockPerfHistory.length > 0 ? '- Compare vs prior mock(s): highlight what improved and what still needs work' : ''}`;
 
     let aiRes: Response;
     try {

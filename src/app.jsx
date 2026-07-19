@@ -6320,24 +6320,97 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
   };
 
   // Parse topic scores directly from raw PDF text using regex — reliable fallback for AI extraction
+  // Keyword lists for Q-by-Q topic classification (shared by parseTopicScoresFromText and buildMockPayload)
+  const MOCK_TOPIC_KW={
+    "Ethics":["standard iv","standard iii","standard ii","standard i","standard v","standard vi","standard vii","gips","professional conduct","loyalty to employer","suitability","material nonpublic","front-running","soft dollar","referral fee","conflict of interest","supervisor responsibility","prudent investor","fair dealing","diligence and reasonable","research objectivity","independence and objectivity","code of ethics","fiduciary duty","mosaic theory","tipping","misrepresentation","personal account dealing","compensation arrangement","preservation of confidentiality"],
+    "Quantitative Methods":["time value of money","npv ","irr ","probability","regression","hypothesis test","time series","correlation coefficient","variance ","z-score","t-test","sampling","confidence interval","normal distribution","bayes","monte carlo","standard deviation","p-value","chi-square","autocorrelation","heteroskedasticity","serial correlation","cointegrat","continuously compound","geometric mean","arithmetic mean","harmonic mean","holding period return","money-weighted","time-weighted","binomial distribution","poisson","stratified sampling","cluster sampling","central limit theorem"],
+    "Economics":["gdp ","gross domestic product","monetary policy","fiscal policy","exchange rate","inflation rate","aggregate demand","aggregate supply","macroeconomics","microeconomics","business cycle","central bank","interest rate policy","purchasing power parity","current account","capital account","comparative advantage","oligopoly","monopoly","price elasticity","labor market","output gap","phillips curve","money supply","credit channel","ricardian equivalence","multiplier effect","money multiplier","concentration ratio","minimum efficient scale","herfindahl","lerner index","kinked demand","price leadership","dominant firm"],
+    "Financial Statement Analysis":["financial statement","financial reporting","balance sheet","income statement","cash flow statement","inventory method","lifo","fifo","weighted average cost","depreciation method","straight-line depreciation","goodwill impairment","ifrs ","gaap ","revenue recognition","pension obligation","operating lease","finance lease","deferred tax","intangible asset","impairment loss","accounts receivable","accrual basis","ebitda ","gross margin","working capital","off-balance sheet","intercorporate investment","minority interest","consolidat","acid-test","current ratio","quick ratio","asset turnover","days sales outstanding","inventory turnover","receivables turnover","payables turnover","common-size","vertical analysis","horizontal analysis","segment report","operating cash flow","free cash flow"],
+    "Corporate Issuers":["capital structure","financial leverage","dividend policy","wacc ","capital budgeting","merger","acquisition","share repurchase","stock buyback","corporate governance","esg ","stakeholder","agency problem","payout ratio","cost of equity","cost of debt","optimal capital structure","business risk","operating leverage","m&a ","takeover","modigliani","board of directors","b2b ","restructuring","leveraged recapitalization","spin-off","carve-out","special dividend","residual dividend","bird-in-hand","signaling theory","pecking order"],
+    "Equity":["equity valuation","stock price","price-to-earnings","earnings per share","eps ","dividend discount model","ddm ","residual income model","price-to-book","ev/ebitda","enterprise value","gordon growth model","free cash flow to equity","pe ratio","peg ratio","comparable company","porter five forces","return on equity","roe ","intrinsic value","growth stock","value stock","justified p/e","justified p/b","multistage ddm","h-model","price-to-sales","price-to-cash flow","fundamental analysis","technical analysis"],
+    "Fixed Income":["bond price","bond duration","yield to maturity","yield to call","credit spread","coupon rate","bond maturity","modified duration","macaulay duration","convexity","sovereign bond","term structure of interest rates","ytm ","callable bond","putable bond","floating rate note","credit risk","default risk","securitization","mortgage-backed","collateralized debt","clo ","asset-backed","yield curve","immunization strategy","duration matching","liability-driven investment","credit analysis","high yield bond","investment grade","credit rating","zero coupon","discount bond","premium bond","par bond","full price","clean price","accrued interest"],
+    "Derivatives":["call option","put option","futures contract","forward contract","interest rate swap","option premium","binomial model","black-scholes","delta hedge","option delta","option gamma","theta decay","vega ","credit default swap","cds ","covered call","protective put","straddle ","strangle ","no-arbitrage","synthetic position","exercise price","strike price","in-the-money","out-of-the-money","at-the-money","long call","short put","short call","long put","collar strategy","option payoff","forward price","futures price"],
+    "Alternatives":["private equity","hedge fund","real estate","reit ","venture capital","leveraged buyout","lbo ","real asset","direct lending","fund of funds","buyout fund","growth equity","distressed debt","event-driven","global macro","managed futures","commodity ","infrastructure","farmland","timberland","lock-up period","redemption frequency","fee structure","two-and-twenty","hurdle rate","carried interest","net asset value","alternative investment","illiquidity premium"],
+    "Portfolio Management":["portfolio construction","asset allocation","sharpe ratio","diversification","investment policy statement","ips ","modern portfolio theory","mpt ","capital asset pricing model","capm ","systematic risk","unsystematic risk","beta ","alpha ","benchmark portfolio","factor model","portfolio rebalancing","strategic asset allocation","tactical asset allocation","behavioral finance","mean-variance optimization","efficient frontier","risk-return tradeoff","tracking error","information ratio","active management","passive management","target-date fund","glide path","liability-driven","liability matching","sortino ratio","treynor ratio","jensen alpha","m-squared","risk budgeting"],
+  };
+  const MOCK_VALID_TOPICS=["Ethics","Quantitative Methods","Economics","Financial Statement Analysis","Corporate Issuers","Equity","Fixed Income","Derivatives","Alternatives","Portfolio Management"];
+
+  // Detect Q-by-Q format and extract question positions from raw PDF text
+  const detectQbyQ=(rawText)=>{
+    const pat=/\b(\d{1,3})\s+Multiple[\s]+Choice\s+([01])\s*\/\s*1\s*point/gi;
+    const positions=[];
+    let m;
+    while((m=pat.exec(rawText))!==null){
+      positions.push({qNum:parseInt(m[1]),correct:m[2]==="1",pos:m.index,end:m.index+m[0].length});
+    }
+    return positions.length>=5?positions:null;
+  };
+
+  // Classify a question's text content into a CFA topic using keyword scoring
+  const classifyQText=(txt)=>{
+    const lower=txt.toLowerCase();
+    let bestTopic=null,bestHits=0;
+    for(const topic of MOCK_VALID_TOPICS){
+      const hits=MOCK_TOPIC_KW[topic].filter(k=>lower.includes(k)).length;
+      if(hits>bestHits){bestHits=hits;bestTopic=topic;}
+    }
+    return bestHits>0?bestTopic:null;
+  };
+
+  // Build compact payload for the AI proxy — handles Q-by-Q and summary-table formats
+  const buildMockPayload=(rawText)=>{
+    const positions=detectQbyQ(rawText);
+    if(positions){
+      const total=positions.length;
+      const correctCount=positions.filter(p=>p.correct).length;
+      const lines=[
+        `FORMAT: CFA Institute Mock Exam Q-by-Q Review`,
+        `OVERALL: ${correctCount}/${total} correct (${Math.round(correctCount/total*100)}%)`,
+        `QUESTIONS (✓=correct, ✗=wrong, followed by first ~140 chars of question content):`,
+      ];
+      for(let i=0;i<positions.length;i++){
+        const cs=positions[i].end;
+        const ce=positions[i+1]?positions[i+1].pos:Math.min(cs+1500,rawText.length);
+        const txt=rawText.slice(cs,Math.min(ce,cs+600)).replace(/\s+/g," ").trim().slice(0,140);
+        lines.push(`Q${positions[i].qNum}${positions[i].correct?"✓":"✗"}: ${txt}`);
+      }
+      return{isQbyQ:true,qCount:total,qCorrect:correctCount,payload:lines.join("\n").slice(0,14000)};
+    }
+    return{isQbyQ:false,payload:rawText.slice(0,14000)};
+  };
+
+  // Client-side topic score extraction — Q-by-Q keyword classification OR legacy table regex
   const parseTopicScoresFromText=(rawText)=>{
+    // Q-by-Q path: classify each question by topic and aggregate scores
+    const positions=detectQbyQ(rawText);
+    if(positions){
+      const topicData={};
+      MOCK_VALID_TOPICS.forEach(t=>{topicData[t]={c:0,n:0};});
+      for(let i=0;i<positions.length;i++){
+        const cs=positions[i].end;
+        const ce=positions[i+1]?positions[i+1].pos:Math.min(cs+2000,rawText.length);
+        const txt=rawText.slice(cs,Math.min(ce,cs+900));
+        const topic=classifyQText(txt);
+        if(topic){
+          topicData[topic].n++;
+          if(positions[i].correct)topicData[topic].c++;
+        }
+      }
+      const scores={};
+      for(const topic of MOCK_VALID_TOPICS){
+        const d=topicData[topic];
+        if(d.n>=2)scores[topic]=Math.round(d.c/d.n*100);
+      }
+      return scores;
+    }
+    // Fallback: look for topic-level summary table (fraction/percentage near topic name)
     const scores={};
     const t=rawText.toLowerCase();
-    // Find all positions of a needle in the lowercased text, with word-boundary guard
     const findAll=(needle)=>{
-      const positions=[];
-      let start=0;
-      while(true){
-        const idx=t.indexOf(needle,start);
-        if(idx<0)break;
-        // Word boundary: char before must not be a letter or digit
-        const pre=idx>0?t[idx-1]:'';
-        if(!/[a-z0-9]/.test(pre))positions.push(idx);
-        start=idx+1;
-      }
-      return positions;
+      const pos=[];let start=0;
+      while(true){const idx=t.indexOf(needle,start);if(idx<0)break;const pre=idx>0?t[idx-1]:"";if(!/[a-z0-9]/.test(pre))pos.push(idx);start=idx+1;}
+      return pos;
     };
-    // Extract score from a text chunk — fraction (7/15) or percentage (47%)
     const extractScore=(chunk)=>{
       const frac=chunk.match(/(\d{1,3})\s*(?:\/|of)\s*(\d{1,3})/);
       if(frac){const n=+frac[1],d=+frac[2];if(d>0&&d<=100&&n<=d)return Math.round(n/d*100);}
@@ -6361,13 +6434,11 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       let found=false;
       for(const term of terms){
         if(found)break;
-        const positions=findAll(term);
-        for(const pos of positions){
-          // Try 500 chars forward
+        const allPos=findAll(term);
+        for(const pos of allPos){
           const fwd=rawText.slice(pos,pos+500);
           let score=extractScore(fwd);
           if(score!==null){scores[key]=score;found=true;break;}
-          // Try 200 chars backward (score column may precede topic name in some layouts)
           const bwd=rawText.slice(Math.max(0,pos-200),pos+term.length);
           score=extractScore(bwd);
           if(score!==null){scores[key]=score;found=true;break;}
@@ -6418,13 +6489,17 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       }
       setPendingPdfReanalyze(null);
       const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));
+      // Build compact payload — for Q-by-Q format this creates a structured question summary
+      // so the AI sees all 90 questions instead of just the first 14k chars of raw text
+      const mockPayload=buildMockPayload(pdfText);
       const res=await fetch(AI_PROXY_URL,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           userId:authUser.id,
           requestType:"analyze_mock_pdf",
-          pdfText:pdfText.slice(0,14000),
+          pdfText:mockPayload.payload,
+          isQbyQ:mockPayload.isQbyQ,
           examDate:examDate.toISOString().slice(0,10),
           cfaLevel,
           daysLeft,
