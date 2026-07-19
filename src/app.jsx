@@ -6388,10 +6388,16 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       plan.pdfFingerprint=fingerprint;
       try{localStorage.setItem(EXAM_PLAN_KEY,JSON.stringify(plan));}catch{}
       setExamStudyPlan(plan);
-      const newHistory=[...mockPerfHistory,{...perfSummary,uploadedAt:new Date().toISOString()}].slice(-10);
+      // If re-analyzing same PDF (force=true), replace the entry with that fingerprint rather than appending
+      const newEntry={...perfSummary,uploadedAt:new Date().toISOString(),pdfFingerprint:fingerprint};
+      const existingIdx=force?(()=>{for(let i=mockPerfHistory.length-1;i>=0;i--)if(mockPerfHistory[i].pdfFingerprint===fingerprint)return i;return -1;})():-1;
+      const newHistory=(existingIdx>=0
+        ?[...mockPerfHistory.slice(0,existingIdx),newEntry,...mockPerfHistory.slice(existingIdx+1)]
+        :[...mockPerfHistory,newEntry]
+      ).slice(-10);
       try{localStorage.setItem(MOCK_PERF_KEY,JSON.stringify(newHistory));}catch{}
       setMockPerfHistory(newHistory);
-      showToast("✅","Plan updated","Your exam study plan has been updated based on this mock review.");
+      showToast("✅",force?"Plan refreshed":"Plan updated",force?"Scores recalculated from the same PDF with latest AI improvements.":"Your exam study plan has been updated based on this mock review.");
     }catch(e){
       setPdfError("Upload failed: "+(e.message||"unknown error"));
     }finally{setPdfUploading(false);}
