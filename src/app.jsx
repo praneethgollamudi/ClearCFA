@@ -6346,28 +6346,33 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
     return positions.length>=5?positions:null;
   };
 
-  // Classify a question's text content into a CFA topic using keyword scoring
-  const classifyQText=(txt)=>{
-    const lower=txt.toLowerCase();
-    // Priority 1: explicit CFA topic section labels as they appear in official PDFs.
-    // Check first 300 chars only so "equity" in a question body doesn't steal a Fixed Income question.
-    const head=lower.slice(0,300);
-    const TOPIC_LABELS=[
-      ["Ethics",["ethical and professional standards","ethics & professional","ethics and professional"]],
-      ["Quantitative Methods",["quantitative methods"]],
-      ["Economics",["economics"]],
-      ["Financial Statement Analysis",["financial reporting and analysis","financial statement analysis","financial reporting & analysis"]],
-      ["Corporate Issuers",["corporate issuers","corporate finance"]],
-      ["Equity",["equity investments","equity analysis"]],
-      ["Fixed Income",["fixed income","fixed-income"]],
-      ["Derivatives",["derivatives"]],
-      ["Alternatives",["alternative investments"]],
-      ["Portfolio Management",["portfolio management"]],
-    ];
-    for(const[topic,pats]of TOPIC_LABELS){
-      if(pats.some(p=>head.includes(p)))return topic;
+  // Shared topic label patterns used by both payload builder and score extractor
+  const QBYQ_TOPIC_LABELS=[
+    ["Ethics",["ethical and professional standards","ethics and professional","ethics & professional"]],
+    ["Quantitative Methods",["quantitative methods"]],
+    ["Economics",["economics"]],
+    ["Financial Statement Analysis",["financial reporting and analysis","financial statement analysis","financial reporting & analysis"]],
+    ["Corporate Issuers",["corporate issuers","corporate finance"]],
+    ["Equity",["equity investments","equity analysis","equity investment"]],
+    ["Fixed Income",["fixed income","fixed-income"]],
+    ["Derivatives",["derivatives"]],
+    ["Alternatives",["alternative investments"]],
+    ["Portfolio Management",["portfolio management"]],
+  ];
+  // Find an explicit CFA topic section label in a text snippet (e.g. between question markers)
+  const findTopicInGap=(text)=>{
+    const lower=text.toLowerCase();
+    for(const[topic,pats]of QBYQ_TOPIC_LABELS){
+      if(pats.some(p=>lower.includes(p)))return topic;
     }
-    // Priority 2: keyword scoring over full text
+    return null;
+  };
+  // Classify a question by propagated section topic + keyword fallback
+  // labelTopic: the section label found in surrounding gap text (highest priority)
+  const classifyQText=(labelTopic,questionTxt)=>{
+    if(labelTopic)return labelTopic;
+    // Keyword scoring fallback on question body text
+    const lower=questionTxt.toLowerCase();
     let bestTopic=null,bestHits=0;
     for(const topic of MOCK_VALID_TOPICS){
       const hits=MOCK_TOPIC_KW[topic].filter(k=>lower.includes(k)).length;
@@ -6376,40 +6381,69 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
     return bestHits>0?bestTopic:null;
   };
 
+  // Compute per-question topic assignments using gap-propagation:
+  // CFA Institute Q-by-Q PDFs put the section header BEFORE the first question in a section.
+  // We scan the "gap" text between each pair of adjacent question markers to find topic labels,
+  // then propagate that label forward until the next label is encountered.
+  const assignQbyQTopics=(rawText,positions)=>{
+    const topicForQ=[];
+    let currentTopic=null;
+    // Check preamble (text before the very first question) for the opening section header
+    if(positions.length>0){
+      const preamble=rawText.slice(0,positions[0].pos);
+      const t=findTopicInGap(preamble);
+      if(t)currentTopic=t;
+    }
+    for(let i=0;i<positions.length;i++){
+      // Gap between previous question's marker end and this question's marker start
+      const gapStart=i>0?positions[i-1].end:0;
+      const gapTopic=findTopicInGap(rawText.slice(gapStart,positions[i].pos));
+      if(gapTopic)currentTopic=gapTopic;
+      // Also check a short window after this question's marker (some PDFs put label after)
+      const afterTxt=rawText.slice(positions[i].end,Math.min(positions[i].end+300,positions[i+1]?positions[i+1].pos:rawText.length));
+      const afterTopic=findTopicInGap(afterTxt);
+      if(afterTopic)currentTopic=afterTopic;
+      topicForQ.push(currentTopic);
+    }
+    return topicForQ;
+  };
+
   // Build compact payload for the AI proxy — handles Q-by-Q and summary-table formats
   const buildMockPayload=(rawText)=>{
     const positions=detectQbyQ(rawText);
     if(positions){
       const total=positions.length;
       const correctCount=positions.filter(p=>p.correct).length;
+      const topicForQ=assignQbyQTopics(rawText,positions);
       const lines=[
         `FORMAT: CFA Institute Mock Exam Q-by-Q Review`,
         `OVERALL: ${correctCount}/${total} correct (${Math.round(correctCount/total*100)}%)`,
-        `QUESTIONS (✓=correct, ✗=wrong, followed by first ~140 chars of question content):`,
+        `QUESTIONS (✓=correct, ✗=wrong, topic, first ~120 chars of content):`,
       ];
       for(let i=0;i<positions.length;i++){
         const cs=positions[i].end;
         const ce=positions[i+1]?positions[i+1].pos:Math.min(cs+1500,rawText.length);
-        const txt=rawText.slice(cs,Math.min(ce,cs+600)).replace(/\s+/g," ").trim().slice(0,140);
-        lines.push(`Q${positions[i].qNum}${positions[i].correct?"✓":"✗"}: ${txt}`);
+        const txt=rawText.slice(cs,Math.min(ce,cs+500)).replace(/\s+/g," ").trim().slice(0,120);
+        const topicTag=topicForQ[i]?` [${topicForQ[i]}]`:"";
+        lines.push(`Q${positions[i].qNum}${positions[i].correct?"✓":"✗"}${topicTag}: ${txt}`);
       }
       return{isQbyQ:true,qCount:total,qCorrect:correctCount,payload:lines.join("\n").slice(0,14000)};
     }
     return{isQbyQ:false,payload:rawText.slice(0,14000)};
   };
 
-  // Client-side topic score extraction — Q-by-Q keyword classification OR legacy table regex
+  // Client-side topic score extraction — Q-by-Q gap-propagation OR legacy table regex
   const parseTopicScoresFromText=(rawText)=>{
-    // Q-by-Q path: classify each question by topic and aggregate scores
     const positions=detectQbyQ(rawText);
     if(positions){
       const topicData={};
       MOCK_VALID_TOPICS.forEach(t=>{topicData[t]={c:0,n:0};});
+      const topicForQ=assignQbyQTopics(rawText,positions);
       for(let i=0;i<positions.length;i++){
         const cs=positions[i].end;
-        const ce=positions[i+1]?positions[i+1].pos:Math.min(cs+2000,rawText.length);
-        const txt=rawText.slice(cs,Math.min(ce,cs+900));
-        const topic=classifyQText(txt);
+        const ce=positions[i+1]?positions[i+1].pos:Math.min(cs+900,rawText.length);
+        const questionTxt=rawText.slice(cs,Math.min(ce,cs+900));
+        const topic=classifyQText(topicForQ[i],questionTxt);
         if(topic){
           topicData[topic].n++;
           if(positions[i].correct)topicData[topic].c++;
