@@ -308,11 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18
-{version:"2026-07-18",slides:[
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Exam Plan Matching",sub:"Study Tools · 2026-07-18 update",desc:"The Readiness Tracker now intelligently matches your exam plan text against all CFA topics, giving you instant visibility into which modules align with your study goals. This helps you prioritize the right content without manual cross-referencing.",tip:"Open your Exam Plan and check the Readiness Tracker—it'll now highlight which of your flagged modules connect to your planned topics."},
-{emoji:"📊",color:C.medium,bg:C.medium,title:"Mock vs In-App Accuracy Insights",sub:"Study Tools · 2026-07-18 update",desc:"The Readiness Tracker now displays side-by-side mock exam and in-app quiz accuracy at the module level, letting you spot knowledge gaps where practice tests differ from lesson quizzes. This reveals whether you truly understand a topic or just perform well in one format.",tip:"Look for modules where your mock accuracy is lower than in-app—those are your priority areas for deeper review."},
-]},
 // WN_VER:2026-07-18-b
 {version:"2026-07-18-b",slides:[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Smarter Exam Plan Matching",sub:"Study Tools · 2026-07-18 update",desc:"Your exam plan now intelligently matches against all CFA topics and keywords, not just exact titles. This means the app catches every relevant study module and gives you a complete picture of your prep progress.",tip:"Check your Readiness Tracker—it now shows only the mock-flagged modules you actually need to focus on."},
@@ -335,6 +330,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Exam Plan Readiness Tracker",sub:"Study Tools · 2026-07-19 update",desc:"Your Exam Plan now shows a module-level readiness tracker that matches your study progress and mock performance against every topic in the official CFA curriculum. Instantly see which modules are exam-ready and which ones need deeper study.",tip:"Check the Readiness Tracker tab in your Exam Plan to find exactly which modules are flagged from your mocks."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Mock PDF Analysis",sub:"Speed · 2026-07-19 update",desc:"Mock exam PDFs now process 3× faster with parallel question generation and improved error handling that shows you exactly what went wrong if something stalls. Your exam scores and topic breakdowns appear in seconds instead of minutes.",tip:"Try re-uploading a duplicate mock to see the new \"Re-analyze PDF\" option that skips duplicate detection."},
 ]},
+// WN_VER:2026-07-19-b
+{version:"2026-07-19-b",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Mock PDF Topic Scores Now Accurate",sub:"Study Tools · 2026-07-19 update",desc:"Fixed topic label mapping so your uploaded mock exam PDFs now correctly populate all topic-level scores instead of missing data. This gives you a true side-by-side comparison of your actual mock performance versus in-app practice results.",tip:"Re-upload any previous mock PDFs to see the corrected topic breakdowns in your performance dashboard."},
+{emoji:"🔄",color:C.medium,bg:C.medium,title:"Re-analyze Duplicate Mock Uploads",sub:"UX · 2026-07-19 update",desc:"When you upload the same mock exam PDF again, ClearCFA now re-analyzes it and updates your existing result instead of creating duplicates. This keeps your study history clean and focused on what matters.",tip:"If you accidentally uploaded a mock twice, just upload it again—the duplicate will be replaced automatically."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -343,13 +343,6 @@ const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version
 // Updated automatically by gen-whats-new.js alongside WHATS_NEW_SLIDES
 const ADMIN_CHANGELOG=[
 // AC_START
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"Fix edge function auth: add --no-verify-jwt to deploy command",
-]},
 // AC_VER:2026-07-18
 {date:"2026-07-18",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -401,6 +394,12 @@ const ADMIN_CHANGELOG=[
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-19
+{date:"2026-07-19",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_END
 ];
