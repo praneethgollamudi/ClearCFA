@@ -6385,13 +6385,38 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       if(!plan||!Array.isArray(plan.phases)){setPdfError("AI returned an unexpected response. Try again.");setPdfUploading(false);return;}
       plan.daysLeftAtCreation=daysLeft;
       plan.pdfFingerprint=fingerprint;
+      // Client-side topic label normalization — handles provider labels AI may return as keys
+      if(plan.topicScores){
+        const TOPIC_ALIASES={
+          "ethical and professional standards":"Ethics","professional standards":"Ethics","ethics & professional standards":"Ethics",
+          "financial reporting and analysis":"Financial Statement Analysis","fra":"Financial Statement Analysis",
+          "financial reporting & analysis":"Financial Statement Analysis","financial statement & analysis":"Financial Statement Analysis",
+          "corporate finance":"Corporate Issuers","corporate finance and issuers":"Corporate Issuers",
+          "corporate finance & issuers":"Corporate Issuers","corporate issuers & governance":"Corporate Issuers",
+          "equity investments":"Equity","equity analysis":"Equity","equity investment":"Equity",
+          "fixed-income":"Fixed Income","fixed income analysis":"Fixed Income",
+          "fixed income investments":"Fixed Income","fixed-income investments":"Fixed Income",
+          "alternative investments":"Alternatives","alternatives investments":"Alternatives",
+          "derivatives analysis":"Derivatives","derivative instruments":"Derivatives",
+          "portfolio management and wealth planning":"Portfolio Management",
+          "portfolio management & wealth planning":"Portfolio Management",
+          "quantitative methods in investment analysis":"Quantitative Methods","quantitative analysis":"Quantitative Methods",
+          "economics and markets":"Economics","economic analysis":"Economics",
+        };
+        const VALID_TOPICS=["Ethics","Quantitative Methods","Economics","Financial Statement Analysis","Corporate Issuers","Equity","Fixed Income","Derivatives","Alternatives","Portfolio Management"];
+        const normalized={};
+        for(const[k,v]of Object.entries(plan.topicScores)){
+          const canonical=TOPIC_ALIASES[k.toLowerCase().trim()]||k;
+          if(VALID_TOPICS.includes(canonical))normalized[canonical]=v;
+        }
+        plan.topicScores=normalized;
+      }
       try{localStorage.setItem(EXAM_PLAN_KEY,JSON.stringify(plan));}catch{}
       setExamStudyPlan(plan);
-      // If re-analyzing same PDF (force=true), replace the entry with that fingerprint rather than appending
-      const newEntry={...perfSummary,uploadedAt:new Date().toISOString(),pdfFingerprint:fingerprint};
-      const existingIdx=force?(()=>{for(let i=mockPerfHistory.length-1;i>=0;i--)if(mockPerfHistory[i].pdfFingerprint===fingerprint)return i;return -1;})():-1;
-      const newHistory=(existingIdx>=0
-        ?[...mockPerfHistory.slice(0,existingIdx),newEntry,...mockPerfHistory.slice(existingIdx+1)]
+      // If re-analyzing (force=true), replace the LAST history entry for this PDF instead of appending
+      const newEntry={...perfSummary,topicScores:plan.topicScores||{},uploadedAt:new Date().toISOString(),pdfFingerprint:fingerprint};
+      const newHistory=(force&&mockPerfHistory.length>0
+        ?[...mockPerfHistory.slice(0,-1),newEntry]
         :[...mockPerfHistory,newEntry]
       ).slice(-10);
       try{localStorage.setItem(MOCK_PERF_KEY,JSON.stringify(newHistory));}catch{}
