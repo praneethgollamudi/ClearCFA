@@ -6324,32 +6324,55 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
   const parseTopicScoresFromText=(rawText)=>{
     const scores={};
     const t=rawText.toLowerCase();
-    // Try each topic: look for keyword, then scan 250 chars ahead for "X/Y" fraction or "X%" percentage
+    // Find all positions of a needle in the lowercased text, with word-boundary guard
+    const findAll=(needle)=>{
+      const positions=[];
+      let start=0;
+      while(true){
+        const idx=t.indexOf(needle,start);
+        if(idx<0)break;
+        // Word boundary: char before must not be a letter or digit
+        const pre=idx>0?t[idx-1]:'';
+        if(!/[a-z0-9]/.test(pre))positions.push(idx);
+        start=idx+1;
+      }
+      return positions;
+    };
+    // Extract score from a text chunk — fraction (7/15) or percentage (47%)
+    const extractScore=(chunk)=>{
+      const frac=chunk.match(/(\d{1,3})\s*(?:\/|of)\s*(\d{1,3})/);
+      if(frac){const n=+frac[1],d=+frac[2];if(d>0&&d<=100&&n<=d)return Math.round(n/d*100);}
+      const pct=chunk.match(/(\d{1,3})\s*%/);
+      if(pct){const p=+pct[1];if(p>=0&&p<=100)return p;}
+      return null;
+    };
     const TOPICS=[
-      {key:"Ethics",terms:["ethical and professional standards","ethical & professional standards","ethics, standards and","ethics "]},
-      {key:"Quantitative Methods",terms:["quantitative methods"]},
-      {key:"Economics",terms:["economics "]},
-      {key:"Financial Statement Analysis",terms:["financial reporting and analysis","financial reporting & analysis","financial statement analysis","fra ","fra:","financial reporting:"]},
-      {key:"Corporate Issuers",terms:["corporate finance","corporate issuers"]},
-      {key:"Fixed Income",terms:["fixed income","fixed-income"]},
-      {key:"Equity",terms:["equity investments","equity "]},
-      {key:"Derivatives",terms:["derivatives"]},
-      {key:"Alternatives",terms:["alternative investments","alternatives "]},
-      {key:"Portfolio Management",terms:["portfolio management"]},
+      {key:"Ethics",terms:["ethical and professional standards","ethical & professional standards","ethics & professional standards","ethics, standards","ethics"]},
+      {key:"Quantitative Methods",terms:["quantitative methods","quantitative analysis"]},
+      {key:"Economics",terms:["economics"]},
+      {key:"Financial Statement Analysis",terms:["financial reporting and analysis","financial reporting & analysis","financial statement & analysis","financial statement analysis","fra"]},
+      {key:"Corporate Issuers",terms:["corporate finance and issuers","corporate finance & issuers","corporate issuers & governance","corporate issuers","corporate finance"]},
+      {key:"Fixed Income",terms:["fixed-income investments","fixed income investments","fixed income analysis","fixed-income","fixed income"]},
+      {key:"Equity",terms:["equity investments","equity analysis","equity investment","equity"]},
+      {key:"Derivatives",terms:["derivatives analysis","derivative instruments","derivatives"]},
+      {key:"Alternatives",terms:["alternative investments","alternatives investments","alternatives"]},
+      {key:"Portfolio Management",terms:["portfolio management and wealth planning","portfolio management & wealth planning","portfolio management"]},
     ];
     for(const{key,terms}of TOPICS){
+      let found=false;
       for(const term of terms){
-        const idx=t.indexOf(term);
-        if(idx<0)continue;
-        // Scan forward up to 250 chars for a score
-        const chunk=rawText.slice(idx,idx+250);
-        // Fraction format: "7/15", "7 / 15", "7 of 15"
-        const frac=chunk.match(/(\d{1,3})\s*(?:\/|of)\s*(\d{1,3})/);
-        if(frac){const n=+frac[1],d=+frac[2];if(d>0&&d<=100&&n<=d){scores[key]=Math.round(n/d*100);break;}}
-        // Percentage format: "47%", "47 %"
-        const pct=chunk.match(/(\d{1,3})\s*%/);
-        if(pct){const p=+pct[1];if(p>=0&&p<=100){scores[key]=p;break;}}
-        break; // keyword found but no nearby score — don't try further keywords for this topic
+        if(found)break;
+        const positions=findAll(term);
+        for(const pos of positions){
+          // Try 500 chars forward
+          const fwd=rawText.slice(pos,pos+500);
+          let score=extractScore(fwd);
+          if(score!==null){scores[key]=score;found=true;break;}
+          // Try 200 chars backward (score column may precede topic name in some layouts)
+          const bwd=rawText.slice(Math.max(0,pos-200),pos+term.length);
+          score=extractScore(bwd);
+          if(score!==null){scores[key]=score;found=true;break;}
+        }
       }
     }
     return scores;
