@@ -6320,6 +6320,41 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
     setWeeklyPlanLoading(false);
   };
 
+  // Parse topic scores directly from raw PDF text using regex — reliable fallback for AI extraction
+  const parseTopicScoresFromText=(rawText)=>{
+    const scores={};
+    const t=rawText.toLowerCase();
+    // Try each topic: look for keyword, then scan 250 chars ahead for "X/Y" fraction or "X%" percentage
+    const TOPICS=[
+      {key:"Ethics",terms:["ethical and professional standards","ethical & professional standards","ethics, standards and","ethics "]},
+      {key:"Quantitative Methods",terms:["quantitative methods"]},
+      {key:"Economics",terms:["economics "]},
+      {key:"Financial Statement Analysis",terms:["financial reporting and analysis","financial reporting & analysis","financial statement analysis","fra ","fra:","financial reporting:"]},
+      {key:"Corporate Issuers",terms:["corporate finance","corporate issuers"]},
+      {key:"Fixed Income",terms:["fixed income","fixed-income"]},
+      {key:"Equity",terms:["equity investments","equity "]},
+      {key:"Derivatives",terms:["derivatives"]},
+      {key:"Alternatives",terms:["alternative investments","alternatives "]},
+      {key:"Portfolio Management",terms:["portfolio management"]},
+    ];
+    for(const{key,terms}of TOPICS){
+      for(const term of terms){
+        const idx=t.indexOf(term);
+        if(idx<0)continue;
+        // Scan forward up to 250 chars for a score
+        const chunk=rawText.slice(idx,idx+250);
+        // Fraction format: "7/15", "7 / 15", "7 of 15"
+        const frac=chunk.match(/(\d{1,3})\s*(?:\/|of)\s*(\d{1,3})/);
+        if(frac){const n=+frac[1],d=+frac[2];if(d>0&&d<=100&&n<=d){scores[key]=Math.round(n/d*100);break;}}
+        // Percentage format: "47%", "47 %"
+        const pct=chunk.match(/(\d{1,3})\s*%/);
+        if(pct){const p=+pct[1];if(p>=0&&p<=100){scores[key]=p;break;}}
+        break; // keyword found but no nearby score — don't try further keywords for this topic
+      }
+    }
+    return scores;
+  };
+
   // Extract text from a PDF File using pdf.js (loaded dynamically)
   const extractPDFText=async(file)=>{
     if(!window.pdfjsLib){
@@ -6385,38 +6420,40 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       if(!plan||!Array.isArray(plan.phases)){setPdfError("AI returned an unexpected response. Try again.");setPdfUploading(false);return;}
       plan.daysLeftAtCreation=daysLeft;
       plan.pdfFingerprint=fingerprint;
-      // Client-side topic label normalization — handles provider labels AI may return as keys
-      if(plan.topicScores){
-        const TOPIC_ALIASES={
-          "ethical and professional standards":"Ethics","professional standards":"Ethics","ethics & professional standards":"Ethics",
-          "financial reporting and analysis":"Financial Statement Analysis","fra":"Financial Statement Analysis",
-          "financial reporting & analysis":"Financial Statement Analysis","financial statement & analysis":"Financial Statement Analysis",
-          "corporate finance":"Corporate Issuers","corporate finance and issuers":"Corporate Issuers",
-          "corporate finance & issuers":"Corporate Issuers","corporate issuers & governance":"Corporate Issuers",
-          "equity investments":"Equity","equity analysis":"Equity","equity investment":"Equity",
-          "fixed-income":"Fixed Income","fixed income analysis":"Fixed Income",
-          "fixed income investments":"Fixed Income","fixed-income investments":"Fixed Income",
-          "alternative investments":"Alternatives","alternatives investments":"Alternatives",
-          "derivatives analysis":"Derivatives","derivative instruments":"Derivatives",
-          "portfolio management and wealth planning":"Portfolio Management",
-          "portfolio management & wealth planning":"Portfolio Management",
-          "quantitative methods in investment analysis":"Quantitative Methods","quantitative analysis":"Quantitative Methods",
-          "economics and markets":"Economics","economic analysis":"Economics",
-        };
-        const VALID_TOPICS=["Ethics","Quantitative Methods","Economics","Financial Statement Analysis","Corporate Issuers","Equity","Fixed Income","Derivatives","Alternatives","Portfolio Management"];
-        const normalized={};
-        for(const[k,v]of Object.entries(plan.topicScores)){
-          const canonical=TOPIC_ALIASES[k.toLowerCase().trim()]||k;
-          if(VALID_TOPICS.includes(canonical))normalized[canonical]=v;
-        }
-        plan.topicScores=normalized;
+      // Step 1: Normalize whatever keys the AI returned (handles provider label variants)
+      const TOPIC_ALIASES={
+        "ethical and professional standards":"Ethics","professional standards":"Ethics","ethics & professional standards":"Ethics",
+        "financial reporting and analysis":"Financial Statement Analysis","fra":"Financial Statement Analysis",
+        "financial reporting & analysis":"Financial Statement Analysis","financial statement & analysis":"Financial Statement Analysis",
+        "corporate finance":"Corporate Issuers","corporate finance and issuers":"Corporate Issuers",
+        "corporate finance & issuers":"Corporate Issuers","corporate issuers & governance":"Corporate Issuers",
+        "equity investments":"Equity","equity analysis":"Equity","equity investment":"Equity",
+        "fixed-income":"Fixed Income","fixed income analysis":"Fixed Income",
+        "fixed income investments":"Fixed Income","fixed-income investments":"Fixed Income",
+        "alternative investments":"Alternatives","alternatives investments":"Alternatives",
+        "derivatives analysis":"Derivatives","derivative instruments":"Derivatives",
+        "portfolio management and wealth planning":"Portfolio Management","portfolio management & wealth planning":"Portfolio Management",
+        "quantitative methods in investment analysis":"Quantitative Methods","quantitative analysis":"Quantitative Methods",
+        "economics and markets":"Economics","economic analysis":"Economics",
+      };
+      const VALID_TOPICS=["Ethics","Quantitative Methods","Economics","Financial Statement Analysis","Corporate Issuers","Equity","Fixed Income","Derivatives","Alternatives","Portfolio Management"];
+      const aiScores={};
+      for(const[k,v]of Object.entries(plan.topicScores||{})){
+        const canonical=TOPIC_ALIASES[k.toLowerCase().trim()]||k;
+        if(VALID_TOPICS.includes(canonical))aiScores[canonical]=v;
       }
+      // Step 2: Client-side regex parse of raw PDF text — fills any gaps the AI missed
+      const regexScores=parseTopicScoresFromText(pdfText);
+      // Merge: AI canonical scores take priority; regex fills topics the AI didn't find
+      plan.topicScores={...regexScores,...aiScores};
       try{localStorage.setItem(EXAM_PLAN_KEY,JSON.stringify(plan));}catch{}
       setExamStudyPlan(plan);
-      // If re-analyzing (force=true), replace the LAST history entry for this PDF instead of appending
-      const newEntry={...perfSummary,topicScores:plan.topicScores||{},uploadedAt:new Date().toISOString(),pdfFingerprint:fingerprint};
-      const newHistory=(force&&mockPerfHistory.length>0
-        ?[...mockPerfHistory.slice(0,-1),newEntry]
+      // Step 3: History — on re-analyze, collapse all same-day entries to just this one
+      const newEntry={...perfSummary,topicScores:plan.topicScores,uploadedAt:new Date().toISOString(),pdfFingerprint:fingerprint};
+      const todayPrefix=new Date().toISOString().slice(0,10);
+      const newHistory=(force
+        // Remove all entries from today (stale re-analyses of same PDF) then append fresh one
+        ?[...mockPerfHistory.filter(h=>!(h.uploadedAt||"").startsWith(todayPrefix)),newEntry]
         :[...mockPerfHistory,newEntry]
       ).slice(-10);
       try{localStorage.setItem(MOCK_PERF_KEY,JSON.stringify(newHistory));}catch{}
