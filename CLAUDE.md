@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Client-side topic label normalization (4b81e56)**: Added normalization of topic labels on the client side during mock PDF analysis to ensure consistent mapping regardless of how topics are labeled in uploaded PDFs. When parsing mock exam results, apply label normalization before matching to canonical topic names to handle variations in CFA curriculum naming.
+
+
+**What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-f and 2026-07-18 from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-b, 2026-07-18-c, 2026-07-18-d, 2026-07-19, and 2026-07-19-b. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
 **What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-e and 2026-07-18-f from WHATS_NEW_SLIDES rotation. Added new version 2026-07-18-d and 2026-07-19. Currently active versions are 2026-07-18, 2026-07-18-b, 2026-07-18-c, 2026-07-18-d, and 2026-07-19. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
 
 
@@ -1787,7 +1793,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1808100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1808200000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
