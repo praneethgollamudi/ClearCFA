@@ -308,11 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-19-c
-{version:"2026-07-19-c",slides:[
-{emoji:"📤",color:C.accentLight,bg:C.accentLight,title:"Re-Analyze Your Mock PDFs",sub:"Study Tools · 2026-07-19 update",desc:"You can now re-analyze a mock exam PDF without creating duplicate entries in your history. When you upload the same exam again, ClearCFA replaces the previous analysis with the new one, keeping your study dashboard clean and organized.",tip:"Upload a mock PDF again to update your scores and insights without cluttering your history."},
-{emoji:"🎯",color:C.medium,bg:C.medium,title:"Complete Topic Breakdowns on Every Mock",sub:"UX · 2026-07-19 update",desc:"Topic labels are now consistently normalized across all mock uploads, ensuring every topic area gets properly scored and reported. This means you'll see a complete picture of your strengths and weaknesses across all CFA domains, no matter which mock you analyze.",tip:"Check your topic score breakdown after uploading a mock—you should now see scores populated for all relevant topics."},
-]},
 // WN_VER:2026-07-19-d
 {version:"2026-07-19-d",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Mock Exam Re-uploads",sub:"Study Tools · 2026-07-19 update",desc:"When you re-upload a PDF mock exam, ClearCFA now replaces the previous analysis instead of creating duplicates. This keeps your exam history clean and focused on your latest attempts.",tip:"Upload the same mock multiple times to track score improvements without clutter."},
@@ -332,6 +327,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-19",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Accurate Mock Exam Scoring",sub:"Study Tools · 2026-07-19 update",desc:"Fixed PDF parsing to reliably extract all 10 CFA topic scores and classify all 90 questions by topic, even from different mock formats. Your practice exam results now reflect your true performance across every topic.",tip:"Upload a new mock exam PDF to see complete topic breakdowns and accurate score analysis."},
 {emoji:"🔄",color:C.medium,bg:C.medium,title:"Re-Analyze Mocks Without Re-Upload",sub:"UX · 2026-07-19 update",desc:"The re-analyze feature now shows detailed error messages and skips redundant PDF re-reading, making it faster to fix parsing issues. If something goes wrong, you'll see exactly what failed instead of silent failures.",tip:"Tap 'Re-analyze' on any mock exam to reprocess it and uncover hidden topic scores."},
+]},
+// WN_VER:2026-07-19-b
+{version:"2026-07-19-b",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Mock Exam Scores Now Accurate",sub:"Study Tools · 2026-07-19 update",desc:"Fixed mock PDF analysis to correctly extract all 10 CFA topic scores and classify every question by topic on first read. Your performance breakdown now reflects your actual strengths and weaknesses across the curriculum.",tip:"Upload a mock exam PDF and check the topic score breakdown—each area now shows your true performance."},
+{emoji:"🔄",color:C.accentLight,bg:C.accentLight,title:"Re-analyze Mocks Without Errors",sub:"UX · 2026-07-19 update",desc:"Re-analyzing mock exams now shows clear error messages and avoids re-reading the PDF unnecessarily. When something goes wrong, you'll see exactly what failed instead of silent failures.",tip:"If you re-analyze a mock and see an error toast, the details will tell you exactly what to check."},
 ]},
 // WN_END
 ];
@@ -353,15 +353,15 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-19
+{date:"2026-07-19",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
