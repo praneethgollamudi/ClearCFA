@@ -4,6 +4,9 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Q-by-Q mock PDF topic classification priority (d4b9034)**: Mock PDF analysis now detects explicit CFA topic labels first before falling back to question-level classification. When parsing Q-by-Q format mocks, prioritize matching against canonical topic names to ensure accurate topic-level score extraction across different PDF layouts.
+
+
 **Re-analyze error handling and toast feedback (1ce4149)**: Mock PDF re-analysis now shows error toasts for all failures and skips re-reading the PDF file during re-analysis. When handling mock re-uploads, surface all parsing and analysis errors to users via toast notifications to improve error visibility.
 
 
@@ -1690,6 +1693,9 @@ API errors (callClaude failures) are logged to `API_LOG_KEY` with `err:true` fla
 
 ## Common Gotchas
 
+- **What's New slide version rotation**: The WHATS_NEW_SLIDES array maintains exactly 5 active versions at any time. When adding new slides, remove the oldest versions to keep the rotation fresh and prevent announcement fatigue. Check the complete active version list before and after each rotation.
+
+
 - **Gap history storage key**: New constant `GAP_HISTORY_KEY = "cfa_gap_history_v1"` tracks knowledge gaps from quiz debrief sessions. When working with user study history, reference this key for gap-based analytics and spaced repetition scheduling.
 
 
@@ -1817,7 +1823,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1808600000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1808700000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
