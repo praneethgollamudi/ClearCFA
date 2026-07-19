@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**What's New version rotation cleanup (latest)**: Removed versions 2026-07-18-d and 2026-07-18-e from WHATS_NEW_SLIDES rotation. Currently active versions are 2026-07-18-f, 2026-07-18, 2026-07-18-c, and 2026-07-18-d. When rotating slides, verify the complete active list and clean up obsolete versions to prevent duplicate announcements.
+
+
+**Re-analyze PDF option for duplicate mock uploads (1838b53)**: Added ability to re-analyze previously uploaded mock PDFs when users attempt to upload duplicates. When handling mock PDF uploads, check for existing mocks and provide re-analysis option rather than rejecting duplicates outright, allowing users to refresh topic score extraction and analysis.
+
+
 **Topic label alias mapping for mock PDF population (1ac8e4a)**: Fixed topic label alias resolution to ensure mock PDFs properly populate all topic scores in Readiness Tracker. When parsing mock exam results, verify that topic aliases are correctly mapped to canonical topic names to avoid missing or mislabeled performance data.
 
 
@@ -1775,7 +1781,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1807900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1808000000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
