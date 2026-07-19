@@ -308,11 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-18-c
-{version:"2026-07-18-c",slides:[
-{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Compare Mock vs In-App Performance",sub:"Study Tools · 2026-07-18 update",desc:"Mock exams now extract and display your actual topic scores side-by-side with in-app performance, giving you a clear picture of where you stand. This helps you spot gaps between practice and real exam conditions.",tip:"After taking a mock, check the analysis tab to see which topics need the most work before test day."},
-{emoji:"🎯",color:C.medium,bg:C.medium,title:"Smarter Exam Plan Topic Matching",sub:"Study Tools · 2026-07-18 update",desc:"Your exam plan now understands CFA topic keywords across all subjects, matching your goals to the exact modules you need. The readiness tracker also focuses only on mock-flagged modules, cutting noise and keeping you on track.",tip:"Open your exam plan to see flagged modules highlighted—these are the priority areas based on your mock performance."},
-]},
 // WN_VER:2026-07-18-d
 {version:"2026-07-18-d",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Mock Exam Score Comparison",sub:"Study Tools · 2026-07-18 update",desc:"Your mock exam analysis now displays official PDF scores side-by-side with ClearCFA in-app results, giving you instant visibility into performance alignment. This helps you calibrate study focus where your real exam readiness differs from practice.",tip:"After uploading a mock PDF, check the Mock vs In-App breakdown to identify topic gaps."},
@@ -334,6 +329,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-19-c",slides:[
 {emoji:"📤",color:C.accentLight,bg:C.accentLight,title:"Re-Analyze Your Mock PDFs",sub:"Study Tools · 2026-07-19 update",desc:"You can now re-analyze a mock exam PDF without creating duplicate entries in your history. When you upload the same exam again, ClearCFA replaces the previous analysis with the new one, keeping your study dashboard clean and organized.",tip:"Upload a mock PDF again to update your scores and insights without cluttering your history."},
 {emoji:"🎯",color:C.medium,bg:C.medium,title:"Complete Topic Breakdowns on Every Mock",sub:"UX · 2026-07-19 update",desc:"Topic labels are now consistently normalized across all mock uploads, ensuring every topic area gets properly scored and reported. This means you'll see a complete picture of your strengths and weaknesses across all CFA domains, no matter which mock you analyze.",tip:"Check your topic score breakdown after uploading a mock—you should now see scores populated for all relevant topics."},
+]},
+// WN_VER:2026-07-19-d
+{version:"2026-07-19-d",slides:[
+{emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Smarter Mock Exam Re-uploads",sub:"Study Tools · 2026-07-19 update",desc:"When you re-upload a PDF mock exam, ClearCFA now replaces the previous analysis instead of creating duplicates. This keeps your exam history clean and focused on your latest attempts.",tip:"Upload the same mock multiple times to track score improvements without clutter."},
+{emoji:"✅",color:C.easy,bg:C.easy,title:"Accurate PDF Score Detection",sub:"UX · 2026-07-19 update",desc:"Improved parsing now reliably extracts your exam scores directly from PDF mock exams, with better handling of topic labels across different test formats. Spend less time manually entering scores and more time studying.",tip:"Your score will auto-populate when you upload—verify it's correct in the preview before confirming."},
 ]},
 // WN_END
 ];
@@ -379,15 +379,15 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-19
+{date:"2026-07-19",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
