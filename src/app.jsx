@@ -308,12 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-19
-{version:"2026-07-19",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Mock Scores vs. In-App Accuracy",sub:"Study Tools · 2026-07-19 update",desc:"Compare your official CFA mock exam scores directly against your in-app performance by topic, revealing exactly where you need to focus. This side-by-side view shows which topics your practice sessions are preparing you for and which ones need more work.",tip:"Upload a mock PDF to see real exam scores mapped to every CFA topic in your Exam Plan."},
-{emoji:"🎯",color:C.accentLight,bg:C.accentLight,title:"Exam Plan Readiness Tracker",sub:"Study Tools · 2026-07-19 update",desc:"Your Exam Plan now shows a module-level readiness tracker that matches your study progress and mock performance against every topic in the official CFA curriculum. Instantly see which modules are exam-ready and which ones need deeper study.",tip:"Check the Readiness Tracker tab in your Exam Plan to find exactly which modules are flagged from your mocks."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Faster Mock PDF Analysis",sub:"Speed · 2026-07-19 update",desc:"Mock exam PDFs now process 3× faster with parallel question generation and improved error handling that shows you exactly what went wrong if something stalls. Your exam scores and topic breakdowns appear in seconds instead of minutes.",tip:"Try re-uploading a duplicate mock to see the new \"Re-analyze PDF\" option that skips duplicate detection."},
-]},
 // WN_VER:2026-07-19-b
 {version:"2026-07-19-b",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.accentLight,title:"Mock PDF Topic Scores Now Accurate",sub:"Study Tools · 2026-07-19 update",desc:"Fixed topic label mapping so your uploaded mock exam PDFs now correctly populate all topic-level scores instead of missing data. This gives you a true side-by-side comparison of your actual mock performance versus in-app practice results.",tip:"Re-upload any previous mock PDFs to see the corrected topic breakdowns in your performance dashboard."},
@@ -333,6 +327,11 @@ const WHATS_NEW_SLIDES=[
 {version:"2026-07-19-e",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Mock Exam Scores Now Parse Perfectly",sub:"Bug Fix · 2026-07-19 update",desc:"We fixed the PDF score parser to reliably extract all 10 CFA topic scores from your mock exams—no more missing data. Your performance breakdown is now complete and accurate every time you upload a practice test.",tip:"Upload a mock exam PDF and check your topic performance dashboard to see all 10 scores populated correctly."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Cleaner Mock Exam History",sub:"UX · 2026-07-19 update",desc:"When you re-analyze a mock exam, we now replace the old entry instead of creating duplicates—keeping your history clean and easy to review. Topic labels are also normalized consistently so you can compare results across exams without confusion.",tip:"Re-upload a mock exam you've analyzed before and notice it updates your existing record instead of cluttering your history."},
+]},
+// WN_VER:2026-07-19-f
+{version:"2026-07-19-f",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Mock PDFs Parse Perfectly Now",sub:"Study Tools · 2026-07-19 update",desc:"We fixed how ClearCFA reads your mock exam PDFs—it now reliably extracts all 10 CFA topic scores and classifies every question by topic, even in Q-by-Q format. You'll see accurate breakdowns of your strengths and weaknesses across each curriculum area.",tip:"Upload your mock PDF and check the detailed topic performance chart to focus your next study session."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Instant Score Analysis Offline",sub:"Speed · 2026-07-19 update",desc:"Score parsing now happens on your device instead of waiting for the server, so you get results instantly and can analyze mocks even without internet. Your exam history is also smarter—duplicates are automatically removed so you see a clean record.",tip:"Try uploading a PDF while offline and watch your topic breakdown appear immediately."},
 ]},
 // WN_END
 ];
@@ -366,15 +365,15 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-18
-{date:"2026-07-18",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
-]},
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
 "Fix edge function auth: add --no-verify-jwt to deploy command",
+]},
+// AC_VER:2026-07-19
+{date:"2026-07-19",entries:[
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
