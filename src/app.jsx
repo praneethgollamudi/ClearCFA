@@ -4942,6 +4942,7 @@ function CFAMock(){
   const [mockPerfHistory,setMockPerfHistory]=useState(()=>{try{const p=localStorage.getItem(MOCK_PERF_KEY);return p?JSON.parse(p):[];}catch{return [];}});
   const [pdfUploading,setPdfUploading]=useState(false);
   const [pdfError,setPdfError]=useState("");
+  const [pendingPdfReanalyze,setPendingPdfReanalyze]=useState(null);
   const [todayStarted,setTodayStarted]=useState(()=>{try{return JSON.parse(localStorage.getItem("cfa_today_started")||"{}");}catch{return {};}});
   const [focusDone,setFocusDone]=useState(()=>{try{const s=JSON.parse(localStorage.getItem("cfa_focus_done")||"null");if(s&&s.date===localDateKey())return s.done||{};}catch{}return {};});
   const [weeklyPlanLoading,setWeeklyPlanLoading]=useState(false);
@@ -6345,7 +6346,7 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
   };
 
   // Upload a mock PDF and generate/update the exam-length study plan
-  const uploadMockPDF=async(file)=>{
+  const uploadMockPDF=async(file,force=false)=>{
     if(!authUser){showToast("⚠️","Sign in required","Please sign in to use PDF analysis.");return;}
     setPdfUploading(true);setPdfError("");
     try{
@@ -6356,10 +6357,12 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       }
       // Duplicate detection: fingerprint = length + first 120 + last 120 chars
       const fingerprint=`${pdfText.length}|${pdfText.slice(0,120)}|${pdfText.slice(-120)}`;
-      if(examStudyPlan?.pdfFingerprint&&examStudyPlan.pdfFingerprint===fingerprint){
-        showToast("ℹ️","Already analyzed","This mock PDF has already been processed. Upload a different mock exam to track progress.");
-        setPdfUploading(false);return;
+      if(examStudyPlan?.pdfFingerprint&&examStudyPlan.pdfFingerprint===fingerprint&&!force){
+        setPdfUploading(false);
+        setPendingPdfReanalyze({file,fingerprint,pdfText});
+        return;
       }
+      setPendingPdfReanalyze(null);
       const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));
       const res=await fetch(AI_PROXY_URL,{
         method:"POST",
@@ -13810,13 +13813,21 @@ Return ONLY a JSON array — no prose, no markdown fences:
             :"Upload your official CFA mock exam review PDF and Claude will build a personalised phased study plan from today until your exam — covering every weak area in priority order."}
         </div>
         {pdfError&&<div style={{fontSize:11,color:C.hard,marginBottom:10,padding:"8px 10px",background:C.hard+"15",borderRadius:8}}>{pdfError}</div>}
-        <label style={{display:"block",cursor:pdfUploading?"not-allowed":"pointer"}}>
+        {pendingPdfReanalyze&&<div style={{background:C.accent+"15",border:`1px solid ${C.accent}44`,borderRadius:10,padding:"12px 14px",marginBottom:10}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:6}}>📋 Same PDF detected</div>
+          <div style={{fontSize:11,color:C.textMid,marginBottom:10}}>This PDF has already been analyzed. Re-analyze to refresh scores with the latest AI improvements, or upload a different mock PDF to track new progress.</div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>{const f=pendingPdfReanalyze.file;setPendingPdfReanalyze(null);uploadMockPDF(f,true);}} style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Re-analyze PDF</button>
+            <button onClick={()=>setPendingPdfReanalyze(null)} style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:600,background:C.surfaceHigh,color:C.textMid,border:`1px solid ${C.border}`,cursor:"pointer"}}>Cancel</button>
+          </div>
+        </div>}
+        {!pendingPdfReanalyze&&<label style={{display:"block",cursor:pdfUploading?"not-allowed":"pointer"}}>
           <input type="file" accept=".pdf,application/pdf" style={{display:"none"}} disabled={pdfUploading}
             onChange={e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(f)uploadMockPDF(f);}}/>
           <div style={{width:"100%",padding:"11px 14px",borderRadius:10,fontSize:13,fontWeight:700,background:pdfUploading?C.surfaceHigh:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:pdfUploading?C.muted:"#fff",border:"none",cursor:pdfUploading?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:pdfUploading?"none":`0 4px 14px ${C.accent}44`,transition:"all 0.2s",userSelect:"none"}}>
             {pdfUploading?<><span style={{display:"inline-block",width:14,height:14,border:`2px solid ${C.muted}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Analyzing mock…</>:"⬆ Upload Mock Review PDF"}
           </div>
-        </label>
+        </label>}
         {lastUploadDate&&<div style={{fontSize:10,color:C.muted,marginTop:8,textAlign:"center"}}>Last updated {lastUploadDate} · {mockPerfHistory.length} mock{mockPerfHistory.length>1?"s":""} analyzed</div>}
       </div>
 
