@@ -6470,13 +6470,15 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
   };
 
   // Upload a mock PDF and generate/update the exam-length study plan
-  const uploadMockPDF=async(file,force=false)=>{
+  const uploadMockPDF=async(file,force=false,prefetchedText=null)=>{
     if(!authUser){showToast("⚠️","Sign in required","Please sign in to use PDF analysis.");return;}
     setPdfUploading(true);setPdfError("");
     try{
-      const pdfText=await extractPDFText(file);
+      // Re-analyze reuses already-extracted text to avoid re-reading the file
+      const pdfText=prefetchedText||(await extractPDFText(file));
       if(!pdfText||pdfText.length<80){
-        setPdfError("Could not read text from this PDF. Make sure it's a text-based PDF, not a scanned image.");
+        const msg="Could not read text from this PDF. Make sure it's a text-based PDF, not a scanned image.";
+        setPdfError(msg);showToast("❌","PDF read failed",msg);
         setPdfUploading(false);return;
       }
       // Duplicate detection: fingerprint = length + first 120 + last 120 chars
@@ -6491,29 +6493,40 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       // Build compact payload — for Q-by-Q format this creates a structured question summary
       // so the AI sees all 90 questions instead of just the first 14k chars of raw text
       const mockPayload=buildMockPayload(pdfText);
-      const res=await fetch(AI_PROXY_URL,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          userId:authUser.id,
-          requestType:"analyze_mock_pdf",
-          pdfText:mockPayload.payload,
-          isQbyQ:mockPayload.isQbyQ,
-          examDate:examDate.toISOString().slice(0,10),
-          cfaLevel,
-          daysLeft,
-          mockPerfHistory,
-          level:cfaLevel,
-        }),
-      });
-      const data=await res.json();
+      let res,data;
+      try{
+        res=await fetch(AI_PROXY_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            userId:authUser.id,
+            requestType:"analyze_mock_pdf",
+            pdfText:mockPayload.payload,
+            isQbyQ:mockPayload.isQbyQ,
+            examDate:examDate.toISOString().slice(0,10),
+            cfaLevel,
+            daysLeft,
+            mockPerfHistory,
+            level:cfaLevel,
+          }),
+        });
+        data=await res.json();
+      }catch(netErr){
+        const msg="Network error — check your connection and try again.";
+        setPdfError(msg);showToast("❌","Analysis failed",msg);
+        setPdfUploading(false);return;
+      }
       if(!res.ok||data.error){
-        if(data.quotaExceeded)setUpgradeModal({reason:"limit"});
-        else setPdfError(data.error||data.message||`Analysis failed (${res.status}). Please try again.`);
+        if(data.quotaExceeded){setUpgradeModal({reason:"limit"});}
+        else{const msg=data.error||data.message||`Analysis failed (${res.status}). Please try again.`;setPdfError(msg);showToast("❌","Analysis failed",msg);}
         setPdfUploading(false);return;
       }
       const {plan,perfSummary}=data;
-      if(!plan||!Array.isArray(plan.phases)){setPdfError("AI returned an unexpected response. Try again.");setPdfUploading(false);return;}
+      if(!plan||!Array.isArray(plan.phases)){
+        const msg="AI returned an unexpected response. Please try again.";
+        setPdfError(msg);showToast("❌","Analysis failed",msg);
+        setPdfUploading(false);return;
+      }
       plan.daysLeftAtCreation=daysLeft;
       plan.pdfFingerprint=fingerprint;
       // Step 1: Normalize whatever keys the AI returned (handles provider label variants)
@@ -6538,9 +6551,9 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
         const canonical=TOPIC_ALIASES[k.toLowerCase().trim()]||k;
         if(VALID_TOPICS.includes(canonical))aiScores[canonical]=v;
       }
-      // Step 2: Client-side regex parse of raw PDF text — fills any gaps the AI missed
+      // Step 2: Client-side keyword classification of raw PDF — fills any gaps the AI missed
       const regexScores=parseTopicScoresFromText(pdfText);
-      // Merge: AI canonical scores take priority; regex fills topics the AI didn't find
+      // Merge: AI canonical scores take priority; keyword scores fill topics the AI didn't find
       plan.topicScores={...regexScores,...aiScores};
       try{localStorage.setItem(EXAM_PLAN_KEY,JSON.stringify(plan));}catch{}
       setExamStudyPlan(plan);
@@ -6554,9 +6567,10 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       ).slice(-10);
       try{localStorage.setItem(MOCK_PERF_KEY,JSON.stringify(newHistory));}catch{}
       setMockPerfHistory(newHistory);
-      showToast("✅",force?"Plan refreshed":"Plan updated",force?"Scores recalculated from the same PDF with latest AI improvements.":"Your exam study plan has been updated based on this mock review.");
+      showToast("✅",force?"Plan refreshed":"Plan created","Your study plan has been built from the mock — scroll up for details.");
     }catch(e){
-      setPdfError("Upload failed: "+(e.message||"unknown error"));
+      const msg="Upload failed: "+(e.message||"unknown error");
+      setPdfError(msg);showToast("❌","Analysis failed",msg);
     }finally{setPdfUploading(false);}
   };
 
@@ -13978,7 +13992,7 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:6}}>📋 Same PDF detected</div>
           <div style={{fontSize:11,color:C.textMid,marginBottom:10}}>This PDF has already been analyzed. Re-analyze to refresh scores with the latest AI improvements, or upload a different mock PDF to track new progress.</div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>{const f=pendingPdfReanalyze.file;setPendingPdfReanalyze(null);uploadMockPDF(f,true);}} style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Re-analyze PDF</button>
+            <button onClick={()=>{const{file:f,pdfText:t}=pendingPdfReanalyze;setPendingPdfReanalyze(null);uploadMockPDF(f,true,t);}} style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Re-analyze PDF</button>
             <button onClick={()=>setPendingPdfReanalyze(null)} style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:600,background:C.surfaceHigh,color:C.textMid,border:`1px solid ${C.border}`,cursor:"pointer"}}>Cancel</button>
           </div>
         </div>}
