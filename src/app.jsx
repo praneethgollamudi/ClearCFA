@@ -308,11 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-19-f
-{version:"2026-07-19-f",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Mock PDFs Parse Perfectly Now",sub:"Study Tools · 2026-07-19 update",desc:"We fixed how ClearCFA reads your mock exam PDFs—it now reliably extracts all 10 CFA topic scores and classifies every question by topic, even in Q-by-Q format. You'll see accurate breakdowns of your strengths and weaknesses across each curriculum area.",tip:"Upload your mock PDF and check the detailed topic performance chart to focus your next study session."},
-{emoji:"⚡",color:C.easy,bg:C.easy,title:"Instant Score Analysis Offline",sub:"Speed · 2026-07-19 update",desc:"Score parsing now happens on your device instead of waiting for the server, so you get results instantly and can analyze mocks even without internet. Your exam history is also smarter—duplicates are automatically removed so you see a clean record.",tip:"Try uploading a PDF while offline and watch your topic breakdown appear immediately."},
-]},
 // WN_VER:2026-07-19
 {version:"2026-07-19",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Accurate Mock Exam Scoring",sub:"Study Tools · 2026-07-19 update",desc:"Fixed PDF parsing to reliably extract all 10 CFA topic scores and classify all 90 questions by topic, even from different mock formats. Your practice exam results now reflect your true performance across every topic.",tip:"Upload a new mock exam PDF to see complete topic breakdowns and accurate score analysis."},
@@ -334,6 +329,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📄",color:C.accentLight,bg:C.accentLight,title:"Smarter PDF Topic Detection",sub:"AI · 2026-07-19 update",desc:"ClearCFA now accurately identifies CFA topic labels within your uploaded PDFs, even when questions are organized non-linearly. This means your quiz questions are tagged with the correct study area automatically.",tip:"Upload past papers or custom materials—your questions will instantly sort by the right CFA topic."},
 {emoji:"✨",color:C.easy,bg:C.easy,title:"Instant Feedback When Analyzing PDFs",sub:"UX · 2026-07-19 update",desc:"You'll now see a confirmation message the moment PDF analysis begins, even if you're scrolled down in the app. No more wondering if your upload started.",tip:"Watch for the toast notification at the bottom of your screen right after you select a PDF."},
 {emoji:"🛠️",color:C.medium,bg:C.medium,title:"Re-analyze Now Shows All Issues",sub:"Bug Fix · 2026-07-19 update",desc:"When you re-analyze a PDF, the app now displays error messages for every failed question instead of stopping silently. You'll know exactly what went wrong and can fix it.",tip:"If re-analysis stumbles, check the error toasts to see which questions couldn't be processed."},
+]},
+// WN_VER:2026-07-20
+{version:"2026-07-20",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Smarter Mock PDF Analysis",sub:"Study Tools · 2026-07-20 update",desc:"We fixed how ClearCFA reads and classifies questions from your mock PDFs, especially for question-by-question formats. Now all 90 questions are properly categorized by CFA topic, so you get accurate performance insights.",tip:"Re-upload any mocks from before this update to see corrected topic breakdowns in your history."},
+{emoji:"🔄",color:C.accentLight,bg:C.accentLight,title:"Re-Analyze Duplicates Without Clutter",sub:"UX · 2026-07-20 update",desc:"Accidentally uploaded the same mock twice? Use the new Re-analyze PDF option to replace old entries instead of stacking duplicates. Your history stays clean and your progress stays accurate.",tip:"Long-press or swipe on any uploaded mock to find the Re-analyze option."},
+{emoji:"⚡",color:C.easy,bg:C.easy,title:"Instant Feedback on PDF Uploads",sub:"UX · 2026-07-20 update",desc:"When you upload a mock PDF, you now see a toast notification immediately so you know the analysis started—even if you've scrolled down the page. Better error messages also show you exactly what went wrong if parsing fails.",tip:"Watch for the quick notification burst at the top when you hit 'Upload Mock PDF'."},
 ]},
 // WN_END
 ];
