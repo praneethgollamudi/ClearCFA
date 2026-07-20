@@ -530,7 +530,7 @@ ${mockPerfHistory.length > 0 ? '- Compare vs prior mock(s): highlight what impro
         headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 2500,
+          max_tokens: 4000,
           temperature: 0.3,
           messages: [{ role: 'user', content: analysisPrompt }],
         }),
