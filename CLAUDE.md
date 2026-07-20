@@ -4,6 +4,18 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**Owner email PDF quota bypass (833a247)**: PDF uploads from owner emails bypass quota limits and show immediate-complete status on re-analyze. When implementing quota checks, whitelist owner emails to allow unlimited mock uploads and skip delayed processing states.
+
+
+**What's New version rotation: 2026-07-20 added (116ce6f)**: Added new version 2026-07-20 highlighting smarter Q-by-Q classification, re-analyze deduplication, and instant feedback. Removed version 2026-07-19-f from rotation. When rotating slides, verify active versions and ensure new announcements highlight the latest mock analysis and UX improvements.
+
+
+**Toast feedback on re-analyze start (116ce6f)**: Re-analysis now shows an immediate toast ("🔄 Analyzing PDF…") when triggered, providing user feedback before the async AI parsing begins. When handling re-analysis flows, emit toast synchronously to signal analysis has started, matching the pattern used for initial PDF uploads.
+
+
+**Retroactive mock history deduplication on load (cf524eb)**: When `mockPerfHistory` is loaded from localStorage, the app now deduplicates by `pdfFingerprint`, keeping only the most recent entry per unique PDF and automatically persisting the cleaned history. When loading mock performance state, expect that duplicate entries may have been collapsed during initialization—this is intentional and improves data consistency.
+
+
 **analyze_mock_pdf token budget increase (7b4ace4)**: The `analyze_mock_pdf` edge function max_tokens increased from 2500 to 4000 to accommodate more complex PDF parsing and classification logic. When updating mock PDF analysis, be aware the function has more capacity for detailed topic classification and gap-propagation logic.
 
 
@@ -1841,7 +1853,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1809100000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1809400000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
