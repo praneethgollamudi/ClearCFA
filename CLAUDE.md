@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**analyze_mock_pdf token budget increase (7b4ace4)**: The `analyze_mock_pdf` edge function max_tokens increased from 2500 to 4000 to accommodate more complex PDF parsing and classification logic. When updating mock PDF analysis, be aware the function has more capacity for detailed topic classification and gap-propagation logic.
+
+
+**Mock PDF history fingerprint-based deduplication (4095f0f)**: When users re-analyze a mock PDF, all prior history entries with the same fingerprint are replaced by the new analysis result, ensuring only the latest version of each unique PDF remains in history. When handling mock re-uploads, compute and compare PDF fingerprints to collapse duplicate entries rather than creating new records.
+
+
 **Gap-propagation for Q-by-Q topic classification (5dc467d)**: Mock PDF analysis now uses gap-propagation logic to classify questions in Q-by-Q format mocks when explicit topic labels are missing. When parsing Q-by-Q PDFs, if a question lacks an explicit CFA topic label, propagate the topic from adjacent questions to improve classification completeness.
 
 
@@ -1835,7 +1841,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1808900000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1809100000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
