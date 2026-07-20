@@ -6570,6 +6570,7 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify({
             userId:authUser.id,
+            email:authUser.email,
             requestType:"analyze_mock_pdf",
             pdfText:mockPayload.payload,
             isQbyQ:mockPayload.isQbyQ,

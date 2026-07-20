@@ -11,6 +11,7 @@ const FREE_DAILY_LIMIT      = 20; // generate requests per day for free users (a
 const FREE_TRIAL_LIMIT      = 40; // generate requests per day during first 30 days
 const FREE_CHAT_DAILY_LIMIT = 15; // chat messages per day for free users
 const IP_DAILY_LIMIT        = 300; // requests per day per IP (anti-abuse)
+const OWNER_EMAILS          = ['sai.praneeth557@gmail.com', 'gspbuilds@gmail.com'];
 
 // Server-side system prompt appended to all generate requests — cannot be bypassed by client
 const SYSTEM_ENFORCE = [
@@ -398,8 +399,10 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'Could not extract text from this PDF.' }, 400);
     }
 
-    // 3 PDF analyses per day for free users, unlimited for Pro
-    const isPdfPro = await checkIsPro(supabaseUrl, supabaseServiceKey, userId as string);
+    // 3 PDF analyses per day for free users, unlimited for Pro/owners
+    const userEmail = typeof body.email === 'string' ? body.email.toLowerCase().trim() : '';
+    const isOwner = OWNER_EMAILS.map(e => e.toLowerCase()).includes(userEmail);
+    const isPdfPro = isOwner || await checkIsPro(supabaseUrl, supabaseServiceKey, userId as string);
     if (!isPdfPro) {
       const pdfDate = `pdf-${todayUTC()}`;
       const svcHdrs = { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}`, 'Content-Type': 'application/json' };
