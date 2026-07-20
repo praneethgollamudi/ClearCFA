@@ -4936,7 +4936,19 @@ function CFAMock(){
   const [essayGrading,setEssayGrading]=useState({});
   const [weeklyPlan,setWeeklyPlan]=useState(()=>{try{const p=localStorage.getItem(PLAN_KEY);return p?JSON.parse(p):null;}catch{return null;}});
   const [examStudyPlan,setExamStudyPlan]=useState(()=>{try{const p=localStorage.getItem(EXAM_PLAN_KEY);return p?JSON.parse(p):null;}catch{return null;}});
-  const [mockPerfHistory,setMockPerfHistory]=useState(()=>{try{const p=localStorage.getItem(MOCK_PERF_KEY);return p?JSON.parse(p):[];}catch{return [];}});
+  const [mockPerfHistory,setMockPerfHistory]=useState(()=>{
+    try{
+      const p=localStorage.getItem(MOCK_PERF_KEY);
+      if(!p)return[];
+      const arr=JSON.parse(p);
+      // Deduplicate by pdfFingerprint — keep only the most recent entry per PDF
+      const seen=new Map();
+      for(const h of arr){const k=h.pdfFingerprint||h.uploadedAt||Math.random();seen.set(k,h);}
+      const deduped=[...seen.values()];
+      if(deduped.length<arr.length)try{localStorage.setItem(MOCK_PERF_KEY,JSON.stringify(deduped));}catch{}
+      return deduped;
+    }catch{return[];}
+  });
   const [pdfUploading,setPdfUploading]=useState(false);
   const [pdfError,setPdfError]=useState("");
   const [pendingPdfReanalyze,setPendingPdfReanalyze]=useState(null);
