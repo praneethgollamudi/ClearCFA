@@ -6548,6 +6548,9 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       // Build compact payload — for Q-by-Q format this creates a structured question summary
       // so the AI sees all 90 questions instead of just the first 14k chars of raw text
       const mockPayload=buildMockPayload(pdfText);
+      // Strip all prior entries for THIS fingerprint before sending to server — the AI should
+      // only see history from genuinely different PDFs, not repeated analyses of the same one
+      const historyOtherPdfs=mockPerfHistory.filter(h=>h.pdfFingerprint!==fingerprint);
       let res,data;
       try{
         res=await fetch(AI_PROXY_URL,{
@@ -6561,7 +6564,7 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
             examDate:examDate.toISOString().slice(0,10),
             cfaLevel,
             daysLeft,
-            mockPerfHistory,
+            mockPerfHistory:historyOtherPdfs,
             level:cfaLevel,
           }),
         });
@@ -6612,14 +6615,10 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
       plan.topicScores={...regexScores,...aiScores};
       try{localStorage.setItem(EXAM_PLAN_KEY,JSON.stringify(plan));}catch{}
       setExamStudyPlan(plan);
-      // Step 3: History — on re-analyze, collapse all same-day entries to just this one
+      // Step 3: History — always replace ALL prior entries for this fingerprint with the new one
+      // so re-analyzing the same PDF never accumulates duplicate entries
       const newEntry={...perfSummary,topicScores:plan.topicScores,uploadedAt:new Date().toISOString(),pdfFingerprint:fingerprint};
-      const todayPrefix=new Date().toISOString().slice(0,10);
-      const newHistory=(force
-        // Remove all entries from today (stale re-analyses of same PDF) then append fresh one
-        ?[...mockPerfHistory.filter(h=>!(h.uploadedAt||"").startsWith(todayPrefix)),newEntry]
-        :[...mockPerfHistory,newEntry]
-      ).slice(-10);
+      const newHistory=[...historyOtherPdfs,newEntry].slice(-10);
       try{localStorage.setItem(MOCK_PERF_KEY,JSON.stringify(newHistory));}catch{}
       setMockPerfHistory(newHistory);
       showToast("✅",force?"Plan refreshed":"Plan created","Your study plan has been built from the mock — scroll up for details.");
