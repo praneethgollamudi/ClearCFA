@@ -4,6 +4,12 @@ ClearCFA is a single-file React CFA exam prep tool served via GitHub Pages.
 
 ## Branding & Identity
 
+**PDF quota bypass with session fallback (86eb9a6)**: Owner email quota bypass now includes a session table lookup when the client email is missing, ensuring quota-exempt status is correctly identified even when email isn't directly available. When implementing quota checks, verify both direct email matching and session-based lookup to properly identify owner uploads.
+
+
+**What's New version rotation: 2026-07-20 added (latest)**: Added new versions 2026-07-20 and 2026-07-20-b highlighting smarter mock PDF analysis, re-analyze deduplication without clutter, instant feedback on uploads, and enhanced AI exam feedback. Removed versions 2026-07-19 and 2026-07-19-f from rotation. Currently active versions are 2026-07-19-b, 2026-07-19-c, 2026-07-19-d, 2026-07-19-e, 2026-07-20, and 2026-07-20-b. When rotating slides, verify the complete active list and ensure new announcements highlight the latest features.
+
+
 **Owner email PDF quota bypass (833a247)**: PDF uploads from owner emails bypass quota limits and show immediate-complete status on re-analyze. When implementing quota checks, whitelist owner emails to allow unlimited mock uploads and skip delayed processing states.
 
 
@@ -1853,7 +1859,7 @@ Referral threshold: **2 paid subscribers** = 1 free Pro month.
 | `cfa_level_v1` | `CFA_LEVEL_KEY` |
 
 ### Build
-Cache version: `app.js?v=1809400000` (increment by 100000 before each commit)
+Cache version: `app.js?v=1809500000` (increment by 100000 before each commit)
 <!-- AUTO_FACTS_END -->
 
 **Level-aware prompts**: Functions like `buildVignettePrompt(topic, module, difficulty, vigCount, subtopic2, losData, level)` and `buildFSAStatementPrompt(subtopic, difficulty, level)` now default `level="1"` but must be called with the user's actual `cfaLevel` from state. `WEEKLY_PLAN_PROMPT` uses template string `{level}` — replace it with `.split("{level}").join(cfaLevel)` before sending to Claude.
