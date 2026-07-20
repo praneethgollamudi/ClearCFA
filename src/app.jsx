@@ -308,11 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-19-b
-{version:"2026-07-19-b",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Mock Exam Scores Now Accurate",sub:"Study Tools · 2026-07-19 update",desc:"Fixed mock PDF analysis to correctly extract all 10 CFA topic scores and classify every question by topic on first read. Your performance breakdown now reflects your actual strengths and weaknesses across the curriculum.",tip:"Upload a mock exam PDF and check the topic score breakdown—each area now shows your true performance."},
-{emoji:"🔄",color:C.accentLight,bg:C.accentLight,title:"Re-analyze Mocks Without Errors",sub:"UX · 2026-07-19 update",desc:"Re-analyzing mock exams now shows clear error messages and avoids re-reading the PDF unnecessarily. When something goes wrong, you'll see exactly what failed instead of silent failures.",tip:"If you re-analyze a mock and see an error toast, the details will tell you exactly what to check."},
-]},
 // WN_VER:2026-07-19-c
 {version:"2026-07-19-c",slides:[
 {emoji:"📊",color:C.accentLight,bg:C.easy,title:"Better Mock Exam Analysis",sub:"AI · 2026-07-19 update",desc:"ClearCFA now accurately classifies all 90 questions in Q-by-Q format mocks by CFA topic, even when labels aren't explicit. Your practice exams are now properly organized so you can track which topics need more work.",tip:"Re-analyze any previously uploaded mock PDFs to see the improved topic breakdown."},
@@ -336,6 +331,11 @@ const WHATS_NEW_SLIDES=[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Cleaner Mock Exam History",sub:"Study Tools · 2026-07-20 update",desc:"We fixed duplicate mock exam entries that appeared when re-analyzing the same PDF. Now your history stays clean and organized, showing only unique attempts so you can track your real progress without clutter.",tip:"Re-upload a previous mock exam PDF—you'll see it replaces the old entry instead of stacking duplicates."},
 {emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Exam Analysis",sub:"AI · 2026-07-20 update",desc:"We enhanced our AI to provide deeper, more detailed feedback on your mock exams by giving it more processing capacity. This means richer explanations of your mistakes and better insights into which concepts need more study time.",tip:"Upload a practice exam and check the explanation section—you'll notice more comprehensive breakdowns of tricky questions."},
 {emoji:"🐛",color:C.medium,bg:C.medium,title:"Better Error Messages for Uploads",sub:"Bug Fix · 2026-07-20 update",desc:"When a PDF fails to analyze, you now see a preview of what went wrong instead of a generic error. This helps you understand exactly why the upload didn't work so you can fix it faster.",tip:"If an upload fails, read the error message carefully—it now includes details from the AI to guide you."},
+]},
+// WN_VER:2026-07-20-c
+{version:"2026-07-20-c",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Cleaner Mock Exam History",sub:"Study Tools · 2026-07-20 update",desc:"ClearCFA now automatically removes duplicate practice attempts from your history when you re-analyze the same PDF. This keeps your performance dashboard focused on unique sessions, making it easier to track real progress over time.",tip:"Check your mock history—old duplicate entries have been cleaned up automatically."},
+{emoji:"🛠️",color:C.medium,bg:C.medium,title:"Better Error Messages for PDF Issues",sub:"UX · 2026-07-20 update",desc:"When a PDF fails to parse, ClearCFA now shows you a preview of what went wrong, making it easier to report issues or retry with a different file. This speeds up troubleshooting so you can get back to studying faster.",tip:"If you see a parse error, read the preview text to understand what didn't work."},
 ]},
 // WN_END
 ];
@@ -393,9 +393,8 @@ const ADMIN_CHANGELOG=[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
-// AC_VER:2026-07-19
-{date:"2026-07-19",entries:[
-"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+// AC_VER:2026-07-20
+{date:"2026-07-20",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
