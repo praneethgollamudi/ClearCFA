@@ -6557,13 +6557,14 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
         return;
       }
       setPendingPdfReanalyze(null);
+      showToast("🔄","Analyzing PDF…","Processing your mock — this takes 20–40 seconds.");
       const daysLeft=Math.max(0,Math.ceil((examDate-new Date())/86400000));
       // Build compact payload — for Q-by-Q format this creates a structured question summary
       // so the AI sees all 90 questions instead of just the first 14k chars of raw text
       const mockPayload=buildMockPayload(pdfText);
-      // Strip all prior entries for THIS fingerprint before sending to server — the AI should
-      // only see history from genuinely different PDFs, not repeated analyses of the same one
-      const historyOtherPdfs=mockPerfHistory.filter(h=>h.pdfFingerprint!==fingerprint);
+      // Strip entries for THIS fingerprint AND old entries without a fingerprint (pre-dedup era)
+      // so the AI only sees genuinely different PDF analyses in history
+      const historyOtherPdfs=mockPerfHistory.filter(h=>h.pdfFingerprint&&h.pdfFingerprint!==fingerprint);
       let res,data;
       try{
         res=await fetch(AI_PROXY_URL,{
@@ -14060,13 +14061,13 @@ Return ONLY a JSON array — no prose, no markdown fences:
           <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:6}}>📋 Same PDF detected</div>
           <div style={{fontSize:11,color:C.textMid,marginBottom:10}}>This PDF has already been analyzed. Re-analyze to refresh scores with the latest AI improvements, or upload a different mock PDF to track new progress.</div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>{const{file:f,pdfText:t}=pendingPdfReanalyze;setPendingPdfReanalyze(null);showToast("🔄","Analyzing PDF…","Processing your mock — this takes 20–40 seconds.");uploadMockPDF(f,true,t);}} style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Re-analyze PDF</button>
+            <button onClick={()=>{const{file:f,pdfText:t}=pendingPdfReanalyze;setPendingPdfReanalyze(null);uploadMockPDF(f,true,t);}} style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:700,background:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:"#fff",border:"none",cursor:"pointer"}}>Re-analyze PDF</button>
             <button onClick={()=>setPendingPdfReanalyze(null)} style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:600,background:C.surfaceHigh,color:C.textMid,border:`1px solid ${C.border}`,cursor:"pointer"}}>Cancel</button>
           </div>
         </div>}
         {!pendingPdfReanalyze&&<label style={{display:"block",cursor:pdfUploading?"not-allowed":"pointer"}}>
           <input type="file" accept=".pdf,application/pdf" style={{display:"none"}} disabled={pdfUploading}
-            onChange={e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(f){showToast("🔄","Analyzing PDF…","Processing your mock — this takes 20–40 seconds.");uploadMockPDF(f);}}}/>
+            onChange={e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(f){uploadMockPDF(f);}}}/>
           <div style={{width:"100%",padding:"11px 14px",borderRadius:10,fontSize:13,fontWeight:700,background:pdfUploading?C.surfaceHigh:`linear-gradient(135deg,${C.accent},${C.accentLight})`,color:pdfUploading?C.muted:"#fff",border:"none",cursor:pdfUploading?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:pdfUploading?"none":`0 4px 14px ${C.accent}44`,transition:"all 0.2s",userSelect:"none"}}>
             {pdfUploading?<><span style={{display:"inline-block",width:14,height:14,border:`2px solid ${C.muted}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Analyzing mock…</>:"⬆ Upload Mock Review PDF"}
           </div>
