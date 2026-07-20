@@ -556,11 +556,12 @@ ${mockPerfHistory.length > 0 ? '- Compare vs prior mock(s): highlight what impro
     let plan: Record<string, unknown>;
     try {
       const match = rawText.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error('no JSON');
+      if (!match) throw new Error('no JSON block found in AI response');
       plan = JSON.parse(match[0]);
-      if (!Array.isArray(plan.phases)) throw new Error('no phases');
-    } catch {
-      return jsonResponse({ error: 'Could not parse study plan. Try uploading a clearer mock review PDF.' }, 500);
+      if (!Array.isArray(plan.phases)) throw new Error('parsed JSON has no phases array');
+    } catch (parseErr) {
+      const preview = rawText.slice(0, 120).replace(/\n/g, ' ');
+      return jsonResponse({ error: `AI response could not be parsed (${(parseErr as Error).message}). AI said: "${preview}…" — please try again.` }, 500);
     }
 
     const perfSummary = {
