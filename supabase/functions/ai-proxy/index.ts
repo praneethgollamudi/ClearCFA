@@ -401,7 +401,22 @@ Deno.serve(async (req: Request) => {
 
     // 3 PDF analyses per day for free users, unlimited for Pro/owners
     const userEmail = typeof body.email === 'string' ? body.email.toLowerCase().trim() : '';
-    const isOwner = OWNER_EMAILS.map(e => e.toLowerCase()).includes(userEmail);
+    let isOwner = OWNER_EMAILS.map(e => e.toLowerCase()).includes(userEmail);
+    // Fallback: look up email from sessions table in case client didn't send it or auth is stale
+    if (!isOwner) {
+      try {
+        const sessRes = await fetch(
+          `${supabaseUrl}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId as string)}&select=data&limit=1`,
+          { headers: { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}` } }
+        );
+        const sessRows = await sessRes.json() as Array<{ data?: string }>;
+        if (Array.isArray(sessRows) && sessRows.length > 0 && sessRows[0].data) {
+          const sessData = JSON.parse(sessRows[0].data) as Record<string, unknown>;
+          const storedEmail = (typeof sessData.email === 'string' ? sessData.email : '').toLowerCase().trim();
+          if (OWNER_EMAILS.map(e => e.toLowerCase()).includes(storedEmail)) isOwner = true;
+        }
+      } catch { /* ignore — fall through to quota check */ }
+    }
     const isPdfPro = isOwner || await checkIsPro(supabaseUrl, supabaseServiceKey, userId as string);
     if (!isPdfPro) {
       const pdfDate = `pdf-${todayUTC()}`;

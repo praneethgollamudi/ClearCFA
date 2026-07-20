@@ -6592,7 +6592,7 @@ STUDY_PLAN: [3-day targeted study sequence in one sentence]`;
         setPdfUploading(false);return;
       }
       if(!res.ok||data.error){
-        if(data.quotaExceeded){setUpgradeModal({reason:"limit"});}
+        if(data.quotaExceeded){showToast("⛔","PDF limit reached","3 analyses used today — upgrade to Pro for unlimited.");setUpgradeModal({reason:"limit"});}
         else{const msg=data.error||data.message||`Analysis failed (${res.status}). Please try again.`;setPdfError(msg);showToast("❌","Analysis failed",msg);}
         setPdfUploading(false);return;
       }
