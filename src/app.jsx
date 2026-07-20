@@ -308,11 +308,6 @@ function expandAcronyms(text){
 }
 const WHATS_NEW_SLIDES=[
 // WN_START
-// WN_VER:2026-07-19
-{version:"2026-07-19",slides:[
-{emoji:"📊",color:C.reward,bg:C.reward,title:"Accurate Mock Exam Scoring",sub:"Study Tools · 2026-07-19 update",desc:"Fixed PDF parsing to reliably extract all 10 CFA topic scores and classify all 90 questions by topic, even from different mock formats. Your practice exam results now reflect your true performance across every topic.",tip:"Upload a new mock exam PDF to see complete topic breakdowns and accurate score analysis."},
-{emoji:"🔄",color:C.medium,bg:C.medium,title:"Re-Analyze Mocks Without Re-Upload",sub:"UX · 2026-07-19 update",desc:"The re-analyze feature now shows detailed error messages and skips redundant PDF re-reading, making it faster to fix parsing issues. If something goes wrong, you'll see exactly what failed instead of silent failures.",tip:"Tap 'Re-analyze' on any mock exam to reprocess it and uncover hidden topic scores."},
-]},
 // WN_VER:2026-07-19-b
 {version:"2026-07-19-b",slides:[
 {emoji:"📊",color:C.reward,bg:C.reward,title:"Mock Exam Scores Now Accurate",sub:"Study Tools · 2026-07-19 update",desc:"Fixed mock PDF analysis to correctly extract all 10 CFA topic scores and classify every question by topic on first read. Your performance breakdown now reflects your actual strengths and weaknesses across the curriculum.",tip:"Upload a mock exam PDF and check the topic score breakdown—each area now shows your true performance."},
@@ -336,6 +331,12 @@ const WHATS_NEW_SLIDES=[
 {emoji:"🔄",color:C.accentLight,bg:C.accentLight,title:"Re-Analyze Duplicates Without Clutter",sub:"UX · 2026-07-20 update",desc:"Accidentally uploaded the same mock twice? Use the new Re-analyze PDF option to replace old entries instead of stacking duplicates. Your history stays clean and your progress stays accurate.",tip:"Long-press or swipe on any uploaded mock to find the Re-analyze option."},
 {emoji:"⚡",color:C.easy,bg:C.easy,title:"Instant Feedback on PDF Uploads",sub:"UX · 2026-07-20 update",desc:"When you upload a mock PDF, you now see a toast notification immediately so you know the analysis started—even if you've scrolled down the page. Better error messages also show you exactly what went wrong if parsing fails.",tip:"Watch for the quick notification burst at the top when you hit 'Upload Mock PDF'."},
 ]},
+// WN_VER:2026-07-20-b
+{version:"2026-07-20-b",slides:[
+{emoji:"📊",color:C.reward,bg:C.reward,title:"Cleaner Mock Exam History",sub:"Study Tools · 2026-07-20 update",desc:"We fixed duplicate mock exam entries that appeared when re-analyzing the same PDF. Now your history stays clean and organized, showing only unique attempts so you can track your real progress without clutter.",tip:"Re-upload a previous mock exam PDF—you'll see it replaces the old entry instead of stacking duplicates."},
+{emoji:"🧠",color:C.accentLight,bg:C.accentLight,title:"Smarter AI Exam Analysis",sub:"AI · 2026-07-20 update",desc:"We enhanced our AI to provide deeper, more detailed feedback on your mock exams by giving it more processing capacity. This means richer explanations of your mistakes and better insights into which concepts need more study time.",tip:"Upload a practice exam and check the explanation section—you'll notice more comprehensive breakdowns of tricky questions."},
+{emoji:"🐛",color:C.medium,bg:C.medium,title:"Better Error Messages for Uploads",sub:"Bug Fix · 2026-07-20 update",desc:"When a PDF fails to analyze, you now see a preview of what went wrong instead of a generic error. This helps you understand exactly why the upload didn't work so you can fix it faster.",tip:"If an upload fails, read the error message carefully—it now includes details from the AI to guide you."},
+]},
 // WN_END
 ];
 const WHATS_NEW_VERSION=WHATS_NEW_SLIDES.reduce((max,e)=>e.version>max?e.version:max,"");
@@ -346,10 +347,6 @@ const ADMIN_CHANGELOG=[
 // AC_START
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
-"Fix edge function auth: add --no-verify-jwt to deploy command",
-]},
-// AC_VER:2026-07-19
-{date:"2026-07-19",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
@@ -399,6 +396,11 @@ const ADMIN_CHANGELOG=[
 // AC_VER:2026-07-19
 {date:"2026-07-19",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+"CLAUDE.md: auto-sync constants and document gaps [skip ci]",
+]},
+// AC_VER:2026-07-20
+{date:"2026-07-20",entries:[
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 "CLAUDE.md: auto-sync constants and document gaps [skip ci]",
 ]},
